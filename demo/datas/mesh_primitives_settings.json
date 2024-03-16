@@ -1,0 +1,125 @@
+[
+  {
+    "type": "cube",
+    "materialType": "Standard",
+    "shape": {
+      "width": 1,
+      "height": 1,
+      "depth": 1
+    },
+    "instances": [
+      {
+        "position": [-5, 5, 0],
+        "scale": [2, 1, 2],
+        "rotation": [0, 0, 0],
+        "opacity": 0.5
+      },
+      {
+        "position": [0, 5, 1],
+        "scale": [1, 0.5, 1],
+        "rotation": [1, 1, 0],
+        "color": "#bd0d87"
+      }
+    ]
+  },
+  {
+    "type": "cylinder",
+    "shape": {
+      "radiusTop": 1,
+      "radiusBottom": 1,
+      "height": 1,
+      "radialSegments": 12,
+      "heightSegments": 1
+    },
+    "instances": [
+      {
+        "position": [5, 0, 0],
+        "scale": [1, 5, 1],
+        "rotation": [0, 0, 0],
+        "color": "#0d87bd"
+      }
+    ]
+  },
+  {
+    "type": "icosahedron",
+    "shape": {
+      "radius": 1,
+      "detail": 1
+    },
+    "instances": [
+      {
+        "position": [0, 0, 0],
+        "scale": [1, 1, 1],
+        "rotation": [0, 0, 0],
+        "color": "#0dbd87"
+      }
+    ]
+  },
+  {
+    "type": "cone",
+    "shape": {
+      "radius": 1,
+      "height": 2,
+      "radialSegments": 8,
+      "heightSegments": 1
+    },
+    "instances": [
+      {
+        "position": [-5, 0, 0],
+        "scale": [1, 1, 1],
+        "rotation": [0, 0, 0],
+        "color": "#bd870d"
+      }
+    ]
+  },
+  {
+    "type": "plane",
+    "shape": {
+      "width": 1,
+      "height": 1,
+      "widthSegments": 1,
+      "heightSegments": 1
+    },
+    "instances": [
+      {
+        "position": [-5, -5, 0],
+        "scale": [5, 5, 5],
+        "rotation": [0, 0, 0],
+        "color": "#0d87bd"
+      }
+    ]
+  },
+  {
+    "type": "sphere",
+    "shape": {
+      "radius": 1,
+      "widthSegments": 16,
+      "heightSegments": 12
+    },
+    "instances": [
+      {
+        "position": [0, -5, 0],
+        "scale": [2, 2, 2],
+        "rotation": [0, 0, 0],
+        "color": "#bd0d87"
+      }
+    ]
+  },
+  {
+    "type": "torus",
+    "shape": {
+      "radius": 1,
+      "tube": 0.5,
+      "radialSegments": 8,
+      "tubularSegments": 24
+    },
+    "instances": [
+      {
+        "position": [5, -5, 0],
+        "scale": [1, 1, 1],
+        "rotation": [0, 0, 0],
+        "color": "#0dbd87"
+      }
+    ]
+  }
+]

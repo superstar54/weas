@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Use local style.css -->
+    <link rel="stylesheet" href="../src/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" />
+  </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../node_modules/three/build/three.module.js",
+          "dat.gui": "../node_modules/dat.gui/build/dat.gui.module.js",
+          "three/examples/jsm/renderers/CSS2DRenderer.js": "../node_modules/three/examples/jsm/renderers/CSS2DRenderer.js",
+          "three/examples/jsm/geometries/ConvexGeometry.js": "../node_modules/three/examples/jsm/geometries/ConvexGeometry.js",
+          "three/examples/jsm/interactive/SelectionBox.js": "../node_modules/three/examples/jsm/interactive/SelectionBox.js",
+          "three/examples/jsm/interactive/SelectionHelper.js": "../node_modules/three/examples/jsm/interactive/SelectionHelper.js"
+        }
+      }
+    </script>
+    <h1>WEAS (Web Environment For Atomistic Structures)</h1>
+
+    <select id="structure-selector">
+      <option value="c2h6so.xyz">C2H6SO</option>
+      <option value="CoO.cif">CoO</option>
+      <option value="tio2.cif">TiO2</option>
+      <option value="h2o-homo.cube">Isosurface data</option>
+      <option value="deca_ala_md.xyz">MD trajectory</option>
+      <option value="au.cif">Selection</option>
+      <option value="Primitives">Primitives</option>
+      <option value="mesh_primitives_settings.json">Primitives instance</option>
+    </select>
+
+    <!-- Add Upload Button Here -->
+    <label for="file-upload" class="custom-file-upload"> <i class="fas fa-cloud-upload-alt"></i> Upload Structure </label>
+    <input id="file-upload" type="file" style="display: none" />
+
+    <div id="weas" style="position: relative; width: 100%; height: 800px"></div>
+    <script type="module" src="demo.js"></script>
+  </body>
+</html>

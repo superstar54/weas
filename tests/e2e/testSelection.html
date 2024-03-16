@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS Test</title>
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 600px; height: 400px"></div>
+
+    <script type="module">
+      import * as weas from "../../dist/weas.mjs";
+
+      async function fetchFile(filename) {
+        const response = await fetch(`../../demo/datas/${filename}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load file for structure: ${filename}`);
+        }
+        return await response.text();
+      }
+
+      let domElement = document.getElementById("viewer");
+      // read atoms from file
+      const filename = "au.cif";
+      fetchFile(filename).then((fileContent) => {
+        let atoms = weas.parseCIF(fileContent);
+        atoms = atoms.multiply(4, 4, 4);
+        let editor = new weas.WEAS({ domElement });
+        window.editor = editor;
+        editor.avr.modelStyle = 0;
+        editor.avr.atoms = atoms;
+        editor.ops.mesh.AddSphereOperation({ position: [6, 6, 6], scale: [4, 4, 4], color: "#bd0d87", opacity: 0.5 });
+        editor.ops.hideGUI();
+        editor.render();
+        // select the last object in the scene
+        editor.selectionManager.selectedObjects = [editor.tjs.scene.children[editor.tjs.scene.children.length - 1]];
+        // select atoms inside the sphere
+        editor.ops.selection.InsideSelection();
+      });
+    </script>
+  </body>
+</html>

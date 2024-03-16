@@ -1,0 +1,74 @@
+import { BaseOperation } from "./baseOperation.js";
+import { pointsInsideMesh } from "../geometry/utils.js";
+
+class SelectAll extends BaseOperation {
+  static description = "Select all";
+  static category = "Select";
+
+  constructor({ weas }) {
+    super(weas);
+    this.previousSelectedAtomsIndices = [...weas.avr.selectedAtomsIndices];
+  }
+
+  execute() {
+    // add cube to settings
+    this.weas.avr.selectedAtomsIndices = [...Array(this.weas.avr.atoms.getAtomsCount()).keys()];
+  }
+
+  undo() {
+    console.log("undo select all");
+    this.weas.avr.selectedAtomsIndices = this.previousSelectedAtomsIndices;
+  }
+}
+
+class InvertSelection extends BaseOperation {
+  static description = "Invert selection";
+  static category = "Select";
+
+  constructor({ weas }) {
+    super(weas);
+    this.previousSelectedAtomsIndices = [...weas.avr.selectedAtomsIndices];
+  }
+
+  execute() {
+    // add cube to settings
+    this.weas.avr.selectedAtomsIndices = [...Array(this.weas.avr.atoms.getAtomsCount()).keys()].filter((i) => !this.previousSelectedAtomsIndices.includes(i));
+  }
+
+  undo() {
+    console.log("undo invert selection");
+    this.weas.avr.selectedAtomsIndices = this.previousSelectedAtomsIndices;
+  }
+}
+
+class InsideSelection extends BaseOperation {
+  static description = "Select inside";
+  static category = "Select";
+
+  constructor({ weas }) {
+    super(weas);
+    this.previousSelectedAtomsIndices = [...weas.avr.selectedAtomsIndices];
+  }
+
+  execute() {
+    const indices = [];
+    // measure the time
+    console.time("inside selection");
+    // loop mesh in the this.weas.selectionManager.selectedObjects, and check if the position is inside the mesh
+    for (let j = 0; j < this.weas.selectionManager.selectedObjects.length; j++) {
+      const mesh = this.weas.selectionManager.selectedObjects[j];
+      const indices1 = pointsInsideMesh(this.weas.avr.atoms.positions, mesh);
+      indices.push(...indices1);
+    }
+    console.timeEnd("inside selection");
+    this.weas.avr.selectedAtomsIndices = indices;
+  }
+
+  undo() {
+    console.log("undo inside selection");
+    console.log("previousSelectedAtomsIndices: ", this.previousSelectedAtomsIndices);
+    this.weas.avr.selectedAtomsIndices = this.previousSelectedAtomsIndices;
+  }
+}
+
+export { SelectAll, InvertSelection, InsideSelection };

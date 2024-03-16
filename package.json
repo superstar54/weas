@@ -1,0 +1,32 @@
+{
+  "name": "weas",
+  "version": "0.1.0",
+  "description": "WEAS (Web Environment for Atomic Structures) is a JavaScript library to visualize and manipulate the atomistic structures directly in the web browser",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "live-server",
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
+    "build": "webpack --mode production && cp src/style.css dist/"
+  },
+  "files": [
+    "src/",
+    "dist/"
+  ],
+  "author": "Xing Wang",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.42.1",
+    "@types/node": "^20.11.24",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^24.0.0",
+    "live-server": "^1.2.2",
+    "playwright": "^1.42.1",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "dat.gui": "^0.7.9",
+    "three": "^0.160.1"
+  }
+}

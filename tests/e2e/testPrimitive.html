@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS Test</title>
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 600px; height: 400px"></div>
+
+    <script type="module">
+      import * as weas from "../../dist/weas.mjs";
+
+      async function fetchFile(filename) {
+        const response = await fetch(`../../demo/datas/${filename}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load file for structure: ${filename}`);
+        }
+        return await response.text();
+      }
+
+      let domElement = document.getElementById("viewer");
+      let editor = new weas.WEAS({ domElement });
+      editor.ops.mesh.AddCubeOperation({ position: [-5, 0, 0], size: 2 });
+      editor.ops.mesh.AddSphereOperation({ position: [5, 2, 0], radius: 2, color: "#00FF00" });
+      editor.ops.hideGUI();
+      editor.selectionManager.selectedObjects = [editor.tjs.scene.children[5]];
+      editor.render();
+    </script>
+  </body>
+</html>

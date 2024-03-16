@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS Molecule</title>
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 600px; height: 600px"></div>
+    <script type="module">
+      import { WEAS, Atoms } from "https://unpkg.com/weas/dist/weas.mjs";
+      let domElement = document.getElementById("viewer");
+      // create atoms object for H2O
+      let atoms = new Atoms({
+        symbols: ["O", "H", "H"],
+        positions: [
+          [2.5, 2.76, 2.5],
+          [2.5, 3.53, 2.0],
+          [2.5, 2.0, 2.0],
+        ],
+        cell: [5, 5, 5],
+      });
+      let editor = new WEAS({ domElement });
+      // load atoms to atoms viewer (avr)
+      editor.avr.atoms = atoms;
+      editor.avr.modelStyle = 1; // 1: ball and stick, 0: ball only
+      editor.render();
+    </script>
+  </body>
+</html>
