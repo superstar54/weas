@@ -210,8 +210,72 @@ test.describe("Selection", () => {
     // simulate keydown event
     await page.keyboard.press("g");
     // mouse move to the center of the canvas element
-    await page.mouse.move(page.centerX - 200, page.centerY);
-    await page.mouse.click(page.centerX - 200, page.centerY);
+    await page.mouse.move(page.centerX - 100, page.centerY);
+    await page.mouse.click(page.centerX - 100, page.centerY);
     await expect(page).toHaveScreenshot();
+  });
+});
+
+test.describe("Animation", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("http://127.0.0.1:8080/tests/e2e/testAnimation.html");
+
+    // focus the element
+    const element = await page.$("#viewer");
+    await element.focus();
+    const boundingBox = await element.boundingBox();
+    // Calculate the center of the element
+    const centerX = boundingBox.x + boundingBox.width / 2;
+    const centerY = boundingBox.y + boundingBox.height / 2;
+    page.centerX = centerX;
+    page.centerY = centerY;
+    // Move the mouse to the center of the element
+    await page.mouse.move(centerX, centerY);
+  });
+
+  test("Undo Redos", async ({ page }) => {
+    await expect(page).toHaveScreenshot("Animation-frame-0.png");
+    // simulate keydown event
+    await page.keyboard.press("g");
+    // mouse move to the center of the canvas element
+    await page.mouse.move(page.centerX + 100, page.centerY);
+    await page.mouse.click(page.centerX + 100, page.centerY);
+    // current frame is 0, add name toHaveScreenshot
+    await expect(page).toHaveScreenshot("Animation-frame-0-move.png");
+    // set frame 10
+    await page.evaluate(() => {
+      const timeline = document.getElementById("timeline");
+      timeline.value = 10;
+      // Creating and dispatching the event must happen within the page context
+      const event = new Event("input", {
+        bubbles: true,
+        cancelable: true,
+      });
+      timeline.dispatchEvent(event);
+    });
+    await expect(page).toHaveScreenshot("Animation-frame-10.png");
+    //move atoms
+    await page.keyboard.press("g");
+    // mouse move to the center of the canvas element
+    await page.mouse.move(page.centerX + 200, page.centerY);
+    await page.mouse.click(page.centerX + 200, page.centerY);
+    await expect(page).toHaveScreenshot("Animation-frame-10-move.png");
+    // undo
+    await page.keyboard.down("Control");
+    await page.keyboard.press("z");
+    await expect(page).toHaveScreenshot("Animation-frame-10-undo.png");
+    // undo, should go back to frame 0
+    const element = await page.$("#undo");
+    await element.click();
+    await expect(page).toHaveScreenshot("Animation-frame-0-undo.png");
+    // redo
+    await page.keyboard.down("Control");
+    await page.keyboard.press("y");
+    await expect(page).toHaveScreenshot("Animation-frame-0-redo.png");
+    // redo
+    await page.waitForSelector("#redo", { state: "attached" });
+    const element2 = await page.$("#redo");
+    await element2.click();
+    await expect(page).toHaveScreenshot("Animation-frame-10-redo.png");
   });
 });

@@ -5,33 +5,42 @@ export class ObjectManager {
   constructor(weas) {
     this.weas = weas;
     this.selectionManager = weas.selectionManager;
-    this.sceneManager = weas.tjs.sceneManager;
+    this.scene = weas.tjs.scene;
   }
 
-  translateSelectedObjects(translateVector) {
-    this.selectionManager.selectedObjects.forEach((object) => {
+  translateSelectedObjects(translateVector, selectedObjects = null) {
+    if (selectedObjects === null) {
+      selectedObjects = this.selectionManager.selectedObjects;
+    }
+    selectedObjects.forEach((object) => {
       const initialPosition = object.position.clone();
       object.position.copy(initialPosition.add(translateVector));
     });
   }
 
-  rotateSelectedObjects(rotationAxis, rotationAngle) {
+  rotateSelectedObjects(rotationAxis, rotationAngle, selectedObjects = null) {
+    if (selectedObjects === null) {
+      selectedObjects = this.selectionManager.selectedObjects;
+    }
     rotationAxis = rotationAxis.normalize();
     rotationAngle = THREE.MathUtils.degToRad(rotationAngle);
-    this.selectionManager.selectedObjects.forEach((object) => {
+    selectedObjects.forEach((object) => {
       object.rotateOnAxis(rotationAxis, -rotationAngle);
     });
   }
 
   deleteSelectedObjects() {
     this.selectionManager.selectedObjects.forEach((object) => {
-      clearObject(this.sceneManager.scene, object);
+      clearObject(this.scene, object);
     });
     this.selectionManager.clearSelection();
   }
 
-  scaleSelectedObjects(scale) {
-    this.selectionManager.selectedObjects.forEach((object) => {
+  scaleSelectedObjects(scale, selectedObjects = null) {
+    if (selectedObjects === null) {
+      selectedObjects = this.selectionManager.selectedObjects;
+    }
+    selectedObjects.forEach((object) => {
       object.scale.multiply(scale);
     });
   }
@@ -41,7 +50,7 @@ export class ObjectManager {
     this.selectionManager.selectedObjects.forEach((object) => {
       const clone = object.clone();
       clone.position.add(new THREE.Vector3(1, 1, 1));
-      this.sceneManager.scene.add(clone);
+      this.scene.add(clone);
       newObjects.push(clone);
     });
     this.selectionManager.selectedObjects = newObjects;

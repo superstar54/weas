@@ -94,6 +94,7 @@ export class Isosurface {
   drawIsosurfaces() {
     /* Draw isosurfaces */
     if (this.volumetricData === null) {
+      console.log("No volumetric data is set");
       return;
     }
     console.log("drawIsosurfaces");

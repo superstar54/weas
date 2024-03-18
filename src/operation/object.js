@@ -17,13 +17,17 @@ class DeleteOperation extends BaseOperation {
   }
 
   execute() {
-    this.weas.avr.deleteSelectedAtoms(this.indices);
+    if (this.indices.length > 0) {
+      this.weas.avr.deleteSelectedAtoms(this.indices);
+    }
     this.weas.objectManager.deleteSelectedObjects();
   }
 
   undo() {
     console.log("undo delete");
-    this.weas.avr.atoms = this.initialAtoms.copy();
+    if (this.indices.length > 0) {
+      this.weas.avr.atoms = this.initialAtoms.copy();
+    }
     // Restore the deleted objects
     const selectedObjects = [];
     this.initialObjectsState.forEach(({ object, parent }) => {
@@ -32,7 +36,7 @@ class DeleteOperation extends BaseOperation {
         parent.add(object);
       } else {
         // If no parent was recorded, add it directly to the scene
-        this.weas.tjs.sceneManager.scene.add(object);
+        this.weas.tjs.scene.add(object);
       }
       selectedObjects.push(object);
     });
@@ -54,16 +58,20 @@ class CopyOperation extends BaseOperation {
   }
 
   execute() {
-    this.weas.avr.copyAtoms(this.indices);
+    if (this.indices.length > 0) {
+      this.weas.avr.copyAtoms(this.indices);
+    }
     this.newObjects = this.weas.objectManager.copySelectedObjects();
   }
 
   undo() {
     console.log("Undo copy operation.");
-    this.weas.avr.atoms = this.initialAtoms.copy();
+    if (this.indices.length > 0) {
+      this.weas.avr.atoms = this.initialAtoms.copy();
+    }
     // Remove the new objects
     this.newObjects.forEach((object) => {
-      clearObject(this.weas.tjs.sceneManager.scene, object);
+      clearObject(this.weas.tjs.scene, object);
     });
   }
 

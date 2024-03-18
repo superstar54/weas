@@ -1,27 +1,27 @@
-export function createViewpointButtons(viewer, gui) {
+export function createViewpointButtons(weas, gui) {
   // Create a folder for the viewpoint buttons
-  console.log("viewer", viewer);
+  console.log("weas", weas);
   const viewpointFolder = gui.addFolder("Viewpoint");
 
   // Create buttons for different viewpoints
   const viewpoints = {
     Top: () => {
-      viewer.tjs.updateCameraAndControls(viewer.atoms.getCenterOfGeometry(), [0, 0, 100]);
+      weas.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
     },
     Bottom: () => {
-      viewer.tjs.updateCameraAndControls(viewer.atoms.getCenterOfGeometry(), [0, 0, -100]);
+      weas.tjs.updateCameraAndControls({ direction: [0, 0, -100] });
     },
     Left: () => {
-      viewer.tjs.updateCameraAndControls(viewer.atoms.getCenterOfGeometry(), [-100, 0, 0]);
+      weas.tjs.updateCameraAndControls({ direction: [-100, 0, 0] });
     },
     Right: () => {
-      viewer.tjs.updateCameraAndControls(viewer.atoms.getCenterOfGeometry(), [100, 0, 0]);
+      weas.tjs.updateCameraAndControls({ direction: [100, 0, 0] });
     },
     Front: () => {
-      viewer.tjs.updateCameraAndControls(viewer.atoms.getCenterOfGeometry(), [0, -100, 0]);
+      weas.tjs.updateCameraAndControls({ direction: [0, -100, 0] });
     },
     Back: () => {
-      viewer.tjs.updateCameraAndControls(viewer.atoms.getCenterOfGeometry(), [0, 100, 0]);
+      weas.tjs.updateCameraAndControls({ direction: [0, 100, 0] });
     },
   };
 

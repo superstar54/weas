@@ -2,7 +2,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "../three/OrbitControls.js";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { SceneManager } from "./SceneManager.js";
+import { WeasScene } from "./SceneManager.js";
+import { OrthographicCamera } from "./Camera.js";
 
 class BlendJSObject {
   constructor(name, geometry, material) {
@@ -44,8 +45,7 @@ class BlendJSRenderer {
 export class BlendJS {
   constructor(containerElement) {
     this.containerElement = containerElement;
-    this.sceneManager = new SceneManager();
-    this.scene = this.sceneManager.scene;
+    this.scene = new WeasScene(this);
     this.objects = {};
     this.materials = {};
     this.meshes = {};
@@ -54,7 +54,7 @@ export class BlendJS {
     this.init();
   }
   init() {
-    this.sceneManager.scene.background = new THREE.Color(0xffffff); // Set the scene's background to white
+    this.scene.background = new THREE.Color(0xffffff); // Set the scene's background to white
     // Create a renderer
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(this.containerElement.clientWidth, this.containerElement.clientHeight);
@@ -76,13 +76,14 @@ export class BlendJS {
     const frustumHalfHeight = frustumSize / 2;
     const frustumHalfWidth = frustumHalfHeight * aspect;
 
-    this.camera = new THREE.OrthographicCamera(
+    this.camera = new OrthographicCamera(
       -frustumHalfWidth, // left
       frustumHalfWidth, // right
       frustumHalfHeight, // top
       -frustumHalfHeight, // bottom
       1, // near clipping plane
       2000, // far clipping plane
+      this,
     );
     // Set initial camera position
     this.camera.position.set(0, -100, 0);
@@ -90,7 +91,7 @@ export class BlendJS {
     // Enable layer 1 for the camera
     // this layer will be used for vertex indicators
     this.camera.layers.enable(1);
-    this.sceneManager.add(this.camera);
+    this.scene.add(this.camera);
     // Create a light
     const light = new THREE.DirectionalLight(0xffffff, 2.0);
     light.position.set(50, 50, 100);
@@ -108,13 +109,14 @@ export class BlendJS {
     // this.controls.enablePan = true; // This line disables panning
     // this.controls.enableDamping = true; // Enable smooth camera movements
     // Add event listener for window resize
+    this.viewerRect = this.containerElement.getBoundingClientRect();
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
   }
 
   addObject(name, geometry, material) {
     const object = new BlendJSObject(name, geometry, material);
     this.objects[name] = object;
-    this.sceneManager.add(object.object3D);
+    this.scene.add(object.object3D);
     return object;
   }
 
@@ -134,7 +136,7 @@ export class BlendJS {
   addLight(name, light) {
     const lgt = new BlendJSLight(name, light);
     this.lights[name] = lgt;
-    this.sceneManager.add(lgt.light);
+    this.scene.add(lgt.light);
     return lgt;
   }
 
@@ -161,21 +163,23 @@ export class BlendJS {
     Object.values(this.renderers).forEach((rndr) => {
       rndr.renderer.setSize(this.containerElement.clientWidth, this.containerElement.clientHeight);
     });
+    this.viewerRect = this.containerElement.getBoundingClientRect();
   }
   //
-  updateCameraAndControls({ center = null, direction = [0, 0, 1], distance = null, zoom = 1 }) {
+  updateCameraAndControls({ lookAt = null, direction = [0, 0, 1], distance = null, zoom = 1 }) {
     /*
     Calculate the camera parameters based on the bounding box of the scene and the camera direction
-    The camera to look at the center, and rotate around the center of the atoms
+    The camera to look at the lookAt, and rotate around the lookAt of the atoms.
+    Position of the camera is defined by the look_at, direction, and distance attributes.
     */
     // normalize the camera direction
     direction = new THREE.Vector3(...direction).normalize();
     const sceneBoundingBox = this.getSceneBoundingBox();
-    // center of the bounding box
-    if (center === null) {
-      center = sceneBoundingBox.getCenter(new THREE.Vector3());
+    // lookAt of the bounding box
+    if (lookAt === null) {
+      lookAt = sceneBoundingBox.getCenter(new THREE.Vector3());
     } else {
-      center = new THREE.Vector3(...center);
+      lookAt = new THREE.Vector3(...lookAt);
     }
 
     const size = calculateBoundingBox(sceneBoundingBox, direction);
@@ -198,25 +202,25 @@ export class BlendJS {
     this.camera.top = cameraHeight / 2;
     this.camera.bottom = -cameraHeight / 2;
 
-    // Adjust camera position based on the center of the bounding box and the camera direction
+    // Adjust camera position based on the lookAt of the bounding box and the camera direction
     if (distance === null) {
       distance = size.z + padding;
     }
-    let cameraPosition = center.clone().add(direction.multiplyScalar(distance));
-    this.camera.position.copy(cameraPosition);
+    let cameraPosition = lookAt.clone().add(direction.multiplyScalar(distance));
+    this.camera.updatePosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
 
-    this.camera.lookAt(center);
+    this.camera.lookAt(lookAt);
     this.camera.updateProjectionMatrix();
-    this.camera.zoom = zoom;
-    // Set the camera target to the center of the atoms
-    this.controls.target.set(center.x, center.y, center.z);
+    this.camera.updateZoom(zoom);
+    // Set the camera target to the lookAt of the atoms
+    this.controls.target.set(lookAt.x, lookAt.y, lookAt.z);
   }
 
   getSceneBoundingBox() {
     // Create a bounding box that will include all objects
     let sceneBoundingBox = new THREE.Box3();
     // For each object in the scene, expand the bounding box to include it
-    this.sceneManager.scene.traverse(function (object) {
+    this.scene.traverse(function (object) {
       if (object.isMesh || object.isLineSegments || object.isInstancedMesh) {
         let objectBoundingBox;
         // if it is a instancedMesh
@@ -251,7 +255,7 @@ export class BlendJS {
 
       // loop through renderers to render the scene
       Object.values(this.renderers).forEach((rndr) => {
-        rndr.renderer.render(this.sceneManager, this.camera);
+        rndr.renderer.render(this.scene, this.camera);
       });
     };
 
@@ -269,7 +273,7 @@ export class BlendJS {
     renderer.setPixelRatio(highResPixelRatio);
 
     // Render the scene for high-res output
-    renderer.render(this.sceneManager.scene, this.camera);
+    renderer.render(this.scene, this.camera);
 
     // Get the image data URL
     var imgData = renderer.domElement.toDataURL("image/png");

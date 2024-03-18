@@ -27,7 +27,8 @@ export class PolyhedraManager {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
     this.settings = [];
-    this.meshes = [];
+    // create a group to store the polyhedra meshes
+    this.meshes = new THREE.Group();
     this.init();
   }
 
@@ -81,9 +82,7 @@ export class PolyhedraManager {
 
   clearMeshes() {
     /* Remove highlighted atom meshes from the selectedAtomsMesh group */
-    this.meshes.forEach((mesh) => {
-      clearObject(this.scene, mesh);
-    });
+    clearObject(this.scene, this.meshes);
   }
 
   drawPolyhedras() {
@@ -92,10 +91,11 @@ export class PolyhedraManager {
     if (this.viewer.debug) {
       console.log("polyhedras: ", polyhedras);
     }
-    this.meshes = drawPolyhedras(this.viewer.atoms, polyhedras, this.viewer.bondManager.bondList, this.viewer._colorType, this.viewer._materialType);
-    this.meshes.forEach((mesh) => {
-      this.scene.add(mesh);
+    const meshes = drawPolyhedras(this.viewer.atoms, polyhedras, this.viewer.bondManager.bondList, this.viewer._colorType, this.viewer._materialType);
+    meshes.forEach((mesh) => {
+      this.meshes.add(mesh);
     });
+    return this.meshes;
   }
 
   updatePolyhedraMesh(atomIndex = null, atoms = null) {

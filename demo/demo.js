@@ -1,5 +1,7 @@
 import { WEAS, Atoms, Species, parseXYZ, parseCIF, parseCube } from "../src/index.js"; // Adjust the path as necessary
+import * as THREE from "three";
 
+window.THREE = THREE;
 window.WEAS = WEAS;
 window.Atoms = Atoms;
 window.Species = Species;

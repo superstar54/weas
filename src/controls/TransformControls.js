@@ -27,7 +27,6 @@ export class TransformControls {
     this.centroidNDC = new THREE.Vector2();
     this.initialAtomPositions = new Map(); // To store initial positions of selected atoms
     this.initialObjectState = new Map(); // To store initial state of selected objects
-    this.viewerRect = this.tjs.containerElement.getBoundingClientRect();
     // Get the camera's forward direction (negative z-axis in world space)
     this.cameraDirection = new THREE.Vector3(0, 0, -1);
   }
@@ -43,6 +42,7 @@ export class TransformControls {
   enterMode(mode, mousePosition) {
     this.mode = mode;
     console.log("Enter mode: ", this.mode);
+    this.cameraDirection = new THREE.Vector3(0, 0, -1);
     this.cameraDirection.applyQuaternion(this.tjs.camera.quaternion);
     if (this.mode === "translate") {
       // Get the camera's forward direction (negative z-axis in world space)
@@ -74,17 +74,15 @@ export class TransformControls {
     // Create a translate operation
     if (this.mode === "translate") {
       const translateVector = this.getTranslateVector(this.eventHandler.currentMousePosition, this.initialMousePosition);
-      console.log("Translate vector: ", translateVector);
-      const translateOperation = new TranslateOperation(this.weas, translateVector);
+      const translateOperation = new TranslateOperation({ weas: this.weas, vector: translateVector });
       this.weas.ops.execute(translateOperation, false);
     } else if (this.mode === "rotate") {
       const rotationAngle = this.getRotationAngle(this.eventHandler.currentMousePosition, this.initialMousePosition);
-      const rotateOperation = new RotateOperation(this.weas, this.cameraDirection, rotationAngle);
+      const rotateOperation = new RotateOperation({ weas: this.weas, axis: this.cameraDirection, angle: rotationAngle });
       this.weas.ops.execute(rotateOperation, false);
     } else if (this.mode === "scale") {
       const scaleVector = this.getScaleVector(this.eventHandler.currentMousePosition, this.initialMousePosition);
-      console.log("Scale vector: ", scaleVector);
-      const scaleOperation = new ScaleOperation(this.weas, scaleVector);
+      const scaleOperation = new ScaleOperation({ weas: this.weas, scale: scaleVector });
       this.weas.ops.execute(scaleOperation, false);
     } else {
       console.log("Invalid mode");
@@ -175,9 +173,15 @@ export class TransformControls {
     this.weas.objectManager.translateSelectedObjects(translateVector);
   }
 
+  getNDC(mousePosition) {
+    return new THREE.Vector2(((mousePosition.x - this.tjs.viewerRect.left) / this.tjs.viewerRect.width) * 2 - 1, -((mousePosition.y - this.tjs.viewerRect.top) / this.tjs.viewerRect.height) * 2 + 1);
+  }
+
   getTranslateVector(currentMousePosition, previousMousePosition) {
-    const currentWorldPosition = getWorldPositionFromScreen(currentMousePosition.x, currentMousePosition.y, this.tjs.camera, this.translatePlane);
-    const previousWorldPosition = getWorldPositionFromScreen(previousMousePosition.x, previousMousePosition.y, this.tjs.camera, this.translatePlane);
+    const newNDC = this.getNDC(currentMousePosition);
+    const currentWorldPosition = getWorldPositionFromScreen(this.tjs.camera, newNDC, this.translatePlane);
+    const initialNDC = this.getNDC(previousMousePosition);
+    const previousWorldPosition = getWorldPositionFromScreen(this.tjs.camera, initialNDC, this.translatePlane);
     return currentWorldPosition.sub(previousWorldPosition);
   }
 
@@ -200,15 +204,8 @@ export class TransformControls {
   }
 
   getScaleVector(currentMousePosition, previousMousePosition) {
-    const initialNDC = new THREE.Vector2(
-      ((previousMousePosition.x - this.viewerRect.left) / this.viewerRect.width) * 2 - 1,
-      -((previousMousePosition.y - this.viewerRect.top) / this.viewerRect.height) * 2 + 1,
-    );
-
-    const newNDC = new THREE.Vector2(
-      ((currentMousePosition.x - this.viewerRect.left) / this.viewerRect.width) * 2 - 1,
-      -((currentMousePosition.y - this.viewerRect.top) / this.viewerRect.height) * 2 + 1,
-    );
+    const initialNDC = this.getNDC(previousMousePosition);
+    const newNDC = this.getNDC(currentMousePosition);
     if (initialNDC.equals(newNDC)) {
       return; // Skip further processing
     }
@@ -221,15 +218,8 @@ export class TransformControls {
   }
 
   getRotationAngle(currentMousePosition, previousMousePosition) {
-    const initialNDC = new THREE.Vector2(
-      ((previousMousePosition.x - this.viewerRect.left) / this.viewerRect.width) * 2 - 1,
-      -((previousMousePosition.y - this.viewerRect.top) / this.viewerRect.height) * 2 + 1,
-    );
-
-    const newNDC = new THREE.Vector2(
-      ((currentMousePosition.x - this.viewerRect.left) / this.viewerRect.width) * 2 - 1,
-      -((currentMousePosition.y - this.viewerRect.top) / this.viewerRect.height) * 2 + 1,
-    );
+    const initialNDC = this.getNDC(previousMousePosition);
+    const newNDC = this.getNDC(currentMousePosition);
     if (initialNDC.equals(newNDC)) {
       console.log("No mouse movement detected, skipping rotation.");
       return; // Skip further processing

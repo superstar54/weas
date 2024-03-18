@@ -5,40 +5,42 @@ class TranslateOperation extends BaseOperation {
   static description = "Translate";
   static category = "Edit";
 
-  constructor(weas, translateVector = new THREE.Vector3()) {
+  constructor({ weas, vector = new THREE.Vector3() }) {
     super(weas);
     // currentFrame
-    this.currentFrame = weas.currentFrame;
+    this.currentFrame = weas.avr.currentFrame;
     // store the selected atoms and the translate vector
     this.selectedAtomsIndices = Array.from(weas.avr.selectedAtomsIndices);
-    this.selectedObjects = weas.selectedObjects;
-    // if translateVector is a normal array [x, y, z], convert it to a THREE.Vector3
-    if (Array.isArray(translateVector)) {
-      translateVector = new THREE.Vector3(translateVector[0], translateVector[1], translateVector[2]);
+    this.selectedObjects = weas.selectionManager.selectedObjects;
+    // if vector is a normal array [x, y, z], convert it to a THREE.Vector3
+    if (Array.isArray(vector)) {
+      vector = new THREE.Vector3(vector[0], vector[1], vector[2]);
     }
-    this.translateVector = translateVector.clone();
-    this.translateVectorGui = { x: translateVector.x, y: translateVector.y, z: translateVector.z };
+    this.vector = vector.clone();
+    this.vectorGui = { x: vector.x, y: vector.y, z: vector.z };
   }
 
   execute() {
     console.log("execute translate");
-    this.weas.currentFrame = this.currentFrame;
-    this.weas.avr.translateSelectedAtoms(this.translateVector, this.selectedAtomsIndices);
-    this.weas.objectManager.translateSelectedObjects(this.translateVector);
+    this.weas.avr.currentFrame = this.currentFrame;
+    this.weas.selectionManager.selectedObjects = this.selectedObjects;
+    this.weas.avr.translateSelectedAtoms(this.vector, this.selectedAtomsIndices);
+    this.weas.objectManager.translateSelectedObjects(this.vector);
   }
 
   undo() {
     console.log("undo translate");
-    this.weas.currentFrame = this.currentFrame;
-    // negative translateVector
-    const negativeTranslateVector = this.translateVector.clone().negate();
-    this.weas.avr.translateSelectedAtoms(negativeTranslateVector, this.selectedAtomsIndices);
-    this.weas.objectManager.translateSelectedObjects(negativeTranslateVector);
+    this.weas.avr.currentFrame = this.currentFrame;
+    // negative vector
+    const negativevector = this.vector.clone().negate();
+    this.weas.avr.translateSelectedAtoms(negativevector, this.selectedAtomsIndices);
+    this.weas.selectionManager.selectedObjects = this.selectedObjects;
+    this.weas.objectManager.translateSelectedObjects(negativevector);
   }
 
   adjust() {
     this.undo();
-    this.translateVector = new THREE.Vector3(this.translateVectorGui.x, this.translateVectorGui.y, this.translateVectorGui.z);
+    this.vector = new THREE.Vector3(this.vectorGui.x, this.vectorGui.y, this.vectorGui.z);
     this.execute(); // Re-execute with the new translate vector
   }
 
@@ -47,19 +49,19 @@ class TranslateOperation extends BaseOperation {
     renameFolder(guiFolder, "Translate");
 
     guiFolder
-      .add(this.translateVectorGui, "x", -10, 10)
+      .add(this.vectorGui, "x", -10, 10)
       .name("X-axis")
       .onChange((value) => {
         this.adjust();
       });
     guiFolder
-      .add(this.translateVectorGui, "y", -10, 10)
+      .add(this.vectorGui, "y", -10, 10)
       .name("Y-axis")
       .onChange((value) => {
         this.adjust();
       });
     guiFolder
-      .add(this.translateVectorGui, "z", -10, 10)
+      .add(this.vectorGui, "z", -10, 10)
       .name("Z-axis")
       .onChange((value) => {
         this.adjust();
@@ -71,11 +73,14 @@ class RotateOperation extends BaseOperation {
   static description = "Rotate";
   static category = "Edit";
 
-  constructor(weas, axis, angle) {
+  constructor({ weas, axis, angle }) {
     super(weas);
-    this.currentFrame = weas.currentFrame;
+    this.currentFrame = weas.avr.currentFrame;
     this.selectedAtomsIndices = Array.from(weas.avr.selectedAtomsIndices);
-    this.selectedObjects = weas.selectedObjects;
+    this.selectedObjects = weas.selectionManager.selectedObjects;
+    if (Array.isArray(axis)) {
+      axis = new THREE.Vector3(axis[0], axis[1], axis[2]);
+    }
     this.axis = axis;
     this.angle = angle;
     this.axisGui = { x: axis.x, y: axis.y, z: axis.z };
@@ -84,7 +89,8 @@ class RotateOperation extends BaseOperation {
 
   execute() {
     // Implementation for rotating selected atoms
-    this.weas.currentFrame = this.currentFrame;
+    this.weas.avr.currentFrame = this.currentFrame;
+    this.weas.selectionManager.selectedObjects = this.selectedObjects;
     this.weas.avr.rotateSelectedAtoms(this.axis, this.angle, this.selectedAtomsIndices);
     this.weas.objectManager.rotateSelectedObjects(this.axis, this.angle);
   }
@@ -92,7 +98,8 @@ class RotateOperation extends BaseOperation {
   undo() {
     // Undo logic
     console.log("undo rotate");
-    this.weas.currentFrame = this.currentFrame;
+    this.weas.avr.currentFrame = this.currentFrame;
+    this.weas.selectionManager.selectedObjects = this.selectedObjects;
     // rotate the atoms back
     this.weas.avr.rotateSelectedAtoms(this.axis, -this.angle, this.selectedAtomsIndices);
     // rotate the objects back
@@ -142,27 +149,32 @@ class ScaleOperation extends BaseOperation {
   static description = "Scale";
   static category = "Edit";
 
-  constructor(weas, scale = new THREE.Vector3()) {
+  constructor({ weas, scale = new THREE.Vector3() }) {
     super(weas);
     // currentFrame
-    this.currentFrame = weas.currentFrame;
+    this.currentFrame = weas.avr.currentFrame;
     // store the selected atoms and the scale vector
     this.selectedAtomsIndices = Array.from(weas.avr.selectedAtomsIndices);
-    this.selectedObjects = weas.selectedObjects;
+    this.selectedObjects = weas.selectionManager.selectedObjects;
+    if (Array.isArray(scale)) {
+      scale = new THREE.Vector3(scale[0], scale[1], scale[2]);
+    }
     this.scale = scale.clone();
     this.scaleGui = { x: scale.x, y: scale.y, z: scale.z };
   }
 
   execute() {
     console.log("execute scale");
-    this.weas.currentFrame = this.currentFrame;
+    this.weas.avr.currentFrame = this.currentFrame;
+    this.weas.selectionManager.selectedObjects = this.selectedObjects;
     // this.weas.avr.scaleSelectedAtoms(this.scale, this.selectedAtomsIndices);
     this.weas.objectManager.scaleSelectedObjects(this.scale);
   }
 
   undo() {
     console.log("undo scale");
-    this.weas.currentFrame = this.currentFrame;
+    this.weas.avr.currentFrame = this.currentFrame;
+    this.weas.selectionManager.selectedObjects = this.selectedObjects;
     // scale back, by 1/scale
     const scale = new THREE.Vector3(1 / this.scale.x, 1 / this.scale.y, 1 / this.scale.z);
     // this.weas.avr.scaleSelectedAtoms(scale, this.selectedAtomsIndices);

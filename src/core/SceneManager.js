@@ -3,28 +3,46 @@
 import * as THREE from "three";
 import { clearObjects } from "../utils.js";
 
-export class SceneManager {
-  constructor() {
-    this.scene = new THREE.Scene();
+export class WeasScene extends THREE.Scene {
+  constructor(tjs) {
+    super();
+    this.tjs = tjs;
   }
+
   add(object) {
-    this.scene.add(object);
+    console.log("add object", object);
+    super.add(object);
+    this.dispatchObjectEvent({
+      data: object.toJSON(),
+      action: "add",
+      catalog: "object",
+    });
   }
+
   remove(object) {
-    this.scene.remove(object);
+    console.log("remove object", object);
+    // if object is a string, find it by uuid
+    if (typeof object === "string") {
+      object = this.getObjectByProperty("uuid", object);
+      if (!object) {
+        console.warn("Object not found");
+        return;
+      }
+    }
+    super.remove(object);
+    this.dispatchObjectEvent({
+      data: object.toJSON(),
+      action: "remove",
+      catalog: "object",
+    });
   }
-  get children() {
-    return this.scene.children;
-  }
-  // Call this method after updating atoms
-  dispatchViewerUpdated(data) {
-    // create a list of picked atoms from the selectedAtomsIndices set
-    const event = new CustomEvent("viewerUpdated", { detail: data });
+
+  dispatchObjectEvent(data) {
+    const event = new CustomEvent("weas", { detail: data });
     this.tjs.containerElement.dispatchEvent(event);
-    console.log("Dispatch viewerUpdated");
   }
 
   clear() {
-    clearObjects(this.scene);
+    clearObjects(this);
   }
 }

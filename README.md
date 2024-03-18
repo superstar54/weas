@@ -60,6 +60,12 @@ npm run build
 npx playwright test
 ```
 
+Run the test with the title
+
+```
+npx playwright test -g "Animation"
+```
+
 If the snapshots need to be updated:
 
 ```
