@@ -6,16 +6,16 @@ class ReplaceOperation extends BaseOperation {
   static description = "Replace atoms";
   static category = "Edit";
 
-  constructor({ weas, element = "C", indices = null }) {
+  constructor({ weas, symbol = "C", indices = null }) {
     super(weas);
     this.indices = indices ? indices : Array.from(this.weas.avr.selectedAtomsIndices);
-    this.element = element;
+    this.symbol = symbol;
     // .copy() provides a fresh instance for restoration
     this.initialAtoms = weas.avr.atoms.copy();
   }
 
   execute() {
-    this.weas.avr.replaceSelectedAtoms(this.element, this.indices);
+    this.weas.avr.replaceSelectedAtoms(this.symbol, this.indices);
   }
 
   undo() {
@@ -23,12 +23,13 @@ class ReplaceOperation extends BaseOperation {
     this.weas.avr.atoms = this.initialAtoms.copy();
   }
 
-  adjust(newElement) {
-    if (!(newElement in elementAtomicNumbers)) {
+  adjust(newSymbol) {
+    // if newSymbol not in elementAtomicNumbers, and newSymbol not in this.weas.avr.atoms.species, ship the adjustment
+    if (!(newSymbol in elementAtomicNumbers || newSymbol in this.weas.avr.atoms.species)) {
       return;
     }
-    this.element = newElement;
-    this.execute(); // Re-execute with the new element
+    this.symbol = newSymbol;
+    this.execute(); // Re-execute with the new symbol
   }
 
   setupGUI(guiFolder) {
@@ -36,10 +37,10 @@ class ReplaceOperation extends BaseOperation {
     renameFolder(guiFolder, "Replace");
 
     guiFolder
-      .add(this, "element", "H")
-      .name("Element")
+      .add(this, "symbol", "H")
+      .name("Symbol")
       .onChange((value) => {
-        this.adjust(this.element);
+        this.adjust(this.symbol);
       });
   }
 }
@@ -48,16 +49,16 @@ class AddAtomOperation extends BaseOperation {
   static description = "Add atom";
   static category = "Edit";
 
-  constructor({ weas, element = "C", position = { x: 0, y: 0, z: 0 } }) {
+  constructor({ weas, symbol = "C", position = { x: 0, y: 0, z: 0 } }) {
     super(weas);
     // this.weas.avr.selectedAtomsIndices is a set
     this.position = position;
-    this.element = element;
+    this.symbol = symbol;
     this.initialAtoms = weas.avr.atoms.copy();
   }
 
   execute() {
-    this.weas.avr.addAtom(this.element, this.position);
+    this.weas.avr.addAtom(this.symbol, this.position);
   }
 
   undo() {
@@ -65,15 +66,15 @@ class AddAtomOperation extends BaseOperation {
     this.weas.avr.atoms = this.initialAtoms.copy();
   }
 
-  adjust(newElement, newPosition) {
-    // if newElement in elementAtomicNumbers, ship the adjustment
-    if (!(newElement in elementAtomicNumbers)) {
+  adjust(newSymbol, newPosition) {
+    // if newSymbol not in elementAtomicNumbers, ship the adjustment
+    if (!(newSymbol in elementAtomicNumbers || newSymbol in this.weas.avr.atoms.species)) {
       return;
     }
     this.weas.avr.atoms = this.initialAtoms.copy();
-    this.element = newElement;
+    this.symbol = newSymbol;
     this.position = newPosition;
-    this.execute(); // Re-execute with the new element
+    this.execute(); // Re-execute with the new symbol
   }
 
   setupGUI(guiFolder) {
@@ -81,8 +82,8 @@ class AddAtomOperation extends BaseOperation {
     renameFolder(guiFolder, "Add");
 
     guiFolder
-      .add(this, "element", "C")
-      .name("Element")
+      .add(this, "symbol", "C")
+      .name("Symbol")
       .onChange((value) => {
         this.adjust(value, this.position);
       });
@@ -90,19 +91,19 @@ class AddAtomOperation extends BaseOperation {
       .add(this.position, "x", -10, 10)
       .name("X-axis")
       .onChange((value) => {
-        this.adjust(this.element, { ...this.position, x: value });
+        this.adjust(this.symbol, { ...this.position, x: value });
       });
     guiFolder
       .add(this.position, "y", -10, 10)
       .name("Y-axis")
       .onChange((value) => {
-        this.adjust(this.element, { ...this.position, y: value });
+        this.adjust(this.symbol, { ...this.position, y: value });
       });
     guiFolder
       .add(this.position, "z", -10, 10)
       .name("Z-axis")
       .onChange((value) => {
-        this.adjust(this.element, { ...this.position, z: value });
+        this.adjust(this.symbol, { ...this.position, z: value });
       });
   }
 }
@@ -111,7 +112,7 @@ class ColorByAttribute extends BaseOperation {
   static description = "Color by attribute";
   static category = "Color";
 
-  constructor({ weas, attribute = "Element", color1 = "#ff0000", color2 = "#0000ff" }) {
+  constructor({ weas, attribute = "Symbol", color1 = "#ff0000", color2 = "#0000ff" }) {
     super(weas);
     // weas.meshPrimitive.settings is a array of objects
     // deep copy it to avoid modifying the original settings

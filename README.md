@@ -1,10 +1,10 @@
-## Web Environment For Atomistic Structure (WEAS)
+## Web Environment For Atomic Structure (WEAS)
 
 [![npm version](https://img.shields.io/npm/v/weas.svg?style=flat-square)](https://www.npmjs.com/package/weas)
 [![Docs status](https://readthedocs.org/projects/weas/badge)](http://weas.readthedocs.io/)
 [![Unit test](https://github.com/superstar54/weas/actions/workflows/ci.yml/badge.svg)](https://github.com/superstar54/weas/actions/workflows/ci.yml)
 
-The WEAS package is a JavaScript library designed to visualize and edit atomistic structures (molecule, crystal, nanoparticle) in the web environments.
+The WEAS package is a JavaScript library designed to visualize and edit atomic structures (molecule, crystal, nanoparticle) in the web environments.
 
 Features:
 
@@ -58,6 +58,12 @@ Then run
 ```
 npm run build
 npx playwright test
+```
+
+Run the test with the title
+
+```
+npx playwright test -g "Animation"
 ```
 
 If the snapshots need to be updated:

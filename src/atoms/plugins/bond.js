@@ -130,7 +130,7 @@ export class BondManager {
       atomColors = this.viewer.atomColors;
     }
     this.bondMesh = drawStick(this.viewer.atoms, this.bondList, this.buildBondDict(), this.viewer.bondRadius, this.viewer._materialType, atomColors);
-    this.scene.add(this.bondMesh);
+    return this.bondMesh;
   }
 
   updateBondMesh(atomIndex = null, atoms = null) {

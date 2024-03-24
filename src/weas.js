@@ -47,7 +47,7 @@ class WEAS {
       this.avr.animate();
 
       Object.values(this.tjs.renderers).forEach((rndr) => {
-        rndr.renderer.render(this.tjs.sceneManager.scene, this.tjs.camera);
+        rndr.renderer.render(this.tjs.scene, this.tjs.camera);
       });
     };
 
@@ -55,7 +55,7 @@ class WEAS {
   }
 
   clear() {
-    this.tjs.sceneManager.clear();
+    this.tjs.scene.clear();
   }
 }
 

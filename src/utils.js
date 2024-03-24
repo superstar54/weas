@@ -48,9 +48,7 @@ export function clearObject(scene, obj) {
   }
 }
 
-export function getWorldPositionFromScreen(screenX, screenY, camera, plane) {
-  const ndc = new THREE.Vector2((screenX / window.innerWidth) * 2 - 1, -(screenY / window.innerHeight) * 2 + 1);
-
+export function getWorldPositionFromScreen(camera, ndc, plane) {
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera(ndc, camera);
 

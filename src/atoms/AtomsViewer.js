@@ -445,8 +445,10 @@ class AtomsViewer {
     }
     this.atomColors = getAtomColors(this.atoms, this.colorBy, { colorType: this.colorType, colorRamp: this._colorRamp });
     this.drawBalls();
-    this.bondManager.drawBonds();
-    this.polyhedraManager.drawPolyhedras();
+    const bondMesh = this.bondManager.drawBonds();
+    this.atomsMesh.add(bondMesh);
+    const polyhedraMesh = this.polyhedraManager.drawPolyhedras();
+    this.atomsMesh.add(polyhedraMesh);
     this.isosurfaceManager.drawIsosurfaces();
     if (this.showVectorField) {
       this.VFManager.drawVectorFields();
@@ -459,6 +461,7 @@ class AtomsViewer {
   drawBalls() {
     // draw atoms
     this.atomsMesh = drawAtoms({ scene: this.tjs.scene, atoms: this.atoms, atomScales: this.atomScales, colors: this.atomColors, radiusType: this.radiusType, materialType: this._materialType });
+    this.tjs.scene.add(this.atomsMesh);
     // atoms to be drawn, boundary atoms, and the bonded atoms
     // merge the boundaryList and the bondedAtoms
     this.imageAtomsList = this.bondedAtoms["atoms"].concat(this.boundaryList);
@@ -473,7 +476,16 @@ class AtomsViewer {
         atomScales[i] = this.atomScales[this.imageAtomsList[i][0]];
       }
       const atomColors = getAtomColors(imageAtomsList, this.colorBy, { colorType: this.colorType, defaultColor: "#0xffffff", colorRamp: this._colorRamp });
-      this.boundaryAtomsMesh = drawAtoms({ scene: this.tjs.scene, atoms: imageAtomsList, atomScales: atomScales, colors: atomColors, radiusType: this.radiusType, materialType: this._materialType });
+      this.boundaryAtomsMesh = drawAtoms({
+        scene: this.tjs.scene,
+        atoms: imageAtomsList,
+        atomScales: atomScales,
+        colors: atomColors,
+        radiusType: this.radiusType,
+        materialType: this._materialType,
+        data_type: "boundary",
+      });
+      this.atomsMesh.add(this.boundaryAtomsMesh);
     }
   }
 
@@ -482,8 +494,16 @@ class AtomsViewer {
     const atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
     // use yellow color to highlight the selected atoms
     const atomColors = new Array(this.atoms.getAtomsCount()).fill(new THREE.Color(0xffff00));
-    this.highlightAtomsMesh = drawAtoms({ scene: this.tjs.scene, atoms: this.atoms, atomScales: atomScales, colors: atomColors, radiusType: this.radiusType, materialType: "Basic" });
-    this.tjs.scene.add(this.highlightAtomsMesh);
+    this.highlightAtomsMesh = drawAtoms({
+      scene: this.tjs.scene,
+      atoms: this.atoms,
+      atomScales: atomScales,
+      colors: atomColors,
+      radiusType: this.radiusType,
+      materialType: "Basic",
+      data_type: "highlight",
+    });
+    this.atomsMesh.add(this.highlightAtomsMesh);
     this.highlightAtomsMesh.material.opacity = 0.6;
     this.updateHighlightAtomsMesh(this.selectedAtomsIndices);
   }

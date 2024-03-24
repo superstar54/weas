@@ -2,17 +2,31 @@ export function setupCameraGUI(gui, camera) {
   // Create a folder for camera parameters
   const cameraFolder = gui.addFolder("Camera");
 
-  cameraFolder.add(camera.position, "x", -100, 100).name("X Position");
-  cameraFolder.add(camera.position, "y", -100, 100).name("Y Position");
-  cameraFolder.add(camera.position, "z", -100, 100).name("Z Position");
+  // Temp storage for position to use in onChange callbacks
+  const position = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
 
-  cameraFolder.add(camera.rotation, "x", -Math.PI, Math.PI).name("X Rotation");
-  cameraFolder.add(camera.rotation, "y", -Math.PI, Math.PI).name("Y Rotation");
-  cameraFolder.add(camera.rotation, "z", -Math.PI, Math.PI).name("Z Rotation");
-
-  const cameraParams = {
-    fov: camera.fov,
-    near: camera.near,
-    far: camera.far,
-  };
+  cameraFolder
+    .add(position, "x", -100, 100)
+    .name("X Position")
+    .onChange((newValue) => {
+      camera.updatePosition(newValue, position.y, position.z);
+      // Update the temp storage to ensure consistency
+      position.x = newValue;
+    });
+  cameraFolder
+    .add(position, "y", -100, 100)
+    .name("Y Position")
+    .onChange((newValue) => {
+      camera.updatePosition(position.x, newValue, position.z);
+      // Update the temp storage to ensure consistency
+      position.y = newValue;
+    });
+  cameraFolder
+    .add(position, "z", -100, 100)
+    .name("Z Position")
+    .onChange((newValue) => {
+      camera.updatePosition(position.x, position.y, newValue);
+      // Update the temp storage to ensure consistency
+      position.z = newValue;
+    });
 }

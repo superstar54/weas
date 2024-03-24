@@ -4,7 +4,7 @@ import { materials } from "../tools/materials.js";
 
 const Radii = { Covalent: covalentRadii, VDW: vdwRadii };
 
-export function drawAtoms({ scene, atoms, atomScales, colors, radiusType = "Covalent", materialType = "Standard" }) {
+export function drawAtoms({ atoms, atomScales, colors, radiusType = "Covalent", materialType = "Standard", data_type = "atom" }) {
   console.time("drawAtoms Time");
   // console.log("atomScales: ", atomScales);
   console.log("Draw Atoms: ", +atoms.symbols.length, " atoms");
@@ -45,7 +45,7 @@ export function drawAtoms({ scene, atoms, atomScales, colors, radiusType = "Cova
     // Set color
     instancedMesh.setColorAt(globalIndex, colors[globalIndex]);
   });
-  instancedMesh.userData.type = "atom";
+  instancedMesh.userData.type = data_type;
   instancedMesh.userData.uuid = atoms.uuid;
   // the default objectMode for atoms is "edit"
   instancedMesh.userData.objectMode = "edit";
@@ -57,7 +57,6 @@ export function drawAtoms({ scene, atoms, atomScales, colors, radiusType = "Cova
     instancedMesh.instanceColor.needsUpdate = true;
   }
 
-  scene.add(instancedMesh);
   console.timeEnd("drawAtoms Time");
   return instancedMesh;
 }

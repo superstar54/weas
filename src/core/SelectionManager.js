@@ -21,7 +21,6 @@ export class SelectionManager {
   }
 
   init() {
-    this.viewerRect = this.tjs.containerElement.getBoundingClientRect();
     this.selectionBox = new SelectionBox(this.tjs.camera, this.tjs.scene);
     this.helper = new SelectionHelper(this.tjs.renderers["MainRenderer"].renderer, "selectBox");
     window.addEventListener("pointerdown", this.onMouseDown.bind(this), false);
@@ -42,16 +41,16 @@ export class SelectionManager {
   }
 
   onMouseDown(event) {
-    let x = ((event.clientX - this.viewerRect.left) / this.viewerRect.width) * 2 - 1;
-    let y = -((event.clientY - this.viewerRect.top) / this.viewerRect.height) * 2 + 1;
+    let x = ((event.clientX - this.tjs.viewerRect.left) / this.tjs.viewerRect.width) * 2 - 1;
+    let y = -((event.clientY - this.tjs.viewerRect.top) / this.tjs.viewerRect.height) * 2 + 1;
     this.selectionBox.startPoint.set(x, y, 0.5);
     this.oldSelectedAtomsIndices = this.weas.avr.selectedAtomsIndices;
     this.oldSelectedObjects = this.selectedObjects;
   }
 
   pickSelection(event) {
-    this.mouse.x = ((event.clientX - this.viewerRect.left) / this.viewerRect.width) * 2 - 1;
-    this.mouse.y = -((event.clientY - this.viewerRect.top) / this.viewerRect.height) * 2 + 1;
+    this.mouse.x = ((event.clientX - this.tjs.viewerRect.left) / this.tjs.viewerRect.width) * 2 - 1;
+    this.mouse.y = -((event.clientY - this.tjs.viewerRect.top) / this.tjs.viewerRect.height) * 2 + 1;
     // Update the picking ray
     this.raycaster.setFromCamera(this.mouse, this.tjs.camera);
 
@@ -135,8 +134,8 @@ export class SelectionManager {
   }
 
   dragSelection(event) {
-    let x = ((event.clientX - this.viewerRect.left) / this.viewerRect.width) * 2 - 1;
-    let y = -((event.clientY - this.viewerRect.top) / this.viewerRect.height) * 2 + 1;
+    let x = ((event.clientX - this.tjs.viewerRect.left) / this.tjs.viewerRect.width) * 2 - 1;
+    let y = -((event.clientY - this.tjs.viewerRect.top) / this.tjs.viewerRect.height) * 2 + 1;
     this.selectionBox.endPoint.set(x, y, 0.5);
 
     this.selectionBox.select();

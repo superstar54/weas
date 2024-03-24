@@ -12,9 +12,7 @@ class BaseMeshOperation extends BaseOperation {
 
   execute() {
     const data = vector3ToArray(this.data);
-    console.log("data: ", data);
     this.object = this.drawFunction(data);
-    console.log("object: ", this.object);
     this.weas.tjs.scene.add(this.object);
   }
 
