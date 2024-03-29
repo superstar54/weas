@@ -192,8 +192,11 @@ class AtomsGUI {
     this.timeline.max = maxFrame;
 
     playPauseBtn.addEventListener("click", () => {
-      this.isPlaying = !this.isPlaying;
-      playPauseBtn.textContent = this.isPlaying ? "Pause" : "Play";
+      this.viewer.isPlaying = !this.viewer.isPlaying;
+      playPauseBtn.textContent = this.viewer.isPlaying ? "Pause" : "Play";
+      if (this.viewer.isPlaying) {
+        this.viewer.play();
+      }
     });
 
     resetBtn.addEventListener("click", () => {

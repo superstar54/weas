@@ -174,6 +174,8 @@ export class Isosurface {
         this.meshes.push(mesh);
       }
     });
+    // call the render function to update the scene
+    this.viewer.tjs.render();
   }
 }
 

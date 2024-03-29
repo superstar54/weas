@@ -83,6 +83,8 @@ export class AtomLabelManager {
         this.scene.add(this.labels[i]);
       }
     });
+    // call the render function to update the scene
+    this.viewer.tjs.render();
   }
 
   updateLabel(atomIndex = null, atoms = null) {

@@ -45,7 +45,6 @@ export class Measurement {
       });
       this.settings = [];
       this.meshes = [];
-      return;
     } else {
       this.settings.push(new Setting({ indices: indices }));
     }
@@ -68,6 +67,8 @@ export class Measurement {
         console.log("Invalid number of atoms for measurement");
       }
     });
+    // call the render function to update the scene
+    this.viewer.tjs.render();
   }
 
   showPosition(indices) {

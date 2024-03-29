@@ -143,7 +143,7 @@ class GUIManager {
       const measurementButton = this.createButton(measurementSVG, "measurement");
       buttonContainer.appendChild(measurementButton);
       measurementButton.addEventListener("click", () => {
-        this.weas.Measurement.measure(this.weas.avr.selectedAtomsIndices);
+        this.weas.avr.Measurement.measure(this.weas.avr.selectedAtomsIndices);
       });
     }
   }

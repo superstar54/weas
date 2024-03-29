@@ -41,6 +41,9 @@ class AtomsViewer {
     this.debug = viewerSettings.debug;
     this._currentFrame = 0;
     this.trajectory = [new Atoms()];
+    // animation settings
+    this.isPlaying = false;
+    this.frameDuration = 100; // Duration in milliseconds between frames
     // Initialize components
     // other plugins
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui);
@@ -50,6 +53,7 @@ class AtomsViewer {
     this.ALManager = new AtomLabelManager(this);
     this.Measurement = new Measurement(this);
     this.VFManager = new VectorField(this);
+    this.animate = this.animate.bind(this); // Bind once in the constructor
     this.init(atoms);
   }
 
@@ -74,11 +78,23 @@ class AtomsViewer {
     console.log("init AtomsViewer successfullly");
   }
 
+  play() {
+    this.isPlaying = true;
+    this.animate();
+  }
+
+  pause() {
+    this.isPlaying = false;
+  }
+
   animate() {
-    const frameDuration = 100; // Duration in milliseconds between frames
     const now = Date.now();
-    if (this.trajectory && this.trajectory.length > 0 && now - this.lastFrameTime > frameDuration && this.guiManager.isPlaying) {
+    if (this.isPlaying && this.trajectory.length > 0 && now - this.lastFrameTime > this.frameDuration) {
       this.currentFrame = (this.currentFrame + 1) % this.trajectory.length;
+      this.lastFrameTime = now;
+    }
+    if (this.isPlaying) {
+      requestAnimationFrame(this.animate);
     }
   }
 
@@ -113,6 +129,7 @@ class AtomsViewer {
     this._currentFrame = newValue;
     this.lastFrameTime = Date.now(); // Update the last frame time
     this.updateFrame(newValue);
+    this.tjs.render();
   }
 
   get atoms() {
@@ -456,6 +473,7 @@ class AtomsViewer {
     this.drawHighlightAtoms();
     this.ALManager.drawAtomLabels();
     this.ready = true;
+    this.weas.tjs.render();
   }
 
   drawBalls() {
