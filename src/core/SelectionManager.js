@@ -31,7 +31,7 @@ export class SelectionManager {
   }
 
   set selectedObjects(objects) {
-    console.log("Setting selected objects: ", objects);
+    // console.log("Setting selected objects: ", objects);
     // skip nonSelectable objects
     objects = objects.filter((object) => {
       return !object.userData.notSelectable;
@@ -166,7 +166,7 @@ export class SelectionManager {
     Object.keys(this.selectedInstances).forEach((objectUuid) => {
       const object = this.tjs.scene.getObjectByProperty("uuid", objectUuid);
       if (!object || !object.userData.vertexPoints) {
-        console.log("Object or vertex points not found");
+        // console.log("Object or vertex points not found");
         return;
       }
 

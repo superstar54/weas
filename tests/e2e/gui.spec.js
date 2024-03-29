@@ -279,3 +279,46 @@ test.describe("Animation", () => {
     await expect(page).toHaveScreenshot("Animation-frame-10-redo.png");
   });
 });
+
+
+test.describe("Measurement", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("http://127.0.0.1:8080/tests/e2e/testMeasurement.html");
+
+    // focus the element
+    const element = await page.$("#viewer");
+    await element.focus();
+    const boundingBox = await element.boundingBox();
+    // Calculate the center of the element
+    const centerX = boundingBox.x + boundingBox.width / 2;
+    const centerY = boundingBox.y + boundingBox.height / 2;
+    page.centerX = centerX;
+    page.centerY = centerY;
+    // Move the mouse to the center of the element
+    await page.mouse.move(centerX, centerY);
+  });
+
+  test("Measurement", async ({ page }) => {
+    // simulate keydown event
+    await page.keyboard.press("m");
+    await expect(page).toHaveScreenshot("Measurement-bond-length.png");
+    // select atoms
+    await page.evaluate(() => {
+      window.editor.avr.selectedAtomsIndices = [0, 1, 7];
+    });
+    await page.keyboard.press("m");
+    await expect(page).toHaveScreenshot("Animation-bond-angle.png");
+    // select atoms
+    await page.evaluate(() => {
+      window.editor.avr.selectedAtomsIndices = [0, 1, 2, 7];
+    });
+    await page.keyboard.press("m");
+    await expect(page).toHaveScreenshot("Animation-dihedral-angle.png");
+    // select no atoms
+    await page.evaluate(() => {
+      window.editor.avr.selectedAtomsIndices = [];
+    });
+    await page.keyboard.press("m");
+    await expect(page).toHaveScreenshot("Animation-no-measurement.png");
+  });
+});

@@ -111,7 +111,15 @@ export class BlendJS {
     // Add event listener for window resize
     this.viewerRect = this.containerElement.getBoundingClientRect();
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
+    // Add event listeners for mouse events
+    this.containerElement.addEventListener('mousemove', this.render.bind(this) );
+    this.containerElement.addEventListener('pointerup', this.render.bind(this) );
+    this.containerElement.addEventListener('pointerdown', this.render.bind(this) );
+    this.containerElement.addEventListener('click', this.render.bind(this) );
+    this.containerElement.addEventListener('wheel', this.render.bind(this) );
+    this.containerElement.addEventListener('atomsUpdated', this.render.bind(this) );
   }
+  
 
   addObject(name, geometry, material) {
     const object = new BlendJSObject(name, geometry, material);
@@ -164,6 +172,7 @@ export class BlendJS {
       rndr.renderer.setSize(this.containerElement.clientWidth, this.containerElement.clientHeight);
     });
     this.viewerRect = this.containerElement.getBoundingClientRect();
+    this.render();
   }
   //
   updateCameraAndControls({ lookAt = null, direction = [0, 0, 1], distance = null, zoom = 1 }) {
@@ -214,6 +223,7 @@ export class BlendJS {
     this.camera.updateZoom(zoom);
     // Set the camera target to the lookAt of the atoms
     this.controls.target.set(lookAt.x, lookAt.y, lookAt.z);
+    this.render();
   }
 
   getSceneBoundingBox() {
@@ -247,19 +257,12 @@ export class BlendJS {
   }
 
   render() {
-    const animate = () => {
-      requestAnimationFrame(animate);
-
-      // Optional: Update controls
-      this.controls.update();
 
       // loop through renderers to render the scene
       Object.values(this.renderers).forEach((rndr) => {
         rndr.renderer.render(this.scene, this.camera);
       });
-    };
 
-    animate();
   }
 
   exportImage(resolution = 5) {

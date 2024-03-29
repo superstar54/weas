@@ -37,21 +37,8 @@ class WEAS {
   }
 
   render() {
-    // Render loop
-    const frameDuration = 100; // Duration in milliseconds between frames
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-
-      this.tjs.controls.update();
-      this.avr.animate();
-
-      Object.values(this.tjs.renderers).forEach((rndr) => {
-        rndr.renderer.render(this.tjs.scene, this.tjs.camera);
-      });
-    };
-
-    animate();
+    // Render
+    this.tjs.render()
   }
 
   clear() {
