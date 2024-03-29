@@ -523,6 +523,7 @@ class AtomsViewer {
     });
     this.atomsMesh.add(this.highlightAtomsMesh);
     this.highlightAtomsMesh.material.opacity = 0.6;
+    this.highlightAtomsMesh.layers.set(1); // Set the layer to 1 to make it not selectable
     this.updateHighlightAtomsMesh(this.selectedAtomsIndices);
   }
 

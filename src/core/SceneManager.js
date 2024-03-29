@@ -10,7 +10,7 @@ export class WeasScene extends THREE.Scene {
   }
 
   add(object) {
-    console.log("add object", object);
+    // console.log("add object", object);
     super.add(object);
     this.dispatchObjectEvent({
       data: object.toJSON(),
@@ -20,7 +20,7 @@ export class WeasScene extends THREE.Scene {
   }
 
   remove(object) {
-    console.log("remove object", object);
+    // console.log("remove object", object);
     // if object is a string, find it by uuid
     if (typeof object === "string") {
       object = this.getObjectByProperty("uuid", object);
