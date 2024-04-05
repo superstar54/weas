@@ -36,6 +36,11 @@ test("Instanced Primitive", async ({ page }) => {
   await expect(page).toHaveScreenshot();
 });
 
+test("Any Mesh", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testAnyMesh.html");
+  await expect(page).toHaveScreenshot();
+});
+
 test.describe("Edit", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");
@@ -279,7 +284,6 @@ test.describe("Animation", () => {
     await expect(page).toHaveScreenshot("Animation-frame-10-redo.png");
   });
 });
-
 
 test.describe("Measurement", () => {
   test.beforeEach(async ({ page }) => {
