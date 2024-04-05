@@ -24,6 +24,7 @@ export class OrthographicCamera extends THREE.OrthographicCamera {
     const newPos = new THREE.Vector3(x, y, z);
     if (!this.position.equals(newPos)) {
       this.position.copy(newPos);
+      this.updateProjectionMatrix(); // Required to apply the zoom change
       this.dispatchObjectEvent({
         data: [x, y, z],
         action: "position",
@@ -35,5 +36,6 @@ export class OrthographicCamera extends THREE.OrthographicCamera {
   dispatchObjectEvent(data) {
     const event = new CustomEvent("weas", { detail: data });
     this.tjs.containerElement.dispatchEvent(event);
+    this.tjs.render();
   }
 }

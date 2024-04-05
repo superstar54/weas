@@ -11,6 +11,7 @@ import { SelectionManager } from "./core/SelectionManager.js";
 import { ObjectManager } from "./core/ObjectManager.js";
 import { OperationManager } from "./operation/operation.js";
 import { InstancedMeshPrimitive } from "./plugins/InstancedMeshPrimitive.js";
+import { AnyMesh } from "./plugins/AnyMesh.js";
 import { AtomsViewer } from "./atoms/AtomsViewer.js";
 import { Atoms } from "./atoms/atoms.js";
 
@@ -28,6 +29,7 @@ class WEAS {
     this.avr = new AtomsViewer({ weas: this, atoms: atoms, viewerConfig: viewerConfig });
     // Initialize other plugins
     this.instancedMeshPrimitive = new InstancedMeshPrimitive(this);
+    this.anyMesh = new AnyMesh(this);
     this.initialize();
   }
 
@@ -38,7 +40,7 @@ class WEAS {
 
   render() {
     // Render
-    this.tjs.render()
+    this.tjs.render();
   }
 
   clear() {
