@@ -35,7 +35,10 @@ export function clearGroup(scene, group) {
 }
 
 export function clearObject(scene, obj) {
-  scene.remove(obj);
+  // remove all children
+  if (obj.children) {
+    obj.remove(...obj.children);
+  }
   if (obj.geometry) {
     obj.geometry.dispose();
   }
@@ -46,6 +49,7 @@ export function clearObject(scene, obj) {
       obj.material.dispose();
     }
   }
+  scene.remove(obj);
 }
 
 export function getWorldPositionFromScreen(camera, ndc, plane) {

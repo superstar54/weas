@@ -112,14 +112,13 @@ export class BlendJS {
     this.viewerRect = this.containerElement.getBoundingClientRect();
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
     // Add event listeners for mouse events
-    this.containerElement.addEventListener('mousemove', this.render.bind(this) );
-    this.containerElement.addEventListener('pointerup', this.render.bind(this) );
-    this.containerElement.addEventListener('pointerdown', this.render.bind(this) );
-    this.containerElement.addEventListener('click', this.render.bind(this) );
-    this.containerElement.addEventListener('wheel', this.render.bind(this) );
-    this.containerElement.addEventListener('atomsUpdated', this.render.bind(this) );
+    this.containerElement.addEventListener("mousemove", this.render.bind(this));
+    this.containerElement.addEventListener("pointerup", this.render.bind(this));
+    this.containerElement.addEventListener("pointerdown", this.render.bind(this));
+    this.containerElement.addEventListener("click", this.render.bind(this));
+    this.containerElement.addEventListener("wheel", this.render.bind(this));
+    this.containerElement.addEventListener("atomsUpdated", this.render.bind(this));
   }
-  
 
   addObject(name, geometry, material) {
     const object = new BlendJSObject(name, geometry, material);
@@ -219,8 +218,8 @@ export class BlendJS {
     this.camera.updatePosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
 
     this.camera.lookAt(lookAt);
-    this.camera.updateProjectionMatrix();
     this.camera.updateZoom(zoom);
+    this.camera.updateProjectionMatrix();
     // Set the camera target to the lookAt of the atoms
     this.controls.target.set(lookAt.x, lookAt.y, lookAt.z);
     this.render();
@@ -257,12 +256,11 @@ export class BlendJS {
   }
 
   render() {
-
-      // loop through renderers to render the scene
-      Object.values(this.renderers).forEach((rndr) => {
-        rndr.renderer.render(this.scene, this.camera);
-      });
-
+    this.controls.update();
+    // loop through renderers to render the scene
+    Object.values(this.renderers).forEach((rndr) => {
+      rndr.renderer.render(this.scene, this.camera);
+    });
   }
 
   exportImage(resolution = 5) {

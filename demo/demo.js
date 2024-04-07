@@ -143,12 +143,21 @@ async function updateAtoms(filename, fileContent = null) {
       break;
     case "mesh_primitives_settings.json":
       structureData = fileContent || (await fetchFile(filename));
-      const data = JSON.parse(structureData);
+      var data = JSON.parse(structureData);
       // draw mesh primitives
       editor.clear();
       editor.avr.guiManager.removeTimeline();
       editor.instancedMeshPrimitive.fromSettings(data);
       editor.instancedMeshPrimitive.drawMesh();
+      break;
+    case "any_mesh_settings.json":
+      structureData = fileContent || (await fetchFile(filename));
+      var data = JSON.parse(structureData);
+      // draw mesh primitives
+      editor.clear();
+      editor.avr.guiManager.removeTimeline();
+      editor.anyMesh.fromSettings(data);
+      editor.anyMesh.drawMesh();
       break;
   }
 }

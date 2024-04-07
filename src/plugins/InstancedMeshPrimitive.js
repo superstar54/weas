@@ -75,6 +75,7 @@ export class InstancedMeshPrimitive {
       this.meshes.push(instancedMesh);
       this.scene.add(instancedMesh);
     });
+    this.viewer.tjs.render();
   }
 
   getGeometry(setting) {
