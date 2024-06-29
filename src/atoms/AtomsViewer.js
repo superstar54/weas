@@ -58,6 +58,16 @@ class AtomsViewer {
   }
 
   init(atoms) {
+    this.reset();
+    this.selectedAtomsLabelElement = document.createElement("div");
+    this.selectedAtomsLabelElement.id = "selectedAtomSymbol";
+    this.tjs.containerElement.appendChild(this.selectedAtomsLabelElement);
+    // update the atoms
+    this.atoms = atoms;
+    console.log("init AtomsViewer successfullly");
+  }
+
+  reset() {
     this.atomLabels = [];
     this.atomArrows = null;
     this.atomColors = new Array();
@@ -65,17 +75,17 @@ class AtomsViewer {
     this._modelSticks = new Array();
     this._modelPolyhedras = new Array();
     this.lastFrameTime = Date.now();
+    this.boundary = [
+      [0, 1],
+      [0, 1],
+      [0, 1],
+    ];
     this.boundaryList = null;
     this.bondRadius = 0.1; // Default bond radius
     //
     this.highlightAtomsMesh = null;
-    this.selectedAtomsLabelElement = document.createElement("div");
-    this.selectedAtomsLabelElement.id = "selectedAtomSymbol";
-    this.tjs.containerElement.appendChild(this.selectedAtomsLabelElement);
+
     this.showVectorField = true;
-    // update the atoms
-    this.atoms = atoms;
-    console.log("init AtomsViewer successfullly");
   }
 
   play() {
@@ -141,6 +151,7 @@ class AtomsViewer {
   set atoms(atoms) {
     this.ready = false;
     this.dispose();
+    this.reset();
     console.log("set atoms: ");
     // if atoms is a array, which means it is a trajectory data
     // only the first frame is used to initialize the viewer
@@ -162,13 +173,7 @@ class AtomsViewer {
     this.isosurfaceManager.reset();
     this.Measurement.reset();
     // if trajectory data is provided, add the trajectory controller
-    if (this.trajectory.length > 1) {
-      this.guiManager.addTimeline();
-      this.guiManager.timeline.max = this.trajectory.length - 1;
-    } else {
-      // remove the timeline controller
-      this.guiManager.removeTimeline();
-    }
+    this.guiManager.update(this.trajectory);
     // this.atoms.uuid = this.uuid;
     this.modelStyle = this._modelStyle;
     this.drawModels();
@@ -176,6 +181,22 @@ class AtomsViewer {
     // udpate camera position and target position based on the atoms
     this.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
     console.log("Set atoms successfullly");
+  }
+
+  // set atoms from phonon trajectory
+  fromPhononTrajectory(atoms, eigenvectors, amplitude, nframes) {
+    const trajectory = [];
+    const times = Array.from({ length: nframes }, (_, i) => 2 * Math.PI * (i / nframes));
+    times.forEach((t) => {
+      const vectors = eigenvectors.map((vec) => vec.map((val) => val * amplitude * Math.sin(t)));
+      const newAtoms = atoms.copy();
+      for (let i = 0; i < newAtoms.positions.length; i++) {
+        newAtoms.positions[i] = newAtoms.positions[i].map((pos, j) => pos + vectors[i][j] / 5);
+      }
+      newAtoms.newAttribute("movement", vectors);
+      trajectory.push(newAtoms);
+    });
+    this.atoms = trajectory;
   }
 
   get ready() {
