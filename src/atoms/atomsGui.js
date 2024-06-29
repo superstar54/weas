@@ -15,6 +15,17 @@ class AtomsGUI {
     this.addAtomsControl();
   }
 
+  // update the GUI when setting a new atoms
+  update(trajectory) {
+    if (trajectory.length > 1) {
+      this.addTimeline();
+      this.timeline.max = trajectory.length - 1;
+    } else {
+      // remove the timeline controller
+      this.removeTimeline();
+    }
+  }
+
   addAtomsControl() {
     const atomsFolder = this.gui.addFolder("Atoms");
     // -----------------------------------------------------------------------------------------
@@ -175,6 +186,10 @@ class AtomsGUI {
   }
 
   addTimeline() {
+    // Check if timeline already exists
+    if (document.getElementById("animation-controls")) {
+      return; // Exit if timeline already added
+    }
     // create a div to hold the timeline controls with id "animation-controls"
     const animation_div = document.createElement("div");
     animation_div.id = "animation-controls";

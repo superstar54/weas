@@ -61,8 +61,9 @@ async function updateAtoms(filename, fileContent = null) {
   let atoms;
   let structureData;
   switch (filename) {
-    case "c2h6so.xyz":
+    case "molecule":
       editor.clear();
+      filename = "c2h6so.xyz";
       structureData = fileContent || (await fetchFile(filename));
       const atomsList = parseXYZ(structureData);
       // atomsList[0].newAttribute("moment", [1, 1, 1, 1, 1, -1, -1, -1, -1, -1], "atom");
@@ -134,6 +135,24 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.modelStyle = 1;
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
       break;
+    case "phonon":
+      editor.clear();
+      filename = "graphene.cif";
+      structureData = fileContent || (await fetchFile(filename));
+      atoms = parseCIF(structureData);
+      editor.avr.fromPhononTrajectory(
+        atoms,
+        [
+          [0, 1, 0],
+          [0, -1, 0],
+        ],
+        1,
+        15,
+      );
+      editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
+      editor.avr.modelStyle = 1;
+      editor.avr.drawModels();
+      break;
     case "Primitives":
       editor.clear();
       editor.ops.mesh.AddSphereOperation({ position: [-5, 0, 0], scale: [1, 1, 1], color: "#00FF00", opacity: 0.5 });
@@ -191,7 +210,7 @@ async function drawAtoms(filename, fileContent) {
   }
 }
 
-updateAtoms("c2h6so.xyz");
+updateAtoms("molecule");
 // updateAtoms("tio2.cif");
 // updateAtoms("au.cif");
 // updateAtoms("c2h6so.xyz");

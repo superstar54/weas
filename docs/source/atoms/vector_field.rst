@@ -43,12 +43,13 @@ In order to update the vector fields when the atom is moved in a animation, the 
 
 .. code-block:: javascript
 
-    // calculate the movement of atoms based on the egenvectors and amplitude
-    // then add the movement to the atoms attributes
-    atoms.newAttribute("movement", movement);
-    // Read orgins and vectors from atoms attributes
+    // update the atoms viewer (avr) from phonon trajectory
+    // inputs: atoms, egenvectors, amplitude and nframes
+    // the egenvectors should have the same length as the atoms
+    editor.avr.fromPhononTrajectory(atoms, [[0, 1, 0], [0, -1, 0]], 1, 15);
+    // Then add a vector field (VF) to show the arrows of the movement
     editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
-    editor.avr.VFManager.drawVectorFields();
+    editor.avr.drawModels();
 
 .. image:: ../_static/images/example-phonon.gif
    :width: 10cm

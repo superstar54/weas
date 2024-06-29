@@ -18,12 +18,12 @@ export class VectorField {
   constructor(viewer) {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
-    this.settings = [];
-    this.meshes = [];
     this.init();
   }
 
   init() {
+    this.settings = [];
+    this.meshes = [];
     console.log("init VectorField");
     // addMagneticMoments
     // generate vectors for the each atom
