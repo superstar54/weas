@@ -149,6 +149,11 @@ async function updateAtoms(filename, fileContent = null) {
         1,
         15,
       );
+      editor.avr.boundary = [
+        [-2, 3],
+        [-2, 3],
+        [0, 1],
+      ];
       editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
       editor.avr.modelStyle = 1;
       editor.avr.drawModels();
