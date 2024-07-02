@@ -118,6 +118,7 @@ class AtomsViewer {
       this.atomsMesh.getMatrixAt(i, matrix);
       matrix.setPosition(new THREE.Vector3(...atoms.positions[i]));
       this.atomsMesh.setMatrixAt(i, matrix);
+      this.updateBoundaryAtomsMesh(i);
     }
     this.atomsMesh.instanceMatrix.needsUpdate = true;
     this.guiManager.timeline.value = frameIndex;
@@ -126,6 +127,10 @@ class AtomsViewer {
     this.bondManager.updateBondMesh(null, atoms);
     // update vector fields related to the atoms attribute
     this.VFManager.updateArrowMesh(null, atoms);
+    // if boundaryAtomsMesh has instanceMatrix, update it
+    if (this.boundaryAtomsMesh) {
+      this.boundaryAtomsMesh.instanceMatrix.needsUpdate = true;
+    }
   }
 
   get currentFrame() {
@@ -741,6 +746,7 @@ class AtomsViewer {
   updateBoundaryAtomsMesh(atomIndex) {
     /* When the atom is moved, the boundary atoms should be moved as well.
      */
+    // console.log("this.boundaryList: ", this.boundaryList);
     // console.log("updateBoundaryAtomsMesh: ", atomIndex);
     // console.log("this.boundaryMap[atomIndex]:", this.boundaryMap[atomIndex]);
     if (this.boundaryList.length > 0 && this.boundaryMap[atomIndex]) {
