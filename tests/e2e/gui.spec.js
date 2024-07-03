@@ -14,6 +14,18 @@ test("Crystal", async ({ page }) => {
 test("Isosurface", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testIsosurface.html");
   await expect(page).toHaveScreenshot();
+  // open gui
+  await page.evaluate(() => {
+    window.editor.guiManager.gui.closed = false;
+    window.editor.avr.isosurfaceManager.guiFolder.closed = false;
+  });
+  await expect(page).toHaveScreenshot("Isosurface-gui.png");
+  // reset isosurface
+  await page.evaluate(() => {
+    window.editor.avr.isosurfaceManager.reset();
+    window.editor.tjs.render();
+  });
+  await expect(page).toHaveScreenshot("Isosurface-reset.png");
 });
 
 test("VectorField", async ({ page }) => {
