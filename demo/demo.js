@@ -158,6 +158,7 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.frameDuration = 20;
       editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
       editor.avr.modelStyle = 1;
+      editor.avr.bondManager.hideLongBonds = false;
       editor.avr.drawModels();
       break;
     case "Primitives":
