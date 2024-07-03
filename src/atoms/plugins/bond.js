@@ -46,6 +46,7 @@ export class BondManager {
     console.log("init bond settings");
     this.settings = [];
     const atoms = this.viewer.atoms;
+    this.hideLongBonds = true;
     const symbols = atoms.symbols;
     const speciesSet = new Set(symbols);
     const speciesList = Array.from(speciesSet);
@@ -173,7 +174,7 @@ export class BondManager {
       }
       const cutoff = this.viewer.cutoffs[key].max;
       const quaternion = calculateQuaternion(position1, position2);
-      const scale = calculateScale(position1, position2, this.viewer.bondRadius, cutoff);
+      const scale = calculateScale(position1, position2, this.viewer.bondRadius, cutoff, this.hideLongBonds);
       const instanceMatrix = new THREE.Matrix4().compose(midpoint, quaternion, scale);
       this.bondMesh.setMatrixAt(i, instanceMatrix);
       // this.bondMesh.setMatrixAt(2 * bondIndex + 1, instanceMatrixs[1]);
@@ -230,12 +231,13 @@ export function drawStick(atoms, bondList, settings, radius = 0.1, materialType 
   return instancedMesh;
 }
 
-export function calculateScale(position1, position2, radius, cutoff = null) {
+export function calculateScale(position1, position2, radius, cutoff = null, hideLongBonds = true) {
   /* Calculate scale for the transformation
   position1: position of the first atom
   position2: position of the second atom
   radius: radius of the bond
   cutoff: cutoff for the bond length
+  hideLongBonds: if true, hide the bonds that are longer than the cutoff
 
   Returns:
   scale: scale for the transformation
@@ -243,7 +245,7 @@ export function calculateScale(position1, position2, radius, cutoff = null) {
   const length = position1.distanceTo(position2);
   // If the bond is large than the bond length cutoff, set the radius to 0 to avoid drawing it
   // This is a temporary fix, the bond should be removed from the bond list
-  if (cutoff !== null && length > cutoff) {
+  if (hideLongBonds && cutoff !== null && length > cutoff) {
     radius = 0;
   }
   const scale = new THREE.Vector3(radius, length / 2, radius);
