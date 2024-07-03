@@ -24,6 +24,13 @@ Usage Example
 .. image:: ../_static/images/example-magnetic-moment.png
    :width: 10cm
 
+Hide Vector Field
+-----------------
+The vector field can be hidden by:
+
+```javascript
+editor.avr.VFManager.show=false;
+```
 
 
 Magentic moment visualization

@@ -84,8 +84,6 @@ class AtomsViewer {
     this.bondRadius = 0.1; // Default bond radius
     //
     this.highlightAtomsMesh = null;
-
-    this.showVectorField = true;
   }
 
   play() {
@@ -379,11 +377,18 @@ class AtomsViewer {
 
   set showCell(newValue) {
     this._showCell = newValue;
+    if (this.cellMesh) {
+      this.cellMesh.visible = newValue;
+    }
+    if (this.cellVectors) {
+      this.cellVectors.visible = newValue;
+    }
     // avoid the recursive loop
     if (this.guiManager.showCellController && this.guiManager.showCellController.getValue() !== newValue) {
       this.guiManager.showCellController.setValue(newValue); // Update the GUI
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ showCell: newValue });
+    this.weas.tjs.render();
   }
 
   get showBondedAtoms() {
@@ -453,9 +458,9 @@ class AtomsViewer {
   drawModels() {
     console.log("-----------------drawModels-----------------");
     this.dispose();
-    if (this.showCell && !this.atoms.isUndefinedCell()) {
-      drawUnitCell(this.tjs.scene, this.atoms);
-      drawUnitCellVectors(this.tjs.scene, this.atoms, this.tjs.camera);
+    if (!this.atoms.isUndefinedCell()) {
+      this.cellMesh = drawUnitCell(this.tjs.scene, this.atoms, this.showCell);
+      this.cellVectors = drawUnitCellVectors(this.tjs.scene, this.atoms, this.showCell);
     }
     // Map the symbols to their radii
     this.cutoffs = this.bondManager.buildBondDict();
@@ -493,9 +498,7 @@ class AtomsViewer {
     const polyhedraMesh = this.polyhedraManager.drawPolyhedras();
     this.atomsMesh.add(polyhedraMesh);
     this.isosurfaceManager.drawIsosurfaces();
-    if (this.showVectorField) {
-      this.VFManager.drawVectorFields();
-    }
+    this.VFManager.drawVectorFields();
     this.drawHighlightAtoms();
     this.ALManager.drawAtomLabels();
     this.ready = true;
