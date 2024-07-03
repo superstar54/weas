@@ -35,6 +35,7 @@ export class BondManager {
     this.scene = this.viewer.tjs.scene;
     this.settings = [];
     this.meshes = [];
+    this.hideLongBonds = true;
     this.init();
   }
 
@@ -46,7 +47,6 @@ export class BondManager {
     console.log("init bond settings");
     this.settings = [];
     const atoms = this.viewer.atoms;
-    this.hideLongBonds = true;
     const symbols = atoms.symbols;
     const speciesSet = new Set(symbols);
     const speciesList = Array.from(speciesSet);

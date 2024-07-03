@@ -18,7 +18,19 @@ export class VectorField {
   constructor(viewer) {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
+    this._show = true;
     this.init();
+  }
+
+  get show() {
+    return this._show;
+  }
+
+  set show(value) {
+    this._show = value;
+    this.meshes.forEach((mesh) => {
+      mesh.visible = value;
+    });
   }
 
   init() {
@@ -83,7 +95,7 @@ export class VectorField {
     });
   }
 
-  drawVectorFields() {
+  drawVectorFields(showVectorField = true) {
     /* Draw vectorfields */
     console.log("drawVectorFields");
     this.clearMeshes();
@@ -111,6 +123,8 @@ export class VectorField {
       this.scene.add(headMesh);
       this.meshes.push(shaftMesh);
       this.meshes.push(headMesh);
+      shaftMesh.visible = this.show;
+      headMesh.visible = this.show;
     });
   }
 

@@ -9,6 +9,12 @@ test("Gui config", async ({ page }) => {
 test("Crystal", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testCrystal.html");
   await expect(page).toHaveScreenshot();
+  // hide cell
+  await page.evaluate(() => {
+    window.editor.avr.showCell = false;
+    window.editor.tjs.render();
+  });
+  await expect(page).toHaveScreenshot("Crystal-hide-cell.png");
 });
 
 test("Isosurface", async ({ page }) => {
@@ -31,6 +37,12 @@ test("Isosurface", async ({ page }) => {
 test("VectorField", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testVectorField.html");
   await expect(page).toHaveScreenshot();
+  // hide vector field
+  await page.evaluate(() => {
+    window.editor.avr.VFManager.show = false;
+    window.editor.tjs.render();
+  });
+  await expect(page).toHaveScreenshot("VectorField-hide-vector.png");
 });
 
 test("ColorBy", async ({ page }) => {

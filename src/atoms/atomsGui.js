@@ -66,7 +66,6 @@ class AtomsGUI {
       .name("Unit Cell")
       .onChange((value) => {
         this.viewer.showCell = value;
-        this.viewer.drawModels();
       });
     this.showBondedAtomsController = atomsFolder
       .add(this.viewer, "showBondedAtoms")

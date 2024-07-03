@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { createLabel } from "../utils.js";
 
-export function drawUnitCell(scene, atoms) {
+export function drawUnitCell(scene, atoms, showCell) {
   const cell = atoms.cell;
   if (!cell || cell.length !== 3) {
     console.warn("Invalid or missing unit cell data");
@@ -42,9 +42,11 @@ export function drawUnitCell(scene, atoms) {
   line.userData.notSelectable = true;
   line.layers.set(1);
   scene.add(line);
+  line.visible = showCell;
+  return line;
 }
 
-export function drawUnitCellVectors(scene, atoms) {
+export function drawUnitCellVectors(scene, atoms, showCell) {
   console.log("drawUnitCellVectors");
   console.log("atoms: ", atoms);
   const cell = atoms.cell;
@@ -54,6 +56,9 @@ export function drawUnitCellVectors(scene, atoms) {
     return;
   }
 
+  // Create a group to hold all arrows and labels
+  const unitCellGroup = new THREE.Group();
+
   // Define lengths and colors for the vectors
   const arrowLength = 2;
   const colors = { a: 0xff0000, b: 0x00ff00, c: 0x0000ff }; // Red, Green, Blue
@@ -61,6 +66,7 @@ export function drawUnitCellVectors(scene, atoms) {
   const position1 = new THREE.Vector3(...cell[0]).normalize();
   const position2 = new THREE.Vector3(...cell[1]).normalize();
   const position3 = new THREE.Vector3(...cell[2]).normalize();
+
   // Create arrows
   const aArrow = new THREE.ArrowHelper(position1, new THREE.Vector3(0, 0, 0), arrowLength, colors.a);
   const bArrow = new THREE.ArrowHelper(position2, new THREE.Vector3(0, 0, 0), arrowLength, colors.b);
@@ -72,13 +78,14 @@ export function drawUnitCellVectors(scene, atoms) {
   aArrow.userData.uuid = atoms.uuid;
   bArrow.userData.uuid = atoms.uuid;
   cArrow.userData.uuid = atoms.uuid;
-  // Add arrows to the scene
-  scene.add(aArrow);
-  scene.add(bArrow);
-  scene.add(cArrow);
+
+  // Add arrows to the group
+  unitCellGroup.add(aArrow);
+  unitCellGroup.add(bArrow);
+  unitCellGroup.add(cArrow);
 
   // Add labels for each axis
-  const offset = 1.1; // Adjust this to position the labels
+  const offset = 2.1; // Adjust this to position the labels
   const aLabel = createLabel(position1.multiplyScalar(offset), "a", "red", "18px");
   const bLabel = createLabel(position2.multiplyScalar(offset), "b", "green", "18px");
   const cLabel = createLabel(position3.multiplyScalar(offset), "c", "blue", "18px");
@@ -90,7 +97,15 @@ export function drawUnitCellVectors(scene, atoms) {
   bLabel.userData.uuid = atoms.uuid;
   cLabel.userData.uuid = atoms.uuid;
 
-  scene.add(aLabel);
-  scene.add(bLabel);
-  scene.add(cLabel);
+  // Add labels to the group
+  unitCellGroup.add(aLabel);
+  unitCellGroup.add(bLabel);
+  unitCellGroup.add(cLabel);
+
+  // Add the group to the scene
+  scene.add(unitCellGroup);
+  unitCellGroup.visible = showCell;
+
+  // Return the group for further control if needed
+  return unitCellGroup;
 }
