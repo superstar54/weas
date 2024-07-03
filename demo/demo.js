@@ -147,13 +147,15 @@ async function updateAtoms(filename, fileContent = null) {
           [0, -1, 0],
         ],
         1,
-        15,
+        50,
       );
       editor.avr.boundary = [
         [-2, 3],
         [-2, 3],
         [0, 1],
       ];
+      // control the speed of the animation
+      editor.avr.frameDuration = 20;
       editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
       editor.avr.modelStyle = 1;
       editor.avr.drawModels();

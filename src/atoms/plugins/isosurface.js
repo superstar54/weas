@@ -29,21 +29,26 @@ export class Isosurface {
     this.settings = [];
     this.volumetricData = null;
     this.guiFolder = null;
-    this.createGui();
     this.meshes = [];
   }
 
   createGui() {
+    if (this.viewer.guiManager.gui && !this.guiFolder) {
+      this.guiFolder = this.viewer.guiManager.gui.addFolder("Isosurface");
+    }
+  }
+
+  removeGui() {
+    // remote the gui folder
     if (this.guiFolder) {
       this.viewer.guiManager.gui.removeFolder(this.guiFolder);
-    }
-    if (this.viewer.guiManager.gui) {
-      this.guiFolder = this.viewer.guiManager.gui.addFolder("Isosurface");
+      this.guiFolder = null;
     }
   }
 
   reset() {
     /* Reset the isosurface */
+    this.removeGui();
     this.clearIossurfaces();
     this.settings = [];
     this.volumetricData = null;
@@ -53,6 +58,7 @@ export class Isosurface {
     // clear
     this.settings = [];
     // remove gui folder and create a new one
+    this.removeGui();
     this.createGui();
     this.clearIossurfaces();
     // loop over settings to add each setting
@@ -76,12 +82,11 @@ export class Isosurface {
     }
     const setting = new Setting({ isovalue, color, mode, step_size });
     this.settings.push(setting);
-    // number of isosurfaces
-    if (this.guiFolder) {
-      const isoFolder = this.guiFolder.addFolder("iso" + this.settings.length);
-      isoFolder.add(setting, "isovalue", -1, 1).name("Level").onChange(this.drawIsosurfaces.bind(this));
-      isoFolder.addColor(setting, "color").name("Color").onChange(this.drawIsosurfaces.bind(this));
-    }
+    // create the gui if it is not exist
+    this.createGui();
+    const isoFolder = this.guiFolder.addFolder("iso" + this.settings.length);
+    isoFolder.add(setting, "isovalue", -1, 1).name("Level").onChange(this.drawIsosurfaces.bind(this));
+    isoFolder.addColor(setting, "color").name("Color").onChange(this.drawIsosurfaces.bind(this));
   }
 
   clearIossurfaces() {
