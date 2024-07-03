@@ -326,3 +326,37 @@ test.describe("Measurement", () => {
     await expect(page).toHaveScreenshot("Animation-no-measurement.png");
   });
 });
+
+test.describe("Phonon", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("http://127.0.0.1:8080/tests/e2e/testPhonon.html");
+
+    // focus the element
+    const element = await page.$("#viewer");
+    await element.focus();
+    const boundingBox = await element.boundingBox();
+    // Calculate the center of the element
+    const centerX = boundingBox.x + boundingBox.width / 2;
+    const centerY = boundingBox.y + boundingBox.height / 2;
+    page.centerX = centerX;
+    page.centerY = centerY;
+    // Move the mouse to the center of the element
+    await page.mouse.move(centerX, centerY);
+  });
+
+  test("Play", async ({ page }) => {
+    await expect(page).toHaveScreenshot("Phonon-frame-0.png");
+    // set frame 10
+    await page.evaluate(() => {
+      const timeline = document.getElementById("timeline");
+      timeline.value = 10;
+      // Creating and dispatching the event must happen within the page context
+      const event = new Event("input", {
+        bubbles: true,
+        cancelable: true,
+      });
+      timeline.dispatchEvent(event);
+    });
+    await expect(page).toHaveScreenshot("Phonon-frame-10.png");
+  });
+});
