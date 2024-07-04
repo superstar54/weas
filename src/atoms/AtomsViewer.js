@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { drawUnitCell, drawUnitCellVectors } from "./cell.js";
+import { CellManager } from "./cell.js";
 import { BondManager, searchBondedAtoms } from "./plugins/bond.js";
 import { drawAtoms } from "./draw_atoms.js";
 import { clearObjects, clearObject, calculateCartesianCoordinates } from "../utils.js";
@@ -46,6 +46,7 @@ class AtomsViewer {
     this.frameDuration = 100; // Duration in milliseconds between frames
     // Initialize components
     // other plugins
+    this.cellManager = new CellManager(this.tjs.scene, atoms, this._showCell);
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui);
     this.bondManager = new BondManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
@@ -129,6 +130,9 @@ class AtomsViewer {
     if (this.boundaryAtomsMesh) {
       this.boundaryAtomsMesh.instanceMatrix.needsUpdate = true;
     }
+    // update cell
+    this.cellManager.atoms = this.atoms;
+    this.cellManager.draw();
   }
 
   get currentFrame() {
@@ -167,6 +171,8 @@ class AtomsViewer {
       this.trajectory = [atoms];
     }
     this._currentFrame = 0;
+    // set cell
+    this.cellManager.atoms = this.atoms;
     // initialize the bond settings
     // the following plugins read the atoms attribute, so they need to be updated
     this.bondManager.init();
@@ -377,12 +383,7 @@ class AtomsViewer {
 
   set showCell(newValue) {
     this._showCell = newValue;
-    if (this.cellMesh) {
-      this.cellMesh.visible = newValue;
-    }
-    if (this.cellVectors) {
-      this.cellVectors.visible = newValue;
-    }
+    this.cellManager.showCell = newValue;
     // avoid the recursive loop
     if (this.guiManager.showCellController && this.guiManager.showCellController.getValue() !== newValue) {
       this.guiManager.showCellController.setValue(newValue); // Update the GUI
@@ -458,10 +459,7 @@ class AtomsViewer {
   drawModels() {
     console.log("-----------------drawModels-----------------");
     this.dispose();
-    if (!this.atoms.isUndefinedCell()) {
-      this.cellMesh = drawUnitCell(this.tjs.scene, this.atoms, this.showCell);
-      this.cellVectors = drawUnitCellVectors(this.tjs.scene, this.atoms, this.showCell);
-    }
+    this.cellManager.draw();
     // Map the symbols to their radii
     this.cutoffs = this.bondManager.buildBondDict();
     // find neighbor atoms in the original cell
