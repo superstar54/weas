@@ -9,12 +9,6 @@ test("Gui config", async ({ page }) => {
 test("Crystal", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testCrystal.html");
   await expect(page).toHaveScreenshot();
-  // hide cell
-  await page.evaluate(() => {
-    window.editor.avr.showCell = false;
-    window.editor.tjs.render();
-  });
-  await expect(page).toHaveScreenshot("Crystal-hide-cell.png");
 });
 
 test("Isosurface", async ({ page }) => {
@@ -383,4 +377,27 @@ test.describe("Phonon", () => {
     });
     await expect(page).toHaveScreenshot("Phonon-frame-10.png");
   });
+});
+
+test("Cell", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testCell.html");
+  await expect(page).toHaveScreenshot("Cell-frame-0.png");
+  // animation cell
+  await page.evaluate(() => {
+    const timeline = document.getElementById("timeline");
+    timeline.value = 10;
+    // Creating and dispatching the event must happen within the page context
+    const event = new Event("input", {
+      bubbles: true,
+      cancelable: true,
+    });
+    timeline.dispatchEvent(event);
+  });
+  await expect(page).toHaveScreenshot("Cell-frame-10.png");
+  // hide cell
+  await page.evaluate(() => {
+    window.editor.avr.showCell = false;
+    window.editor.tjs.render();
+  });
+  await expect(page).toHaveScreenshot("Cell-hide.png");
 });
