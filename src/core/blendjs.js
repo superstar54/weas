@@ -263,9 +263,13 @@ export class BlendJS {
     });
   }
 
-  exportImage(resolution = 5) {
+  exportImage(resolution = 2) {
     // Render the scene first if not already rendering
     console.log("Exporting image");
+    // increasing the resolution significantly can cause the browser's canvas
+    // to exceed the maximum allowable texture size
+    // I set max resolution to 3, which works on my laptop
+    resolution = Math.min(resolution, 3);
     const renderer = this.renderers["MainRenderer"].renderer;
     const originalPixelRatio = renderer.getPixelRatio();
     const highResPixelRatio = resolution; // Or higher for more resolution
@@ -281,6 +285,7 @@ export class BlendJS {
 
     // Reset the pixel ratio to its original value
     renderer.setPixelRatio(originalPixelRatio);
+    this.render();
     return imgData;
   }
 
