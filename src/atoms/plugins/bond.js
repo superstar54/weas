@@ -46,7 +46,7 @@ export class BondManager {
     */
     console.log("init bond settings");
     this.settings = [];
-    const atoms = this.viewer.atoms;
+    const atoms = this.viewer.originalAtoms;
     const symbols = atoms.symbols;
     const speciesSet = new Set(symbols);
     const speciesList = Array.from(speciesSet);
@@ -118,7 +118,7 @@ export class BondManager {
     }
     // I don't add bonded atoms to offsets, because the bondlist will add them through the bondedAtoms["bonds"]
     // console.log("offsets: ", offsets);
-    this.bondList = buildBonds(this.viewer.atoms, offsets, this.viewer.neighbors["map"], this.viewer._boundary, this.viewer.modelSticks);
+    this.bondList = buildBonds(this.viewer.originalAtoms, offsets, this.viewer.neighbors["map"], this.viewer._boundary, this.viewer.modelSticks);
     // merge the bondList and the bondedAtoms["bonds"]
     this.bondList = this.bondList.concat(this.viewer.bondedAtoms["bonds"]);
     if (this.viewer.debug) {
@@ -130,7 +130,7 @@ export class BondManager {
     if (this.viewer.colorBy !== "Element") {
       atomColors = this.viewer.atomColors;
     }
-    this.bondMesh = drawStick(this.viewer.atoms, this.bondList, this.buildBondDict(), this.viewer.bondRadius, this.viewer._materialType, atomColors);
+    this.bondMesh = drawStick(this.viewer.originalAtoms, this.bondList, this.buildBondDict(), this.viewer.bondRadius, this.viewer._materialType, atomColors);
     return this.bondMesh;
   }
 
@@ -141,7 +141,7 @@ export class BondManager {
     */
     // console.log("updateBondMesh: ", atomIndex);
     if (atoms === null) {
-      atoms = this.viewer.atoms;
+      atoms = this.viewer.originalAtoms;
     }
     let bondIndices = [];
     if (atomIndex) {

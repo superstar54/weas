@@ -25,19 +25,31 @@
       fetchFile(filename).then((fileContent) => {
         const atoms = weas.parseCIF(fileContent);
         let editor = new weas.WEAS({ domElement });
-        editor.avr.fromPhononTrajectory(
-          atoms,
-          [
-            [0, 1, 0],
-            [0, -1, 0],
+        editor.avr.fromPhononMode({
+          atoms: atoms,
+          eigenvectors: [
+            [
+              [0, 0],
+              [1, 0],
+              [0, 0],
+            ],
+            [
+              [0, 0],
+              [-1, 0],
+              [0, 0],
+            ],
           ],
-          1,
-          50,
-        );
+          amplitude: 1,
+          nframes: 50,
+          kpoint: [0, 0, 0],
+          repeat: [4, 4, 1],
+        });
+
+        // control the speed of the animation
         editor.avr.boundary = [
-          [-2, 3],
-          [-2, 3],
-          [0, 1],
+          [-0.01, 1.01],
+          [-0.01, 1.01],
+          [-0.01, 1.01],
         ];
         // control the speed of the animation
         editor.avr.frameDuration = 20;
@@ -45,6 +57,7 @@
         editor.avr.modelStyle = 1;
         editor.avr.bondManager.hideLongBonds = false;
         editor.render();
+        window.editor = editor;
       });
     </script>
   </body>
