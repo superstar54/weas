@@ -53,7 +53,26 @@ In order to update the vector fields when the atom is moved in a animation, the 
     // update the atoms viewer (avr) from phonon trajectory
     // inputs: atoms, egenvectors, amplitude and nframes
     // the egenvectors should have the same length as the atoms
-    editor.avr.fromPhononTrajectory(atoms, [[0, 1, 0], [0, -1, 0]], 1, 15);
+    // the egenvector consists of the real and imaginary part
+    editor.avr.fromPhononMode({
+        atoms: atoms,
+        eigenvectors: [
+          [
+            [0, 0.5],
+            [1, 0.5],
+            [0, 0.5],
+          ],
+          [
+            [0, 1],
+            [-1, 0.5],
+            [0, 1],
+          ],
+        ],
+        amplitude: 1,
+        nframes: 50,
+        kpoint: [0.5, 0.5, 0.5],
+        repeat: [4, 4, 1],
+      });
     // Then add a vector field (VF) to show the arrows of the movement
     editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
     editor.avr.drawModels();
