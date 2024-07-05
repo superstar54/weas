@@ -14,6 +14,7 @@ import { Measurement } from "./plugins/measurement.js";
 import { getAtomColors } from "./color.js";
 import { AtomsGUI } from "./atomsGui.js";
 import { defaultViewerSettings } from "../config.js";
+import { Phonon } from "./plugins/phonon.js";
 
 class AtomsViewer {
   constructor({ weas, atoms = [new Atoms()], viewerConfig = {} }) {
@@ -55,6 +56,7 @@ class AtomsViewer {
     this.Measurement = new Measurement(this);
     this.VFManager = new VectorField(this);
     this.animate = this.animate.bind(this); // Bind once in the constructor
+    this._atoms = null;
     this.init(atoms);
   }
 
@@ -149,6 +151,13 @@ class AtomsViewer {
     this.tjs.render();
   }
 
+  get originalAtoms() {
+    if (this._atoms) {
+      return this._atoms;
+    }
+    return this.atoms;
+  }
+
   get atoms() {
     const atoms = this.trajectory[this.currentFrame];
     atoms.uuid = this.uuid;
@@ -170,6 +179,7 @@ class AtomsViewer {
     } else {
       this.trajectory = [atoms];
     }
+    this._atoms = null;
     this._currentFrame = 0;
     // set cell
     this.cellManager.atoms = this.atoms;
@@ -193,19 +203,16 @@ class AtomsViewer {
   }
 
   // set atoms from phonon trajectory
-  fromPhononTrajectory(atoms, eigenvectors, amplitude, nframes) {
-    const trajectory = [];
-    const times = Array.from({ length: nframes }, (_, i) => 2 * Math.PI * (i / nframes));
-    times.forEach((t) => {
-      const vectors = eigenvectors.map((vec) => vec.map((val) => val * amplitude * Math.sin(t)));
-      const newAtoms = atoms.copy();
-      for (let i = 0; i < newAtoms.positions.length; i++) {
-        newAtoms.positions[i] = newAtoms.positions[i].map((pos, j) => pos + vectors[i][j] / 5);
-      }
-      newAtoms.newAttribute("movement", vectors);
-      trajectory.push(newAtoms);
-    });
+  fromPhononMode({ atoms, eigenvectors, amplitude, nframes, kpoint = [0, 0, 0], repeat = [1, 1, 1] }) {
+    console.log("--------------------------------------From Phonon Mode--------------------------------------");
+    const phonon = new Phonon(atoms, kpoint, eigenvectors, true);
+    const trajectory = phonon.getTrajectory(amplitude, nframes, null, null, null, repeat);
     this.atoms = trajectory;
+    this._atoms = atoms.multiply(...repeat);
+    this._atoms.uuid = this.uuid;
+    this.drawModels();
+    this.play();
+    // console.log("this._atoms: ", this._atoms);
   }
 
   get ready() {
@@ -463,7 +470,7 @@ class AtomsViewer {
     // Map the symbols to their radii
     this.cutoffs = this.bondManager.buildBondDict();
     // find neighbor atoms in the original cell
-    this.neighbors = findNeighbors(this.atoms, this.cutoffs);
+    this.neighbors = findNeighbors(this.originalAtoms, this.cutoffs);
     if (this.debug) {
       console.log("neighbors: ", this.neighbors);
     }

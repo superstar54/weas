@@ -362,7 +362,18 @@ test.describe("Phonon", () => {
     await page.mouse.move(centerX, centerY);
   });
 
-  test("Play", async ({ page }) => {
+  test("Frame", async ({ page }) => {
+    await page.evaluate(() => {
+      window.editor.avr.pause();
+      const timeline = document.getElementById("timeline");
+      timeline.value = 0;
+      // Creating and dispatching the event must happen within the page context
+      const event = new Event("input", {
+        bubbles: true,
+        cancelable: true,
+      });
+      timeline.dispatchEvent(event);
+    });
     await expect(page).toHaveScreenshot("Phonon-frame-0.png");
     // set frame 10
     await page.evaluate(() => {

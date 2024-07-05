@@ -102,7 +102,7 @@ export class CellManager {
   }
 
   drawUnitCellVectors() {
-    console.log("drawUnitCellVectors");
+    // console.log("drawUnitCellVectors");
     const cell = this.atoms.cell;
     if (!cell || cell.length !== 3) {
       console.warn("Invalid or missing unit cell data for vectors");

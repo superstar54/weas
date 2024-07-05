@@ -140,21 +140,32 @@ async function updateAtoms(filename, fileContent = null) {
       filename = "graphene.cif";
       structureData = fileContent || (await fetchFile(filename));
       atoms = parseCIF(structureData);
-      editor.avr.fromPhononTrajectory(
-        atoms,
-        [
-          [0, 1, 0],
-          [0, -1, 0],
+      editor.avr.fromPhononMode({
+        atoms: atoms,
+        eigenvectors: [
+          [
+            [0, 0.5],
+            [1, 0.5],
+            [0, 0.5],
+          ],
+          [
+            [0, 1],
+            [-1, 0.5],
+            [0, 1],
+          ],
         ],
-        1,
-        50,
-      );
-      editor.avr.boundary = [
-        [-2, 3],
-        [-2, 3],
-        [0, 1],
-      ];
+        amplitude: 1,
+        nframes: 50,
+        kpoint: [0.5, 0.5, 0.5],
+        repeat: [4, 4, 1],
+      });
+
       // control the speed of the animation
+      editor.avr.boundary = [
+        [-0.01, 1.01],
+        [-0.01, 1.01],
+        [-0.01, 1.01],
+      ];
       editor.avr.frameDuration = 20;
       editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
       editor.avr.modelStyle = 1;

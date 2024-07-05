@@ -278,7 +278,22 @@ class Atoms {
         }
       }
     }
-    console.timeEnd("multiply");
+    // repeat attributes for each atom
+    for (const name in this.attributes["atom"]) {
+      const values = this.attributes["atom"][name];
+      const newValues = [];
+      for (let ix = 0; ix < mx; ix++) {
+        for (let iy = 0; iy < my; iy++) {
+          for (let iz = 0; iz < mz; iz++) {
+            for (let i = 0; i < values.length; i++) {
+              newValues.push(values[i]);
+            }
+          }
+        }
+      }
+      newAtoms.newAttribute(name, newValues, "atom");
+    }
+    // console.timeEnd("multiply");
     // Return the new Atoms object
     return newAtoms;
   }
