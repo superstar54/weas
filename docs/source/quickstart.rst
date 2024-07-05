@@ -51,7 +51,7 @@ Here is the result of the above code:
     <!doctype html>
     <html lang="en">
       <body>
-        <div id="viewer" style="position: relative; width: 500px; height: 500px"></div>
+        <div id="viewer" style="position: relative; width: 100%; height: 500px"></div>
         <script type="module">
           import { WEAS, Atoms } from 'https://unpkg.com/weas/dist/weas.mjs';
           let domElement = document.getElementById("viewer");
