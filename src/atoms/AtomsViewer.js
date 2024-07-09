@@ -15,13 +15,13 @@ import { getAtomColors } from "./color.js";
 import { AtomsGUI } from "./atomsGui.js";
 import { defaultViewerSettings } from "../config.js";
 import { Phonon } from "./plugins/phonon.js";
+import { Logger } from "../logger.js";
 
 class AtomsViewer {
   constructor({ weas, atoms = [new Atoms()], viewerConfig = {} }) {
     this.uuid = THREE.MathUtils.generateUUID();
     this.weas = weas;
     this.tjs = weas.tjs;
-    console.log("weas: ", weas);
     // Merge the user-provided settings overrides with the default settings
     const viewerSettings = { ...defaultViewerSettings, ...viewerConfig };
     // Apply merged settings
@@ -41,6 +41,7 @@ class AtomsViewer {
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.debug = viewerSettings.debug;
     this._currentFrame = 0;
+    this.logger = new Logger(viewerSettings.logLevel || "warn"); // Default log level is "warn"
     this.trajectory = [new Atoms()];
     // animation settings
     this.isPlaying = false;
@@ -67,7 +68,7 @@ class AtomsViewer {
     this.tjs.containerElement.appendChild(this.selectedAtomsLabelElement);
     // update the atoms
     this.atoms = atoms;
-    console.log("init AtomsViewer successfullly");
+    this.logger.debug("init AtomsViewer successfully");
   }
 
   reset() {
@@ -168,7 +169,7 @@ class AtomsViewer {
     this.ready = false;
     this.dispose();
     this.reset();
-    console.log("set atoms: ");
+    this.logger.debug("set atoms: ");
     // if atoms is a array, which means it is a trajectory data
     // only the first frame is used to initialize the viewer
     // but keep the trajectory data for the future use
@@ -199,12 +200,12 @@ class AtomsViewer {
     this.selectedAtomsIndices = [];
     // udpate camera position and target position based on the atoms
     this.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
-    console.log("Set atoms successfullly");
+    this.logger.debug("Set atoms successfullly");
   }
 
   // set atoms from phonon trajectory
   fromPhononMode({ atoms, eigenvectors, amplitude = 1, nframes = 30, kpoint = [0, 0, 0], repeat = [1, 1, 1] }) {
-    console.log("--------------------------------------From Phonon Mode--------------------------------------");
+    this.logger.debug("--------------------------------------From Phonon Mode--------------------------------------");
     const phonon = new Phonon(atoms, kpoint, eigenvectors, true);
     const trajectory = phonon.getTrajectory(amplitude, nframes, null, null, null, repeat);
     this.atoms = trajectory;
@@ -212,7 +213,7 @@ class AtomsViewer {
     this._atoms.uuid = this.uuid;
     this.drawModels();
     this.play();
-    // console.log("this._atoms: ", this._atoms);
+    // this.logger.debug("this._atoms: ", this._atoms);
   }
 
   get ready() {
@@ -229,11 +230,11 @@ class AtomsViewer {
   }
 
   set modelStyle(newValue) {
-    console.log("updateModelStyle: ", newValue);
+    this.logger.debug("updateModelStyle: ", newValue);
     newValue = parseInt(newValue);
     if (this.selectedAtomsIndices.length > 0) {
       if (newValue === 0) {
-        console.log("newValue: ", newValue);
+        this.logger.debug("newValue: ", newValue);
         this.selectedAtomsIndices.forEach((atomIndex) => {
           this.atomScales[atomIndex] = 1;
           this.modelSticks[atomIndex] = 0;
@@ -348,7 +349,7 @@ class AtomsViewer {
   }
 
   set atomLabelType(newValue) {
-    console.log("updateAtomLabelType: ", newValue);
+    this.logger.debug("updateAtomLabelType: ", newValue);
     this._atomLabelType = newValue;
     if (newValue === "None") {
       // Remove labels
@@ -464,38 +465,31 @@ class AtomsViewer {
   }
 
   drawModels() {
-    console.log("-----------------drawModels-----------------");
+    this.logger.debug("-----------------drawModels-----------------");
     this.dispose();
     this.cellManager.draw();
     // Map the symbols to their radii
     this.cutoffs = this.bondManager.buildBondDict();
     // find neighbor atoms in the original cell
     this.neighbors = findNeighbors(this.originalAtoms, this.cutoffs);
-    if (this.debug) {
-      console.log("neighbors: ", this.neighbors);
-    }
+    this.logger.debug("neighbors: ", this.neighbors);
     // search boundary atoms
     this.boundaryList = searchBoundary(this.atoms, this._boundary);
-    if (this.debug) {
-      console.log("boundaryList: ", this.boundaryList);
-    }
+    this.logger.debug("boundaryList: ", this.boundaryList);
     this.boundaryMap = createBoundaryMapping(this.boundaryList);
-    if (this.debug) {
-      console.log("boundaryMap: ", this.boundaryMap);
-    }
+    this.logger.debug("boundaryMap: ", this.boundaryMap);
     // search atoms bonded to atoms, which includes the boundary atoms and the orginal atoms
     const atomsList = this.atoms.positions.map((_, index) => [index, [0, 0, 0]]);
     // merge the atomsList and boundaryList
     const offsets = atomsList.concat(this.boundaryList);
-    // console.log("atoms with boundary: ", offsets)
+    // this.logger.debug("atoms with boundary: ", offsets)
     if (this._showBondedAtoms) {
       this.bondedAtoms = searchBondedAtoms(this.atoms.getSymbols(), offsets, this.neighbors, this.modelSticks);
     } else {
       this.bondedAtoms = { atoms: [], bonds: [] };
     }
-    if (this.debug) {
-      console.log("bondedAtoms: ", this.bondedAtoms);
-    }
+
+    this.logger.debug("bondedAtoms: ", this.bondedAtoms);
     this.atomColors = getAtomColors(this.atoms, this.colorBy, { colorType: this.colorType, colorRamp: this._colorRamp });
     this.drawBalls();
     const bondMesh = this.bondManager.drawBonds();
@@ -564,7 +558,7 @@ class AtomsViewer {
   clearHighlightAtoms() {
     // Remove highlighted atom meshes from the highlightAtomsMesh group
     if (this.highlightAtomsMesh) {
-      console.log("clearHighlightAtoms: ");
+      this.logger.debug("clearHighlightAtoms: ");
       clearObject(this.tjs.scene, this.highlightAtomsMesh);
     }
   }
@@ -623,7 +617,7 @@ class AtomsViewer {
     const atom = new Atom(element, [position.x, position.y, position.z]);
     this.atoms.addSpecies(element);
     this.atoms.addAtom(atom);
-    // console.log("atoms: ", this.atoms);
+    // this.logger.debug("atoms: ", this.atoms);
 
     // add the properties, e.g. modelStyles, that are associated with the added atoms
     this.atomScales = this.atomScales.concat([this.atomScale]);
@@ -645,9 +639,9 @@ class AtomsViewer {
       indices = this.selectedAtomsIndices;
     }
     const copied_atoms = this.atoms.getAtomsByIndices(indices);
-    console.log("copied_atoms: ", copied_atoms);
+    this.logger.debug("copied_atoms: ", copied_atoms);
     this.atoms.addToSelf(copied_atoms);
-    console.log("atoms: ", this.atoms);
+    this.logger.debug("atoms: ", this.atoms);
 
     // also copy the properties, e.g. modelStyles, that are associated with the copied atoms
     this.atomScales = this.atomScales.concat(indices.map((index) => this.atomScales[index]));
@@ -754,11 +748,11 @@ class AtomsViewer {
   updateBoundaryAtomsMesh(atomIndex) {
     /* When the atom is moved, the boundary atoms should be moved as well.
      */
-    // console.log("this.boundaryList: ", this.boundaryList);
-    // console.log("updateBoundaryAtomsMesh: ", atomIndex);
-    // console.log("this.boundaryMap[atomIndex]:", this.boundaryMap[atomIndex]);
+    // this.logger.debug("this.boundaryList: ", this.boundaryList);
+    // this.logger.debug("updateBoundaryAtomsMesh: ", atomIndex);
+    // this.logger.debug("this.boundaryMap[atomIndex]:", this.boundaryMap[atomIndex]);
     if (this.boundaryList.length > 0 && this.boundaryMap[atomIndex]) {
-      // console.log("updateBoundaryAtomsMesh: ", atomIndex);
+      // this.logger.debug("updateBoundaryAtomsMesh: ", atomIndex);
       const atomList = this.boundaryMap[atomIndex];
       // loop all atomList and update the boundary atoms
       atomList.forEach((atom) => {

@@ -37,7 +37,7 @@ export class PolyhedraManager {
     The default max is the sum of two radius of the species.
     The default color is from the elementColors.
     */
-    console.log("init PolyhedraManager");
+    this.viewer.logger.debug("init PolyhedraManager");
     this.settings = [];
     const atoms = this.viewer.atoms;
     const symbols = atoms.symbols;
@@ -88,9 +88,7 @@ export class PolyhedraManager {
   drawPolyhedras() {
     this.clearMeshes();
     const polyhedras = filterBondMap(this.viewer.bondManager.bondMap["bondMapWithOffset"], this.viewer.atoms.symbols, elementsWithPolyhedra, this.viewer.modelPolyhedras);
-    if (this.viewer.debug) {
-      console.log("polyhedras: ", polyhedras);
-    }
+    this.viewer.logger.debug("polyhedras: ", polyhedras);
     const meshes = drawPolyhedras(this.viewer.atoms, polyhedras, this.viewer.bondManager.bondList, this.viewer._colorType, this.viewer._materialType);
     meshes.forEach((mesh) => {
       this.meshes.add(mesh);

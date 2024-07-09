@@ -20,7 +20,7 @@ export function getImageAtoms(atoms, offsets) {
   // change fractional positions to cartesian positions
   imageAtoms.symbols = offsets.map((offset) => atoms.symbols[offset[0]]);
   imageAtoms.uuid = atoms.uuid;
-  console.log("imageAtoms: ", imageAtoms);
+  // console.log("imageAtoms: ", imageAtoms);
   return imageAtoms;
 }
 
@@ -32,7 +32,7 @@ export function searchBoundary(
     [-0.01, 1.01],
   ],
 ) {
-  console.log("searchBoundary: ", boundary);
+  // console.log("searchBoundary: ", boundary);
   console.time("searchBoundary Time");
   if (atoms.isUndefinedCell()) {
     return [];
