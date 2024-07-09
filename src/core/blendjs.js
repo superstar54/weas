@@ -51,8 +51,27 @@ export class BlendJS {
     this.meshes = {};
     this.lights = {};
     this.renderers = {}; // New property to store renderers
+    this._cameraType = "Orthographic"; //"Perspective"
     this.init();
   }
+
+  get cameraType() {
+    return this._cameraType;
+  }
+
+  set cameraType(value) {
+    this._cameraType = value;
+    this.controls = new OrbitControls(this.camera, this.renderers["MainRenderer"].renderer.domElement);
+    this.updateCameraAndControls({});
+  }
+
+  get camera() {
+    if (this._cameraType === "Orthographic") {
+      return this.orthographicCamera;
+    }
+    return this.perspectiveCamera;
+  }
+
   init() {
     this.scene.background = new THREE.Color(0xffffff); // Set the scene's background to white
     // Create a renderer
@@ -70,13 +89,14 @@ export class BlendJS {
     labelRenderer.domElement.style.pointerEvents = "none";
     this.addRenderer("LabelRenderer", labelRenderer);
     // Create a camera
-    // this.camera = new THREE.PerspectiveCamera(50, this.containerElement.clientWidth / this.containerElement.clientHeight, 1, 500);
+    this.perspectiveCamera = new THREE.PerspectiveCamera(50, this.containerElement.clientWidth / this.containerElement.clientHeight, 1, 500);
+    this.perspectiveCamera.layers.enable(1);
     const frustumSize = 20; // This can be adjusted based on scene's scale
     const aspect = this.containerElement.clientWidth / this.containerElement.clientHeight;
     const frustumHalfHeight = frustumSize / 2;
     const frustumHalfWidth = frustumHalfHeight * aspect;
 
-    this.camera = new OrthographicCamera(
+    this.orthographicCamera = new OrthographicCamera(
       -frustumHalfWidth, // left
       frustumHalfWidth, // right
       frustumHalfHeight, // top
@@ -85,12 +105,13 @@ export class BlendJS {
       2000, // far clipping plane
       this,
     );
+    this.orthographicCamera.layers.enable(1);
     // Set initial camera position
     this.camera.position.set(0, -100, 0);
     this.camera.lookAt(0, 0, 0);
     // Enable layer 1 for the camera
     // this layer will be used for vertex indicators
-    this.camera.layers.enable(1);
+
     this.scene.add(this.camera);
     // Create a light
     const light = new THREE.DirectionalLight(0xffffff, 2.0);
@@ -174,7 +195,7 @@ export class BlendJS {
     this.render();
   }
   //
-  updateCameraAndControls({ lookAt = null, direction = [0, 0, 1], distance = null, zoom = 1 }) {
+  updateCameraAndControls({ lookAt = null, direction = [0, 0, 1], distance = null, zoom = 1, fov = 50 }) {
     /*
     Calculate the camera parameters based on the bounding box of the scene and the camera direction
     The camera to look at the lookAt, and rotate around the lookAt of the atoms.
@@ -215,10 +236,14 @@ export class BlendJS {
       distance = size.z + padding;
     }
     let cameraPosition = lookAt.clone().add(direction.multiplyScalar(distance));
-    this.camera.updatePosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+    this.camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
 
     this.camera.lookAt(lookAt);
-    this.camera.updateZoom(zoom);
+    if (this.camera.isOrthographicCamera) {
+      this.camera.updateZoom(zoom);
+    } else {
+      this.camera.fov = fov; // Set the new field of view
+    }
     this.camera.updateProjectionMatrix();
     // Set the camera target to the lookAt of the atoms
     this.controls.target.set(lookAt.x, lookAt.y, lookAt.z);

@@ -6,6 +6,15 @@ test("Gui config", async ({ page }) => {
   await expect(page).toHaveScreenshot();
 });
 
+test("Camera", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testCrystal.html");
+  // open gui
+  await page.evaluate(() => {
+    window.editor.tjs.cameraType = "perspective";
+  });
+  await expect(page).toHaveScreenshot("Camera-perspective.png");
+});
+
 test("Crystal", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testCrystal.html");
   await expect(page).toHaveScreenshot();
