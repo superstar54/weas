@@ -24,24 +24,26 @@
       const filename = "graphene.cif";
       fetchFile(filename).then((fileContent) => {
         const atoms = weas.parseCIF(fileContent);
+        const eigenvectors = [
+          [
+            [-0.31, 0.47],
+            [-0.16, -0.38],
+            [0, 0],
+          ],
+          [
+            [0.54, -0.15],
+            [-0.31, -0.27],
+            [0, 0],
+          ],
+        ];
+        const kpoint = [0.31, 0.31, 0];
         let editor = new weas.WEAS({ domElement });
         editor.avr.fromPhononMode({
           atoms: atoms,
-          eigenvectors: [
-            [
-              [0, 0],
-              [1, 0],
-              [0, 0],
-            ],
-            [
-              [0, 0],
-              [-1, 0],
-              [0, 0],
-            ],
-          ],
-          amplitude: 1,
+          eigenvectors: eigenvectors,
+          amplitude: 3,
           nframes: 50,
-          kpoint: [0, 0, 0],
+          kpoint: kpoint,
           repeat: [4, 4, 1],
         });
 

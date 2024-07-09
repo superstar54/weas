@@ -203,7 +203,7 @@ class AtomsViewer {
   }
 
   // set atoms from phonon trajectory
-  fromPhononMode({ atoms, eigenvectors, amplitude, nframes, kpoint = [0, 0, 0], repeat = [1, 1, 1] }) {
+  fromPhononMode({ atoms, eigenvectors, amplitude = 1, nframes = 30, kpoint = [0, 0, 0], repeat = [1, 1, 1] }) {
     console.log("--------------------------------------From Phonon Mode--------------------------------------");
     const phonon = new Phonon(atoms, kpoint, eigenvectors, true);
     const trajectory = phonon.getTrajectory(amplitude, nframes, null, null, null, repeat);

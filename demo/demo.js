@@ -140,23 +140,26 @@ async function updateAtoms(filename, fileContent = null) {
       filename = "graphene.cif";
       structureData = fileContent || (await fetchFile(filename));
       atoms = parseCIF(structureData);
+      const eigenvectors = [
+        [
+          [-0.31, 0.47],
+          [-0.16, -0.38],
+          [0, 0],
+        ],
+        [
+          [0.54, -0.15],
+          [-0.31, -0.27],
+          [0, 0],
+        ],
+      ];
+      const kpoint = [0.31, 0.31, 0];
       editor.avr.fromPhononMode({
         atoms: atoms,
-        eigenvectors: [
-          [
-            [0, 0.5],
-            [1, 0.5],
-            [0, 0.5],
-          ],
-          [
-            [0, 1],
-            [-1, 0.5],
-            [0, 1],
-          ],
-        ],
-        amplitude: 1,
+        eigenvectors: eigenvectors,
+        amplitude: 2,
         nframes: 50,
-        kpoint: [0.5, 0.5, 0.5],
+        kpoint: kpoint,
+        // repeat: [1, 1, 1],
         repeat: [4, 4, 1],
       });
 
@@ -166,7 +169,7 @@ async function updateAtoms(filename, fileContent = null) {
         [-0.01, 1.01],
         [-0.01, 1.01],
       ];
-      editor.avr.frameDuration = 20;
+      editor.avr.frameDuration = 50;
       editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
       editor.avr.modelStyle = 1;
       editor.avr.bondManager.hideLongBonds = false;
@@ -234,3 +237,4 @@ updateAtoms("molecule");
 // updateAtoms("au.cif");
 // updateAtoms("c2h6so.xyz");
 // updateAtoms("h2o-homo.cube");
+// updateAtoms("phonon")
