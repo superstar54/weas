@@ -49,7 +49,7 @@ class GUIManager {
 
   addCameraControls() {
     createViewpointButtons(this.weas, this.gui);
-    setupCameraGUI(this.gui, this.weas.tjs.camera, this.weas.tjs.scene);
+    setupCameraGUI(this.weas.tjs, this.gui, this.weas.tjs.camera);
   }
 
   addButtons() {

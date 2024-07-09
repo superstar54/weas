@@ -71,6 +71,7 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.atoms = atomsList;
       // editor.avr.bondManager.settings[1].color1 = "blue";
       // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
+      editor.avr.colorType = "CPK";
       editor.avr.modelStyle = 1;
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
       break;
@@ -158,7 +159,7 @@ async function updateAtoms(filename, fileContent = null) {
         nframes: 50,
         kpoint: kpoint,
         // repeat: [1, 1, 1],
-        repeat: [4, 4, 1],
+        repeat: [5, 5, 1],
       });
 
       // control the speed of the animation
@@ -169,8 +170,9 @@ async function updateAtoms(filename, fileContent = null) {
       ];
       editor.avr.frameDuration = 50;
       editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
-      editor.avr.modelStyle = 1;
       editor.avr.bondManager.hideLongBonds = false;
+      editor.avr.showBondedAtoms = false;
+      editor.avr.modelStyle = 1;
       editor.avr.drawModels();
       break;
     case "Primitives":
