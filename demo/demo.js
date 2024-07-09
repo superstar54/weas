@@ -158,7 +158,7 @@ async function updateAtoms(filename, fileContent = null) {
         nframes: 50,
         kpoint: kpoint,
         // repeat: [1, 1, 1],
-        repeat: [8, 8, 1],
+        repeat: [4, 4, 1],
       });
 
       // control the speed of the animation
