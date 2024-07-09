@@ -15,7 +15,7 @@ async function fetchFile(filename) {
 }
 
 const domElement = document.getElementById("weas");
-const viewerConfig = { _modelStyle: 1, debug: true };
+const viewerConfig = { _modelStyle: 1, logLevel: "debug" };
 const guiConfig = {
   enabled: true,
   components: {

@@ -11,6 +11,23 @@ export class Logger {
     this.timers = {}; // For storing timer data
   }
 
+  getCallerInfo() {
+    const e = new Error();
+    const stack = e.stack.split("\n")[4]; // Adjust this number as needed
+    // Match the pattern to find the correct line
+    const match = stack.match(/at (.*?) \((.*?):(\d+):(\d+)\)/) || stack.match(/at (.*?):(\d+):(\d+)/);
+    if (match) {
+      return `${match[1]}`;
+    }
+    return "Unknown location";
+  }
+
+  log(level, ...args) {
+    if (this.levels[this.level] >= this.levels[level]) {
+      console.log(`${level.toUpperCase()}: ${this.getCallerInfo()}:`, ...args);
+    }
+  }
+
   setLevel(level) {
     if (this.levels[level] !== undefined) {
       this.level = level;
@@ -18,28 +35,21 @@ export class Logger {
   }
 
   debug(...args) {
-    if (this.levels[this.level] >= this.levels["debug"]) {
-      console.log("DEBUG:", ...args);
-    }
+    this.log("debug", ...args);
   }
 
   info(...args) {
-    if (this.levels[this.level] >= this.levels["info"]) {
-      console.info("INFO:", ...args);
-    }
+    this.log("info", ...args);
   }
 
   warn(...args) {
-    if (this.levels[this.level] >= this.levels["warn"]) {
-      console.warn("WARN:", ...args);
-    }
+    this.log("warn", ...args);
   }
 
   error(...args) {
-    if (this.levels[this.level] >= this.levels["error"]) {
-      console.error("ERROR:", ...args);
-    }
+    this.log("error", ...args);
   }
+
   time(label) {
     if (this.levels[this.level] >= this.levels["info"]) {
       this.timers[label] = Date.now();
