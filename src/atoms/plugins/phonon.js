@@ -17,11 +17,6 @@ function complexPolar(magnitude, angle) {
   };
 }
 
-// Helper function to multiply complex numbers
-function complexMult(complex, phase) {
-  return phase.mult({ real: complex[0], imag: complex[1] });
-}
-
 export class Phonon {
   constructor(atoms, kpoint = null, eigenvectors = null, addatomphase = true) {
     this.atoms = atoms;
@@ -47,7 +42,7 @@ export class Phonon {
     for (let i = 0; i < natoms; i++) {
       let sprod = atom_phase[i];
       let phase = complexPolar(1.0, sprod * 2.0 * Math.PI);
-      this.vibrations.push(this.eigenvectors[i].map((vector) => complexMult(vector, phase)));
+      this.vibrations.push(this.eigenvectors[i].map((vector) => phase.mult({ real: vector[0], imag: vector[1] })));
     }
     console.log("vibrations: ", this.vibrations);
   }
@@ -78,7 +73,7 @@ export class Phonon {
       let phase = complexPolar(amplitude, t);
       const movement = [];
       for (let i = 0; i < this.atoms.positions.length; i++) {
-        let displacement = this.vibrations[i].map((v) => phase.real * v.real);
+        let displacement = this.vibrations[i].map((v) => phase.mult(v).real);
         newAtoms.positions[i] = this.atoms.positions[i].map((pos, index) => pos + displacement[index] / 5);
         movement.push(displacement);
       }
