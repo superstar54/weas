@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import { GUI } from "dat.gui";
 import { setupCameraGUI } from "../tools/camera.js"; // Assuming these are utility functions
 import { createViewpointButtons } from "../tools/viewpoint.js";

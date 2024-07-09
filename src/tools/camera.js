@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 export function setupCameraGUI(tjs, gui, camera) {
   // Create a folder for camera parameters
   const cameraFolder = gui.addFolder("Camera");

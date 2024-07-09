@@ -62,6 +62,7 @@ export class BlendJS {
   set cameraType(value) {
     this._cameraType = value;
     this.controls = new OrbitControls(this.camera, this.renderers["MainRenderer"].renderer.domElement);
+    this.updateCameraAndControls({});
   }
 
   get camera() {
