@@ -7,7 +7,7 @@ const Radii = { Covalent: covalentRadii, VDW: vdwRadii };
 export function drawAtoms({ atoms, atomScales, colors, radiusType = "Covalent", materialType = "Standard", data_type = "atom" }) {
   console.time("drawAtoms Time");
   // console.log("atomScales: ", atomScales);
-  console.log("Draw Atoms: ", +atoms.symbols.length, " atoms");
+  // console.log("Draw Atoms: ", +atoms.symbols.length, " atoms");
   // Create a basic sphere geometry for all atoms
   let radiusSegment = 32;
 
@@ -24,7 +24,7 @@ export function drawAtoms({ atoms, atomScales, colors, radiusType = "Covalent", 
     radiusSegment = 32;
   }
   const atomGeometry = new THREE.SphereGeometry(1, radiusSegment, radiusSegment); // Unit sphere
-  console.log("materialType: ", materialType);
+  // console.log("materialType: ", materialType);
   const material = materials[materialType].clone();
   // Create a single instanced mesh for all atoms
   // May be added in the future: allocating a sufficiently large amount of instances and temporarily and use updateRange

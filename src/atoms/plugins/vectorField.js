@@ -36,7 +36,7 @@ export class VectorField {
   init() {
     this.settings = [];
     this.meshes = [];
-    console.log("init VectorField");
+    this.viewer.logger.debug("init VectorField");
     // addMagneticMoments
     // generate vectors for the each atom
     if (this.viewer.atoms.attributes["atom"]["moment"] === undefined) {
@@ -97,7 +97,7 @@ export class VectorField {
 
   drawVectorFields(showVectorField = true) {
     /* Draw vectorfields */
-    console.log("drawVectorFields");
+    this.viewer.logger.debug("drawVectorFields");
     this.clearMeshes();
     // console.log("this.settings: ", this.settings);
     this.settings.forEach((setting) => {

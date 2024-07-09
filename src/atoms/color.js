@@ -13,8 +13,8 @@ export function getAtomColors(atoms, colorBy, params) {
 
   let colors = [];
   let color;
-  console.log("colorBy: ", colorBy);
-  console.log("params: ", params);
+  // console.log("colorBy: ", colorBy);
+  // console.log("params: ", params);
   atoms.symbols.forEach((symbol, globalIndex) => {
     color = new THREE.Color(elementColors[params.colorType][symbol]);
     colors.push(color);

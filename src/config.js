@@ -16,6 +16,7 @@ const defaultViewerSettings = {
   ],
   atomScale: 0.4, // Default atom scale
   backgroundColor: "#ffffff", // Default background color (white)
+  logLevel: "warn", // Default log level
 };
 
 const defaultGuiConfig = {

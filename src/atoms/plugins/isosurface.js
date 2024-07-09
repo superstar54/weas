@@ -99,10 +99,10 @@ export class Isosurface {
   drawIsosurfaces() {
     /* Draw isosurfaces */
     if (this.volumetricData === null) {
-      console.log("No volumetric data is set");
+      this.viewer.logger.debug("No volumetric data is set");
       return;
     }
-    console.log("drawIsosurfaces");
+    this.viewer.logger.debug("drawIsosurfaces");
     this.clearIossurfaces();
     const volumetricData = this.volumetricData;
     const data = volumetricData.values;
@@ -117,7 +117,7 @@ export class Isosurface {
 
     this.settings.forEach((setting) => {
       // Generate isosurface geometry
-      console.log("setting: ", setting);
+      this.viewer.logger.debug("setting: ", setting);
       let isovalues;
       let colors;
 
@@ -133,7 +133,7 @@ export class Isosurface {
       // loop over isovalues to generate multiple isosurfaces
       for (let i = 0; i < isovalues.length; i++) {
         const isovalue = isovalues[i];
-        console.log("isovalue: ", isovalue);
+        this.viewer.logger.debug("isovalue: ", isovalue);
         console.time("marchingCubes Time");
         var isoData = marchingCubes(dims, data, null, isovalue, setting.step_size);
         console.timeEnd("marchingCubes Time");

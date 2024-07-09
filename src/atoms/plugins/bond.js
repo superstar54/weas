@@ -44,7 +44,7 @@ export class BondManager {
     The default max is the sum of two radius of the species.
     The default color is from the elementColors.
     */
-    console.log("init bond settings");
+    this.viewer.logger.debug("init bond settings");
     this.settings = [];
     const atoms = this.viewer.originalAtoms;
     const symbols = atoms.symbols;
@@ -91,7 +91,7 @@ export class BondManager {
       const key2 = species2 + "-" + species1;
       cutoffDict[key1] = setting.toDict();
     });
-    console.log("cutoffDict: ", cutoffDict);
+    this.viewer.logger.debug("cutoffDict: ", cutoffDict);
     return cutoffDict;
   }
 
@@ -110,22 +110,22 @@ export class BondManager {
       }
     }
     // add boundary atoms to offsets
-    // console.log("boundaryList: ", this.viewer.boundaryList);
+    // this.viewer.logger.debug("boundaryList: ", this.viewer.boundaryList);
     if (this.viewer.boundaryList.length > 0) {
       for (let i = 0; i < this.viewer.boundaryList.length; i++) {
         offsets.push(this.viewer.boundaryList[i]);
       }
     }
     // I don't add bonded atoms to offsets, because the bondlist will add them through the bondedAtoms["bonds"]
-    // console.log("offsets: ", offsets);
+    // this.viewer.logger.debug("offsets: ", offsets);
     this.bondList = buildBonds(this.viewer.originalAtoms, offsets, this.viewer.neighbors["map"], this.viewer._boundary, this.viewer.modelSticks);
     // merge the bondList and the bondedAtoms["bonds"]
     this.bondList = this.bondList.concat(this.viewer.bondedAtoms["bonds"]);
     if (this.viewer.debug) {
-      console.log("bondList: ", this.bondList);
+      this.viewer.logger.debug("bondList: ", this.bondList);
     }
     this.bondMap = buildBondMap(this.bondList);
-    // console.log("bondMap: ", this.bondMap);
+    // this.viewer.logger.debug("bondMap: ", this.bondMap);
     let atomColors = null;
     if (this.viewer.colorBy !== "Element") {
       atomColors = this.viewer.atomColors;
@@ -139,7 +139,7 @@ export class BondManager {
     if atomIndex is null, update all bonds
     if atoms is null, use this.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
     */
-    // console.log("updateBondMesh: ", atomIndex);
+    // this.viewer.logger.debug("updateBondMesh: ", atomIndex);
     if (atoms === null) {
       atoms = this.viewer.originalAtoms;
     }
@@ -154,7 +154,7 @@ export class BondManager {
     } else {
       bondIndices = this.bondList.map((_, index) => index);
     }
-    // console.log("bondIndices: ", bondIndices);
+    // this.viewer.logger.debug("bondIndices: ", bondIndices);
     // loop all bond indices and update the bonds
     bondIndices.forEach((i) => {
       const bond = this.bondList[i];
@@ -197,7 +197,7 @@ export function drawStick(atoms, bondList, settings, radius = 0.1, materialType 
   console.time("drawBonds Time");
   // console.log("bondList: ", bondList);
   // console.log("settings: ", settings);
-  console.log("atomColors: ", atomColors);
+  // console.log("atomColors: ", atomColors);
 
   const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1); // Adjust segment count as needed
 

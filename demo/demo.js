@@ -15,7 +15,7 @@ async function fetchFile(filename) {
 }
 
 const domElement = document.getElementById("weas");
-const viewerConfig = { _modelStyle: 1, debug: true };
+const viewerConfig = { _modelStyle: 1, logLevel: "debug" };
 const guiConfig = {
   enabled: true,
   components: {
@@ -69,8 +69,6 @@ async function updateAtoms(filename, fileContent = null) {
       // atomsList[0].newAttribute("moment", [1, 1, 1, 1, 1, -1, -1, -1, -1, -1], "atom");
       // atomsList[0].newAttribute("charge", [-1, 0.5, 1, 0.5, 0.3, 0.2, 2, 1, 0, -0.5], "atom");
       editor.avr.atoms = atomsList;
-      console.log("bond settings: ", editor.avr.bondManager.settings);
-      console.log("polyhedra settings: ", editor.avr.polyhedraManager.settings);
       // editor.avr.bondManager.settings[1].color1 = "blue";
       // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
       editor.avr.modelStyle = 1;
