@@ -15,7 +15,7 @@ async function fetchFile(filename) {
 }
 
 const domElement = document.getElementById("weas");
-const viewerConfig = { _modelStyle: 1, logLevel: "debug" };
+const viewerConfig = { _modelStyle: 1, logLevel: "warn" };
 const guiConfig = {
   enabled: true,
   components: {
@@ -37,7 +37,7 @@ const editor = new WEAS({ domElement, viewerConfig, guiConfig });
 window.editor = editor;
 document.getElementById("structure-selector").addEventListener("change", async (event) => {
   const filename = event.target.value;
-  console.log("filename: ", filename);
+  // console.log("filename: ", filename);
   await updateAtoms(filename);
 });
 
@@ -158,7 +158,7 @@ async function updateAtoms(filename, fileContent = null) {
         nframes: 50,
         kpoint: kpoint,
         // repeat: [1, 1, 1],
-        repeat: [4, 4, 1],
+        repeat: [8, 8, 1],
       });
 
       // control the speed of the animation

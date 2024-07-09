@@ -196,8 +196,8 @@ class AtomsGUI {
       '<button id="play-pause-btn">Play</button><button id="reset-btn">Reset</button><input type="range" id="timeline" min="0" max="100" value="0"><span id="current-frame">0</span>';
     this.viewer.tjs.containerElement.appendChild(animation_div);
     //
-    const playPauseBtn = document.getElementById("play-pause-btn");
-    const resetBtn = document.getElementById("reset-btn");
+    this.playPauseBtn = document.getElementById("play-pause-btn");
+    this.resetBtn = document.getElementById("reset-btn");
     this.timeline = document.getElementById("timeline");
     this.currentFrameDisplay = document.getElementById("current-frame");
 
@@ -205,15 +205,15 @@ class AtomsGUI {
     const maxFrame = 100; // Set this to the animation's total frames
     this.timeline.max = maxFrame;
 
-    playPauseBtn.addEventListener("click", () => {
+    this.playPauseBtn.addEventListener("click", () => {
       this.viewer.isPlaying = !this.viewer.isPlaying;
-      playPauseBtn.textContent = this.viewer.isPlaying ? "Pause" : "Play";
+      this.playPauseBtn.textContent = this.viewer.isPlaying ? "Pause" : "Play";
       if (this.viewer.isPlaying) {
         this.viewer.play();
       }
     });
 
-    resetBtn.addEventListener("click", () => {
+    this.resetBtn.addEventListener("click", () => {
       this.viewer.currentFrame = 0;
     });
 

@@ -93,10 +93,12 @@ class AtomsViewer {
   play() {
     this.isPlaying = true;
     this.animate();
+    this.guiManager.playPauseBtn.textContent = "Pause";
   }
 
   pause() {
     this.isPlaying = false;
+    this.guiManager.playPauseBtn.textContent = "Play";
   }
 
   animate() {
