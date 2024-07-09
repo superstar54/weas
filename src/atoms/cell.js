@@ -2,13 +2,12 @@ import * as THREE from "three";
 import { createLabel } from "../utils.js";
 
 export class CellManager {
-  constructor(scene, atoms, showCell = True) {
-    this.scene = scene;
-    this.atoms = atoms;
+  constructor(viewer) {
+    this.viewer = viewer;
     this.cellMesh = null;
     this.cellVectors = null;
     this.labels = [];
-    this._showCell = showCell;
+    this._showCell = viewer._showCell;
   }
 
   get showCell() {
@@ -30,18 +29,18 @@ export class CellManager {
 
   clear() {
     if (this.cellMesh) {
-      this.scene.remove(this.cellMesh);
+      this.viewer.tjs.scene.remove(this.cellMesh);
       this.cellMesh.geometry.dispose();
       this.cellMesh.material.dispose();
       this.cellMesh = null;
     }
     if (this.cellVectors) {
-      this.scene.remove(this.cellVectors);
+      this.viewer.tjs.scene.remove(this.cellVectors);
       this.cellVectors = null;
     }
     if (this.labels.length > 0) {
       this.labels.forEach((label) => {
-        this.scene.remove(label);
+        this.viewer.tjs.scene.remove(label);
         label.remove();
       });
       this.labels = [];
@@ -50,14 +49,14 @@ export class CellManager {
 
   draw() {
     this.clear();
-    if (!this.atoms.isUndefinedCell()) {
+    if (!this.viewer.originalCell.some((row) => row.every((cell) => cell === 0))) {
       this.cellMesh = this.drawUnitCell();
       this.cellVectors = this.drawUnitCellVectors();
     }
   }
 
   drawUnitCell() {
-    const cell = this.atoms.cell;
+    const cell = this.viewer.originalCell;
     if (!cell || cell.length !== 3) {
       console.warn("Invalid or missing unit cell data");
       return;
@@ -92,18 +91,18 @@ export class CellManager {
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const line = new THREE.LineSegments(geometry, material);
     line.userData.type = "cell";
-    line.userData.uuid = this.atoms.uuid;
+    line.userData.uuid = this.viewer.uuid;
     line.userData.objectMode = "edit";
     line.userData.notSelectable = true;
     line.layers.set(1);
-    this.scene.add(line);
+    this.viewer.tjs.scene.add(line);
     line.visible = this.showCell;
     return line;
   }
 
   drawUnitCellVectors() {
     // console.log("drawUnitCellVectors");
-    const cell = this.atoms.cell;
+    const cell = this.viewer.originalCell;
     if (!cell || cell.length !== 3) {
       console.warn("Invalid or missing unit cell data for vectors");
       return;
@@ -128,9 +127,9 @@ export class CellManager {
     aArrow.userData.type = "cell";
     bArrow.userData.type = "cell";
     cArrow.userData.type = "cell";
-    aArrow.userData.uuid = this.atoms.uuid;
-    bArrow.userData.uuid = this.atoms.uuid;
-    cArrow.userData.uuid = this.atoms.uuid;
+    aArrow.userData.uuid = this.viewer.uuid;
+    bArrow.userData.uuid = this.viewer.uuid;
+    cArrow.userData.uuid = this.viewer.uuid;
 
     // Add arrows to the group
     unitCellGroup.add(aArrow);
@@ -146,20 +145,20 @@ export class CellManager {
     aLabel.userData.type = "cell";
     bLabel.userData.type = "cell";
     cLabel.userData.type = "cell";
-    aLabel.userData.uuid = this.atoms.uuid;
-    bLabel.userData.uuid = this.atoms.uuid;
-    cLabel.userData.uuid = this.atoms.uuid;
+    aLabel.userData.uuid = this.viewer.uuid;
+    bLabel.userData.uuid = this.viewer.uuid;
+    cLabel.userData.uuid = this.viewer.uuid;
 
     // Add labels to the group
     this.labels.push(aLabel);
     this.labels.push(bLabel);
     this.labels.push(cLabel);
-    this.scene.add(aLabel);
-    this.scene.add(bLabel);
-    this.scene.add(cLabel);
+    this.viewer.tjs.scene.add(aLabel);
+    this.viewer.tjs.scene.add(bLabel);
+    this.viewer.tjs.scene.add(cLabel);
 
     // Add the group to the scene
-    this.scene.add(unitCellGroup);
+    this.viewer.tjs.scene.add(unitCellGroup);
     unitCellGroup.visible = this.showCell;
 
     // Return the group for further control if needed

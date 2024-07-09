@@ -27,24 +27,31 @@ export class Phonon {
   }
 
   // Compute initial phases and vibrations
-  calculateVibrations() {
+  calculateVibrations(repeat = [1, 1, 1]) {
+    const [nx, ny, nz] = repeat;
     const fractional_positions = this.atoms.calculateFractionalCoordinates();
     const natoms = this.atoms.positions.length;
     let atom_phase = [];
 
+    // console.log("addatomphase: ", this.addatomphase);
     if (this.addatomphase) {
       atom_phase = fractional_positions.map((position) => vec_dot(this.kpoint, position));
     } else {
       atom_phase = new Array(natoms).fill(0);
     }
     console.log("atom_phase: ", atom_phase);
-
-    for (let i = 0; i < natoms; i++) {
-      let sprod = atom_phase[i];
-      let phase = complexPolar(1.0, sprod * 2.0 * Math.PI);
-      this.vibrations.push(this.eigenvectors[i].map((vector) => phase.mult({ real: vector[0], imag: vector[1] })));
+    for (let ix = 0; ix < nx; ix++) {
+      for (let iy = 0; iy < ny; iy++) {
+        for (let iz = 0; iz < nz; iz++) {
+          for (let i = 0; i < natoms; i++) {
+            let sprod = vec_dot(this.kpoint, [ix, iy, iz]) + atom_phase[i];
+            let phase = complexPolar(1.0, sprod * 2.0 * Math.PI);
+            this.vibrations.push(this.eigenvectors[i].map((vector) => phase.mult({ real: vector[0], imag: vector[1] })));
+          }
+        }
+      }
     }
-    console.log("vibrations: ", this.vibrations);
+    // console.log("vibrations: ", this.vibrations);
   }
 
   // Get the trajectory of the phonon mode
@@ -65,20 +72,22 @@ export class Phonon {
       this.addatomphase = addatomphase;
     }
 
-    this.calculateVibrations();
+    this.calculateVibrations(repeat);
     const trajectory = [];
     const times = Array.from({ length: nframes }, (_, i) => 2 * Math.PI * (i / nframes));
     times.forEach((t) => {
-      const newAtoms = this.atoms.copy();
+      const newAtoms = this.atoms.multiply(...repeat);
       let phase = complexPolar(amplitude, t);
       const movement = [];
-      for (let i = 0; i < this.atoms.positions.length; i++) {
+      for (let i = 0; i < newAtoms.positions.length; i++) {
         let displacement = this.vibrations[i].map((v) => phase.mult(v).real);
-        newAtoms.positions[i] = this.atoms.positions[i].map((pos, index) => pos + displacement[index] / 5);
+        newAtoms.positions[i] = newAtoms.positions[i].map((pos, index) => pos + displacement[index] / 5);
         movement.push(displacement);
       }
       newAtoms.newAttribute("movement", movement);
-      trajectory.push(newAtoms.multiply(...repeat));
+      // update the movement attribute by kpoint
+
+      trajectory.push(newAtoms);
     });
     return trajectory;
   }

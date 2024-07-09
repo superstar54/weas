@@ -48,7 +48,7 @@ class AtomsViewer {
     this.frameDuration = 100; // Duration in milliseconds between frames
     // Initialize components
     // other plugins
-    this.cellManager = new CellManager(this.tjs.scene, atoms, this._showCell);
+    this.cellManager = new CellManager(this);
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui);
     this.bondManager = new BondManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
@@ -58,6 +58,7 @@ class AtomsViewer {
     this.VFManager = new VectorField(this);
     this.animate = this.animate.bind(this); // Bind once in the constructor
     this._atoms = null;
+    this._cell = null;
     this.init(atoms);
   }
 
@@ -93,10 +94,12 @@ class AtomsViewer {
   play() {
     this.isPlaying = true;
     this.animate();
+    this.guiManager.playPauseBtn.textContent = "Pause";
   }
 
   pause() {
     this.isPlaying = false;
+    this.guiManager.playPauseBtn.textContent = "Play";
   }
 
   animate() {
@@ -134,7 +137,7 @@ class AtomsViewer {
       this.boundaryAtomsMesh.instanceMatrix.needsUpdate = true;
     }
     // update cell
-    this.cellManager.atoms = this.atoms;
+    this.cellManager.cell = this.atoms.cell;
     this.cellManager.draw();
   }
 
@@ -150,6 +153,13 @@ class AtomsViewer {
     this.lastFrameTime = Date.now(); // Update the last frame time
     this.updateFrame(newValue);
     this.tjs.render();
+  }
+
+  get originalCell() {
+    if (this._cell) {
+      return this._cell;
+    }
+    return this.originalAtoms.cell;
   }
 
   get originalAtoms() {
@@ -180,10 +190,11 @@ class AtomsViewer {
     } else {
       this.trajectory = [atoms];
     }
+    this._cell = null;
     this._atoms = null;
     this._currentFrame = 0;
     // set cell
-    this.cellManager.atoms = this.atoms;
+    this.cellManager.cell = this.atoms.cell;
     // initialize the bond settings
     // the following plugins read the atoms attribute, so they need to be updated
     this.bondManager.init();
@@ -209,6 +220,7 @@ class AtomsViewer {
     const phonon = new Phonon(atoms, kpoint, eigenvectors, true);
     const trajectory = phonon.getTrajectory(amplitude, nframes, null, null, null, repeat);
     this.atoms = trajectory;
+    this._cell = atoms.cell;
     this._atoms = atoms.multiply(...repeat);
     this._atoms.uuid = this.uuid;
     this.drawModels();
