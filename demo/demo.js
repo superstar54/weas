@@ -17,14 +17,14 @@ async function fetchFile(filename) {
 const domElement = document.getElementById("weas");
 const viewerConfig = { _modelStyle: 1, logLevel: "warn" };
 const guiConfig = {
-  enabled: true,
-  components: {
+  controls: {
+    enabled: true,
     atomsControl: true,
     colorControl: true, // Disable color control
     cameraControls: true,
-    buttons: true,
   },
   buttons: {
+    enabled: true,
     // New section for button visibility
     fullscreen: true,
     undo: true,
