@@ -21,14 +21,15 @@
       let domElement = document.getElementById("viewer");
 
       const guiConfig = {
-        enabled: false,
-        components: {
+        controls: {
+          enabled: false,
           atomsControl: true,
           colorControl: true, // Disable color control
           cameraControls: true,
           buttons: true,
         },
         buttons: {
+          enabled: false,
           // New section for button visibility
           fullscreen: true,
           undo: true,

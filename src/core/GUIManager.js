@@ -14,20 +14,22 @@ class GUIManager {
     this.guiConfig = { ...defaultGuiConfig, ...guiConfig };
     this.gui = new GUI();
     this.gui.closed = true; // Set the GUI to be closed by default
-    if (!this.guiConfig.enabled) {
+    // controls
+    if (!this.guiConfig.controls.enabled) {
       this.gui.hide();
     } else {
       this.initGUI();
+    }
+    // buttons
+    if (this.guiConfig.buttons.enabled) {
+      this.addButtons();
     }
   }
 
   initGUI() {
     this.createGUIContainer();
-    if (this.guiConfig.components.cameraControls) {
+    if (this.guiConfig.controls.cameraControls) {
       this.addCameraControls();
-    }
-    if (this.guiConfig.components.buttons) {
-      this.addButtons();
     }
   }
 

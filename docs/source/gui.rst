@@ -10,14 +10,14 @@ The default configuration is:
 .. code-block:: javascript
 
    const defaultGuiConfig = {
-   enabled: true,
-   components: {
+   controls: {
+      enabled: true,
       atomsControl: true,
       colorControl: true,
       cameraControls: true,
-      buttons: true,
    },
    buttons: {
+      enabled: true,
       fullscreen: true,
       undo: true,
       redo: true,
