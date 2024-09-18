@@ -63,12 +63,11 @@ class AtomsViewer {
   }
 
   init(atoms) {
-    this.reset();
     this.selectedAtomsLabelElement = document.createElement("div");
     this.selectedAtomsLabelElement.id = "selectedAtomSymbol";
     this.tjs.containerElement.appendChild(this.selectedAtomsLabelElement);
-    // update the atoms
-    this.atoms = atoms;
+    // only need to update the atoms, without reset the viewer
+    this.updateAtoms(atoms);
     this.logger.debug("init AtomsViewer successfully");
   }
 
@@ -176,10 +175,16 @@ class AtomsViewer {
   }
 
   set atoms(atoms) {
+    // Set a new atoms object
+    // This will dispose the current objects, reset the viewer, and update the new atoms
     this.ready = false;
     this.dispose();
     this.reset();
-    this.logger.debug("set atoms: ");
+    this.updateAtoms(atoms);
+  }
+
+  updateAtoms(atoms) {
+    // Update the trajectory, managers, and draw the models
     // if atoms is a array, which means it is a trajectory data
     // only the first frame is used to initialize the viewer
     // but keep the trajectory data for the future use
