@@ -624,6 +624,9 @@ class AtomsViewer {
     // Remove the selected atoms from the scene and data
     this.atoms.replaceAtoms(Array.from(indices), element);
 
+    // Update the bond settings
+    this.bondManager.init();
+
     // Update the visualization
     this.drawModels(); // Reapply the visualization
   }
@@ -719,8 +722,8 @@ class AtomsViewer {
     if (this.boundaryAtomsMesh) {
       this.boundaryAtomsMesh.instanceMatrix.needsUpdate = true;
     }
-    if (this.bondsMesh) {
-      this.bondsMesh.instanceMatrix.needsUpdate = true;
+    if (this.bondManager.bondMesh) {
+      this.bondManager.bondMesh.instanceMatrix.needsUpdate = true;
     }
   }
 
