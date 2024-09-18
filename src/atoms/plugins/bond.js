@@ -54,14 +54,20 @@ export class BondManager {
       for (let j = 0; j < speciesList.length; j++) {
         const species1 = speciesList[i];
         const species2 = speciesList[j];
-        const color1 = elementColors[this.viewer.colorType][species1];
-        const color2 = elementColors[this.viewer.colorType][species2];
-        const min = 0.0;
-        const max = (covalentRadii[species1] + covalentRadii[species2]) * 1.1;
-        const setting = new Setting({ species1, species2, min, max, color1, color2 });
+        const setting = this.getDefaultSetting(species1, species2);
         this.settings.push(setting);
       }
     }
+  }
+
+  getDefaultSetting(species1, species2) {
+    /* Get the default bond setting for the species1 and species2 */
+    const color1 = elementColors[this.viewer.colorType][species1];
+    const color2 = elementColors[this.viewer.colorType][species2];
+    const min = 0.0;
+    const max = (covalentRadii[species1] + covalentRadii[species2]) * 1.1;
+    const setting = new Setting({ species1, species2, min, max, color1, color2 });
+    return setting;
   }
 
   fromSettings(settings) {
