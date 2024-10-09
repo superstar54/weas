@@ -76,23 +76,24 @@ export class BlendJS {
     this.scene.background = new THREE.Color(0xffffff); // Set the scene's background to white
     // Create a renderer
     const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(this.containerElement.clientWidth, this.containerElement.clientHeight);
+    const { width: clientWidth, height: clientHeight } = getContainerDimensions(this.containerElement);
+    renderer.setSize(clientWidth, clientHeight);
     // renderer.shadowMap.enabled = true;
     // renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 
     this.addRenderer("MainRenderer", renderer);
     // Create a label renderer
     const labelRenderer = new CSS2DRenderer();
-    labelRenderer.setSize(this.containerElement.clientWidth, this.containerElement.clientHeight);
+    labelRenderer.setSize(clientWidth, clientHeight);
     labelRenderer.domElement.style.position = "absolute";
     labelRenderer.domElement.style.top = "0px";
     labelRenderer.domElement.style.pointerEvents = "none";
     this.addRenderer("LabelRenderer", labelRenderer);
     // Create a camera
-    this.perspectiveCamera = new THREE.PerspectiveCamera(50, this.containerElement.clientWidth / this.containerElement.clientHeight, 1, 500);
+    this.perspectiveCamera = new THREE.PerspectiveCamera(50, clientWidth / clientHeight, 1, 500);
     this.perspectiveCamera.layers.enable(1);
     const frustumSize = 20; // This can be adjusted based on scene's scale
-    const aspect = this.containerElement.clientWidth / this.containerElement.clientHeight;
+    const aspect = clientWidth / clientHeight;
     const frustumHalfHeight = frustumSize / 2;
     const frustumHalfWidth = frustumHalfHeight * aspect;
 
@@ -177,19 +178,21 @@ export class BlendJS {
   }
 
   onWindowResize() {
-    // Update the camera aspect ratio and the renderer size based on the container element
+    const { width: clientWidth, height: clientHeight } = getContainerDimensions(this.containerElement);
+    // Update camera and renderer sizes based on the container element
     if (this.camera.isOrthographicCamera) {
-      const aspect = this.containerElement.clientWidth / this.containerElement.clientHeight;
+      const aspect = clientWidth / clientHeight;
       const frustumHeight = this.camera.top - this.camera.bottom;
       this.camera.left = (-frustumHeight * aspect) / 2;
       this.camera.right = (frustumHeight * aspect) / 2;
     } else {
-      this.camera.aspect = this.containerElement.clientWidth / this.containerElement.clientHeight;
+      this.camera.aspect = clientWidth / clientHeight;
     }
     this.camera.updateProjectionMatrix();
-    // loop through renderers to update their size
+
+    // Resize all renderers
     Object.values(this.renderers).forEach((rndr) => {
-      rndr.renderer.setSize(this.containerElement.clientWidth, this.containerElement.clientHeight);
+      rndr.renderer.setSize(clientWidth, clientHeight);
     });
     this.viewerRect = this.containerElement.getBoundingClientRect();
     this.render();
@@ -201,6 +204,7 @@ export class BlendJS {
     The camera to look at the lookAt, and rotate around the lookAt of the atoms.
     Position of the camera is defined by the look_at, direction, and distance attributes.
     */
+    const { width: clientWidth, height: clientHeight } = getContainerDimensions(this.containerElement);
     // normalize the camera direction
     direction = new THREE.Vector3(...direction).normalize();
     const sceneBoundingBox = this.getSceneBoundingBox();
@@ -215,7 +219,7 @@ export class BlendJS {
     let aspect;
     // Determine the aspect ratio of the camera
     if (this.camera.isOrthographicCamera) {
-      aspect = this.containerElement.clientWidth / this.containerElement.clientHeight;
+      aspect = clientWidth / clientHeight;
     } else {
       aspect = this.camera.aspect;
     }
@@ -370,4 +374,12 @@ function calculateBoundingBox(box, direction) {
   size.y = maxProjected.y - minProjected.y;
   size.z = maxProjected.z - minProjected.z;
   return size;
+}
+
+function getContainerDimensions(element, defaultWidth = 600, defaultHeight = 400) {
+  // Get the default width and height if the container is not yet rendered.
+  const computedStyle = getComputedStyle(element);
+  const width = element.clientWidth || parseInt(computedStyle.width, 10) || defaultWidth;
+  const height = element.clientHeight || parseInt(computedStyle.height, 10) || defaultHeight;
+  return { width, height };
 }
