@@ -10,6 +10,7 @@ export function drawAtoms({ atoms, atomScales, colors, radiusType = "Covalent", 
   // console.log("Draw Atoms: ", +atoms.symbols.length, " atoms");
   // Create a basic sphere geometry for all atoms
   let radiusSegment = 32;
+  let radius = 1;
 
   // change radiusSegment based on number of atoms
   if (atoms.symbols.length > 100000) {
@@ -32,7 +33,12 @@ export function drawAtoms({ atoms, atomScales, colors, radiusType = "Covalent", 
   const instancedMesh = new THREE.InstancedMesh(atomGeometry, material, atoms.symbols.length);
   // Position, scale, and color each atom
   atoms.symbols.forEach((symbol, globalIndex) => {
-    const radius = Radii[radiusType][symbol] || 1;
+    // if atoms has radii attribute in the species domain, use it
+    if ("radii" in atoms.attributes["species"]) {
+      radius = atoms.attributes["species"]["radii"][symbol] || 1;
+    } else {
+      radius = Radii[radiusType][symbol] || 1;
+    }
 
     // Set position and scale
     const position = new THREE.Vector3(...atoms.positions[globalIndex]);

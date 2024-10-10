@@ -43,7 +43,7 @@ Attributes and domain
 One can store additional data in the Atoms object using the `attributes`. The `attributes` has two domains:
 
 - `atoms`: store data that is specific to each atom, such as the charge or force.
-- `species`: store data that is specific to each species, such as the mass.
+- `species`: store data that is specific to each species, such as the mass, color, or radius.
 
 
 .. code-block:: javascript
@@ -52,6 +52,8 @@ One can store additional data in the Atoms object using the `attributes`. The `a
                             'force': [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
                             },
                 'species': {'mass': {'O': 15.999, 'H': 1.008},
+                            "color", {C: "red", H: "#b434eb", O: "#34eb77", S: "#FFFF00" },
+                            "radius", {C: 0.77, H: 0.37, O: 0.66, S: 1.04},
                             },
                 }
 

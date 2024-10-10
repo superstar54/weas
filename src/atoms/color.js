@@ -16,8 +16,14 @@ export function getAtomColors(atoms, colorBy, params) {
   // console.log("colorBy: ", colorBy);
   // console.log("params: ", params);
   atoms.symbols.forEach((symbol, globalIndex) => {
-    color = new THREE.Color(elementColors[params.colorType][symbol]);
-    colors.push(color);
+    // if atoms has color attribute in the species domain, use it
+    if ("color" in atoms.attributes["species"]) {
+      color = new THREE.Color(atoms.attributes["species"]["color"][symbol]);
+      colors.push(color);
+    } else {
+      color = new THREE.Color(elementColors[params.colorType][symbol]);
+      colors.push(color);
+    }
   });
   if (colorBy === "Random") {
     colors = [];
