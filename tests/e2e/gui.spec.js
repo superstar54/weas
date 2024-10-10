@@ -51,6 +51,13 @@ test("VectorField", async ({ page }) => {
 test("ColorBy", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testColorBy.html");
   await expect(page).toHaveScreenshot();
+  // color by species
+  await page.evaluate(() => {
+    window.editor.avr.colorBy = "Element";
+    window.editor.avr.atoms.newAttribute("color", { C: "##eb4034", H: "#b434eb", O: "#34eb77", S: "#FFFF00" }, "species");
+    window.editor.avr.drawModels();
+  });
+  await expect(page).toHaveScreenshot("Color-species.png");
 });
 
 test("Highlight Atoms", async ({ page }) => {

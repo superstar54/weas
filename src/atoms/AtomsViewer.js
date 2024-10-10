@@ -41,6 +41,7 @@ class AtomsViewer {
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.debug = viewerSettings.debug;
     this._currentFrame = 0;
+    this.lastFrameTime = Date.now();
     this.logger = new Logger(viewerSettings.logLevel || "warn"); // Default log level is "warn"
     this.trajectory = [new Atoms()];
     // animation settings
@@ -808,6 +809,13 @@ class AtomsViewer {
       });
       this.highlightAtomsMesh.instanceMatrix.needsUpdate = true;
     }
+  }
+
+  setAttribute(name, values, domain = "atom") {
+    // loop all the atoms in the trajectory
+    this.trajectory.forEach((atoms) => {
+      atoms.newAttribute(name, values, domain);
+    });
   }
 }
 
