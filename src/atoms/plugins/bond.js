@@ -30,12 +30,12 @@ class Setting {
 }
 
 export class BondManager {
-  constructor(viewer) {
+  constructor(viewer, hideLongBonds = true) {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
     this.settings = [];
     this.meshes = [];
-    this.hideLongBonds = true;
+    this.hideLongBonds = hideLongBonds;
     this.init();
   }
 

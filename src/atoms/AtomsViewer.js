@@ -51,7 +51,7 @@ class AtomsViewer {
     // other plugins
     this.cellManager = new CellManager(this);
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui);
-    this.bondManager = new BondManager(this);
+    this.bondManager = new BondManager(this, viewerSettings._hideLongBonds);
     this.polyhedraManager = new PolyhedraManager(this);
     this.isosurfaceManager = new Isosurface(this);
     this.ALManager = new AtomLabelManager(this);
