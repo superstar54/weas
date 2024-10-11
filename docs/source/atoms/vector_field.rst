@@ -86,6 +86,8 @@ In order to update the vector fields when the atom is moved in a animation, the 
             nframes: 50,
             kpoint: [0, 0, 0],
             repeat: [4, 4, 1],
+            color: "#ff0000",
+            radius: 0.1,
           });
           // control the speed of the animation
           editor.avr.boundary = [
@@ -95,9 +97,7 @@ In order to update the vector fields when the atom is moved in a animation, the 
           ];
           // control the speed of the animation
           editor.avr.frameDuration = 20;
-          editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
           editor.avr.modelStyle = 1;
-          editor.avr.bondManager.hideLongBonds = false;
           editor.render();
           window.editor = editor;
         </script>
@@ -149,6 +149,8 @@ In order to update the vector fields when the atom is moved in a animation, the 
             nframes: 50,
             kpoint: [0, 0, 0],
             repeat: [4, 4, 1],
+            color: "#ff0000",
+            radius: 0.1,
           });
           // control the speed of the animation
           editor.avr.boundary = [
@@ -158,9 +160,7 @@ In order to update the vector fields when the atom is moved in a animation, the 
           ];
           // control the speed of the animation
           editor.avr.frameDuration = 20;
-          editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
           editor.avr.modelStyle = 1;
-          editor.avr.bondManager.hideLongBonds = false;
           editor.render();
           window.editor = editor;
         </script>

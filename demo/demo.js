@@ -162,6 +162,8 @@ async function updateAtoms(filename, fileContent = null) {
         kpoint: kpoint,
         // repeat: [1, 1, 1],
         repeat: [5, 5, 1],
+        color: "#ff0000",
+        radius: 0.1,
       });
 
       // control the speed of the animation
@@ -171,8 +173,6 @@ async function updateAtoms(filename, fileContent = null) {
         [-0.01, 1.01],
       ];
       editor.avr.frameDuration = 50;
-      editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
-      editor.avr.bondManager.hideLongBonds = false;
       editor.avr.showBondedAtoms = false;
       editor.avr.modelStyle = 1;
       editor.avr.drawModels();
