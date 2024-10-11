@@ -36,6 +36,7 @@ export class BondManager {
     this.settings = [];
     this.meshes = [];
     this.hideLongBonds = hideLongBonds;
+    this.bondRadius = 0.1;
     this.init();
   }
 
@@ -137,7 +138,7 @@ export class BondManager {
     if (this.viewer.colorBy !== "Element") {
       atomColors = this.viewer.atomColors;
     }
-    this.bondMesh = drawStick(this.viewer.originalAtoms, this.bondList, this.buildBondDict(), this.viewer.bondRadius, this.viewer._materialType, atomColors);
+    this.bondMesh = drawStick(this.viewer.originalAtoms, this.bondList, this.buildBondDict(), this.bondRadius, this.viewer._materialType, atomColors);
     return this.bondMesh;
   }
 
@@ -181,7 +182,7 @@ export class BondManager {
       }
       const cutoff = this.viewer.cutoffs[key].max;
       const quaternion = calculateQuaternion(position1, position2);
-      const scale = calculateScale(position1, position2, this.viewer.bondRadius, cutoff, this.hideLongBonds);
+      const scale = calculateScale(position1, position2, this.bondRadius, cutoff, this.hideLongBonds);
       const instanceMatrix = new THREE.Matrix4().compose(midpoint, quaternion, scale);
       this.bondMesh.setMatrixAt(i, instanceMatrix);
       // this.bondMesh.setMatrixAt(2 * bondIndex + 1, instanceMatrixs[1]);

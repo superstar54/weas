@@ -41,7 +41,6 @@ class AtomsViewer {
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.debug = viewerSettings.debug;
     this._currentFrame = 0;
-    this.lastFrameTime = Date.now();
     this.logger = new Logger(viewerSettings.logLevel || "warn"); // Default log level is "warn"
     this.trajectory = [new Atoms()];
     // animation settings
@@ -64,6 +63,7 @@ class AtomsViewer {
   }
 
   init(atoms) {
+    this.lastFrameTime = Date.now();
     this.selectedAtomsLabelElement = document.createElement("div");
     this.selectedAtomsLabelElement.id = "selectedAtomSymbol";
     this.tjs.containerElement.appendChild(this.selectedAtomsLabelElement);
@@ -79,14 +79,13 @@ class AtomsViewer {
     this._atomScales = new Array();
     this._modelSticks = new Array();
     this._modelPolyhedras = new Array();
-    this.lastFrameTime = Date.now();
+
     this.boundary = [
       [0, 1],
       [0, 1],
       [0, 1],
     ];
     this.boundaryList = null;
-    this.bondRadius = 0.1; // Default bond radius
     //
     this.highlightAtomsMesh = null;
   }
