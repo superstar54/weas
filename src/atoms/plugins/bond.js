@@ -106,6 +106,7 @@ export class BondManager {
     this.meshes.forEach((mesh) => {
       clearObject(this.scene, mesh);
     });
+    this.meshes = [];
   }
 
   drawBonds() {

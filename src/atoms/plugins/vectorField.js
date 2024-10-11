@@ -93,6 +93,7 @@ export class VectorField {
     this.meshes.forEach((mesh) => {
       clearObject(this.scene, mesh);
     });
+    this.meshes = [];
   }
 
   drawVectorFields(showVectorField = true) {

@@ -391,6 +391,12 @@ test.describe("Phonon", () => {
       timeline.dispatchEvent(event);
     });
     await expect(page).toHaveScreenshot("Phonon-frame-0.png");
+    // change model style
+    await page.evaluate(() => {
+      window.editor.avr.modelStyle = 0;
+      window.editor.avr.drawModels();
+    });
+    await expect(page).toHaveScreenshot("Phonon-change-modelStyle.png");
     // set frame 10
     await page.evaluate(() => {
       const timeline = document.getElementById("timeline");
