@@ -113,6 +113,15 @@ class EventHandlers {
         case "3":
           this.weas.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
           break;
+        case "4":
+          this.weas.tjs.updateCameraAndControls({ direction: [0, 100, 0] });
+          break;
+        case "5":
+          this.weas.tjs.updateCameraAndControls({ direction: [100, 0, 0] });
+          break;
+        case "6":
+          this.weas.tjs.updateCameraAndControls({ direction: [0, 0, -100] });
+          break;
         case "F9":
           this.weas.ops.updateAdjustLastOperationGUI();
           break;
