@@ -33,7 +33,7 @@ export class BondManager {
   constructor(viewer, hideLongBonds = true) {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
-    this.settings = [];
+    this.settings = {};
     this.meshes = [];
     this.hideLongBonds = hideLongBonds;
     this.bondRadius = 0.1;
@@ -46,7 +46,7 @@ export class BondManager {
     The default color is from the elementColors.
     */
     this.viewer.logger.debug("init bond settings");
-    this.settings = [];
+    this.settings = {};
     const atoms = this.viewer.originalAtoms;
     const symbols = atoms.symbols;
     const speciesSet = new Set(symbols);
@@ -55,8 +55,8 @@ export class BondManager {
       for (let j = 0; j < speciesList.length; j++) {
         const species1 = speciesList[i];
         const species2 = speciesList[j];
-        const setting = this.getDefaultSetting(species1, species2);
-        this.settings.push(setting);
+        const key = JSON.stringify([species1, species2]);
+        this.settings[key] = this.getDefaultSetting(species1, species2);
       }
     }
   }
@@ -73,7 +73,7 @@ export class BondManager {
 
   fromSettings(settings) {
     /* Set the bond settings */
-    this.settings = [];
+    this.settings = {};
     this.clearMeshes();
     // loop over settings to add each setting
     settings.forEach((setting) => {
@@ -85,17 +85,17 @@ export class BondManager {
   addSetting({ species1, species2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
     /* Add a new setting to the bond */
     const setting = new Setting({ species1, species2, radius, min, max, color1, color2, order });
-    this.settings.push(setting);
+    const key = JSON.stringify([species1, species2]);
+    this.settings[key] = setting;
   }
 
   buildBondDict() {
     /* Build a dictionary of cutoffs */
     const cutoffDict = {};
-    this.settings.forEach((setting) => {
+    Object.values(this.settings).forEach((setting) => {
       const species1 = setting.species1;
       const species2 = setting.species2;
       const key1 = species1 + "-" + species2;
-      const key2 = species2 + "-" + species1;
       cutoffDict[key1] = setting.toDict();
     });
     this.viewer.logger.debug("cutoffDict: ", cutoffDict);
