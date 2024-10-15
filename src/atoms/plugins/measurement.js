@@ -37,7 +37,8 @@ export class Measurement {
         this.scene.remove(mesh);
       });
     });
-    // this.meshes = {};
+    this.meshes = {};
+    this.viewer.tjs.render();
   }
 
   measure(indices = null) {
