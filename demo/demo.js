@@ -104,8 +104,6 @@ async function updateAtoms(filename, fileContent = null) {
         [-0.01, 1.01],
         [-0.01, 1.01],
       ];
-      delete editor.avr.bondManager.settings['["Ca","Ti"]'];
-      delete editor.avr.bondManager.settings['["Ti","Ca"]'];
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
       editor.avr.modelStyle = 2;
       break;

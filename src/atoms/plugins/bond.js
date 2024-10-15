@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { calculateCartesianCoordinates, calculateQuaternion } from "../../utils.js";
 import { materials } from "../../tools/materials.js";
-import { elementsWithPolyhedra, covalentRadii, elementColors } from "../atoms_data.js";
+import { elementsWithPolyhedra, covalentRadii, elementColors, default_bond_pairs } from "../atoms_data.js";
 
 // convert color to THREE.Color, the color can be a string or an array
 function convertColor(color) {
@@ -66,6 +66,11 @@ export class BondManager {
         const species1 = speciesList[i];
         const species2 = speciesList[j];
         const key = JSON.stringify([species1, species2]);
+        const elementPair = species1 + "-" + species2;
+        // if the elementPair is not in the default_bond_pairs, skip
+        if (default_bond_pairs[elementPair] === undefined) {
+          continue;
+        }
         this.settings[key] = this.getDefaultSetting(species1, species2);
       }
     }
@@ -226,7 +231,7 @@ export function drawStick(atoms, bondList, settings, radius = 0.1, materialType 
   const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1); // Adjust segment count as needed
 
   const material = materials[materialType].clone();
-  const instancedMesh = new THREE.InstancedMesh(cylinderGeometry, material, bondList.length);
+  const instancedMesh = new THREE.InstancedMesh(cylinderGeometry, material, bondList.length * 2);
 
   bondList.forEach(([index1, index2, offset1, offset2], instanceId) => {
     // console.log(index1, index2, offset1, offset2);
@@ -239,12 +244,18 @@ export function drawStick(atoms, bondList, settings, radius = 0.1, materialType 
     const key = atoms.species[atoms.symbols[index1]].symbol + "-" + atoms.species[atoms.symbols[index2]].symbol;
     // if atomColors is not null, use the atomColors, otherwise use the settings
     const color1 = atomColors ? atomColors[index1] : settings[key].color1;
-    const midpoint = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
+    const midpoint1 = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
     const quaternion = calculateQuaternion(position1, position2);
     const scale = calculateScale(position1, position2, radius);
-    const instanceMatrix = new THREE.Matrix4().compose(midpoint, quaternion, scale);
-    instancedMesh.setMatrixAt(instanceId, instanceMatrix);
-    instancedMesh.setColorAt(instanceId, color1);
+    const instanceMatrix = new THREE.Matrix4().compose(midpoint1, quaternion, scale);
+    instancedMesh.setMatrixAt(instanceId * 2, instanceMatrix);
+    instancedMesh.setColorAt(instanceId * 2, color1);
+    // set the second bond
+    const color2 = atomColors ? atomColors[index2] : settings[key].color2;
+    const midpoint2 = new THREE.Vector3().lerpVectors(position1, position2, 0.75);
+    const instanceMatrix2 = new THREE.Matrix4().compose(midpoint2, quaternion, scale);
+    instancedMesh.setMatrixAt(instanceId * 2 + 1, instanceMatrix2);
+    instancedMesh.setColorAt(instanceId * 2 + 1, color2);
   });
 
   instancedMesh.userData.type = "bond";
