@@ -345,19 +345,19 @@ test.describe("Measurement", () => {
       window.editor.avr.selectedAtomsIndices = [0, 1, 7];
     });
     await page.keyboard.press("m");
-    await expect(page).toHaveScreenshot("Animation-bond-angle.png");
+    await expect(page).toHaveScreenshot("Measurement-bond-angle.png");
     // select atoms
     await page.evaluate(() => {
       window.editor.avr.selectedAtomsIndices = [0, 1, 2, 7];
     });
     await page.keyboard.press("m");
-    await expect(page).toHaveScreenshot("Animation-dihedral-angle.png");
+    await expect(page).toHaveScreenshot("Measurement-dihedral-angle.png");
     // select no atoms
     await page.evaluate(() => {
       window.editor.avr.selectedAtomsIndices = [];
     });
     await page.keyboard.press("m");
-    await expect(page).toHaveScreenshot("Animation-no-measurement.png");
+    await expect(page).toHaveScreenshot("Measurement-no-measurement.png");
   });
 });
 
