@@ -91,7 +91,22 @@ async function updateAtoms(filename, fileContent = null) {
       // editor.ops.selection.InsideSelection();
       editor.ops.hideGUI();
       break;
-    case "tio2.cif":
+    case "catio3.cif":
+      editor.clear();
+      structureData = fileContent || (await fetchFile(filename));
+      atoms = parseCIF(structureData);
+      // atoms = atoms.multiply(1, 1, 1);
+      editor.avr.atoms = atoms;
+      editor.avr.showBondedAtoms = true;
+      editor.avr.colorType = "VESTA";
+      editor.avr.boundary = [
+        [-0.01, 1.01],
+        [-0.01, 1.01],
+        [-0.01, 1.01],
+      ];
+      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.avr.modelStyle = 2;
+      break;
     case "CoO.cif":
       editor.clear();
       structureData = fileContent || (await fetchFile(filename));
@@ -115,10 +130,10 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.atoms = cubeData.atoms;
       editor.avr.isosurfaceManager.volumetricData = cubeData.volumetricData;
       // editor.avr.isosurfaceManager.addSetting(0.0002);
-      editor.avr.isosurfaceManager.fromSettings([
-        { isovalue: 0.0002, mode: 1, step_size: 1 },
-        { isovalue: -0.0002, color: "#ff0000", mode: 1 },
-      ]);
+      editor.avr.isosurfaceManager.fromSettings({
+        positive: { isovalue: 0.0002, mode: 1, step_size: 1 },
+        negative: { isovalue: -0.0002, color: "#ff0000", mode: 1 },
+      });
       editor.avr.isosurfaceManager.drawIsosurfaces();
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
       break;
@@ -175,7 +190,6 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.frameDuration = 50;
       editor.avr.showBondedAtoms = false;
       editor.avr.modelStyle = 1;
-      editor.avr.drawModels();
       break;
     case "Primitives":
       editor.clear();
@@ -235,7 +249,7 @@ async function drawAtoms(filename, fileContent) {
 }
 
 updateAtoms("molecule");
-// updateAtoms("tio2.cif");
+// updateAtoms("catio3.cif");
 // updateAtoms("au.cif");
 // updateAtoms("c2h6so.xyz");
 // updateAtoms("h2o-homo.cube");

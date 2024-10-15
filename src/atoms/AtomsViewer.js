@@ -228,7 +228,7 @@ class AtomsViewer {
     this._cell = atoms.cell;
     this._atoms = atoms.multiply(...repeat);
     this._atoms.uuid = this.uuid;
-    this.VFManager.addSetting({ origins: "positions", vectors: "movement", color: color, radius: radius });
+    this.VFManager.addSetting("phonon", { origins: "positions", vectors: "movement", color: color, radius: radius });
     this.bondManager.hideLongBonds = false;
     this.drawModels();
     this.play();

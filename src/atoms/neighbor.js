@@ -68,9 +68,9 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) 
     const point = { x: positions[idx1][0], y: positions[idx1][1], z: positions[idx1][2] };
 
     // Find potential neighbors within the sum of radius1 and maximum possible radius2
-    // max neighbors is 12, which is the number of nearest neighbors in a face-centered cubic lattice
-    // the closest packed structure
-    const potentialNeighbors = tree.nearest(point, 12, (radius1 + maxCutoff) ** 2);
+    // max neighbors is 12*2, 12 is the number of nearest neighbors in a face-centered cubic lattice
+    // the closest packed structure. We consider the nearest and second nearest neighbors
+    const potentialNeighbors = tree.nearest(point, 24, maxCutoff ** 2);
 
     potentialNeighbors.forEach((neighbor) => {
       const idx2 = neighbor[0].index;

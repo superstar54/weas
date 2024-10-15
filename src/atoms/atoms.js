@@ -86,7 +86,7 @@ class Atoms {
   setAttributes(attributes) {
     /*Set the attributes of the Atoms instance.
      */
-    this.attributes = { atom: {}, species: {} };
+    this.attributes = { atom: {}, species: {}, "inter-species": {} };
     for (const domain in attributes) {
       for (const name in attributes[domain]) {
         this.newAttribute(name, attributes[domain][name], domain);
@@ -111,8 +111,11 @@ class Atoms {
         }
       }
       this.attributes["species"][name] = JSON.parse(JSON.stringify(values));
+    } else if (domain === "inter-species") {
+      // We don't require the values to be provided for each species
+      this.attributes["species"][name] = JSON.parse(JSON.stringify(values));
     } else {
-      throw new Error('Invalid domain. Must be either "atom" or "species".');
+      throw new Error('Invalid domain. Must be either "atom", "species", or "inter-species".');
     }
   }
 
@@ -137,6 +140,11 @@ class Atoms {
         throw new Error(`Attribute '${name}' is not defined. The available attributes are: ${Object.keys(this.attributes["species"])}`);
       }
       return this.attributes["species"][name];
+    } else if (domain === "inter-species") {
+      if (!this.attributes[domain][name]) {
+        throw new Error(`Attribute '${name}' is not defined in inter-species domain. The available attributes are: ${Object.keys(this.attributes[domain])}`);
+      }
+      return this.attributes[domain][name];
     } else {
       throw new Error('Invalid domain. Must be either "atom" or "species".');
     }

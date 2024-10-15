@@ -1,7 +1,17 @@
 import * as THREE from "three";
 import { calculateCartesianCoordinates, calculateQuaternion } from "../../utils.js";
 import { materials } from "../../tools/materials.js";
-import { elementsWithPolyhedra, covalentRadii, elementColors } from "../atoms_data.js";
+import { elementsWithPolyhedra, covalentRadii, elementColors, default_bond_pairs } from "../atoms_data.js";
+
+// convert color to THREE.Color, the color can be a string or an array
+function convertColor(color) {
+  if (Array.isArray(color)) {
+    color = new THREE.Color(...color);
+  } else {
+    color = new THREE.Color(color);
+  }
+  return color;
+}
 
 class Setting {
   constructor({ species1, species2, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", radius = 0.1, order = 1 }) {
@@ -9,8 +19,8 @@ class Setting {
     this.species2 = species2;
     this.min = min;
     this.max = max;
-    this.color1 = color1;
-    this.color2 = color2;
+    this.color1 = convertColor(color1);
+    this.color2 = convertColor(color2);
     this.radius = radius;
     this.order = order;
   }
@@ -33,7 +43,7 @@ export class BondManager {
   constructor(viewer, hideLongBonds = true) {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
-    this.settings = [];
+    this.settings = {};
     this.meshes = [];
     this.hideLongBonds = hideLongBonds;
     this.bondRadius = 0.1;
@@ -46,7 +56,7 @@ export class BondManager {
     The default color is from the elementColors.
     */
     this.viewer.logger.debug("init bond settings");
-    this.settings = [];
+    this.settings = {};
     const atoms = this.viewer.originalAtoms;
     const symbols = atoms.symbols;
     const speciesSet = new Set(symbols);
@@ -55,8 +65,13 @@ export class BondManager {
       for (let j = 0; j < speciesList.length; j++) {
         const species1 = speciesList[i];
         const species2 = speciesList[j];
-        const setting = this.getDefaultSetting(species1, species2);
-        this.settings.push(setting);
+        const key = JSON.stringify([species1, species2]);
+        const elementPair = species1 + "-" + species2;
+        // if the elementPair is not in the default_bond_pairs, skip
+        if (default_bond_pairs[elementPair] === undefined) {
+          continue;
+        }
+        this.settings[key] = this.getDefaultSetting(species1, species2);
       }
     }
   }
@@ -73,10 +88,10 @@ export class BondManager {
 
   fromSettings(settings) {
     /* Set the bond settings */
-    this.settings = [];
+    this.settings = {};
     this.clearMeshes();
     // loop over settings to add each setting
-    settings.forEach((setting) => {
+    Object.values(settings).forEach((setting) => {
       this.addSetting(setting);
     });
   }
@@ -85,17 +100,17 @@ export class BondManager {
   addSetting({ species1, species2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
     /* Add a new setting to the bond */
     const setting = new Setting({ species1, species2, radius, min, max, color1, color2, order });
-    this.settings.push(setting);
+    const key = JSON.stringify([species1, species2]);
+    this.settings[key] = setting;
   }
 
   buildBondDict() {
     /* Build a dictionary of cutoffs */
     const cutoffDict = {};
-    this.settings.forEach((setting) => {
+    Object.values(this.settings).forEach((setting) => {
       const species1 = setting.species1;
       const species2 = setting.species2;
       const key1 = species1 + "-" + species2;
-      const key2 = species2 + "-" + species1;
       cutoffDict[key1] = setting.toDict();
     });
     this.viewer.logger.debug("cutoffDict: ", cutoffDict);
@@ -127,8 +142,14 @@ export class BondManager {
     // I don't add bonded atoms to offsets, because the bondlist will add them through the bondedAtoms["bonds"]
     // this.viewer.logger.debug("offsets: ", offsets);
     this.bondList = buildBonds(this.viewer.originalAtoms, offsets, this.viewer.neighbors["map"], this.viewer._boundary, this.viewer.modelSticks);
-    // merge the bondList and the bondedAtoms["bonds"]
-    this.bondList = this.bondList.concat(this.viewer.bondedAtoms["bonds"]);
+    // loop the bondedAtoms["bonds"] and add the bonds to the bondList
+    this.viewer.bondedAtoms["bonds"].forEach((bond) => {
+      // if key not in the settings, skip
+      const key = this.viewer.originalAtoms.symbols[bond[0]] + "-" + this.viewer.originalAtoms.symbols[bond[1]];
+      if (this.viewer.cutoffs[key]) {
+        this.bondList.push(bond);
+      }
+    });
     if (this.viewer.debug) {
       this.viewer.logger.debug("bondList: ", this.bondList);
     }
@@ -174,7 +195,7 @@ export class BondManager {
       let position2 = atoms.positions[atomIndex2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
       position1 = new THREE.Vector3(...position1);
       position2 = new THREE.Vector3(...position2);
-      const midpoint = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
+      const midpoint1 = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
       const key = atoms.symbols[atomIndex1] + "-" + atoms.symbols[atomIndex2];
       // if key is not in the cutoffs, skip. In principle, this should not happen
       if (!this.viewer.cutoffs[key]) {
@@ -183,9 +204,12 @@ export class BondManager {
       const cutoff = this.viewer.cutoffs[key].max;
       const quaternion = calculateQuaternion(position1, position2);
       const scale = calculateScale(position1, position2, this.bondRadius, cutoff, this.hideLongBonds);
-      const instanceMatrix = new THREE.Matrix4().compose(midpoint, quaternion, scale);
-      this.bondMesh.setMatrixAt(i, instanceMatrix);
-      // this.bondMesh.setMatrixAt(2 * bondIndex + 1, instanceMatrixs[1]);
+      const instanceMatrix = new THREE.Matrix4().compose(midpoint1, quaternion, scale);
+      this.bondMesh.setMatrixAt(i * 2, instanceMatrix);
+      // set the second bond
+      const midpoint2 = new THREE.Vector3().lerpVectors(position1, position2, 0.75);
+      const instanceMatrix2 = new THREE.Matrix4().compose(midpoint2, quaternion, scale);
+      this.bondMesh.setMatrixAt(i * 2 + 1, instanceMatrix2);
     });
     this.bondMesh.instanceMatrix.needsUpdate = true;
   }
@@ -210,7 +234,7 @@ export function drawStick(atoms, bondList, settings, radius = 0.1, materialType 
   const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1); // Adjust segment count as needed
 
   const material = materials[materialType].clone();
-  const instancedMesh = new THREE.InstancedMesh(cylinderGeometry, material, bondList.length);
+  const instancedMesh = new THREE.InstancedMesh(cylinderGeometry, material, bondList.length * 2);
 
   bondList.forEach(([index1, index2, offset1, offset2], instanceId) => {
     // console.log(index1, index2, offset1, offset2);
@@ -222,13 +246,19 @@ export function drawStick(atoms, bondList, settings, radius = 0.1, materialType 
     // Setting color for each material
     const key = atoms.species[atoms.symbols[index1]].symbol + "-" + atoms.species[atoms.symbols[index2]].symbol;
     // if atomColors is not null, use the atomColors, otherwise use the settings
-    const color1 = atomColors ? atomColors[index1] : new THREE.Color(settings[key].color1);
-    const midpoint = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
+    const color1 = atomColors ? atomColors[index1] : settings[key].color1;
+    const midpoint1 = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
     const quaternion = calculateQuaternion(position1, position2);
     const scale = calculateScale(position1, position2, radius);
-    const instanceMatrix = new THREE.Matrix4().compose(midpoint, quaternion, scale);
-    instancedMesh.setMatrixAt(instanceId, instanceMatrix);
-    instancedMesh.setColorAt(instanceId, color1);
+    const instanceMatrix = new THREE.Matrix4().compose(midpoint1, quaternion, scale);
+    instancedMesh.setMatrixAt(instanceId * 2, instanceMatrix);
+    instancedMesh.setColorAt(instanceId * 2, color1);
+    // set the second bond
+    const color2 = atomColors ? atomColors[index2] : settings[key].color2;
+    const midpoint2 = new THREE.Vector3().lerpVectors(position1, position2, 0.75);
+    const instanceMatrix2 = new THREE.Matrix4().compose(midpoint2, quaternion, scale);
+    instancedMesh.setMatrixAt(instanceId * 2 + 1, instanceMatrix2);
+    instancedMesh.setColorAt(instanceId * 2 + 1, color2);
   });
 
   instancedMesh.userData.type = "bond";
