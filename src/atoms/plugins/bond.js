@@ -195,7 +195,7 @@ export class BondManager {
       let position2 = atoms.positions[atomIndex2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
       position1 = new THREE.Vector3(...position1);
       position2 = new THREE.Vector3(...position2);
-      const midpoint = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
+      const midpoint1 = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
       const key = atoms.symbols[atomIndex1] + "-" + atoms.symbols[atomIndex2];
       // if key is not in the cutoffs, skip. In principle, this should not happen
       if (!this.viewer.cutoffs[key]) {
@@ -204,9 +204,12 @@ export class BondManager {
       const cutoff = this.viewer.cutoffs[key].max;
       const quaternion = calculateQuaternion(position1, position2);
       const scale = calculateScale(position1, position2, this.bondRadius, cutoff, this.hideLongBonds);
-      const instanceMatrix = new THREE.Matrix4().compose(midpoint, quaternion, scale);
-      this.bondMesh.setMatrixAt(i, instanceMatrix);
-      // this.bondMesh.setMatrixAt(2 * bondIndex + 1, instanceMatrixs[1]);
+      const instanceMatrix = new THREE.Matrix4().compose(midpoint1, quaternion, scale);
+      this.bondMesh.setMatrixAt(i * 2, instanceMatrix);
+      // set the second bond
+      const midpoint2 = new THREE.Vector3().lerpVectors(position1, position2, 0.75);
+      const instanceMatrix2 = new THREE.Matrix4().compose(midpoint2, quaternion, scale);
+      this.bondMesh.setMatrixAt(i * 2 + 1, instanceMatrix2);
     });
     this.bondMesh.instanceMatrix.needsUpdate = true;
   }
