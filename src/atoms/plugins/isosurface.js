@@ -3,7 +3,7 @@ import { marchingCubes } from "../../geometry/marchingCubes.js";
 import { clearObject } from "../../utils.js";
 
 class Setting {
-  constructor({ isovalue = null, color = "#3d82ed", mode = 0, step_size = 1 }) {
+  constructor({ isovalue = null, color = "#3d82ed", mode = 1, step_size = 1 }) {
     /* The setting of isosurface
     isovalue: The value to search for the isosurface. If isovalue is not set,
               the average value of the min and max values is used.
@@ -26,10 +26,10 @@ export class Isosurface {
   constructor(viewer) {
     this.viewer = viewer;
     this.scene = viewer.tjs.scene;
-    this.settings = [];
+    this.settings = {};
     this.volumetricData = null;
     this.guiFolder = null;
-    this.meshes = [];
+    this.meshes = {};
   }
 
   createGui() {
@@ -50,24 +50,24 @@ export class Isosurface {
     /* Reset the isosurface */
     this.removeGui();
     this.clearIossurfaces();
-    this.settings = [];
+    this.settings = {};
     this.volumetricData = null;
   }
   fromSettings(settings) {
     /* Set the isosurface settings */
     // clear
-    this.settings = [];
+    this.settings = {};
     // remove gui folder and create a new one
     this.removeGui();
     this.createGui();
     this.clearIossurfaces();
     // loop over settings to add each setting
-    settings.forEach((setting) => {
-      this.addSetting(setting);
+    Object.entries(settings).forEach(([name, setting]) => {
+      this.addSetting(name, setting);
     });
   }
 
-  addSetting({ isovalue = null, color = "#3d82ed", mode = 0, step_size = 1 }) {
+  addSetting(name, { isovalue = null, color = "#3d82ed", mode = 1, step_size = 1 }) {
     /* Add a new setting to the isosurface */
     // if isoValue is not set, use the average value if the volumetric data is set
     if (isovalue === null) {
@@ -81,17 +81,21 @@ export class Isosurface {
       }
     }
     const setting = new Setting({ isovalue, color, mode, step_size });
-    this.settings.push(setting);
+    // if name is not set, use the length of the settings
+    if (name === undefined) {
+      name = "iso-" + Object.keys(this.settings).length;
+    }
+    this.settings[name] = setting;
     // create the gui if it is not exist
     this.createGui();
-    const isoFolder = this.guiFolder.addFolder("iso" + this.settings.length);
+    const isoFolder = this.guiFolder.addFolder(name);
     isoFolder.add(setting, "isovalue", -1, 1).name("Level").onChange(this.drawIsosurfaces.bind(this));
     isoFolder.addColor(setting, "color").name("Color").onChange(this.drawIsosurfaces.bind(this));
   }
 
   clearIossurfaces() {
     /* Remove highlighted atom meshes from the selectedAtomsMesh group */
-    this.meshes.forEach((mesh) => {
+    Object.values(this.meshes).forEach((mesh) => {
       clearObject(this.scene, mesh);
     });
   }
@@ -115,7 +119,7 @@ export class Isosurface {
       [cell[2][0] / dims[2], cell[2][1] / dims[2], cell[2][2] / dims[2]],
     ];
 
-    this.settings.forEach((setting) => {
+    Object.entries(this.settings).forEach(([name, setting]) => {
       // Generate isosurface geometry
       this.viewer.logger.debug("setting: ", setting);
       let isovalues;
@@ -176,7 +180,7 @@ export class Isosurface {
 
         // Add mesh to the scene
         this.scene.add(mesh);
-        this.meshes.push(mesh);
+        this.meshes[name] = mesh;
       }
     });
     // call the render function to update the scene

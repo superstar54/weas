@@ -28,14 +28,16 @@ export class VectorField {
 
   set show(value) {
     this._show = value;
-    this.meshes.forEach((mesh) => {
-      mesh.visible = value;
+    Object.values(this.meshes).forEach((data) => {
+      data.forEach((mesh) => {
+        mesh.visible = value;
+      });
     });
   }
 
   init() {
-    this.settings = [];
-    this.meshes = [];
+    this.settings = {};
+    this.meshes = {};
     this.viewer.logger.debug("init VectorField");
     // addMagneticMoments
     // generate vectors for the each atom
@@ -62,8 +64,8 @@ export class VectorField {
         vectors2.push(vector);
       }
     }
-    this.addSetting({ origins: origins1, vectors: vectors1, color: "#3d82ed" });
-    this.addSetting({ origins: origins2, vectors: vectors2, color: "#ff0000" });
+    this.addSetting("up", { origins: origins1, vectors: vectors1, color: "#3d82ed" });
+    this.addSetting("down", { origins: origins2, vectors: vectors2, color: "#ff0000" });
   }
 
   fromSettings(settings) {
@@ -71,13 +73,13 @@ export class VectorField {
     this.settings = [];
     this.clearMeshes();
     // loop over settings to add each setting
-    settings.forEach((setting) => {
-      this.addSetting(setting);
+    Object.entries(settings).forEach(([name, setting]) => {
+      this.addSetting(name, setting);
     });
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting({ origins, vectors, color = "#3d82ed", radius = 0.05, centerOnAtoms = false }) {
+  addSetting(name, { origins, vectors, color = "#3d82ed", radius = 0.05, centerOnAtoms = false }) {
     /* Add a new setting to the vectorfield */
     if (typeof origins === "string") {
       if (!this.viewer.atoms.getAttribute(origins)) {
@@ -85,23 +87,29 @@ export class VectorField {
       }
     }
     const setting = new Setting({ origins, vectors, color, radius, centerOnAtoms });
-    this.settings.push(setting);
+    // if name is not set, use the length of the settings
+    if (name === undefined) {
+      name = "vf-" + Object.keys(this.settings).length;
+    }
+    this.settings[name] = setting;
   }
 
   clearMeshes() {
     /* Remove highlighted atom meshes from the selectedAtomsMesh group */
-    this.meshes.forEach((mesh) => {
-      clearObject(this.scene, mesh);
+    Object.values(this.meshes).forEach((data) => {
+      data.forEach((mesh) => {
+        clearObject(this.scene, mesh);
+      });
     });
-    this.meshes = [];
+    this.meshes = {};
   }
 
   drawVectorFields(showVectorField = true) {
     /* Draw vectorfields */
     this.viewer.logger.debug("drawVectorFields");
     this.clearMeshes();
-    // console.log("this.settings: ", this.settings);
-    this.settings.forEach((setting) => {
+    // loop over settings by key and value
+    Object.entries(this.settings).forEach(([name, setting]) => {
       // Generate vectorfield geometry
       // if origin and vector are string, which means they are from atoms attributes
       let origins;
@@ -122,8 +130,7 @@ export class VectorField {
       // Add mesh to the scene
       this.scene.add(shaftMesh);
       this.scene.add(headMesh);
-      this.meshes.push(shaftMesh);
-      this.meshes.push(headMesh);
+      this.meshes[name] = [shaftMesh, headMesh];
       shaftMesh.visible = this.show;
       headMesh.visible = this.show;
     });
@@ -147,15 +154,14 @@ export class VectorField {
     }
     // console.log("atomIndices: ", atomIndices);
     // loop all settings with index
-    for (let i = 0; i < this.settings.length; i++) {
-      const setting = this.settings[i];
+    Object.entries(this.settings).forEach(([name, setting]) => {
       if (typeof setting.origins !== "string") {
-        continue;
+        return;
       }
       const origins = atoms.getAttribute(setting.origins);
       const vectors = atoms.getAttribute(setting.vectors);
-      const shaftMesh = this.meshes[i * 2];
-      const headMesh = this.meshes[i * 2 + 1];
+      const shaftMesh = this.meshes[name][0];
+      const headMesh = this.meshes[name][1];
       atomIndices.forEach((i) => {
         const position1 = new THREE.Vector3(...origins[i]);
         const position2 = position1.clone().add(new THREE.Vector3(...vectors[i]));
@@ -169,7 +175,7 @@ export class VectorField {
       });
       shaftMesh.instanceMatrix.needsUpdate = true;
       headMesh.instanceMatrix.needsUpdate = true;
-    }
+    });
   }
 }
 

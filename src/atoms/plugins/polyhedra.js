@@ -135,7 +135,20 @@ export function drawPolyhedras(atoms, polyhedras, bondList, colorType = "CPK", m
     }
     // console.log("vertices: ", vertices);
 
-    const geometry = new ConvexGeometry(vertices);
+    // Skip the polyhedron if vertices are not sufficient for ConvexGeometry
+    if (vertices.length < 4) {
+      console.warn(`Skipping polyhedron with key "${key}" due to insufficient vertices.`);
+      continue;
+    }
+
+    let geometry;
+    try {
+      geometry = new ConvexGeometry(vertices);
+    } catch (error) {
+      console.warn(`Skipping polyhedron with key "${key}" due to ConvexGeometry error:`, error);
+      continue;
+    }
+    // Set up color and material for the polyhedron
     const symbol = atoms.symbols[polyhedra.atomIndex];
     const color = elementColors[colorType][symbol] || defaultColor;
 

@@ -3,14 +3,24 @@ import { calculateCartesianCoordinates, calculateQuaternion } from "../../utils.
 import { materials } from "../../tools/materials.js";
 import { elementsWithPolyhedra, covalentRadii, elementColors } from "../atoms_data.js";
 
+// convert color to THREE.Color, the color can be a string or an array
+function convertColor(color) {
+  if (Array.isArray(color)) {
+    color = new THREE.Color(...color);
+  } else {
+    color = new THREE.Color(color);
+  }
+  return color;
+}
+
 class Setting {
   constructor({ species1, species2, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", radius = 0.1, order = 1 }) {
     this.species1 = species1;
     this.species2 = species2;
     this.min = min;
     this.max = max;
-    this.color1 = color1;
-    this.color2 = color2;
+    this.color1 = convertColor(color1);
+    this.color2 = convertColor(color2);
     this.radius = radius;
     this.order = order;
   }
@@ -76,7 +86,7 @@ export class BondManager {
     this.settings = {};
     this.clearMeshes();
     // loop over settings to add each setting
-    settings.forEach((setting) => {
+    Object.values(settings).forEach((setting) => {
       this.addSetting(setting);
     });
   }
@@ -127,8 +137,14 @@ export class BondManager {
     // I don't add bonded atoms to offsets, because the bondlist will add them through the bondedAtoms["bonds"]
     // this.viewer.logger.debug("offsets: ", offsets);
     this.bondList = buildBonds(this.viewer.originalAtoms, offsets, this.viewer.neighbors["map"], this.viewer._boundary, this.viewer.modelSticks);
-    // merge the bondList and the bondedAtoms["bonds"]
-    this.bondList = this.bondList.concat(this.viewer.bondedAtoms["bonds"]);
+    // loop the bondedAtoms["bonds"] and add the bonds to the bondList
+    this.viewer.bondedAtoms["bonds"].forEach((bond) => {
+      // if key not in the settings, skip
+      const key = this.viewer.originalAtoms.symbols[bond[0]] + "-" + this.viewer.originalAtoms.symbols[bond[1]];
+      if (this.viewer.cutoffs[key]) {
+        this.bondList.push(bond);
+      }
+    });
     if (this.viewer.debug) {
       this.viewer.logger.debug("bondList: ", this.bondList);
     }
@@ -222,7 +238,7 @@ export function drawStick(atoms, bondList, settings, radius = 0.1, materialType 
     // Setting color for each material
     const key = atoms.species[atoms.symbols[index1]].symbol + "-" + atoms.species[atoms.symbols[index2]].symbol;
     // if atomColors is not null, use the atomColors, otherwise use the settings
-    const color1 = atomColors ? atomColors[index1] : new THREE.Color(settings[key].color1);
+    const color1 = atomColors ? atomColors[index1] : settings[key].color1;
     const midpoint = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
     const quaternion = calculateQuaternion(position1, position2);
     const scale = calculateScale(position1, position2, radius);

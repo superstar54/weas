@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { clearObject } from "../../utils.js";
 import { createLabel } from "../../utils.js";
 
 class Setting {
@@ -22,56 +23,55 @@ export class Measurement {
   constructor(viewer) {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
-    this.settings = [];
-    this.meshes = [];
+    this.settings = {};
+    this.meshes = {};
   }
 
   reset() {
     /* Reset the measurements */
-    this.settings = [];
-    this.meshes.forEach((mesh) => {
-      this.scene.remove(mesh);
+    this.settings = {};
+    Object.entries(this.meshes).forEach(([name, data]) => {
+      console.log(name, data);
+      data.forEach((mesh) => {
+        console.log(mesh);
+        this.scene.remove(mesh);
+      });
     });
-    this.meshes = [];
+    // this.meshes = {};
   }
 
   measure(indices = null) {
     /* Measures the distance, angle, or dihedral angle between atoms.*/
 
     if (indices.length === 0) {
-      // Clear the previous measurements
-      this.meshes.forEach((mesh) => {
-        this.scene.remove(mesh);
-      });
-      this.settings = [];
-      this.meshes = [];
+      this.reset();
     } else {
-      this.settings.push(new Setting({ indices: indices }));
+      name = `measurement-${Object.keys(this.settings).length}`;
+      const setting = new Setting({ indices });
+      this.settings[name] = setting;
+      this.drawMeasurement(setting);
     }
-    this.drawMeasurements();
   }
 
-  drawMeasurements() {
+  drawMeasurement(setting) {
     /* Draw the measurements */
-    this.settings.forEach((setting) => {
-      const indices = setting.indices;
-      if (indices.length === 1) {
-        this.showPosition(indices);
-      } else if (indices.length === 2) {
-        this.showDistance(indices);
-      } else if (indices.length === 3) {
-        this.showAngle(indices);
-      } else if (indices.length === 4) {
-        this.showDihedralAngle(indices);
-      } else {
-        console.log("Invalid number of atoms for measurement");
-      }
-    });
+    const indices = setting.indices;
+    if (indices.length === 1) {
+      this.showPosition(name, indices);
+    } else if (indices.length === 2) {
+      this.showDistance(name, indices);
+    } else if (indices.length === 3) {
+      this.showAngle(name, indices);
+    } else if (indices.length === 4) {
+      this.showDihedralAngle(name, indices);
+    } else {
+      console.log("Invalid number of atoms for measurement");
+    }
     // call the render function to update the scene
     this.viewer.tjs.render();
   }
 
-  showPosition(indices) {
+  showPosition(name, indices) {
     const atomIndex = indices[0];
     const position = this.viewer.atoms.positions[atomIndex];
     const symbol = this.viewer.atoms.symbols[atomIndex];
@@ -81,9 +81,9 @@ export class Measurement {
     // lable shift by 1.0 in x direction
     const label = createLabel(new THREE.Vector3(...position).add(new THREE.Vector3(1, 0, 0)), text, "black", "18px");
     this.scene.add(label);
-    this.meshes.push(label);
+    this.meshes[name] = [label];
   }
-  showDistance(indices) {
+  showDistance(name, indices) {
     const position1 = new THREE.Vector3(...this.viewer.atoms.positions[indices[0]]);
     const position2 = new THREE.Vector3(...this.viewer.atoms.positions[indices[1]]);
     const distance = position1.distanceTo(position2);
@@ -93,13 +93,12 @@ export class Measurement {
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const line = new THREE.LineSegments(geometry, material);
     this.scene.add(line);
-    this.meshes.push(line);
     // add distance to the line
     const label = createLabel(position1.add(position2).multiplyScalar(0.5), distance.toFixed(3), "black", "18px");
     this.scene.add(label);
-    this.meshes.push(label);
+    this.meshes[name] = [line, label];
   }
-  showAngle(indices) {
+  showAngle(name, indices) {
     const position1 = new THREE.Vector3(...this.viewer.atoms.positions[indices[0]]);
     const position2 = new THREE.Vector3(...this.viewer.atoms.positions[indices[1]]);
     const position3 = new THREE.Vector3(...this.viewer.atoms.positions[indices[2]]);
@@ -111,18 +110,16 @@ export class Measurement {
     const geometry = new THREE.BufferGeometry().setFromPoints([position1, position2]);
     const line1 = new THREE.LineSegments(geometry, material);
     this.scene.add(line1);
-    this.meshes.push(line1);
     const geometry2 = new THREE.BufferGeometry().setFromPoints([position2, position3]);
     const line2 = new THREE.LineSegments(geometry2, material);
     this.scene.add(line2);
-    this.meshes.push(line2);
     // add angle to the angle
     const position = position2.add(vector1.add(vector2).multiplyScalar(0.3));
     const label = createLabel(position, angle.toFixed(3), "black", "18px");
     this.scene.add(label);
-    this.meshes.push(label);
+    this.meshes[name] = [line1, line2, label];
   }
-  showDihedralAngle(indices) {
+  showDihedralAngle(name, indices) {
     const position1 = new THREE.Vector3(...this.viewer.atoms.positions[indices[0]]);
     const position2 = new THREE.Vector3(...this.viewer.atoms.positions[indices[1]]);
     const position3 = new THREE.Vector3(...this.viewer.atoms.positions[indices[2]]);
@@ -152,10 +149,9 @@ export class Measurement {
     });
     const mesh = new THREE.Mesh(geometry, material);
     this.scene.add(mesh);
-    this.meshes.push(mesh);
     const position = position2.add(position3).multiplyScalar(0.3).sub(normal1.add(normal2).multiplyScalar(0.3));
     const label = createLabel(position, angle.toFixed(3), "black", "18px");
     this.scene.add(label);
-    this.meshes.push(label);
+    this.meshes[name] = [mesh, label];
   }
 }
