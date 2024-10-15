@@ -53,13 +53,13 @@ jobs:
           path: playwright-report/
           retention-days: 30
       # Commit the changes to the pull request branch
-      # - name: Run Playwright tests with snapshot update
-      #   if: failure()
-      #   run: npx playwright test --update-snapshots
-      # - uses: stefanzweifel/git-auto-commit-action@v4
-      #   if: failure()
-      #   with:
-      #     commit_message: "[CI] Update Snapshots"
+      - name: Run Playwright tests with snapshot update
+        if: failure()
+        run: npx playwright test --update-snapshots
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        if: failure()
+        with:
+          commit_message: "[CI] Update Snapshots"
 
   unit-tests:
     runs-on: ubuntu-22.04
