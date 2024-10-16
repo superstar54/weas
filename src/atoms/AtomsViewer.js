@@ -5,7 +5,6 @@ import { BondManager, searchBondedAtoms } from "./plugins/bond.js";
 import { clearObjects, clearObject } from "../utils.js";
 import { PolyhedraManager } from "./plugins/polyhedra.js";
 import { BoundaryManager } from "./plugins/boundary.js";
-import { findNeighbors } from "./neighbor.js";
 import { AtomLabelManager } from "./plugins/atomLabel.js";
 import { Atom, Atoms } from "./atoms.js";
 import { Isosurface } from "./plugins/isosurface.js";
@@ -483,10 +482,7 @@ class AtomsViewer {
     this.dispose();
     this.cellManager.draw();
     // Map the symbols to their radii
-    this.cutoffs = this.bondManager.buildBondDict();
-    // find neighbor atoms in the original cell
-    this.neighbors = findNeighbors(this.originalAtoms, this.cutoffs);
-    this.logger.debug("neighbors: ", this.neighbors);
+    this.bondManager.buildNeighborList();
     this.boundaryManager.getBoundaryAtoms();
     // search atoms bonded to atoms, which includes the boundary atoms and the orginal atoms
     const atomsList = this.atoms.positions.map((_, index) => [index, [0, 0, 0]]);

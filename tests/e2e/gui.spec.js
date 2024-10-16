@@ -54,7 +54,10 @@ test("ColorBy", async ({ page }) => {
   // color by species
   await page.evaluate(() => {
     window.editor.avr.colorBy = "Element";
-    window.editor.avr.atoms.newAttribute("color", { C: "##eb4034", H: "#b434eb", O: "#34eb77", S: "#FFFF00" }, "species");
+    window.editor.avr.atomManager.settings["C"].color = "##eb4034";
+    window.editor.avr.atomManager.settings["H"].color = "#b434eb";
+    window.editor.avr.atomManager.settings["O"].color = "#34eb77";
+    window.editor.avr.atomManager.settings["S"].color = "#FFFF00";
     window.editor.avr.drawModels();
   });
   await expect(page).toHaveScreenshot("Color-species.png");
