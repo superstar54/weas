@@ -28,8 +28,10 @@ Use can set custom color for each species. The color can be in the form of hex c
 
 .. code-block:: javascript
 
-
-    weas.avr.set_attribute("color", {C: "red", H: "#b434eb", O: "#34eb77", S: "#FFFF00" }, "species")
+    weas.avr.atomManager.settings["C"].color = "red";
+    weas.avr.atomManager.settings["H"].color = "#b434eb";
+    weas.avr.atomManager.settings["O"].color = "#34eb77";
+    weas.avr.atomManager.settings["S"].color = "#FFFF00";
     weas.avr.drawModels()
 
 
