@@ -1685,3 +1685,5 @@ export const default_bond_pairs = {
   "Zr-As": [1, 1, 0],
   "Zr-H": [1, 1, 0],
 };
+
+export const radiiData = { Covalent: covalentRadii, VDW: vdwRadii };

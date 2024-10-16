@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 export const generatePhononTrajectory = (atoms, eigenvectors, amplitude, nframes) => {
   const trajectory = [];
   const times = Array.from({ length: nframes }, (_, i) => 2 * Math.PI * (i / nframes));
@@ -12,3 +14,13 @@ export const generatePhononTrajectory = (atoms, eigenvectors, amplitude, nframes
   });
   return trajectory;
 };
+
+// convert color to THREE.Color, the color can be a string or an array
+export function convertColor(color) {
+  if (Array.isArray(color)) {
+    color = new THREE.Color(...color);
+  } else {
+    color = new THREE.Color(color);
+  }
+  return color;
+}

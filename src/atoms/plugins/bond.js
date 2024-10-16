@@ -2,16 +2,7 @@ import * as THREE from "three";
 import { calculateCartesianCoordinates, calculateQuaternion } from "../../utils.js";
 import { materials } from "../../tools/materials.js";
 import { elementsWithPolyhedra, covalentRadii, elementColors, default_bond_pairs } from "../atoms_data.js";
-
-// convert color to THREE.Color, the color can be a string or an array
-function convertColor(color) {
-  if (Array.isArray(color)) {
-    color = new THREE.Color(...color);
-  } else {
-    color = new THREE.Color(color);
-  }
-  return color;
-}
+import { convertColor } from "../utils.js";
 
 class Setting {
   constructor({ species1, species2, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", radius = 0.1, order = 1 }) {

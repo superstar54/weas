@@ -1,17 +1,16 @@
 import * as THREE from "three";
 import { CellManager } from "./cell.js";
+import { AtomManager, drawAtoms } from "./plugins/atom.js";
 import { BondManager, searchBondedAtoms } from "./plugins/bond.js";
-import { drawAtoms } from "./draw_atoms.js";
-import { clearObjects, clearObject, calculateCartesianCoordinates } from "../utils.js";
+import { clearObjects, clearObject } from "../utils.js";
 import { PolyhedraManager } from "./plugins/polyhedra.js";
-import { getImageAtoms, searchBoundary, createBoundaryMapping } from "./boundary.js";
+import { BoundaryManager } from "./plugins/boundary.js";
 import { findNeighbors } from "./neighbor.js";
 import { AtomLabelManager } from "./plugins/atomLabel.js";
 import { Atom, Atoms } from "./atoms.js";
 import { Isosurface } from "./plugins/isosurface.js";
 import { VectorField } from "./plugins/vectorField.js";
 import { Measurement } from "./plugins/measurement.js";
-import { getAtomColors } from "./color.js";
 import { AtomsGUI } from "./atomsGui.js";
 import { defaultViewerSettings } from "../config.js";
 import { Phonon } from "./plugins/phonon.js";
@@ -51,6 +50,8 @@ class AtomsViewer {
     this.cellManager = new CellManager(this);
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui);
     this.bondManager = new BondManager(this, viewerSettings._hideLongBonds);
+    this.boundaryManager = new BoundaryManager(this);
+    this.atomManager = new AtomManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
     this.isosurfaceManager = new Isosurface(this);
     this.ALManager = new AtomLabelManager(this);
@@ -117,24 +118,14 @@ class AtomsViewer {
       return;
     }
     const atoms = this.trajectory[frameIndex % this.trajectory.length];
-    var matrix = new THREE.Matrix4();
-    for (let i = 0; i < atoms.positions.length; i++) {
-      this.atomsMesh.getMatrixAt(i, matrix);
-      matrix.setPosition(new THREE.Vector3(...atoms.positions[i]));
-      this.atomsMesh.setMatrixAt(i, matrix);
-      this.updateBoundaryAtomsMesh(i);
-    }
-    this.atomsMesh.instanceMatrix.needsUpdate = true;
     this.guiManager.timeline.value = frameIndex;
     this.guiManager.currentFrameDisplay.textContent = frameIndex;
+    // update the atoms
+    this.atomManager.updateAtomMesh(null, atoms);
     // update the bonds
     this.bondManager.updateBondMesh(null, atoms);
     // update vector fields related to the atoms attribute
     this.VFManager.updateArrowMesh(null, atoms);
-    // if boundaryAtomsMesh has instanceMatrix, update it
-    if (this.boundaryAtomsMesh) {
-      this.boundaryAtomsMesh.instanceMatrix.needsUpdate = true;
-    }
     // update cell
     this.cellManager.cell = this.atoms.cell;
     this.cellManager.draw();
@@ -202,6 +193,7 @@ class AtomsViewer {
     this.cellManager.cell = this.atoms.cell;
     // initialize the bond settings
     // the following plugins read the atoms attribute, so they need to be updated
+    this.atomManager.init();
     this.bondManager.init();
     this.polyhedraManager.init();
     this.VFManager.init();
@@ -314,6 +306,7 @@ class AtomsViewer {
       this.guiManager.radiusTypeController.setValue(newValue); // Update the GUI
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ radiusType: newValue });
+    this.atomManager.init();
     this.bondManager.init();
     this.polyhedraManager.init();
   }
@@ -330,6 +323,7 @@ class AtomsViewer {
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ colorBy: newValue });
     // update the bondManager settings
+    this.atomManager.init();
     this.bondManager.init();
     this.polyhedraManager.init();
   }
@@ -346,6 +340,7 @@ class AtomsViewer {
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ colorType: newValue });
     // update the bondManager settings
+    this.atomManager.init();
     this.bondManager.init();
     this.polyhedraManager.init();
   }
@@ -492,11 +487,7 @@ class AtomsViewer {
     // find neighbor atoms in the original cell
     this.neighbors = findNeighbors(this.originalAtoms, this.cutoffs);
     this.logger.debug("neighbors: ", this.neighbors);
-    // search boundary atoms
-    this.boundaryList = searchBoundary(this.atoms, this._boundary);
-    this.logger.debug("boundaryList: ", this.boundaryList);
-    this.boundaryMap = createBoundaryMapping(this.boundaryList);
-    this.logger.debug("boundaryMap: ", this.boundaryMap);
+    this.boundaryManager.getBoundaryAtoms();
     // search atoms bonded to atoms, which includes the boundary atoms and the orginal atoms
     const atomsList = this.atoms.positions.map((_, index) => [index, [0, 0, 0]]);
     // merge the atomsList and boundaryList
@@ -509,49 +500,17 @@ class AtomsViewer {
     }
 
     this.logger.debug("bondedAtoms: ", this.bondedAtoms);
-    this.atomColors = getAtomColors(this.atoms, this.colorBy, { colorType: this.colorType, colorRamp: this._colorRamp });
-    this.drawBalls();
+    this.atomManager.meshes["atom"] = this.atomManager.drawBalls();
     const bondMesh = this.bondManager.drawBonds();
-    this.atomsMesh.add(bondMesh);
+    this.atomManager.meshes["atom"].add(bondMesh);
     const polyhedraMesh = this.polyhedraManager.drawPolyhedras();
-    this.atomsMesh.add(polyhedraMesh);
+    this.atomManager.meshes["atom"].add(polyhedraMesh);
     this.isosurfaceManager.drawIsosurfaces();
     this.VFManager.drawVectorFields();
     this.drawHighlightAtoms();
     this.ALManager.drawAtomLabels();
     this.ready = true;
     this.weas.tjs.render();
-  }
-
-  drawBalls() {
-    // draw atoms
-    this.atomsMesh = drawAtoms({ scene: this.tjs.scene, atoms: this.atoms, atomScales: this.atomScales, colors: this.atomColors, radiusType: this.radiusType, materialType: this._materialType });
-    this.tjs.scene.add(this.atomsMesh);
-    // atoms to be drawn, boundary atoms, and the bonded atoms
-    // merge the boundaryList and the bondedAtoms
-    this.imageAtomsList = this.bondedAtoms["atoms"].concat(this.boundaryList);
-    // if boundaryList length > 0, draw boundary atoms
-    if (this.imageAtomsList.length > 0) {
-      // draw boundary atoms
-      const imageAtomsList = getImageAtoms(this.atoms, this.imageAtomsList);
-      // get the models, the indices and scales should read from this.atomScales
-      let atomScales = new Array(imageAtomsList.getAtomsCount()).fill(1);
-      // update the models indices and scales
-      for (let i = 0; i < imageAtomsList.getAtomsCount(); i++) {
-        atomScales[i] = this.atomScales[this.imageAtomsList[i][0]];
-      }
-      const atomColors = getAtomColors(imageAtomsList, this.colorBy, { colorType: this.colorType, defaultColor: "#0xffffff", colorRamp: this._colorRamp });
-      this.boundaryAtomsMesh = drawAtoms({
-        scene: this.tjs.scene,
-        atoms: imageAtomsList,
-        atomScales: atomScales,
-        colors: atomColors,
-        radiusType: this.radiusType,
-        materialType: this._materialType,
-        data_type: "boundary",
-      });
-      this.atomsMesh.add(this.boundaryAtomsMesh);
-    }
   }
 
   drawHighlightAtoms() {
@@ -563,12 +522,13 @@ class AtomsViewer {
       scene: this.tjs.scene,
       atoms: this.atoms,
       atomScales: atomScales,
+      settings: {},
       colors: atomColors,
       radiusType: this.radiusType,
       materialType: "Basic",
       data_type: "highlight",
     });
-    this.atomsMesh.add(this.highlightAtomsMesh);
+    this.atomManager.meshes["atom"].add(this.highlightAtomsMesh);
     this.highlightAtomsMesh.material.opacity = 0.6;
     this.highlightAtomsMesh.layers.set(1); // Set the layer to 1 to make it not selectable
     this.updateHighlightAtomsMesh(this.selectedAtomsIndices);
@@ -588,11 +548,11 @@ class AtomsViewer {
     // Remove the selected atom mesh group
     // this.tjs.scene.remove(this.highlightAtomsMesh);
     // Remove the atom labels
-    if (this.atomsMesh) {
-      this.atomsMesh.dispose();
+    if (this.atomManager.meshes["atom"]) {
+      this.atomManager.meshes["atom"].dispose();
     }
-    if (this.boundaryAtomsMesh) {
-      this.boundaryAtomsMesh.dispose();
+    if (this.atomManager.meshes["boundary"]) {
+      this.atomManager.meshes["boundary"].dispose();
     }
     // Remove the unit cell
     clearObjects(this.tjs.scene, this.uuid);
@@ -679,12 +639,12 @@ class AtomsViewer {
   setAtomPosition(index, position) {
     // Update the atom position
     const matrix = new THREE.Matrix4();
-    this.atomsMesh.getMatrixAt(index, matrix);
+    this.atomManager.meshes["atom"].getMatrixAt(index, matrix);
     matrix.setPosition(position);
-    this.atomsMesh.setMatrixAt(index, matrix);
+    this.atomManager.meshes["atom"].setMatrixAt(index, matrix);
     this.atoms.positions[index] = [position.x, position.y, position.z];
     // update the other meshes
-    this.updateBoundaryAtomsMesh(index);
+    this.atomManager.updateBoundaryAtomsMesh(index);
     this.bondManager.updateBondMesh(index);
   }
 
@@ -701,7 +661,7 @@ class AtomsViewer {
       // Update the atom position
       this.setAtomPosition(atomIndex, initialPosition);
     });
-    this.atomsMesh.instanceMatrix.needsUpdate = true;
+    this.atomManager.meshes["atom"].instanceMatrix.needsUpdate = true;
   }
 
   translateSelectedAtoms(translateVector, indices = null) {
@@ -719,10 +679,10 @@ class AtomsViewer {
       this.setAtomPosition(atomIndex, newPosition);
     });
 
-    this.atomsMesh.instanceMatrix.needsUpdate = true;
+    this.atomManager.meshes["atom"].instanceMatrix.needsUpdate = true;
     // if boundaryAtomsMesh has instanceMatrix, update it
-    if (this.boundaryAtomsMesh) {
-      this.boundaryAtomsMesh.instanceMatrix.needsUpdate = true;
+    if (this.atomManager.meshes["boundary"]) {
+      this.atomManager.meshes["boundary"].instanceMatrix.needsUpdate = true;
     }
     if (this.bondManager.bondMesh) {
       this.bondManager.bondMesh.instanceMatrix.needsUpdate = true;
@@ -760,32 +720,10 @@ class AtomsViewer {
       this.setAtomPosition(atomIndex, newPosition);
     });
 
-    this.atomsMesh.instanceMatrix.needsUpdate = true;
+    this.atomManager.meshes["atom"].instanceMatrix.needsUpdate = true;
     // if boundaryAtomsMesh has instanceMatrix, update it
-    if (this.boundaryAtomsMesh) {
-      this.boundaryAtomsMesh.instanceMatrix.needsUpdate = true;
-    }
-  }
-
-  updateBoundaryAtomsMesh(atomIndex) {
-    /* When the atom is moved, the boundary atoms should be moved as well.
-     */
-    // this.logger.debug("this.boundaryList: ", this.boundaryList);
-    // this.logger.debug("updateBoundaryAtomsMesh: ", atomIndex);
-    // this.logger.debug("this.boundaryMap[atomIndex]:", this.boundaryMap[atomIndex]);
-    if (this.boundaryList.length > 0 && this.boundaryMap[atomIndex]) {
-      // this.logger.debug("updateBoundaryAtomsMesh: ", atomIndex);
-      const atomList = this.boundaryMap[atomIndex];
-      // loop all atomList and update the boundary atoms
-      atomList.forEach((atom) => {
-        const boundaryAtomIndex = atom.index;
-        const newPosition = this.atoms.positions[atomIndex].map((value, index) => value + calculateCartesianCoordinates(this.atoms.cell, atom.offset)[index]);
-        // Update the atom position
-        const matrix = new THREE.Matrix4();
-        this.boundaryAtomsMesh.getMatrixAt(boundaryAtomIndex, matrix);
-        matrix.setPosition(new THREE.Vector3(...newPosition));
-        this.boundaryAtomsMesh.setMatrixAt(boundaryAtomIndex, matrix);
-      });
+    if (this.atomManager.meshes["boundary"]) {
+      this.atomManager.meshes["boundary"].instanceMatrix.needsUpdate = true;
     }
   }
 
@@ -799,7 +737,7 @@ class AtomsViewer {
       indices.forEach((index) => {
         // Update the atom position
         const matrix = new THREE.Matrix4();
-        this.atomsMesh.getMatrixAt(index, matrix);
+        this.atomManager.meshes["atom"].getMatrixAt(index, matrix);
         // Decompose the original matrix into its components
         matrix.decompose(position, rotation, scale);
         // scale by factor

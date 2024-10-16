@@ -1,5 +1,80 @@
-import { Atoms } from "./atoms.js";
-import { calculateCartesianCoordinates } from "../utils.js";
+import { calculateCartesianCoordinates } from "../../utils.js";
+import { radiiData, elementColors } from "../atoms_data.js";
+import { Atoms } from "../atoms.js";
+
+class Setting {
+  constructor({ element, symbol, radius = 2.0, color = "#3d82ed" }) {
+    this.element = element;
+    this.symbol = symbol;
+    this.color = convertColor(color);
+    this.radius = radius;
+  }
+
+  toDict() {
+    return {
+      element: this.element,
+      symbol: this.symbol,
+      color: this.color,
+      radius: this.radius,
+    };
+  }
+}
+
+export class BoundaryManager {
+  constructor(viewer) {
+    this.viewer = viewer;
+    this.scene = this.viewer.tjs.scene;
+    this.settings = {};
+    this.meshes = {};
+    this.init();
+  }
+
+  init() {
+    /* Initialize the species settings from the viewer.atoms
+     */
+    this.viewer.logger.debug("init atom settings");
+    this.settings = {};
+    const speciesSet = new Set(this.viewer.originalAtoms.symbols);
+    const speciesList = Array.from(speciesSet);
+    for (let i = 0; i < speciesList.length; i++) {
+      const species = speciesList[i];
+      this.settings[species] = this.getDefaultSetting(species);
+    }
+  }
+
+  getDefaultSetting(species) {
+    /* Get the default bond setting for the species1 and species2 */
+    const color = elementColors[this.viewer.colorType][species];
+    const radius = radiiData[this.viewer.radiusType][species];
+    const setting = new Setting({ element: species, symbol: species, radius, color });
+    return setting;
+  }
+
+  fromSettings(settings) {
+    /* Set the bond settings */
+    this.settings = {};
+    this.clearMeshes();
+    // loop over settings to add each setting
+    Object.values(settings).forEach((setting) => {
+      this.addSetting(setting);
+    });
+  }
+
+  addSetting({ species1, species2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
+    /* Add a new setting to the bond */
+    const setting = new Setting({ species1, species2, radius, min, max, color1, color2, order });
+    const key = JSON.stringify([species1, species2]);
+    this.settings[key] = setting;
+  }
+
+  getBoundaryAtoms() {
+    // search boundary atoms
+    this.viewer.boundaryList = searchBoundary(this.viewer.atoms, this.viewer._boundary);
+    this.viewer.logger.debug("boundaryList: ", this.viewer.boundaryList);
+    this.viewer.boundaryMap = createBoundaryMapping(this.viewer.boundaryList);
+    this.viewer.logger.debug("boundaryMap: ", this.viewer.boundaryMap);
+  }
+}
 
 export function getImageAtoms(atoms, offsets) {
   // create a new atoms with the boundary atoms

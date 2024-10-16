@@ -1,6 +1,6 @@
 import { covalentRadii } from "./atoms_data.js";
 import { kdTree } from "../geometry/kdTree.js";
-import { searchBoundary } from "./boundary.js";
+import { searchBoundary } from "./plugins/boundary.js";
 import { calculateCartesianCoordinates } from "../utils.js";
 
 export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) {
