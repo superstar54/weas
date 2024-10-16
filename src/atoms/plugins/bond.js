@@ -50,32 +50,30 @@ export class BondManager {
     */
     this.viewer.logger.debug("init bond settings");
     this.settings = {};
-    const atoms = this.viewer.originalAtoms;
-    const symbols = atoms.symbols;
-    const speciesSet = new Set(symbols);
-    const speciesList = Array.from(speciesSet);
-    for (let i = 0; i < speciesList.length; i++) {
-      for (let j = 0; j < speciesList.length; j++) {
-        const species1 = speciesList[i];
-        const species2 = speciesList[j];
-        const key = JSON.stringify([species1, species2]);
-        const elementPair = species1 + "-" + species2;
+    Object.entries(this.viewer.originalAtoms.species).forEach(([symbol1, species1]) => {
+      Object.entries(this.viewer.originalAtoms.species).forEach(([symbol2, species2]) => {
+        const key = JSON.stringify([symbol1, symbol2]);
+        const elementPair = species1.element + "-" + species2.element;
         // if the elementPair is not in the default_bond_pairs, skip
         if (default_bond_pairs[elementPair] === undefined) {
-          continue;
+          return;
         }
         this.settings[key] = this.getDefaultSetting(species1, species2);
-      }
-    }
+      });
+    });
   }
 
   getDefaultSetting(species1, species2) {
     /* Get the default bond setting for the species1 and species2 */
-    const color1 = elementColors[this.viewer.colorType][species1];
-    const color2 = elementColors[this.viewer.colorType][species2];
+    const color1 = this.viewer.atomManager.settings[species1.symbol].color;
+    const color2 = this.viewer.atomManager.settings[species2.symbol].color;
+    const radius1 = this.viewer.atomManager.settings[species1.symbol].radius;
+    const radius2 = this.viewer.atomManager.settings[species2.symbol].radius;
     const min = 0.0;
-    const max = (covalentRadii[species1] + covalentRadii[species2]) * 1.1;
-    const setting = new Setting({ species1, species2, min, max, color1, color2 });
+    const max = (radius1 + radius2) * 1.1;
+    const symbol1 = species1.symbol;
+    const symbol2 = species2.symbol;
+    const setting = new Setting({ species1: symbol1, species2: symbol2, min, max, color1, color2 });
     return setting;
   }
 

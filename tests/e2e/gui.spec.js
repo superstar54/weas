@@ -453,7 +453,12 @@ test("Ops", async ({ page }) => {
   await expect(page).toHaveScreenshot("Ops-translate.png");
   // add atom
   await page.evaluate(() => {
-    window.editor.ops.atoms.AddAtomOperation({ symbol: "Pt" });
+    window.editor.ops.atoms.AddAtomOperation({ symbol: "Pt", position: { x: -1, y: 1, z: 1 } });
   });
-  await expect(page).toHaveScreenshot("Ops-translate.png");
+  await expect(page).toHaveScreenshot("Ops-add-atom.png");
+});
+
+test("Species", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testSpecies.html");
+  await expect(page).toHaveScreenshot("Species.png");
 });
