@@ -437,3 +437,23 @@ test("Cell", async ({ page }) => {
   });
   await expect(page).toHaveScreenshot("Cell-hide.png");
 });
+
+test("Ops", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testOps.html");
+  await expect(page).toHaveScreenshot("Ops-replace.png");
+  // invert selection
+  await page.evaluate(() => {
+    window.editor.ops.selection.InvertSelection();
+  });
+  await expect(page).toHaveScreenshot("Ops-invert-selection.png");
+  // translate
+  await page.evaluate(() => {
+    window.editor.ops.transform.TranslateOperation({ vector: [1, 0, 0] });
+  });
+  await expect(page).toHaveScreenshot("Ops-translate.png");
+  // add atom
+  await page.evaluate(() => {
+    window.editor.ops.atoms.AddAtomOperation({ symbol: "Pt" });
+  });
+  await expect(page).toHaveScreenshot("Ops-translate.png");
+});
