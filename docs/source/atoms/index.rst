@@ -8,6 +8,7 @@ Atoms
 
     atoms
     color
+    bond
     edit
     isosurface
     vector_field
