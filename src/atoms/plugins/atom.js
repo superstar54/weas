@@ -63,11 +63,17 @@ export class AtomManager {
 
   getDefaultSetting(species) {
     /* Get the default bond setting for the species1 and species2 */
-    const color = elementColors[this.viewer.colorType][species];
+    let color;
     let radius;
+    // if species has color attribute in the species domain, use it
+    if ("color" in this.viewer.atoms.attributes["species"]) {
+      color = this.viewer.atoms.attributes["species"]["color"][species] || "#3d82ed";
+    } else {
+      color = elementColors[this.viewer.colorType][species];
+    }
     // if atoms has radii attribute in the species domain, use it
     if ("radii" in this.viewer.atoms.attributes["species"]) {
-      radius = this.viewer.atoms.attributes["species"]["radii"][symbol] || 1;
+      radius = this.viewer.atoms.attributes["species"]["radii"][species] || 1;
     } else {
       radius = radiiData[this.viewer.radiusType][species] || 1;
     }
