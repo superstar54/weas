@@ -263,7 +263,7 @@ class Atoms {
     }
     const newAtoms = new Atoms();
     // Copy species object
-    newAtoms.species = JSON.parse(JSON.stringify(this.species));
+    newAtoms.species = { ...this.species };
 
     const [[ax, ay, az], [bx, by, bz], [cx, cy, cz]] = this.cell;
     newAtoms.setCell([ax * mx, ay * my, az * mz, bx * mx, by * my, bz * mz, cx * mx, cy * my, cz * mz]);

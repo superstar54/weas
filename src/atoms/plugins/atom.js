@@ -39,12 +39,10 @@ export class AtomManager {
      */
     this.viewer.logger.debug("init atom settings");
     this.settings = {};
-    const speciesSet = new Set(this.viewer.originalAtoms.symbols);
-    const speciesList = Array.from(speciesSet);
-    for (let i = 0; i < speciesList.length; i++) {
-      const species = speciesList[i];
-      this.settings[species] = this.getDefaultSetting(species);
-    }
+
+    Object.entries(this.viewer.originalAtoms.species).forEach(([symbol, species]) => {
+      this.settings[symbol] = this.getDefaultSetting(symbol, species.element);
+    });
     this.updateAtomColors();
   }
 
@@ -61,23 +59,23 @@ export class AtomManager {
     }
   }
 
-  getDefaultSetting(species) {
+  getDefaultSetting(symbol, element) {
     /* Get the default bond setting for the species1 and species2 */
     let color;
     let radius;
     // if species has color attribute in the species domain, use it
     if ("color" in this.viewer.atoms.attributes["species"]) {
-      color = this.viewer.atoms.attributes["species"]["color"][species] || "#3d82ed";
+      color = this.viewer.atoms.attributes["species"]["color"][symbol] || "#3d82ed";
     } else {
-      color = elementColors[this.viewer.colorType][species];
+      color = elementColors[this.viewer.colorType][element];
     }
     // if atoms has radii attribute in the species domain, use it
     if ("radii" in this.viewer.atoms.attributes["species"]) {
-      radius = this.viewer.atoms.attributes["species"]["radii"][species] || 1;
+      radius = this.viewer.atoms.attributes["species"]["radii"][symbol] || 1;
     } else {
-      radius = radiiData[this.viewer.radiusType][species] || 1;
+      radius = radiiData[this.viewer.radiusType][element] || 1;
     }
-    const setting = new Setting({ element: species, symbol: species, radius, color });
+    const setting = new Setting({ element: element, symbol: symbol, radius, color });
     return setting;
   }
 

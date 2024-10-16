@@ -583,6 +583,7 @@ class AtomsViewer {
     this.atoms.replaceAtoms(Array.from(indices), element);
 
     // Update the bond settings
+    this.atomManager.init();
     this.bondManager.init();
 
     // Update the visualization
@@ -603,6 +604,7 @@ class AtomsViewer {
     this.modelPolyhedras = this.modelPolyhedras.concat([0]);
 
     // update bond settings
+    this.atomManager.init();
     this.bondManager.init();
 
     // Update the visualization
