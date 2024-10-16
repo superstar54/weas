@@ -5,6 +5,7 @@ import { radiiData, elementColors } from "../atoms_data.js";
 import { getAtomColors } from "../color.js";
 import { getImageAtoms } from "./boundary.js";
 import { convertColor } from "../utils.js";
+import { clearObject } from "../../utils.js";
 
 class Setting {
   constructor({ element, symbol, radius = 2.0, color = "#3d82ed" }) {
@@ -84,11 +85,19 @@ export class AtomManager {
     });
   }
 
-  addSetting({ species1, species2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
+  addSetting({ element, symbol, radius = 2.0, color = "#3d82ed" }) {
     /* Add a new setting to the bond */
-    const setting = new Setting({ species1, species2, radius, min, max, color1, color2, order });
-    const key = JSON.stringify([species1, species2]);
-    this.settings[key] = setting;
+    const setting = new Setting({ element, symbol, radius, color });
+    this.settings[symbol] = setting;
+  }
+
+  clearMeshes() {
+    /* Remove highlighted atom meshes from the selectedAtomsMesh group */
+    Object.values(this.meshes).forEach((mesh) => {
+      console.log("mesh: ", mesh);
+      clearObject(this.scene, mesh);
+    });
+    this.meshes = {};
   }
 
   drawBalls() {
@@ -107,7 +116,6 @@ export class AtomManager {
     // merge the boundaryList and the bondedAtoms
     this.viewer.imageAtomsList = this.viewer.bondedAtoms["atoms"].concat(this.viewer.boundaryList);
     // if boundaryList length > 0, draw boundary atoms
-    let boundaryAtomsMesh;
     if (this.viewer.imageAtomsList.length > 0) {
       // draw boundary atoms
       const imageAtomsList = getImageAtoms(this.viewer.atoms, this.viewer.imageAtomsList);
@@ -123,7 +131,7 @@ export class AtomManager {
         const color = new THREE.Color(this.settings[symbol].color);
         atomColors.push(color);
       });
-      boundaryAtomsMesh = drawAtoms({
+      const boundaryAtomsMesh = drawAtoms({
         scene: this.scene,
         atoms: imageAtomsList,
         atomScales: atomScales,
@@ -133,9 +141,9 @@ export class AtomManager {
         data_type: "boundary",
       });
       atomsMesh.add(boundaryAtomsMesh);
+      this.meshes["boundary"] = boundaryAtomsMesh;
     }
     this.meshes["atom"] = atomsMesh;
-    this.meshes["boundary"] = boundaryAtomsMesh;
     return atomsMesh;
   }
   updateAtomMesh(atomIndex = null, atoms = null) {
