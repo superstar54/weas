@@ -13,6 +13,8 @@ class AtomsGUI {
       [0, 0],
     ]; // Initialize with default values
     this.addAtomsControl();
+    this.div = document.createElement("div");
+    this.viewer.tjs.containerElement.appendChild(this.div);
   }
 
   // update the GUI when setting a new atoms
@@ -186,7 +188,7 @@ class AtomsGUI {
 
   addTimeline() {
     // Check if timeline already exists
-    if (document.getElementById("animation-controls")) {
+    if (this.div.querySelector("#animation-controls")) {
       return; // Exit if timeline already added
     }
     // create a div to hold the timeline controls with id "animation-controls"
@@ -194,12 +196,12 @@ class AtomsGUI {
     animation_div.id = "animation-controls";
     animation_div.innerHTML =
       '<button id="play-pause-btn">Play</button><button id="reset-btn">Reset</button><input type="range" id="timeline" min="0" max="100" value="0"><span id="current-frame">0</span>';
-    this.viewer.tjs.containerElement.appendChild(animation_div);
+    this.div.appendChild(animation_div);
     //
-    this.playPauseBtn = document.getElementById("play-pause-btn");
-    this.resetBtn = document.getElementById("reset-btn");
-    this.timeline = document.getElementById("timeline");
-    this.currentFrameDisplay = document.getElementById("current-frame");
+    this.playPauseBtn = this.div.querySelector("#play-pause-btn");
+    this.resetBtn = this.div.querySelector("#reset-btn");
+    this.timeline = this.div.querySelector("#timeline");
+    this.currentFrameDisplay = this.div.querySelector("#current-frame");
 
     this.isPlaying = false;
     const maxFrame = 100; // Set this to the animation's total frames
@@ -223,7 +225,7 @@ class AtomsGUI {
   }
 
   removeTimeline() {
-    const animation_div = document.getElementById("animation-controls");
+    const animation_div = this.div.querySelector("#animation-controls");
     if (animation_div) {
       animation_div.remove();
     }
