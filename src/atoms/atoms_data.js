@@ -131,7 +131,7 @@ export const cpkColors = {
   Li: 0xcc80ff, // Lithium - Light Purple
   Be: 0xc2ff00, // Beryllium - Lime Green
   B: 0xffb5b5, // Boron - Light Salmon
-  C: 0x808080, // Carbon - Grey (not from CPK)
+  C: 0xc8c8c8, // Carbon - Grey
   N: 0x0000ff, // Nitrogen - Blue
   O: 0xff0000, // Oxygen - Red
   F: 0xff00ff, // Fluorine - Magenta

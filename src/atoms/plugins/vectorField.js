@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { clearObject, calculateQuaternion } from "../../utils.js";
 import { materials } from "../../tools/materials.js";
+import { convertColor } from "../utils.js";
 
 class Setting {
   constructor({ origins = [], vectors = [], color = "#3d82ed", radius = 0.05, centerOnAtoms = false }) {
@@ -8,7 +9,7 @@ class Setting {
 
     this.origins = origins;
     this.vectors = vectors;
-    this.color = color;
+    this.color = convertColor(color);
     this.radius = radius;
     this.centerOnAtoms = centerOnAtoms;
   }

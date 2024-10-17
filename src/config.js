@@ -2,7 +2,7 @@
 const defaultViewerSettings = {
   _modelStyle: 0, // Default viz type
   _colorBy: "Element", // Default color by
-  _colorType: "CPK",
+  _colorType: "JMOL",
   _colorRamp: ["red", "blue"],
   _radiusType: "Covalent",
   _materialType: "Standard",
