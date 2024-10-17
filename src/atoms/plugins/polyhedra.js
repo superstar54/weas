@@ -3,13 +3,14 @@ import { ConvexGeometry } from "three/examples/jsm/geometries/ConvexGeometry.js"
 import { elementColors, elementsWithPolyhedra } from "../atoms_data.js";
 import { clearObject, calculateCartesianCoordinates } from "../../utils.js";
 import { materials } from "../../tools/materials.js";
+import { convertColor } from "../utils.js";
 
 const defaultColor = 0xffffff;
 
 class Setting {
   constructor({ species, color = "#3d82ed", show_edge = false }) {
     this.species = species;
-    this.color = color;
+    this.color = convertColor(color);
     this.show_edge = show_edge;
   }
 

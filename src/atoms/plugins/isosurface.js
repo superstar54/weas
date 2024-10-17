@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { marchingCubes } from "../../geometry/marchingCubes.js";
 import { clearObject } from "../../utils.js";
+import { convertColor } from "../utils.js";
 
 class Setting {
   constructor({ isovalue = null, color = "#3d82ed", mode = 1, step_size = 1 }) {
@@ -16,7 +17,7 @@ class Setting {
                 Larger steps yield faster but coarser results.
     */
     this.isovalue = isovalue;
-    this.color = color;
+    this.color = convertColor(color);
     this.mode = mode;
     this.step_size = step_size;
   }
