@@ -150,7 +150,7 @@ export class TransformControls {
     // Store the initial positions of the selected atoms
     this.weas.avr.selectedAtomsIndices.forEach((atomIndex) => {
       const matrix = new THREE.Matrix4();
-      this.weas.avr.atomsMesh.getMatrixAt(atomIndex, matrix);
+      this.weas.avr.atomManager.meshes["atom"].getMatrixAt(atomIndex, matrix);
       const position = new THREE.Vector3();
       matrix.decompose(position, new THREE.Quaternion(), new THREE.Vector3());
       this.initialAtomPositions.set(atomIndex, position.clone());
