@@ -186,6 +186,41 @@ export class AtomManager {
       });
     }
   }
+  // Method to update the scale of atoms
+  updateAtomScale() {
+    let mesh = this.meshes["atom"];
+    this.updateMeshScale(mesh, this.viewer.atoms.symbols, this.viewer.atomScale);
+    // update the boundary atoms
+    mesh = this.meshes["boundary"];
+    if (mesh) {
+      const symbols = [];
+      for (let i = 0; i < this.viewer.boundaryList.length; i++) {
+        symbols.push(this.viewer.atoms.symbols[this.viewer.boundaryList[i][0]]);
+      }
+      this.updateMeshScale(mesh, symbols, this.viewer.atomScale);
+    }
+  }
+
+  updateMeshScale(mesh, symbols, atomScale) {
+    const position = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+
+    for (let i = 0; i < mesh.count; i++) {
+      const instanceMatrix = new THREE.Matrix4();
+      const radius = this.settings[symbols[i]].radius || 1;
+      mesh.getMatrixAt(i, instanceMatrix); // Get the original matrix of the instance
+      // Decompose the original matrix into its components
+      instanceMatrix.decompose(position, rotation, scale);
+      // Set the scale to the new value
+      scale.set(radius * atomScale, radius * atomScale, radius * atomScale);
+      console.log("scale: ", scale);
+      // Recompose the matrix with the new scale
+      instanceMatrix.compose(position, rotation, scale);
+      mesh.setMatrixAt(i, instanceMatrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
 }
 
 export function drawAtoms({ atoms, atomScales, settings, colors, materialType = "Standard", data_type = "atom" }) {

@@ -61,7 +61,7 @@ class AtomsGUI {
         this.viewer.drawModels();
       })
       .name("Material Type");
-    atomsFolder.add(this.viewer, "atomScale", 0.1, 2.0).onChange(this.updateAtomScale.bind(this)).name("Atom Scale");
+    atomsFolder.add(this.viewer, "atomScale", 0.1, 2.0).onChange(this.viewer.atomManager.updateAtomScale.bind(this.viewer.atomManager)).name("Atom Scale");
     // Add control to toggle the visibility of the unit cell
     this.showCellController = atomsFolder
       .add(this.viewer, "showCell")
@@ -229,44 +229,6 @@ class AtomsGUI {
     if (animation_div) {
       animation_div.remove();
     }
-  }
-
-  // Method to update the scale of atoms
-  updateAtomScale() {
-    const position = new THREE.Vector3();
-    const rotation = new THREE.Quaternion();
-    const scale = new THREE.Vector3();
-
-    let mesh = this.viewer.atomsMesh;
-    for (let i = 0; i < mesh.count; i++) {
-      const instanceMatrix = new THREE.Matrix4();
-      const radius = covalentRadii[this.viewer.atoms.symbols[i]] || 1;
-      mesh.getMatrixAt(i, instanceMatrix); // Get the original matrix of the instance
-      // Decompose the original matrix into its components
-      instanceMatrix.decompose(position, rotation, scale);
-      // Set the scale to the new value
-      scale.set(radius * this.viewer.atomScale, radius * this.viewer.atomScale, radius * this.viewer.atomScale);
-      // Recompose the matrix with the new scale
-      instanceMatrix.compose(position, rotation, scale);
-      mesh.setMatrixAt(i, instanceMatrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-    // update the boundary atoms
-    mesh = this.viewer.boundaryAtomsMesh;
-    for (let i = 0; i < mesh.count; i++) {
-      const instanceMatrix = new THREE.Matrix4();
-      const atomIndex = this.viewer.boundaryList[i][0];
-      const radius = covalentRadii[this.viewer.atoms.symbols[atomIndex]] || 1;
-      mesh.getMatrixAt(i, instanceMatrix); // Get the original matrix of the instance
-      // Decompose the original matrix into its components
-      instanceMatrix.decompose(position, rotation, scale);
-      // Set the scale to the new value
-      scale.set(radius * this.viewer.atomScale, radius * this.viewer.atomScale, radius * this.viewer.atomScale);
-      // Recompose the matrix with the new scale
-      instanceMatrix.compose(position, rotation, scale);
-      mesh.setMatrixAt(i, instanceMatrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
   }
 
   // Function to update boundary values

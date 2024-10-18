@@ -46,11 +46,11 @@ class AtomsViewer {
     this.frameDuration = 100; // Duration in milliseconds between frames
     // Initialize components
     // other plugins
+    this.atomManager = new AtomManager(this);
     this.cellManager = new CellManager(this);
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui);
     this.bondManager = new BondManager(this, viewerSettings._hideLongBonds);
     this.boundaryManager = new BoundaryManager(this);
-    this.atomManager = new AtomManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
     this.isosurfaceManager = new Isosurface(this);
     this.ALManager = new AtomLabelManager(this);

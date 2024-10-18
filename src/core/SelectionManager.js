@@ -140,8 +140,8 @@ export class SelectionManager {
 
     this.selectionBox.select();
     // add the selected atoms to the selectedAtomsIndices array
-    if (this.selectionBox.instances[this.weas.avr.atomsMesh.uuid]) {
-      const selectedAtomsIndicesFromBox = this.selectionBox.instances[this.weas.avr.atomsMesh.uuid];
+    if (this.selectionBox.instances[this.weas.avr.atomManager.meshes["atom"].uuid]) {
+      const selectedAtomsIndicesFromBox = this.selectionBox.instances[this.weas.avr.atomManager.meshes["atom"].uuid];
       // merge the selected atoms (array) from the box with the old selected atoms array as a new array
       // avoid duplicates, but keep order
       this.weas.avr.selectedAtomsIndices = [...new Set([...this.oldSelectedAtomsIndices, ...selectedAtomsIndicesFromBox])];
