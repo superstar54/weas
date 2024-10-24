@@ -462,3 +462,20 @@ test("Species", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testSpecies.html");
   await expect(page).toHaveScreenshot("Species.png");
 });
+
+test("Bond", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testBond.html");
+  await expect(page).toHaveScreenshot("Bond-frame-0.png");
+  // hydrogen bond
+  await page.evaluate(() => {
+    window.editor.avr.bondManager.showHydrogenBonds = true;
+    window.editor.avr.drawModels();
+  });
+  await expect(page).toHaveScreenshot("Bond-hydrogen-bond.png");
+  // bond settings
+  await page.evaluate(() => {
+    delete window.editor.avr.bondManager.settings["N-H"];
+    window.editor.avr.drawModels();
+  });
+  await expect(page).toHaveScreenshot("Bond-delete-bond-pair.png");
+});

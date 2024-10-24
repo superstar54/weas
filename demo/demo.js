@@ -192,7 +192,7 @@ async function updateAtoms(filename, fileContent = null) {
         nframes: 50,
         kpoint: kpoint,
         // repeat: [1, 1, 1],
-        repeat: [5, 5, 1],
+        repeat: [4, 4, 1],
         color: "#ff0000",
         radius: 0.1,
       });
