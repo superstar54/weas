@@ -58,12 +58,12 @@ export class BondManager {
     this.springBonds = [];
     Object.entries(this.viewer.originalAtoms.species).forEach(([symbol1, species1]) => {
       Object.entries(this.viewer.originalAtoms.species).forEach(([symbol2, species2]) => {
-        const key = species1.element + "-" + species2.element;
         const elementPair = species1.element + "-" + species2.element;
         // if the elementPair is not in the default_bond_pairs, skip
         if (default_bond_pairs[elementPair] === undefined) {
           return;
         }
+        const key = species1.symbol + "-" + species2.symbol;
         this.settings[key] = this.getDefaultSetting(species1, species2);
       });
     });
@@ -79,7 +79,7 @@ export class BondManager {
     let max = (radius1 + radius2) * 1.1;
     const symbol1 = species1.symbol;
     const symbol2 = species2.symbol;
-    const type = default_bond_pairs[symbol1 + "-" + symbol2][2];
+    const type = default_bond_pairs[species1.element + "-" + species2.element][2];
     // if type  is hydrogen bond, set the min as the max, and the max as the max + 1
     if (type === 1) {
       min = max + 0.4;

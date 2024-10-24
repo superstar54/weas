@@ -232,6 +232,24 @@ async function updateAtoms(filename, fileContent = null) {
       editor.anyMesh.fromSettings(data);
       editor.anyMesh.drawMesh();
       break;
+    case "species":
+      editor.clear();
+      filename = "c2h6so.xyz";
+      structureData = fileContent || (await fetchFile(filename));
+      atoms = parseXYZ(structureData);
+      atoms[0].addSpecies("C1", "C");
+      atoms[0].symbols[3] = "C1";
+      editor.avr.atoms = atoms;
+      // editor.avr.bondManager.settings[1].color1 = "blue";
+      // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
+      // editor.avr.colorType = "CPK";
+      editor.avr.modelStyle = 1;
+      editor.avr.atomManager.settings["C1"].color = "blue";
+      editor.avr.atomManager.settings["C1"].radius = 1.5;
+      editor.avr.bondManager.init();
+      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.avr.drawModels();
+      break;
   }
 }
 
