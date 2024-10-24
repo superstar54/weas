@@ -21,17 +21,14 @@
       let domElement = document.getElementById("viewer");
 
       // read atoms from file
-      const filename = "c2h6so.xyz";
+      const filename = "urea.cif";
       fetchFile(filename).then((fileContent) => {
-        const atoms = weas.parseXYZ(fileContent);
+        const atoms = weas.parseCIF(fileContent);
         let editor = new weas.WEAS({ domElement });
         editor.avr.atoms = atoms;
         editor.avr.modelStyle = 1;
-        editor.avr.bondManager.showHydrogenBonds = false;
         editor.avr.drawModels();
         editor.render();
-        editor.avr.selectedAtomsIndices = [0];
-        editor.ops.atoms.ReplaceOperation({ symbol: "N" });
         window.editor = editor;
       });
     </script>

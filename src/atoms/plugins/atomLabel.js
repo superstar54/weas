@@ -92,7 +92,7 @@ export class AtomLabelManager {
     if atomIndex is null, update all bonds
     if atoms is null, use this.viewer.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
     */
-    // console.log("updateBondMesh: ", atomIndex);
+    // console.log("updateBondStick: ", atomIndex);
   }
 }
 

@@ -73,9 +73,25 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.atoms = atomsList;
       // editor.avr.bondManager.settings[1].color1 = "blue";
       // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
-      editor.avr.colorType = "CPK";
+      // editor.avr.colorType = "CPK";
       editor.avr.modelStyle = 1;
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      break;
+    case "urea.cif":
+      editor.clear();
+      structureData = fileContent || (await fetchFile(filename));
+      atoms = parseCIF(structureData);
+      editor.avr.atoms = atoms;
+      editor.avr.showBondedAtoms = true;
+      editor.avr.modelStyle = 1;
+      editor.avr.boundary = [
+        [-0.01, 1.01],
+        [-0.01, 1.01],
+        [-0.01, 1.01],
+      ];
+      editor.avr.bondManager.showHydrogenBonds = true;
+      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.avr.drawModels();
       break;
     case "au.cif":
       editor.clear();
@@ -176,7 +192,7 @@ async function updateAtoms(filename, fileContent = null) {
         nframes: 50,
         kpoint: kpoint,
         // repeat: [1, 1, 1],
-        repeat: [5, 5, 1],
+        repeat: [4, 4, 1],
         color: "#ff0000",
         radius: 0.1,
       });
@@ -215,6 +231,24 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.guiManager.removeTimeline();
       editor.anyMesh.fromSettings(data);
       editor.anyMesh.drawMesh();
+      break;
+    case "species":
+      editor.clear();
+      filename = "c2h6so.xyz";
+      structureData = fileContent || (await fetchFile(filename));
+      atoms = parseXYZ(structureData);
+      atoms[0].addSpecies("C1", "C");
+      atoms[0].symbols[3] = "C1";
+      editor.avr.atoms = atoms;
+      // editor.avr.bondManager.settings[1].color1 = "blue";
+      // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
+      // editor.avr.colorType = "CPK";
+      editor.avr.modelStyle = 1;
+      editor.avr.atomManager.settings["C1"].color = "blue";
+      editor.avr.atomManager.settings["C1"].radius = 1.5;
+      editor.avr.bondManager.init();
+      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.avr.drawModels();
       break;
   }
 }
