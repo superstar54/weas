@@ -186,12 +186,12 @@ export class BondManager {
     };
   }
 
-  updateBondMesh(atomIndex = null, atoms = null) {
+  updateBondStick(atomIndex = null, atoms = null) {
     /* When the atom is moved, the bonds should be moved as well.
     if atomIndex is null, update all bonds
     if atoms is null, use this.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
     */
-    // this.viewer.logger.debug("updateBondMesh: ", atomIndex);
+    // this.viewer.logger.debug("updateBondStick: ", atomIndex);
     if (atoms === null) {
       atoms = this.viewer.originalAtoms;
     }
