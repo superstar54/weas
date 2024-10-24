@@ -63,7 +63,7 @@ export class BoundaryManager {
   addSetting({ species1, species2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
     /* Add a new setting to the bond */
     const setting = new Setting({ species1, species2, radius, min, max, color1, color2, order });
-    const key = JSON.stringify([species1, species2]);
+    const key = species1 + "-" + species2;
     this.settings[key] = setting;
   }
 

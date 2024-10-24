@@ -7,7 +7,7 @@ import { kdTree } from "../../geometry/kdTree.js";
 import { searchBoundary } from "./boundary.js";
 
 class Setting {
-  constructor({ species1, species2, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", radius = 0.1, order = 1 }) {
+  constructor({ species1, species2, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", radius = 0.1, order = 1, type = 0 }) {
     this.species1 = species1;
     this.species2 = species2;
     this.min = min;
@@ -16,6 +16,7 @@ class Setting {
     this.color2 = convertColor(color2);
     this.radius = radius;
     this.order = order;
+    this.type = type;
   }
 
   toDict() {
@@ -28,6 +29,7 @@ class Setting {
       color2: this.color2,
       radius: this.radius,
       order: this.order,
+      type: this.type,
     };
   }
 }
@@ -50,9 +52,12 @@ export class BondManager {
     */
     this.viewer.logger.debug("init bond settings");
     this.settings = {};
+    this.stickBonds = [];
+    this.lineBonds = [];
+    this.springBonds = [];
     Object.entries(this.viewer.originalAtoms.species).forEach(([symbol1, species1]) => {
       Object.entries(this.viewer.originalAtoms.species).forEach(([symbol2, species2]) => {
-        const key = JSON.stringify([symbol1, symbol2]);
+        const key = species1.element + "-" + species2.element;
         const elementPair = species1.element + "-" + species2.element;
         // if the elementPair is not in the default_bond_pairs, skip
         if (default_bond_pairs[elementPair] === undefined) {
@@ -65,15 +70,24 @@ export class BondManager {
 
   getDefaultSetting(species1, species2) {
     /* Get the default bond setting for the species1 and species2 */
-    const color1 = this.viewer.atomManager.settings[species1.symbol].color;
-    const color2 = this.viewer.atomManager.settings[species2.symbol].color;
+    let color1 = this.viewer.atomManager.settings[species1.symbol].color;
+    let color2 = this.viewer.atomManager.settings[species2.symbol].color;
     const radius1 = this.viewer.atomManager.settings[species1.symbol].radius;
     const radius2 = this.viewer.atomManager.settings[species2.symbol].radius;
-    const min = 0.0;
-    const max = (radius1 + radius2) * 1.1;
+    let min = 0.0;
+    let max = (radius1 + radius2) * 1.1;
     const symbol1 = species1.symbol;
     const symbol2 = species2.symbol;
-    const setting = new Setting({ species1: symbol1, species2: symbol2, min, max, color1, color2 });
+    const type = default_bond_pairs[symbol1 + "-" + symbol2][2];
+    // if type  is hydrogen bond, set the min as the max, and the max as the max + 1
+    if (type === 1) {
+      min = max + 0.4;
+      max = min + 1;
+      // set color to grey
+      color1 = "#808080";
+      color2 = "#808080";
+    }
+    const setting = new Setting({ species1: symbol1, species2: symbol2, min, max, color1, color2, type });
     return setting;
   }
 
@@ -88,10 +102,10 @@ export class BondManager {
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting({ species1, species2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
+  addSetting({ species1, species2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1, type = 0 }) {
     /* Add a new setting to the bond */
-    const setting = new Setting({ species1, species2, radius, min, max, color1, color2, order });
-    const key = JSON.stringify([species1, species2]);
+    const setting = new Setting({ species1, species2, radius, min, max, color1, color2, order, type });
+    const key = species1 + "-" + species2;
     this.settings[key] = setting;
   }
 
@@ -157,8 +171,29 @@ export class BondManager {
     if (this.viewer.colorBy !== "Element") {
       atomColors = this.viewer.atomColors;
     }
-    this.bondMesh = drawStick(this.viewer.originalAtoms, this.bondList, this.viewer.cutoffs, this.bondRadius, this.viewer._materialType, atomColors);
-    return this.bondMesh;
+    // Split the bondList into three categories based on bond type
+    this.stickBonds = [];
+    this.lineBonds = [];
+    this.springBonds = [];
+    this.bondList.forEach((bond) => {
+      const [index1, index2] = bond;
+      const key = this.viewer.originalAtoms.symbols[index1] + "-" + this.viewer.originalAtoms.symbols[index2];
+      const bondType = this.settings[key].type;
+      // Split into stick, line (dashed), and spring bonds based on type
+      if (bondType === 0) {
+        this.stickBonds.push(bond);
+      } else if (bondType === 1) {
+        this.lineBonds.push(bond);
+      } else if (bondType === 2) {
+        this.springBonds.push(bond); // Assuming you may handle springs later
+      }
+    });
+    this.bondMesh = drawStick(this.viewer.originalAtoms, this.stickBonds, this.viewer.cutoffs, this.bondRadius, this.viewer._materialType, atomColors);
+    this.bondLine = drawLine(this.viewer.originalAtoms, this.lineBonds, this.viewer.cutoffs, this.viewer._materialType, atomColors);
+    return {
+      bondMesh: this.bondMesh,
+      bondLine: this.bondLine,
+    };
   }
 
   updateBondMesh(atomIndex = null, atoms = null) {
@@ -226,7 +261,6 @@ export function drawStick(atoms, bondList, settings, radius = 0.1, materialType 
   */
   console.time("drawBonds Time");
   // console.log("bondList: ", bondList);
-  console.log("settings: ", settings);
   // console.log("atomColors: ", atomColors);
 
   const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1); // Adjust segment count as needed
@@ -265,6 +299,70 @@ export function drawStick(atoms, bondList, settings, radius = 0.1, materialType 
 
   console.timeEnd("drawBonds Time");
   return instancedMesh;
+}
+
+export function drawLine(atoms, bondList, settings, materialType = "dashed", atomColors = null) {
+  /* Draw dashed bonds between atoms.
+  atoms: the atoms object
+  bondList: list of bonds, each bond is a list of 4 elements:
+  [atomIndex1, atomIndex2, offset1, offset2]
+  materialType: material type of the bond
+
+  Returns:
+  lineSegments: the LineSegments object of the dashed bonds
+  */
+  console.time("drawDashedBonds Time");
+
+  const vertices = [];
+  const colors = [];
+
+  bondList.forEach(([index1, index2, offset1, offset2]) => {
+    var position1 = atoms.positions[index1].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset1)[index]);
+    position1 = new THREE.Vector3(...position1);
+
+    var position2 = atoms.positions[index2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
+    position2 = new THREE.Vector3(...position2);
+
+    // Add the start and end positions to the vertices array
+    vertices.push(position1.x, position1.y, position1.z);
+    vertices.push(position2.x, position2.y, position2.z);
+    // Setting color for each bond
+    const key = atoms.species[atoms.symbols[index1]].symbol + "-" + atoms.species[atoms.symbols[index2]].symbol;
+    const color1 = settings[key].color1;
+    const color2 = settings[key].color2;
+
+    // Add the colors for both atoms
+    colors.push(color1.r, color1.g, color1.b);
+    colors.push(color2.r, color2.g, color2.b);
+  });
+
+  // Create the buffer geometry for the line segments
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+
+  // Create the dashed line material
+  const material = new THREE.LineDashedMaterial({
+    color: 0xffffff, // Set a default color if needed, but we'll use vertex colors
+    vertexColors: true, // Use the colors provided by the geometry
+    dashSize: 0.1, // Length of each dash
+    gapSize: 0.1, // Length of each gap
+    linewidth: 3, // Optional: adjust line thickness (supported in WebGL2 contexts)
+  });
+
+  // Create the LineSegments object
+  const lineSegments = new THREE.LineSegments(geometry, material);
+
+  // Compute line distances for dashes to work correctly
+  lineSegments.computeLineDistances();
+
+  // Store additional data in userData for tracking
+  lineSegments.userData.type = "bond";
+  lineSegments.userData.uuid = atoms.uuid;
+  lineSegments.userData.objectMode = "edit";
+
+  console.timeEnd("drawDashedBonds Time");
+  return lineSegments;
 }
 
 export function calculateScale(position1, position2, radius, cutoff = null, hideLongBonds = true) {

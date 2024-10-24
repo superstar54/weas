@@ -497,8 +497,9 @@ class AtomsViewer {
 
     this.logger.debug("bondedAtoms: ", this.bondedAtoms);
     this.atomManager.meshes["atom"] = this.atomManager.drawBalls();
-    const bondMesh = this.bondManager.drawBonds();
+    const { bondMesh, bondLine } = this.bondManager.drawBonds();
     this.atomManager.meshes["atom"].add(bondMesh);
+    this.atomManager.meshes["atom"].add(bondLine);
     const polyhedraMesh = this.polyhedraManager.drawPolyhedras();
     this.atomManager.meshes["atom"].add(polyhedraMesh);
     this.isosurfaceManager.drawIsosurfaces();

@@ -73,9 +73,24 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.atoms = atomsList;
       // editor.avr.bondManager.settings[1].color1 = "blue";
       // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
-      editor.avr.colorType = "CPK";
+      // editor.avr.colorType = "CPK";
       editor.avr.modelStyle = 1;
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      break;
+    case "urea.cif":
+      editor.clear();
+      structureData = fileContent || (await fetchFile(filename));
+      atoms = parseCIF(structureData);
+      editor.avr.atoms = atoms;
+      editor.avr.showBondedAtoms = true;
+      editor.avr.modelStyle = 1;
+      editor.avr.boundary = [
+        [-0.01, 1.01],
+        [-0.01, 1.01],
+        [-0.01, 1.01],
+      ];
+      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.avr.drawModels();
       break;
     case "au.cif":
       editor.clear();
