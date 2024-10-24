@@ -120,7 +120,7 @@ export function drawPolyhedras(atoms, polyhedras, bondList, colorType = "CPK", m
     // console.log("key: ", key);
     // console.log("polyhedra: ", polyhedra);
     // Assuming bonds.length is the number of vertices
-    for (const bondData of polyhedra.bonds) {
+    for (const bondData of polyhedra.sticks) {
       const bond = bondList[bondData[0]];
       // if isStart is true, then the second atom is neighbor
       if (bondData[1]) {
@@ -182,7 +182,7 @@ export function filterBondMap(bondMap, symbols, elements, modelPolyhedras) {
 
   Object.keys(bondMap).forEach((key) => {
     const atomIndex = bondMap[key]["atomIndex"];
-    const numBond = bondMap[key]["bonds"].length;
+    const numBond = bondMap[key]["sticks"].length;
     const speciesName = symbols[atomIndex];
 
     if (modelPolyhedras[atomIndex] && numBond >= 4 && elements.includes(speciesName)) {

@@ -27,6 +27,7 @@
         let editor = new weas.WEAS({ domElement });
         editor.avr.atoms = atoms;
         editor.avr.modelStyle = 1;
+        editor.avr.bondManager.showHydrogenBonds = false;
         editor.avr.drawModels();
         editor.render();
         editor.avr.selectedAtomsIndices = [0];
