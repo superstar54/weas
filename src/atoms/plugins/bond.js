@@ -186,6 +186,17 @@ export class BondManager {
     };
   }
 
+  updateBondMesh(atomIndex = null, atoms = null) {
+    /* When the atom is moved, the bonds should be moved as well.
+    if atomIndex is null, update all bonds
+    if atoms is null, use this.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
+    */
+    this.updateBondStick(atomIndex, atoms);
+    if (this.showHydrogenBonds) {
+      this.updateBondLine(atomIndex, atoms);
+    }
+  }
+
   updateBondStick(atomIndex = null, atoms = null) {
     /* When the atom is moved, the bonds should be moved as well.
     if atomIndex is null, update all bonds
@@ -235,6 +246,75 @@ export class BondManager {
       this.bondMesh.setMatrixAt(i * 2 + 1, instanceMatrix2);
     });
     this.bondMesh.instanceMatrix.needsUpdate = true;
+  }
+
+  updateBondLine(atomIndex = null, atoms = null) {
+    /* When the atom is moved, the bonds should be moved as well.
+    if atomIndex is null, update all bonds
+    if atoms is null, use this.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
+    */
+    // this.viewer.logger.debug("updateBondStick: ", atomIndex);
+    if (atoms === null) {
+      atoms = this.viewer.originalAtoms;
+    }
+    let bondIndices = [];
+    if (atomIndex) {
+      console.log("atomIndex: ", atomIndex);
+      const bondMap = this.bondMap["bondMap"][atomIndex];
+      if (bondMap) {
+        bondMap.lines.forEach((bondData) => {
+          bondIndices.push(bondData[0]);
+        });
+      }
+    } else {
+      bondIndices = this.bondMap["lineBonds"].map((_, index) => index);
+    }
+    // Assuming lineSegments is already created
+    const positionAttribute = this.bondLine.geometry.attributes.position;
+    const array = positionAttribute.array; // Access the array storing positions
+
+    // this.viewer.logger.debug("bondIndices: ", bondIndices);
+    // loop all bond indices and update the bonds
+    bondIndices.forEach((i) => {
+      const bond = this.bondList[this.bondMap["lineBonds"][i]];
+      const atomIndex1 = bond[0];
+      const atomIndex2 = bond[1];
+      const offset1 = bond[2];
+      const offset2 = bond[3];
+      let position1 = atoms.positions[atomIndex1].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset1)[index]);
+      let position2 = atoms.positions[atomIndex2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
+      const key = atoms.symbols[atomIndex1] + "-" + atoms.symbols[atomIndex2];
+      // if key is not in the cutoffs, skip. In principle, this should not happen
+      if (!this.settings[key]) {
+        return;
+      }
+
+      position1 = new THREE.Vector3(...position1);
+      position2 = new THREE.Vector3(...position2);
+      // if bond length > cutoff, hide the segment
+      // Calculate the bond length
+      const bondLength = position1.distanceTo(position2);
+      // If bond length exceeds the cutoff, hide the line by collapsing the points
+      if ((bondLength > this.settings[key].max) | (bondLength < this.settings[key].min)) {
+        position2.copy(position1); // Collapse position2 to position1
+      }
+
+      // Update the position1 and end positions in the buffer
+      console.log(array[i * 6]);
+      array[i * 6] = position1.x; // x of position1
+      array[i * 6 + 1] = position1.y; // y of position1
+      array[i * 6 + 2] = position1.z; // z of position1
+      array[i * 6 + 3] = position2.x; // x of position2
+      array[i * 6 + 4] = position2.y; // y of position2
+      array[i * 6 + 5] = position2.z; // z of position2
+      console.log(array[i * 6]);
+    });
+    // Mark the position attribute as needing an update
+    positionAttribute.needsUpdate = true;
+
+    // If the length of lines or geometry changes, you might also need to call:
+    this.bondLine.geometry.computeBoundingBox();
+    this.bondLine.geometry.computeBoundingSphere();
   }
 }
 
@@ -572,16 +652,16 @@ export function buildBondMap(bondList, atoms, settings) {
       bondMapWithOffset[key2]["sticks"].push([stickBonds.length - 1, false]);
     } else if (bondType === 1) {
       lineBonds.push(i);
-      bondMap[index1]["lines"].push([i, true]);
-      bondMap[index2]["lines"].push([i, false]);
-      bondMapWithOffset[key1]["lines"].push([stickBonds.length - 1, true]);
-      bondMapWithOffset[key2]["lines"].push([stickBonds.length - 1, false]);
+      bondMap[index1]["lines"].push([lineBonds.length - 1, true]);
+      bondMap[index2]["lines"].push([lineBonds.length - 1, false]);
+      bondMapWithOffset[key1]["lines"].push([lineBonds.length - 1, true]);
+      bondMapWithOffset[key2]["lines"].push([lineBonds.length - 1, false]);
     } else if (bondType === 2) {
       springBonds.push(i);
-      bondMap[index1]["springs"].push([i, true]);
-      bondMap[index2]["springs"].push([i, false]);
-      bondMapWithOffset[key1]["springs"].push([stickBonds.length - 1, true]);
-      bondMapWithOffset[key2]["springs"].push([stickBonds.length - 1, false]);
+      bondMap[index1]["springs"].push([springBonds.length - 1, true]);
+      bondMap[index2]["springs"].push([springBonds.length - 1, false]);
+      bondMapWithOffset[key1]["springs"].push([springBonds.length - 1, true]);
+      bondMapWithOffset[key2]["springs"].push([springBonds.length - 1, false]);
     }
   }
   return { bondMap: bondMap, bondMapWithOffset: bondMapWithOffset, stickBonds: stickBonds, lineBonds: lineBonds, springBonds: springBonds };

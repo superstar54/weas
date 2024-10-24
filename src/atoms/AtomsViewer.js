@@ -122,7 +122,7 @@ class AtomsViewer {
     // update the atoms
     this.atomManager.updateAtomMesh(null, atoms);
     // update the bonds
-    this.bondManager.updateBondStick(null, atoms);
+    this.bondManager.updateBondMesh(null, atoms);
     // update vector fields related to the atoms attribute
     this.VFManager.updateArrowMesh(null, atoms);
     // update cell
@@ -648,7 +648,7 @@ class AtomsViewer {
     this.atoms.positions[index] = [position.x, position.y, position.z];
     // update the other meshes
     this.atomManager.updateBoundaryAtomsMesh(index);
-    this.bondManager.updateBondStick(index);
+    this.bondManager.updateBondMesh(index);
   }
 
   resetSelectedAtomsPositions(initialAtomPositions, indices = null) {
