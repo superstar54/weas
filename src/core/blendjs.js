@@ -52,7 +52,35 @@ export class BlendJS {
     this.lights = {};
     this.renderers = {}; // New property to store renderers
     this._cameraType = "Orthographic"; //"Perspective"
+    this.sceneView = { left: 0, bottom: 0, width: 1.0, height: 1.0 };
     this.init();
+  }
+
+  createCoordScene() {
+    this.coordScene = new THREE.Scene();
+
+    const coordSceneRatio = 0.3;
+    const coordSceneSize = 1 - coordSceneRatio;
+    this.coordSceneView = {
+      left: this.sceneView.left * coordSceneSize,
+      bottom: this.sceneView.bottom * coordSceneSize,
+      width: this.sceneView.width * coordSceneRatio,
+      height: this.sceneView.height * coordSceneRatio,
+    };
+
+    this.coordCamera = new THREE.OrthographicCamera(10 / -2, 10 / 2, 10 / 2, 10 / -2, 0.011, 1000);
+    this.coordCamera.position.copy(this.camera.position);
+    // Add ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+    this.coordScene.add(ambientLight);
+
+    // Optionally, add directional light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    directionalLight.position.set(10, 10, 10);
+    this.coordScene.add(directionalLight);
+
+    // const axesHelper = new THREE.AxesHelper(5);
+    // this.coordScene.add(axesHelper);
   }
 
   get cameraType() {
@@ -75,7 +103,8 @@ export class BlendJS {
   init() {
     this.scene.background = new THREE.Color(0xffffff); // Set the scene's background to white
     // Create a renderer
-    const renderer = new THREE.WebGLRenderer();
+    const renderer = new THREE.WebGLRenderer({ alpha: true });
+    renderer.autoClear = false;
     const { width: clientWidth, height: clientHeight } = getContainerDimensions(this.containerElement);
     renderer.setSize(clientWidth, clientHeight);
     // renderer.shadowMap.enabled = true;
@@ -140,6 +169,7 @@ export class BlendJS {
     this.containerElement.addEventListener("click", this.render.bind(this));
     this.containerElement.addEventListener("wheel", this.render.bind(this));
     this.containerElement.addEventListener("atomsUpdated", this.render.bind(this));
+    this.createCoordScene();
   }
 
   addObject(name, geometry, material) {
@@ -284,12 +314,46 @@ export class BlendJS {
     return sceneBoundingBox;
   }
 
+  renderSceneInfo(scene, camera, left, bottom, width, height, renderer) {
+    const canvas = renderer.domElement;
+    if (true) {
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+    }
+
+    // take the coordinate from 0-1 space, and put them
+    // in screen space, baed on the size of the canvas.
+    var nleft = Math.floor(canvas.width * left);
+    var nbottom = Math.floor(canvas.height * bottom);
+    var nwidth = Math.floor(canvas.width * width);
+    var nheight = Math.floor(canvas.height * height);
+    renderer.setViewport(nleft, nbottom, nwidth, nheight);
+    renderer.setScissor(nleft, nbottom, nwidth, nheight);
+    renderer.setScissorTest(true);
+    // renderer.setClearColor("lightblue");
+    renderer.render(scene, camera);
+  }
+
   render() {
-    this.controls.update();
+    this.renderers["MainRenderer"].renderer.clear();
     // loop through renderers to render the scene
     Object.values(this.renderers).forEach((rndr) => {
       rndr.renderer.render(this.scene, this.camera);
     });
+    this.renderSceneInfo(this.scene, this.camera, this.sceneView.left, this.sceneView.bottom, this.sceneView.width, this.sceneView.height, this.renderers["MainRenderer"].renderer);
+    this.coordCamera.position.copy(this.camera.position);
+    // this.coordCamera.position.sub(this.controls.target);
+    this.coordCamera.lookAt(this.coordScene.position);
+    this.renderSceneInfo(
+      this.coordScene,
+      this.coordCamera,
+      this.coordSceneView.left,
+      this.coordSceneView.bottom,
+      this.coordSceneView.width,
+      this.coordSceneView.height,
+      this.renderers["MainRenderer"].renderer,
+    );
+    this.controls.update();
   }
 
   exportImage(resolution = 2) {

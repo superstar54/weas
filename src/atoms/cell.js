@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { createLabel } from "../utils.js";
+import { drawArrow } from "../tools/primitives.js";
 
 export class CellManager {
   constructor(viewer) {
@@ -35,7 +36,7 @@ export class CellManager {
       this.cellMesh = null;
     }
     if (this.cellVectors) {
-      this.viewer.tjs.scene.remove(this.cellVectors);
+      this.viewer.tjs.coordScene.remove(this.cellVectors);
       this.cellVectors = null;
     }
     if (this.labels.length > 0) {
@@ -101,35 +102,30 @@ export class CellManager {
   }
 
   drawUnitCellVectors() {
-    // console.log("drawUnitCellVectors");
+    const origin = new THREE.Vector3(0, 0, 0);
     const cell = this.viewer.originalCell;
     if (!cell || cell.length !== 3) {
       console.warn("Invalid or missing unit cell data for vectors");
       return;
     }
 
-    // Create a group to hold all arrows and labels
+    // Create a group to hold all arrows, labels, and the origin sphere
     const unitCellGroup = new THREE.Group();
 
-    // Define lengths and colors for the vectors
-    const arrowLength = 2;
+    // Define lengths, colors, and other parameters for the arrows
+    const arrowLength = 2; // Length of the arrow
+    const arrowRadius = 0.1; // Radius of the cylinder
+    const coneHeight = 0.5; // Height of the cone
+    const coneRadius = 0.2; // Radius of the cone
+    const sphereRadius = 0.2; // Radius of the origin sphere
     const colors = { a: 0xff0000, b: 0x00ff00, c: 0x0000ff }; // Red, Green, Blue
 
-    const position1 = new THREE.Vector3(...cell[0]).normalize();
-    const position2 = new THREE.Vector3(...cell[1]).normalize();
-    const position3 = new THREE.Vector3(...cell[2]).normalize();
+    const directions = [new THREE.Vector3(...cell[0]).normalize(), new THREE.Vector3(...cell[1]).normalize(), new THREE.Vector3(...cell[2]).normalize()];
 
-    // Create arrows
-    const aArrow = new THREE.ArrowHelper(position1, new THREE.Vector3(0, 0, 0), arrowLength, colors.a);
-    const bArrow = new THREE.ArrowHelper(position2, new THREE.Vector3(0, 0, 0), arrowLength, colors.b);
-    const cArrow = new THREE.ArrowHelper(position3, new THREE.Vector3(0, 0, 0), arrowLength, colors.c);
-
-    aArrow.userData.type = "cell";
-    bArrow.userData.type = "cell";
-    cArrow.userData.type = "cell";
-    aArrow.userData.uuid = this.viewer.uuid;
-    bArrow.userData.uuid = this.viewer.uuid;
-    cArrow.userData.uuid = this.viewer.uuid;
+    // Create arrows for each direction
+    const aArrow = drawArrow({ position: origin, direction: directions[0], arrowLength, arrowRadius, coneHeight, coneRadius, color: colors.a });
+    const bArrow = drawArrow({ position: origin, direction: directions[1], arrowLength, arrowRadius, coneHeight, coneRadius, color: colors.b });
+    const cArrow = drawArrow({ position: origin, direction: directions[2], arrowLength, arrowRadius, coneHeight, coneRadius, color: colors.c });
 
     // Add arrows to the group
     unitCellGroup.add(aArrow);
@@ -138,27 +134,28 @@ export class CellManager {
 
     // Add labels for each axis
     const offset = 2.1; // Adjust this to position the labels
-    const aLabel = createLabel(position1.multiplyScalar(offset), "a", "red", "18px");
-    const bLabel = createLabel(position2.multiplyScalar(offset), "b", "green", "18px");
-    const cLabel = createLabel(position3.multiplyScalar(offset), "c", "blue", "18px");
-
-    aLabel.userData.type = "cell";
-    bLabel.userData.type = "cell";
-    cLabel.userData.type = "cell";
-    aLabel.userData.uuid = this.viewer.uuid;
-    bLabel.userData.uuid = this.viewer.uuid;
-    cLabel.userData.uuid = this.viewer.uuid;
+    const aLabel = createLabel(directions[0].multiplyScalar(offset), "a", "red", "88px");
+    const bLabel = createLabel(directions[1].multiplyScalar(offset), "b", "green", "88px");
+    const cLabel = createLabel(directions[2].multiplyScalar(offset), "c", "blue", "88px");
 
     // Add labels to the group
     this.labels.push(aLabel);
     this.labels.push(bLabel);
     this.labels.push(cLabel);
-    this.viewer.tjs.scene.add(aLabel);
-    this.viewer.tjs.scene.add(bLabel);
-    this.viewer.tjs.scene.add(cLabel);
+    this.viewer.tjs.coordScene.add(aLabel);
+    this.viewer.tjs.coordScene.add(bLabel);
+    this.viewer.tjs.coordScene.add(cLabel);
+
+    // Create the sphere at the origin
+    const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 16, 16);
+    const sphereMaterial = new THREE.MeshStandardMaterial({ color: "grey" }); // Yellow color for the origin
+    const originSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+    // Add the sphere to the group
+    unitCellGroup.add(originSphere);
 
     // Add the group to the scene
-    this.viewer.tjs.scene.add(unitCellGroup);
+    this.viewer.tjs.coordScene.add(unitCellGroup);
     unitCellGroup.visible = this.showCell;
 
     // Return the group for further control if needed
