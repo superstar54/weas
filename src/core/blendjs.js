@@ -337,7 +337,7 @@ export class BlendJS {
     this.renderers["LabelRenderer"].renderer.render(this.scene, this.camera);
     this.renderSceneInfo(this.scene, this.camera, this.sceneView.left, this.sceneView.bottom, this.sceneView.width, this.sceneView.height, this.renderers["MainRenderer"].renderer);
     this.coordCamera.position.copy(this.camera.position);
-    // this.coordCamera.position.sub(this.controls.target);
+    this.coordCamera.position.sub(this.controls.target);
     this.coordCamera.lookAt(this.coordScene.position);
     this.renderSceneInfo(
       this.coordScene,
