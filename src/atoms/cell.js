@@ -7,8 +7,8 @@ export class CellManager {
     this.viewer = viewer;
     this.cellMesh = null;
     this.cellVectors = null;
-    this.labels = [];
     this._showCell = viewer._showCell;
+    this._showAxes = viewer._showAxes;
   }
 
   get showCell() {
@@ -23,9 +23,17 @@ export class CellManager {
     if (this.cellVectors) {
       this.cellVectors.visible = newValue;
     }
-    this.labels.forEach((label) => {
-      label.visible = newValue;
-    });
+  }
+
+  get showAxes() {
+    return this._showAxes;
+  }
+
+  set showAxes(newValue) {
+    this._showAxes = newValue;
+    if (this.cellVectors) {
+      this.cellVectors.visible = newValue;
+    }
   }
 
   clear() {
@@ -38,13 +46,6 @@ export class CellManager {
     if (this.cellVectors) {
       this.viewer.tjs.coordScene.remove(this.cellVectors);
       this.cellVectors = null;
-    }
-    if (this.labels.length > 0) {
-      this.labels.forEach((label) => {
-        this.viewer.tjs.scene.remove(label);
-        label.remove();
-      });
-      this.labels = [];
     }
   }
 
@@ -113,11 +114,11 @@ export class CellManager {
     const unitCellGroup = new THREE.Group();
 
     // Define lengths, colors, and other parameters for the arrows
-    const arrowLength = 2; // Length of the arrow
-    const arrowRadius = 0.1; // Radius of the cylinder
-    const coneHeight = 0.5; // Height of the cone
-    const coneRadius = 0.2; // Radius of the cone
-    const sphereRadius = 0.2; // Radius of the origin sphere
+    const arrowLength = 3; // Length of the arrow
+    const arrowRadius = 0.15; // Radius of the cylinder
+    const coneHeight = 0.8; // Height of the cone
+    const coneRadius = 0.3; // Radius of the cone
+    const sphereRadius = 0.3; // Radius of the origin sphere
     const colors = { a: 0xff0000, b: 0x00ff00, c: 0x0000ff }; // Red, Green, Blue
 
     const directions = [new THREE.Vector3(...cell[0]).normalize(), new THREE.Vector3(...cell[1]).normalize(), new THREE.Vector3(...cell[2]).normalize()];
@@ -133,18 +134,15 @@ export class CellManager {
     unitCellGroup.add(cArrow);
 
     // Add labels for each axis
-    const offset = 2.1; // Adjust this to position the labels
-    const aLabel = createLabel(directions[0].multiplyScalar(offset), "a", "red", "88px");
-    const bLabel = createLabel(directions[1].multiplyScalar(offset), "b", "green", "88px");
-    const cLabel = createLabel(directions[2].multiplyScalar(offset), "c", "blue", "88px");
+    const offset = arrowLength + 0.3; // Adjust this to position the labels
+    const aLabel = createSpriteLabel(directions[0].multiplyScalar(offset), "a", "black", "80px");
+    const bLabel = createSpriteLabel(directions[1].multiplyScalar(offset), "b", "black", "80px");
+    const cLabel = createSpriteLabel(directions[2].multiplyScalar(offset), "c", "black", "80px");
 
     // Add labels to the group
-    this.labels.push(aLabel);
-    this.labels.push(bLabel);
-    this.labels.push(cLabel);
-    this.viewer.tjs.coordScene.add(aLabel);
-    this.viewer.tjs.coordScene.add(bLabel);
-    this.viewer.tjs.coordScene.add(cLabel);
+    unitCellGroup.add(aLabel);
+    unitCellGroup.add(bLabel);
+    unitCellGroup.add(cLabel);
 
     // Create the sphere at the origin
     const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 16, 16);
@@ -161,4 +159,22 @@ export class CellManager {
     // Return the group for further control if needed
     return unitCellGroup;
   }
+}
+
+function createSpriteLabel(position, text, color, size) {
+  var canvas = document.createElement("canvas");
+  canvas.width = 120; // Increase canvas size
+  canvas.height = 120;
+  var context = canvas.getContext("2d");
+  context.font = size + " Arial"; // Increase font size
+  context.fillStyle = color;
+  context.textAlign = "center";
+  context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  var texture = new THREE.CanvasTexture(canvas);
+  var spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+  var sprite = new THREE.Sprite(spriteMaterial);
+  sprite.position.copy(position);
+  sprite.scale.set(1.5, 1.5, 1); // Adjust the size as needed
+  return sprite;
 }

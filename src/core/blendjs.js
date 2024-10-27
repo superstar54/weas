@@ -60,27 +60,23 @@ export class BlendJS {
     this.coordScene = new THREE.Scene();
 
     const coordSceneRatio = 0.3;
-    const coordSceneSize = 1 - coordSceneRatio;
     this.coordSceneView = {
-      left: this.sceneView.left * coordSceneSize,
-      bottom: this.sceneView.bottom * coordSceneSize,
+      left: 0,
+      bottom: 0,
       width: this.sceneView.width * coordSceneRatio,
       height: this.sceneView.height * coordSceneRatio,
     };
 
-    this.coordCamera = new THREE.OrthographicCamera(10 / -2, 10 / 2, 10 / 2, 10 / -2, 0.011, 1000);
+    this.coordCamera = new THREE.OrthographicCamera(this.orthographicCamera.left, this.orthographicCamera.right, this.orthographicCamera.top, this.orthographicCamera.bottom, 1, 2000);
     this.coordCamera.position.copy(this.camera.position);
     // Add ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
     this.coordScene.add(ambientLight);
 
-    // Optionally, add directional light
+    // Add directional light
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
     directionalLight.position.set(10, 10, 10);
     this.coordScene.add(directionalLight);
-
-    // const axesHelper = new THREE.AxesHelper(5);
-    // this.coordScene.add(axesHelper);
   }
 
   get cameraType() {
@@ -215,10 +211,14 @@ export class BlendJS {
       const frustumHeight = this.camera.top - this.camera.bottom;
       this.camera.left = (-frustumHeight * aspect) / 2;
       this.camera.right = (frustumHeight * aspect) / 2;
+      this.coordCamera.left = this.camera.left;
+      this.coordCamera.right = this.camera.right;
     } else {
       this.camera.aspect = clientWidth / clientHeight;
+      this.coordCamera.aspect = this.camera.aspect;
     }
     this.camera.updateProjectionMatrix();
+    this.coordCamera.updateProjectionMatrix();
 
     // Resize all renderers
     Object.values(this.renderers).forEach((rndr) => {
@@ -264,6 +264,10 @@ export class BlendJS {
     this.camera.right = cameraWidth / 2;
     this.camera.top = cameraHeight / 2;
     this.camera.bottom = -cameraHeight / 2;
+    this.coordCamera.left = this.camera.left;
+    this.coordCamera.right = this.camera.right;
+    this.coordCamera.top = this.camera.top;
+    this.coordCamera.bottom = this.camera.bottom;
 
     // Adjust camera position based on the lookAt of the bounding box and the camera direction
     if (distance === null) {
@@ -316,30 +320,21 @@ export class BlendJS {
 
   renderSceneInfo(scene, camera, left, bottom, width, height, renderer) {
     const canvas = renderer.domElement;
-    if (true) {
-      camera.aspect = canvas.clientWidth / canvas.clientHeight;
-      camera.updateProjectionMatrix();
-    }
 
-    // take the coordinate from 0-1 space, and put them
-    // in screen space, baed on the size of the canvas.
     var nleft = Math.floor(canvas.width * left);
     var nbottom = Math.floor(canvas.height * bottom);
     var nwidth = Math.floor(canvas.width * width);
     var nheight = Math.floor(canvas.height * height);
     renderer.setViewport(nleft, nbottom, nwidth, nheight);
     renderer.setScissor(nleft, nbottom, nwidth, nheight);
-    renderer.setScissorTest(true);
-    // renderer.setClearColor("lightblue");
+    renderer.setScissorTest(false);
     renderer.render(scene, camera);
   }
 
   render() {
     this.renderers["MainRenderer"].renderer.clear();
     // loop through renderers to render the scene
-    Object.values(this.renderers).forEach((rndr) => {
-      rndr.renderer.render(this.scene, this.camera);
-    });
+    this.renderers["LabelRenderer"].renderer.render(this.scene, this.camera);
     this.renderSceneInfo(this.scene, this.camera, this.sceneView.left, this.sceneView.bottom, this.sceneView.width, this.sceneView.height, this.renderers["MainRenderer"].renderer);
     this.coordCamera.position.copy(this.camera.position);
     // this.coordCamera.position.sub(this.controls.target);
