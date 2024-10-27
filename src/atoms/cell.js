@@ -1,13 +1,14 @@
 import * as THREE from "three";
 import { createLabel } from "../utils.js";
+import { drawArrow } from "../tools/primitives.js";
 
 export class CellManager {
   constructor(viewer) {
     this.viewer = viewer;
     this.cellMesh = null;
     this.cellVectors = null;
-    this.labels = [];
     this._showCell = viewer._showCell;
+    this._showAxes = viewer._showAxes;
   }
 
   get showCell() {
@@ -22,9 +23,17 @@ export class CellManager {
     if (this.cellVectors) {
       this.cellVectors.visible = newValue;
     }
-    this.labels.forEach((label) => {
-      label.visible = newValue;
-    });
+  }
+
+  get showAxes() {
+    return this._showAxes;
+  }
+
+  set showAxes(newValue) {
+    this._showAxes = newValue;
+    if (this.cellVectors) {
+      this.cellVectors.visible = newValue;
+    }
   }
 
   clear() {
@@ -35,15 +44,8 @@ export class CellManager {
       this.cellMesh = null;
     }
     if (this.cellVectors) {
-      this.viewer.tjs.scene.remove(this.cellVectors);
+      this.viewer.tjs.coordScene.remove(this.cellVectors);
       this.cellVectors = null;
-    }
-    if (this.labels.length > 0) {
-      this.labels.forEach((label) => {
-        this.viewer.tjs.scene.remove(label);
-        label.remove();
-      });
-      this.labels = [];
     }
   }
 
@@ -101,35 +103,30 @@ export class CellManager {
   }
 
   drawUnitCellVectors() {
-    // console.log("drawUnitCellVectors");
+    const origin = new THREE.Vector3(0, 0, 0);
     const cell = this.viewer.originalCell;
     if (!cell || cell.length !== 3) {
       console.warn("Invalid or missing unit cell data for vectors");
       return;
     }
 
-    // Create a group to hold all arrows and labels
+    // Create a group to hold all arrows, labels, and the origin sphere
     const unitCellGroup = new THREE.Group();
 
-    // Define lengths and colors for the vectors
-    const arrowLength = 2;
+    // Define lengths, colors, and other parameters for the arrows
+    const arrowLength = 3; // Length of the arrow
+    const arrowRadius = 0.15; // Radius of the cylinder
+    const coneHeight = 0.8; // Height of the cone
+    const coneRadius = 0.3; // Radius of the cone
+    const sphereRadius = 0.3; // Radius of the origin sphere
     const colors = { a: 0xff0000, b: 0x00ff00, c: 0x0000ff }; // Red, Green, Blue
 
-    const position1 = new THREE.Vector3(...cell[0]).normalize();
-    const position2 = new THREE.Vector3(...cell[1]).normalize();
-    const position3 = new THREE.Vector3(...cell[2]).normalize();
+    const directions = [new THREE.Vector3(...cell[0]).normalize(), new THREE.Vector3(...cell[1]).normalize(), new THREE.Vector3(...cell[2]).normalize()];
 
-    // Create arrows
-    const aArrow = new THREE.ArrowHelper(position1, new THREE.Vector3(0, 0, 0), arrowLength, colors.a);
-    const bArrow = new THREE.ArrowHelper(position2, new THREE.Vector3(0, 0, 0), arrowLength, colors.b);
-    const cArrow = new THREE.ArrowHelper(position3, new THREE.Vector3(0, 0, 0), arrowLength, colors.c);
-
-    aArrow.userData.type = "cell";
-    bArrow.userData.type = "cell";
-    cArrow.userData.type = "cell";
-    aArrow.userData.uuid = this.viewer.uuid;
-    bArrow.userData.uuid = this.viewer.uuid;
-    cArrow.userData.uuid = this.viewer.uuid;
+    // Create arrows for each direction
+    const aArrow = drawArrow({ position: origin, direction: directions[0], arrowLength, arrowRadius, coneHeight, coneRadius, color: colors.a });
+    const bArrow = drawArrow({ position: origin, direction: directions[1], arrowLength, arrowRadius, coneHeight, coneRadius, color: colors.b });
+    const cArrow = drawArrow({ position: origin, direction: directions[2], arrowLength, arrowRadius, coneHeight, coneRadius, color: colors.c });
 
     // Add arrows to the group
     unitCellGroup.add(aArrow);
@@ -137,31 +134,47 @@ export class CellManager {
     unitCellGroup.add(cArrow);
 
     // Add labels for each axis
-    const offset = 2.1; // Adjust this to position the labels
-    const aLabel = createLabel(position1.multiplyScalar(offset), "a", "red", "18px");
-    const bLabel = createLabel(position2.multiplyScalar(offset), "b", "green", "18px");
-    const cLabel = createLabel(position3.multiplyScalar(offset), "c", "blue", "18px");
-
-    aLabel.userData.type = "cell";
-    bLabel.userData.type = "cell";
-    cLabel.userData.type = "cell";
-    aLabel.userData.uuid = this.viewer.uuid;
-    bLabel.userData.uuid = this.viewer.uuid;
-    cLabel.userData.uuid = this.viewer.uuid;
+    const offset = arrowLength + 0.3; // Adjust this to position the labels
+    const aLabel = createSpriteLabel(directions[0].multiplyScalar(offset), "a", "black", "80px");
+    const bLabel = createSpriteLabel(directions[1].multiplyScalar(offset), "b", "black", "80px");
+    const cLabel = createSpriteLabel(directions[2].multiplyScalar(offset), "c", "black", "80px");
 
     // Add labels to the group
-    this.labels.push(aLabel);
-    this.labels.push(bLabel);
-    this.labels.push(cLabel);
-    this.viewer.tjs.scene.add(aLabel);
-    this.viewer.tjs.scene.add(bLabel);
-    this.viewer.tjs.scene.add(cLabel);
+    unitCellGroup.add(aLabel);
+    unitCellGroup.add(bLabel);
+    unitCellGroup.add(cLabel);
+
+    // Create the sphere at the origin
+    const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 16, 16);
+    const sphereMaterial = new THREE.MeshStandardMaterial({ color: "grey" }); // Yellow color for the origin
+    const originSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+    // Add the sphere to the group
+    unitCellGroup.add(originSphere);
 
     // Add the group to the scene
-    this.viewer.tjs.scene.add(unitCellGroup);
+    this.viewer.tjs.coordScene.add(unitCellGroup);
     unitCellGroup.visible = this.showCell;
 
     // Return the group for further control if needed
     return unitCellGroup;
   }
+}
+
+function createSpriteLabel(position, text, color, size) {
+  var canvas = document.createElement("canvas");
+  canvas.width = 120; // Increase canvas size
+  canvas.height = 120;
+  var context = canvas.getContext("2d");
+  context.font = size + " Arial"; // Increase font size
+  context.fillStyle = color;
+  context.textAlign = "center";
+  context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  var texture = new THREE.CanvasTexture(canvas);
+  var spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+  var sprite = new THREE.Sprite(spriteMaterial);
+  sprite.position.copy(position);
+  sprite.scale.set(1.5, 1.5, 1); // Adjust the size as needed
+  return sprite;
 }
