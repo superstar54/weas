@@ -84,10 +84,10 @@ export class HighlightManager {
     this.viewer.atomManager.meshes["atom"].add(highlightAtomsMesh);
     highlightAtomsMesh.material.opacity = 0.6;
     highlightAtomsMesh.layers.set(1); // Set the layer to 1 to make it not selectable
+    this.meshes["atoms"] = highlightAtomsMesh;
     Object.values(this.settings).forEach((setting) => {
       this.updateHighlightAtomsMesh(setting.indices, setting.scale, setting.color);
     });
-    this.meshes["atoms"] = highlightAtomsMesh;
   }
 
   updateHighlightAtomsMesh(indices = [], factor = 1.1, color = "#3d82ed") {
