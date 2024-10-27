@@ -54,29 +54,44 @@ function drawTorus(options) {
   return createMesh(geometry, options);
 }
 
-function drawArrow({ position = [0, 0, 0], direction = [0, 0, 1], length = 4, radius = 0.2, color = "#bd0d87", opacity = 1.0, materialType = "Standard" }) {
-  const origin = new THREE.Vector3(...position);
-  const dir = new THREE.Vector3(...direction);
-  // Arrow Shaft (Cylinder)
-  const cylinderGeometry = new THREE.CylinderGeometry(radius, radius, length, 8, 1); // Adjust segment count as needed
-  // set scale
-  // Arrowhead (Cone)
-  const coneGeometry = new THREE.ConeGeometry(radius * 2, 6 * radius, 8); // 0.5 is the base radius, 2 is the height
-  // align cone to point up
-  coneGeometry.rotateY(Math.PI);
-  // combine into a single mesh
-  const arrow = new THREE.Object3D();
-  const shaft = new THREE.Mesh(cylinderGeometry, material);
-  shaft.scale.set(1, 1, 1);
-  const cone = new THREE.Mesh(coneGeometry, material);
-  cone.position.y = length / 2;
-  arrow.add(shaft);
-  arrow.add(cone);
-  // set position and direction
-  arrow.position.copy(origin);
-  arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+function drawArrow({
+  position = [0, 0, 0],
+  direction = [0, 0, 1],
+  arrowLength = 1,
+  arrowRadius = 0.05,
+  coneHeight = 0.2,
+  coneRadius = 0.1,
+  color = "#bd0d87",
+  opacity = 1.0,
+  materialType = "Standard",
+}) {
+  const material = materials[materialType].clone();
+  material.color = new THREE.Color(color);
+  material.transparent = true;
+  material.opacity = opacity;
+  material.side = THREE.DoubleSide;
+  const group = new THREE.Group();
+  // change direction to Vector3
+  direction = new THREE.Vector3(...direction);
 
-  return arrow;
+  // Create the cylinder (arrow shaft)
+  const shaftGeometry = new THREE.CylinderGeometry(arrowRadius, arrowRadius, arrowLength - coneHeight, 12);
+  const shaft = new THREE.Mesh(shaftGeometry, material);
+  // Position the shaft along the arrow direction
+  shaft.position.set(0, (arrowLength - coneHeight) / 2, 0);
+  group.add(shaft);
+  // Create the cone (arrow head)
+  const coneGeometry = new THREE.ConeGeometry(coneRadius, coneHeight, 12);
+  const cone = new THREE.Mesh(coneGeometry, material);
+  // Position the cone at the tip of the arrow
+  cone.position.set(0, arrowLength - coneHeight / 2, 0);
+  group.add(cone);
+  // Rotate the entire group so that it points in the direction
+  const axis = new THREE.Vector3(0, 1, 0); // Default arrow direction is along Y-axis
+  const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, direction.clone().normalize());
+  group.applyQuaternion(quaternion);
+  group.position.set(...position);
+  return group;
 }
 
 export { drawCube, drawCylinder, drawIcosahedron, drawCone, drawPlane, drawSphere, drawTorus, drawArrow };
