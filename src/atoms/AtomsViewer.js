@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { CellManager } from "./cell.js";
-import { AtomManager, drawAtoms } from "./plugins/atom.js";
+import { AtomManager } from "./plugins/atom.js";
 import { BondManager, searchBondedAtoms } from "./plugins/bond.js";
 import { clearObjects, clearObject } from "../utils.js";
 import { PolyhedraManager } from "./plugins/polyhedra.js";
@@ -10,6 +10,7 @@ import { Atom, Atoms } from "./atoms.js";
 import { Isosurface } from "./plugins/isosurface.js";
 import { VectorField } from "./plugins/vectorField.js";
 import { Measurement } from "./plugins/measurement.js";
+import { HighlightManager } from "./plugins/highlight.js";
 import { AtomsGUI } from "./atomsGui.js";
 import { defaultViewerSettings } from "../config.js";
 import { Phonon } from "./plugins/phonon.js";
@@ -48,6 +49,7 @@ class AtomsViewer {
     // other plugins
     this.atomManager = new AtomManager(this);
     this.cellManager = new CellManager(this);
+    this.highlightManager = new HighlightManager(this);
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui);
     this.bondManager = new BondManager(this, viewerSettings._hideLongBonds);
     this.boundaryManager = new BoundaryManager(this);
@@ -87,7 +89,6 @@ class AtomsViewer {
     ];
     this.boundaryList = null;
     //
-    this.highlightAtomsMesh = null;
   }
 
   play() {
@@ -193,6 +194,7 @@ class AtomsViewer {
     // initialize the bond settings
     // the following plugins read the atoms attribute, so they need to be updated
     this.atomManager.init();
+    this.highlightManager.init();
     this.bondManager.init();
     this.polyhedraManager.init();
     this.VFManager.init();
@@ -462,6 +464,7 @@ class AtomsViewer {
     if (JSON.stringify(this._selectedAtomsIndices) === JSON.stringify(newValue)) {
       return;
     }
+    this.highlightManager.settings["selection"].indices = newValue;
     // get new selected atoms from the difference between newValue and this._selectedAtomsIndices
     const newSelectedAtoms = newValue.filter((value) => !this._selectedAtomsIndices.includes(value));
     // get unselected atoms from the difference between this._selectedAtomsIndices and newValue
@@ -469,8 +472,8 @@ class AtomsViewer {
     this._selectedAtomsIndices = newValue;
     this.weas.eventHandlers.dispatchViewerUpdated({ selectedAtomsIndices: newValue });
     // update the highlight and atom label
-    this.updateHighlightAtomsMesh(newSelectedAtoms);
-    this.updateHighlightAtomsMesh(unselectedAtoms, 0);
+    this.highlightManager.updateHighlightAtomsMesh(newSelectedAtoms);
+    this.highlightManager.updateHighlightAtomsMesh(unselectedAtoms, 0);
     // draw atom label
     // const texts = this.selectedAtomsIndices.map(index => this.atoms.symbols[index]);
     this.ALManager.settings = [{ origins: "positions", texts: this.selectedAtomsIndices, selection: this.selectedAtomsIndices }];
@@ -508,39 +511,10 @@ class AtomsViewer {
     this.atomManager.meshes["atom"].add(polyhedraMesh);
     this.isosurfaceManager.drawIsosurfaces();
     this.VFManager.drawVectorFields();
-    this.drawHighlightAtoms();
+    this.highlightManager.drawHighlightAtoms();
     this.ALManager.drawAtomLabels();
     this.ready = true;
     this.weas.tjs.render();
-  }
-
-  drawHighlightAtoms() {
-    // set all the atomScales to 0 to hide the atoms
-    const atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
-    // use yellow color to highlight the selected atoms
-    const atomColors = new Array(this.atoms.getAtomsCount()).fill(new THREE.Color(0xffff00));
-    this.highlightAtomsMesh = drawAtoms({
-      scene: this.tjs.scene,
-      atoms: this.atoms,
-      atomScales: atomScales,
-      settings: {},
-      colors: atomColors,
-      radiusType: this.radiusType,
-      materialType: "Basic",
-      data_type: "highlight",
-    });
-    this.atomManager.meshes["atom"].add(this.highlightAtomsMesh);
-    this.highlightAtomsMesh.material.opacity = 0.6;
-    this.highlightAtomsMesh.layers.set(1); // Set the layer to 1 to make it not selectable
-    this.updateHighlightAtomsMesh(this.selectedAtomsIndices);
-  }
-
-  clearHighlightAtoms() {
-    // Remove highlighted atom meshes from the highlightAtomsMesh group
-    if (this.highlightAtomsMesh) {
-      this.logger.debug("clearHighlightAtoms: ");
-      clearObject(this.tjs.scene, this.highlightAtomsMesh);
-    }
   }
 
   dispose() {
@@ -727,29 +701,6 @@ class AtomsViewer {
     // if boundaryAtomsMesh has instanceMatrix, update it
     if (this.atomManager.meshes["boundary"]) {
       this.atomManager.meshes["boundary"].instanceMatrix.needsUpdate = true;
-    }
-  }
-
-  updateHighlightAtomsMesh(indices, factor = 1.1) {
-    /* When the atom is moved, the boundary atoms should be moved as well.
-     */
-    if (this.atoms.symbols.length > 0) {
-      const position = new THREE.Vector3();
-      const rotation = new THREE.Quaternion();
-      const scale = new THREE.Vector3();
-      indices.forEach((index) => {
-        // Update the atom position
-        const matrix = new THREE.Matrix4();
-        this.atomManager.meshes["atom"].getMatrixAt(index, matrix);
-        // Decompose the original matrix into its components
-        matrix.decompose(position, rotation, scale);
-        // scale by factor
-        scale.multiplyScalar(factor);
-        // Recompose the matrix with the new scale
-        matrix.compose(position, rotation, scale);
-        this.highlightAtomsMesh.setMatrixAt(index, matrix);
-      });
-      this.highlightAtomsMesh.instanceMatrix.needsUpdate = true;
     }
   }
 
