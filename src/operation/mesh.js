@@ -248,8 +248,18 @@ class AddArrowOperation extends BaseMeshOperation {
   static description = "Add arrow";
   static category = "Mesh";
 
-  constructor({ weas, position = { x: 0, y: 0, z: 0 }, direction = { x: 0, y: 0, z: 1 }, length = 4, radius = 0.2, color = "#bd0d87", materialType = "Standard" }) {
-    super(weas, { position, direction, length, radius, color, materialType }, drawArrow);
+  constructor({
+    weas,
+    position = { x: 0, y: 0, z: 0 },
+    direction = { x: 0, y: 0, z: 1 },
+    arrowLength = 1,
+    arrowRadius = 0.05,
+    coneHeight = 0.2,
+    coneRadius = 0.1,
+    color = "#bd0d87",
+    materialType = "Standard",
+  }) {
+    super(weas, { position, direction, arrowLength, arrowRadius, coneHeight, color, coneRadius, materialType }, drawArrow);
   }
 }
 
