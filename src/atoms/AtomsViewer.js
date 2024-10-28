@@ -472,8 +472,8 @@ class AtomsViewer {
     this._selectedAtomsIndices = newValue;
     this.weas.eventHandlers.dispatchViewerUpdated({ selectedAtomsIndices: newValue });
     // update the highlight and atom label
-    this.highlightManager.updateHighlightAtomsMesh(newSelectedAtoms);
-    this.highlightManager.updateHighlightAtomsMesh(unselectedAtoms, 0);
+    this.highlightManager.updateHighlightAtomsMesh({ indices: newSelectedAtoms, factor: 1.1, type: "sphere" });
+    this.highlightManager.updateHighlightAtomsMesh({ indices: unselectedAtoms, factor: 0, type: "sphere" });
     // draw atom label
     // const texts = this.selectedAtomsIndices.map(index => this.atoms.symbols[index]);
     this.ALManager.settings = [{ origins: "positions", texts: this.selectedAtomsIndices, selection: this.selectedAtomsIndices }];

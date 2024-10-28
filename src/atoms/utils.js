@@ -52,21 +52,24 @@ export function drawAtoms({ atoms, atomScales, settings, colors, materialType = 
   // const instancedMesh = new THREE.InstancedMesh(atomGeometry, material, Math.max(1000, atoms.symbols.length));
   const instancedMesh = new THREE.InstancedMesh(atomGeometry, material, atoms.symbols.length);
   // Position, scale, and color each atom
+  let position = new THREE.Vector3();
+  const rotation = new THREE.Quaternion();
+  let scale = new THREE.Vector3();
+  const instanceMatrix = new THREE.Matrix4();
   atoms.symbols.forEach((symbol, globalIndex) => {
     // Set position and scale
-    const position = new THREE.Vector3(...atoms.positions[globalIndex]);
-    const dummy = new THREE.Object3D();
-    dummy.position.copy(position);
-    const scale = atomScales[globalIndex];
+    position = new THREE.Vector3(...atoms.positions[globalIndex]);
     // if symbol in settings, use the radius and color from settings
     if (symbol in settings) {
       radius = settings[symbol].radius;
     } else {
       radius = 1;
     }
-    dummy.scale.set(radius * scale, radius * scale, radius * scale);
-    dummy.updateMatrix();
-    instancedMesh.setMatrixAt(globalIndex, dummy.matrix);
+    //scale is radius * atomScales[globalIndex], radius * atomScales[globalIndex], radius * atomScales[globalIndex]
+    scale.set(radius * atomScales[globalIndex], radius * atomScales[globalIndex], radius * atomScales[globalIndex]);
+    // Set rotation
+    instanceMatrix.compose(position, rotation, scale);
+    instancedMesh.setMatrixAt(globalIndex, instanceMatrix);
     // Set color
     instancedMesh.setColorAt(globalIndex, colors[globalIndex]);
   });
