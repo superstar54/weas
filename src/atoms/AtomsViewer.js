@@ -51,7 +51,7 @@ class AtomsViewer {
     this.cellManager = new CellManager(this);
     this.highlightManager = new HighlightManager(this);
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui);
-    this.bondManager = new BondManager(this, viewerSettings._hideLongBonds);
+    this.bondManager = new BondManager(this, viewerSettings._hideLongBonds, viewerSettings._showHydrogenBonds);
     this.boundaryManager = new BoundaryManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
     this.isosurfaceManager = new Isosurface(this);
