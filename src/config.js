@@ -9,6 +9,7 @@ const defaultViewerSettings = {
   _atomLabelType: "None",
   _showBondedAtoms: false,
   _hideLongBonds: true,
+  _showHydrogenBonds: false,
   _showCell: true, // Default show cell
   _boundary: [
     [0, 1],

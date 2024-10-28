@@ -14,3 +14,4 @@ Atoms
     vector_field
     measurement
     boundary
+    highlight
