@@ -127,8 +127,7 @@ class AtomsViewer {
     // update vector fields related to the atoms attribute
     this.VFManager.updateArrowMesh(null, atoms);
     // update cell
-    this.cellManager.cell = this.atoms.cell;
-    this.cellManager.draw();
+    this.cellManager.updateCellMesh(this.originalCell);
   }
 
   get currentFrame() {

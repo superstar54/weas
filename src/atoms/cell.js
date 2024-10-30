@@ -52,6 +52,8 @@ export class CellManager {
   draw() {
     this.clear();
     if (!this.viewer.originalCell.some((row) => row.every((cell) => cell === 0))) {
+      // copy the cell as current cell
+      this.currentCell = this.viewer.originalCell.map((row) => row.slice());
       this.cellMesh = this.drawUnitCell();
       this.cellVectors = this.drawUnitCellVectors();
     }
@@ -158,6 +160,87 @@ export class CellManager {
 
     // Return the group for further control if needed
     return unitCellGroup;
+  }
+
+  updateCellMesh(cell) {
+    // Validate the cell matrix format
+    if (!cell || cell.length !== 3) {
+      console.warn("Invalid cell data for updating cell mesh");
+      return;
+    }
+    if (!this.cellMesh && !this.currentCell) {
+      return;
+    }
+    // If the cell is the same as the current cell within tolerance, do nothing
+    const eps = 1e-5;
+    if (cell.every((row, i) => row.every((cellValue, j) => Math.abs(cellValue - this.currentCell[i][j]) < eps))) {
+      return;
+    }
+
+    if (this.cellMesh) {
+      // Update vertices based on new cell parameters
+      const cellMatrix = cell;
+      const origin = new THREE.Vector3(0, 0, 0);
+
+      const v0 = origin;
+      const v1 = new THREE.Vector3(...cellMatrix[0]);
+      const v2 = new THREE.Vector3(...cellMatrix[1]);
+      const v3 = new THREE.Vector3().addVectors(v1, v2);
+      const v4 = new THREE.Vector3(...cellMatrix[2]);
+      const v5 = new THREE.Vector3().addVectors(v1, v4);
+      const v6 = new THREE.Vector3().addVectors(v2, v4);
+      const v7 = new THREE.Vector3().addVectors(v3, v4);
+
+      // Update geometry points
+      const points = [
+        v0.clone(),
+        v1.clone(),
+        v1.clone(),
+        v3.clone(),
+        v3.clone(),
+        v2.clone(),
+        v2.clone(),
+        v0.clone(),
+        v4.clone(),
+        v5.clone(),
+        v5.clone(),
+        v7.clone(),
+        v7.clone(),
+        v6.clone(),
+        v6.clone(),
+        v4.clone(),
+        v0.clone(),
+        v4.clone(),
+        v1.clone(),
+        v5.clone(),
+        v2.clone(),
+        v6.clone(),
+        v3.clone(),
+        v7.clone(),
+      ];
+
+      // Replace old geometry with new geometry points
+      this.cellMesh.geometry.setFromPoints(points);
+    }
+
+    if (this.cellVectors) {
+      // Update arrow directions
+      const directions = [new THREE.Vector3(...cell[0]).normalize(), new THREE.Vector3(...cell[1]).normalize(), new THREE.Vector3(...cell[2]).normalize()];
+
+      // Update the direction of each arrow by applying a new rotation
+      const axis = new THREE.Vector3(0, 1, 0); // Default arrow direction is along Y-axis
+
+      for (let i = 0; i < 3; i++) {
+        const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, directions[i]);
+        this.cellVectors.children[i].setRotationFromQuaternion(quaternion);
+      }
+
+      // Update label positions
+      const offset = 3.3; // Offset position for labels based on new directions
+      this.cellVectors.children[3].position.copy(directions[0].multiplyScalar(offset));
+      this.cellVectors.children[4].position.copy(directions[1].multiplyScalar(offset));
+      this.cellVectors.children[5].position.copy(directions[2].multiplyScalar(offset));
+    }
   }
 }
 
