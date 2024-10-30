@@ -168,6 +168,9 @@ export class CellManager {
       console.warn("Invalid cell data for updating cell mesh");
       return;
     }
+    if (!this.cellMesh && !this.currentCell) {
+      return;
+    }
     // If the cell is the same as the current cell within tolerance, do nothing
     const eps = 1e-5;
     if (cell.every((row, i) => row.every((cellValue, j) => Math.abs(cellValue - this.currentCell[i][j]) < eps))) {
