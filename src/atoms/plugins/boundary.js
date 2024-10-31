@@ -30,23 +30,20 @@ export class BoundaryManager {
   }
 
   init() {
-    /* Initialize the species settings from the viewer.atoms
+    /* Initialize the settings from the viewer.atoms
      */
     this.viewer.logger.debug("init atom settings");
     this.settings = {};
-    const speciesSet = new Set(this.viewer.originalAtoms.symbols);
-    const speciesList = Array.from(speciesSet);
-    for (let i = 0; i < speciesList.length; i++) {
-      const species = speciesList[i];
-      this.settings[species] = this.getDefaultSetting(species);
-    }
+    Object.entries(this.viewer.originalAtoms.kinds).forEach(([symbol, kind]) => {
+      this.settings[symbol] = this.getDefaultSetting(symbol, kind);
+    });
   }
 
-  getDefaultSetting(species) {
-    /* Get the default bond setting for the species1 and species2 */
-    const color = elementColors[this.viewer.colorType][species];
-    const radius = radiiData[this.viewer.radiusType][species];
-    const setting = new Setting({ element: species, symbol: species, radius, color });
+  getDefaultSetting(symbol, kind) {
+    /* Get the default bond setting for the kind1 and kind2 */
+    const color = elementColors[this.viewer.colorType][kind.element];
+    const radius = radiiData[this.viewer.radiusType][kind.element];
+    const setting = new Setting({ element: kind.element, symbol: symbol, radius, color });
     return setting;
   }
 
@@ -60,10 +57,10 @@ export class BoundaryManager {
     });
   }
 
-  addSetting({ species1, species2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
+  addSetting({ kind1, kind2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
     /* Add a new setting to the bond */
-    const setting = new Setting({ species1, species2, radius, min, max, color1, color2, order });
-    const key = species1 + "-" + species2;
+    const setting = new Setting({ kind1, kind2, radius, min, max, color1, color2, order });
+    const key = kind1 + "-" + kind2;
     this.settings[key] = setting;
   }
 
@@ -80,7 +77,7 @@ export function getImageAtoms(atoms, offsets) {
   // create a new atoms with the boundary atoms
   const imageAtoms = new Atoms();
   imageAtoms.cell = atoms.cell;
-  imageAtoms.species = atoms.species;
+  imageAtoms.kinds = atoms.kinds;
   const positions = offsets.map((offset) => {
     // Get original position
     const originalPosition = atoms.positions[offset[0]];
@@ -113,7 +110,7 @@ export function searchBoundary(
     return [];
   }
   let positions = atoms.positions;
-  let species = atoms.species; // Assuming species is a property of atoms
+  let kinds = atoms.kinds; // Assuming kinds is a property of atoms
 
   if (typeof boundary === "number") {
     boundary = [
@@ -136,7 +133,7 @@ export function searchBoundary(
   let i0 = 0;
 
   let offsets = [];
-  let speciesExtended = [];
+  let kindsExtended = [];
 
   for (let m0 = ib[0][0]; m0 < ib[1][0]; m0++) {
     for (let m1 = ib[0][1]; m1 < ib[1][1]; m1++) {
@@ -149,7 +146,7 @@ export function searchBoundary(
           npositions[i] = npositions[i].map((val, idx) => val + (idx === 0 ? m0 : idx === 1 ? m1 : m2));
           offsets.push([i % n, [m0, m1, m2]]);
         }
-        speciesExtended = speciesExtended.concat(species);
+        kindsExtended = kindsExtended.concat(kinds);
         i0 = i1;
       }
     }

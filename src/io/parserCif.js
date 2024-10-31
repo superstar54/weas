@@ -4,7 +4,7 @@ import { convertToMatrixFromABCAlphaBetaGamma, calculateCartesianCoordinates } f
 export function parseCIF(cifString) {
   const data = {
     cell: [],
-    species: {},
+    kinds: {},
     positions: [],
     symbols: [],
   };

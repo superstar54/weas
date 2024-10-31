@@ -24,8 +24,8 @@ class ReplaceOperation extends BaseOperation {
   }
 
   adjust(newSymbol) {
-    // if newSymbol not in elementAtomicNumbers, and newSymbol not in this.weas.avr.atoms.species, ship the adjustment
-    if (!(newSymbol in elementAtomicNumbers || newSymbol in this.weas.avr.atoms.species)) {
+    // if newSymbol not in elementAtomicNumbers, and newSymbol not in this.weas.avr.atoms.kinds, ship the adjustment
+    if (!(newSymbol in elementAtomicNumbers || newSymbol in this.weas.avr.atoms.kinds)) {
       return;
     }
     this.symbol = newSymbol;
@@ -68,7 +68,7 @@ class AddAtomOperation extends BaseOperation {
 
   adjust(newSymbol, newPosition) {
     // if newSymbol not in elementAtomicNumbers, ship the adjustment
-    if (!(newSymbol in elementAtomicNumbers || newSymbol in this.weas.avr.atoms.species)) {
+    if (!(newSymbol in elementAtomicNumbers || newSymbol in this.weas.avr.atoms.kinds)) {
       return;
     }
     this.weas.avr.atoms = this.initialAtoms.copy();

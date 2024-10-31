@@ -7,9 +7,9 @@ import { kdTree } from "../../geometry/kdTree.js";
 import { searchBoundary } from "./boundary.js";
 
 class Setting {
-  constructor({ species1, species2, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", radius = 0.1, order = 1, type = 0 }) {
-    this.species1 = species1;
-    this.species2 = species2;
+  constructor({ kind1, kind2, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", radius = 0.1, order = 1, type = 0 }) {
+    this.kind1 = kind1;
+    this.kind2 = kind2;
     this.min = min;
     this.max = max;
     this.color1 = convertColor(color1);
@@ -21,8 +21,8 @@ class Setting {
 
   toDict() {
     return {
-      species1: this.species1,
-      species2: this.species2,
+      kind1: this.kind1,
+      kind2: this.kind2,
       min: this.min,
       max: this.max,
       color1: this.color1,
@@ -48,7 +48,7 @@ export class BondManager {
 
   init() {
     /* Initialize the bond settings from the viewer.atoms
-    The default max is the sum of two radius of the species.
+    The default max is the sum of two radius of the kinds.
     The default color is from the elementColors.
     */
     this.viewer.logger.debug("init bond settings");
@@ -56,30 +56,28 @@ export class BondManager {
     this.stickBonds = [];
     this.lineBonds = [];
     this.springBonds = [];
-    Object.entries(this.viewer.originalAtoms.species).forEach(([symbol1, species1]) => {
-      Object.entries(this.viewer.originalAtoms.species).forEach(([symbol2, species2]) => {
-        const elementPair = species1.element + "-" + species2.element;
+    Object.entries(this.viewer.originalAtoms.kinds).forEach(([symbol1, kind1]) => {
+      Object.entries(this.viewer.originalAtoms.kinds).forEach(([symbol2, kind2]) => {
+        const elementPair = kind1.element + "-" + kind2.element;
         // if the elementPair is not in the default_bond_pairs, skip
         if (default_bond_pairs[elementPair] === undefined) {
           return;
         }
-        const key = species1.symbol + "-" + species2.symbol;
-        this.settings[key] = this.getDefaultSetting(species1, species2);
+        const key = symbol1 + "-" + symbol2;
+        this.settings[key] = this.getDefaultSetting(symbol1, kind1, symbol2, kind2);
       });
     });
   }
 
-  getDefaultSetting(species1, species2) {
-    /* Get the default bond setting for the species1 and species2 */
-    let color1 = this.viewer.atomManager.settings[species1.symbol].color;
-    let color2 = this.viewer.atomManager.settings[species2.symbol].color;
-    const radius1 = this.viewer.atomManager.settings[species1.symbol].radius;
-    const radius2 = this.viewer.atomManager.settings[species2.symbol].radius;
+  getDefaultSetting(symbol1, kind1, symbol2, kind2) {
+    /* Get the default bond setting for the kind1 and kind2 */
+    let color1 = this.viewer.atomManager.settings[symbol1].color;
+    let color2 = this.viewer.atomManager.settings[symbol2].color;
+    const radius1 = this.viewer.atomManager.settings[symbol1].radius;
+    const radius2 = this.viewer.atomManager.settings[symbol2].radius;
     let min = 0.0;
     let max = (radius1 + radius2) * 1.1;
-    const symbol1 = species1.symbol;
-    const symbol2 = species2.symbol;
-    const type = default_bond_pairs[species1.element + "-" + species2.element][2];
+    const type = default_bond_pairs[kind1.element + "-" + kind2.element][2];
     // if type  is hydrogen bond, set the min as the max, and the max as the max + 1
     if (type === 1) {
       min = max + 0.4;
@@ -88,7 +86,7 @@ export class BondManager {
       color1 = "#808080";
       color2 = "#808080";
     }
-    const setting = new Setting({ species1: symbol1, species2: symbol2, min, max, color1, color2, type });
+    const setting = new Setting({ kind1: symbol1, kind2: symbol2, min, max, color1, color2, type });
     return setting;
   }
 
@@ -103,10 +101,10 @@ export class BondManager {
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting({ species1, species2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1, type = 0 }) {
+  addSetting({ kind1, kind2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1, type = 0 }) {
     /* Add a new setting to the bond */
-    const setting = new Setting({ species1, species2, radius, min, max, color1, color2, order, type });
-    const key = species1 + "-" + species2;
+    const setting = new Setting({ kind1, kind2, radius, min, max, color1, color2, order, type });
+    const key = kind1 + "-" + kind2;
     this.settings[key] = setting;
   }
 
@@ -114,9 +112,9 @@ export class BondManager {
     /* Build a dictionary of cutoffs */
     const cutoffDict = {};
     Object.values(this.settings).forEach((setting) => {
-      const species1 = setting.species1;
-      const species2 = setting.species2;
-      const key1 = species1 + "-" + species2;
+      const kind1 = setting.kind1;
+      const kind2 = setting.kind2;
+      const key1 = kind1 + "-" + kind2;
       cutoffDict[key1] = setting.toDict();
     });
     this.viewer.logger.debug("cutoffDict: ", cutoffDict);
@@ -347,7 +345,7 @@ export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, 
     var position2 = atoms.positions[index2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
     position2 = new THREE.Vector3(...position2);
     // Setting color for each material
-    const key = atoms.species[atoms.symbols[index1]].symbol + "-" + atoms.species[atoms.symbols[index2]].symbol;
+    const key = atoms.symbols[index1] + "-" + atoms.symbols[index2];
     // if atomColors is not null, use the atomColors, otherwise use the settings
     const color1 = atomColors ? atomColors[index1] : settings[key].color1;
     const midpoint1 = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
@@ -400,7 +398,7 @@ export function drawLine(atoms, bondList, bondIndices, settings, materialType = 
     vertices.push(position1.x, position1.y, position1.z);
     vertices.push(position2.x, position2.y, position2.z);
     // Setting color for each bond
-    const key = atoms.species[atoms.symbols[index1]].symbol + "-" + atoms.species[atoms.symbols[index2]].symbol;
+    const key = atoms.symbols[index1] + "-" + atoms.symbols[index2];
     const color1 = settings[key].color1;
     const color2 = settings[key].color2;
 
@@ -671,7 +669,7 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) 
   /* Function to find neighbors within a certain cutoff
   Args:
     atoms: Atoms object
-    cutoffs: Dictionary of cutoffs for each species pair, has min and max
+    cutoffs: Dictionary of cutoffs for each kind pair, has min and max
     include_self: Include self in the neighbors list
     pbc: Periodic boundary conditions
   */
@@ -726,8 +724,8 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) 
   offsets.forEach(([atomIndex1, offset1], idx1) => {
     // skip the atoms not in the original cell
     if (offset1[0] != 0 || offset1[1] != 0 || offset1[2] != 0) return;
-    const species1 = atoms.species[atoms.symbols[atomIndex1]].symbol;
-    const radius1 = covalentRadii[species1] * 1.1 || 1;
+    const kind1 = atoms.symbols[atomIndex1];
+    const radius1 = covalentRadii[kind1] * 1.1 || 1;
     const pos1 = positions[idx1];
     const point = { x: positions[idx1][0], y: positions[idx1][1], z: positions[idx1][2] };
 
@@ -741,7 +739,7 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) 
       if (idx1 == idx2) return;
       const atomIndex2 = offsets[idx2][0];
       if (!include_self && atomIndex1 == atomIndex2) return;
-      const key = species1 + "-" + atoms.species[atoms.symbols[atomIndex2]].symbol;
+      const key = kind1 + "-" + atoms.symbols[atomIndex2];
       // if key is not in cutoffs, skip
       if (!cutoffs[key]) return;
       const pos2 = positions[idx2];

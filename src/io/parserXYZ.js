@@ -21,7 +21,7 @@ function parseXYZ(xyzString) {
 
     // Initialize data structure for the current frame
     const data = {
-      species: {},
+      kinds: {},
       positions: [],
       symbols: [],
     };
@@ -35,12 +35,12 @@ function parseXYZ(xyzString) {
 
       const [element, x, y, z] = parts;
 
-      // Update species data if it's a new species
-      if (!data.species[element]) {
-        data.species[element] = element;
+      // Update kinds data if it's a new kinds
+      if (!data.kinds[element]) {
+        data.kinds[element] = element;
       }
 
-      // Add species and position data for the current atom
+      // Add kinds and position data for the current atom
       data.symbols.push(element);
       data.positions.push([parseFloat(x), parseFloat(y), parseFloat(z)]);
     }

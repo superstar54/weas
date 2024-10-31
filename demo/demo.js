@@ -1,10 +1,10 @@
-import { WEAS, Atoms, Species, parseXYZ, parseCIF, parseCube } from "../src/index.js"; // Adjust the path as necessary
+import { WEAS, Atoms, Kind, parseXYZ, parseCIF, parseCube } from "../src/index.js"; // Adjust the path as necessary
 import * as THREE from "three";
 
 window.THREE = THREE;
 window.WEAS = WEAS;
 window.Atoms = Atoms;
-window.Species = Species;
+window.Kind = Kind;
 
 async function fetchFile(filename) {
   const response = await fetch(`datas/${filename}`);
@@ -68,8 +68,8 @@ async function updateAtoms(filename, fileContent = null) {
       const atomsList = parseXYZ(structureData);
       // atomsList[0].newAttribute("moment", [1, 1, 1, 1, 1, -1, -1, -1, -1, -1], "atom");
       // atomsList[0].newAttribute("charge", [-1, 0.5, 1, 0.5, 0.3, 0.2, 2, 1, 0, -0.5], "atom");
-      // atomsList[0].newAttribute("color", { C: "##eb4034", H: "#b434eb", O: "#34eb77", S: "#FFFF00" }, "species");
-      // atomsList[0].newAttribute("radii", { C: 1.5, H: 1.0, O: 1.5, S: 1.5 }, "species");
+      // atomsList[0].newAttribute("color", { C: "##eb4034", H: "#b434eb", O: "#34eb77", S: "#FFFF00" }, "kind");
+      // atomsList[0].newAttribute("radii", { C: 1.5, H: 1.0, O: 1.5, S: 1.5 }, "kind");
       editor.avr.atoms = atomsList;
       // editor.avr.bondManager.settings[1].color1 = "blue";
       // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
@@ -232,12 +232,12 @@ async function updateAtoms(filename, fileContent = null) {
       editor.anyMesh.fromSettings(data);
       editor.anyMesh.drawMesh();
       break;
-    case "species":
+    case "kinds":
       editor.clear();
       filename = "c2h6so.xyz";
       structureData = fileContent || (await fetchFile(filename));
       atoms = parseXYZ(structureData);
-      atoms[0].addSpecies("C1", "C");
+      atoms[0].addKind("C1", "C");
       atoms[0].symbols[3] = "C1";
       editor.avr.atoms = atoms;
       // editor.avr.bondManager.settings[1].color1 = "blue";

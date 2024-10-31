@@ -31,7 +31,7 @@ export class HighlightManager {
   }
 
   init() {
-    /* Initialize the species settings from the viewer.atoms */
+    /* Initialize the kind settings from the viewer.atoms */
     this.viewer.logger.debug("init highlight settings");
     this.settings = {
       selection: new Setting({ indices: [], scale: 1.1, color: "#ffff00" }),

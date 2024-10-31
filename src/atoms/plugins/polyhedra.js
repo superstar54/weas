@@ -8,15 +8,15 @@ import { convertColor } from "../utils.js";
 const defaultColor = 0xffffff;
 
 class Setting {
-  constructor({ species, color = "#3d82ed", show_edge = false }) {
-    this.species = species;
+  constructor({ symbol, color = "#3d82ed", show_edge = false }) {
+    this.symbol = symbol;
     this.color = convertColor(color);
     this.show_edge = show_edge;
   }
 
   toDict() {
     return {
-      species: this.species,
+      symbol: this.symbol,
       color: this.color,
       show_edge: this.show_edge,
     };
@@ -35,24 +35,20 @@ export class PolyhedraManager {
 
   init() {
     /* Initialize the polyhedra settings from the viewer.atoms
-    The default max is the sum of two radius of the species.
+    The default max is the sum of two radius of the kinds.
     The default color is from the elementColors.
     */
     this.viewer.logger.debug("init PolyhedraManager");
     this.settings = [];
     const atoms = this.viewer.atoms;
-    const symbols = atoms.symbols;
-    const speciesSet = new Set(symbols);
-    const speciesList = Array.from(speciesSet);
-    for (let i = 0; i < speciesList.length; i++) {
-      if (!elementsWithPolyhedra.includes(speciesList[i])) {
-        continue;
+    Object.entries(this.viewer.originalAtoms.kinds).forEach(([symbol, kind]) => {
+      if (!elementsWithPolyhedra.includes(kind.element)) {
+        return;
       }
-      const species = speciesList[i];
-      const color = elementColors[this.viewer.colorType][species];
-      const setting = new Setting({ species, color });
+      const color = elementColors[this.viewer.colorType][kind.element];
+      const setting = new Setting({ symbol, color });
       this.settings.push(setting);
-    }
+    });
   }
 
   fromSettings(settings) {
@@ -66,9 +62,9 @@ export class PolyhedraManager {
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting({ species, color = "#3d82ed", show_edge = false }) {
+  addSetting({ symbol, color = "#3d82ed", show_edge = false }) {
     /* Add a new setting to the polyhedra */
-    const setting = new Setting({ species, color, show_edge });
+    const setting = new Setting({ symbol, color, show_edge });
     this.settings.push(setting);
   }
 
@@ -76,7 +72,7 @@ export class PolyhedraManager {
     /* Build a dictionary of cutoffs */
     const cutoffDict = {};
     this.settings.forEach((setting) => {
-      cutoffDict[setting.species] = setting.toDict();
+      cutoffDict[setting.symbol] = setting.toDict();
     });
     return cutoffDict;
   }
@@ -174,7 +170,7 @@ export function drawPolyhedras(atoms, polyhedras, bondList, colorType = "CPK", m
 export function filterBondMap(bondMap, symbols, elements, modelPolyhedras) {
   /*
     loop through bondMap and filter out only those atoms that have
-    four or more bonds and whose species (retrieved from atoms.symbols[atomIndex])
+    four or more bonds and whose kind (retrieved from atoms.symbols[atomIndex])
     are in a specified list of elements (elements)
     */
   const filteredMap = {};
@@ -183,9 +179,9 @@ export function filterBondMap(bondMap, symbols, elements, modelPolyhedras) {
   Object.keys(bondMap).forEach((key) => {
     const atomIndex = bondMap[key]["atomIndex"];
     const numBond = bondMap[key]["sticks"].length;
-    const speciesName = symbols[atomIndex];
+    const kindName = symbols[atomIndex];
 
-    if (modelPolyhedras[atomIndex] && numBond >= 4 && elements.includes(speciesName)) {
+    if (modelPolyhedras[atomIndex] && numBond >= 4 && elements.includes(kindName)) {
       filteredMap[key] = bondMap[key];
     }
   });

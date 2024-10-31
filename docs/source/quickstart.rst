@@ -77,7 +77,7 @@ Here is the result of the above code:
 Features
 --------
 
-- **Structure Manipulation**: Enables manipulation of the structure, such as adding, removing, translating, rotating atoms and modifying species, and cell parameters.
+- **Structure Manipulation**: Enables manipulation of the structure, such as adding, removing, translating, rotating atoms and modifying kind, and cell parameters.
 
 - **Customizable Appearance**: Allows customization of atom and bond appearances, including colors, sizes, and visibility, polyhedra, and unit cell.
 
