@@ -21,9 +21,9 @@ Supported style are:
 
 
 -----------------------------
-Custom color for each kind
+Custom color for each specie
 -----------------------------
-Use can set custom color for each kind. The color can be in the form of hex code or color name.
+Use can set custom color for each specie. The color can be in the form of hex code or color name.
 
 
 .. code-block:: javascript
@@ -35,7 +35,7 @@ Use can set custom color for each kind. The color can be in the form of hex code
     weas.avr.drawModels()
 
 
-.. image:: ../_static/images/example_color_by_kind.png
+.. image:: ../_static/images/example_color_by_species.png
    :width: 6cm
 
 

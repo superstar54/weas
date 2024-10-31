@@ -1,10 +1,10 @@
 import { elementAtomicNumbers } from "./atoms_data.js";
 import { convertToMatrixFromABCAlphaBetaGamma, calculateInverseMatrix } from "../utils.js";
 
-class Kind {
+class Specie {
   constructor(element) {
     if (!element) {
-      throw new Error("Element is required for Kind.");
+      throw new Error("Element is required for Specie.");
     }
     this.element = element;
   }
@@ -42,8 +42,8 @@ class Atoms {
       [0, 0, 0],
     ],
     pbc = [true, true, true],
-    kinds = {},
-    attributes = { atom: {}, kind: {} },
+    species = {},
+    attributes = { atom: {}, specie: {} },
   } = {}) {
     this.uuid = null;
     if (symbols.length !== positions.length) {
@@ -51,32 +51,32 @@ class Atoms {
     }
     this.symbols = symbols;
     this.positions = positions;
-    this.setKinds(kinds, symbols);
+    this.setSpecies(species, symbols);
     this.setCell(cell);
     this.setPBC(pbc);
     this.setAttributes(attributes);
   }
 
-  setKinds(kinds, symbols = null) {
-    this.kinds = {};
-    if (typeof kinds !== "object") {
-      throw new Error("Kinds should be a dictionary.");
+  setSpecies(species, symbols = null) {
+    this.species = {};
+    if (typeof species !== "object") {
+      throw new Error("Species should be a dictionary.");
     }
-    Object.entries(kinds).forEach(([symbol, element]) => {
-      this.addKind(symbol, element);
+    Object.entries(species).forEach(([symbol, element]) => {
+      this.addSpecie(symbol, element);
     });
     if (symbols) {
-      const kindsSet = new Set(symbols);
-      kindsSet.forEach((s) => {
-        if (!this.kinds[s]) {
-          this.addKind(s);
+      const speciesSet = new Set(symbols);
+      speciesSet.forEach((s) => {
+        if (!this.species[s]) {
+          this.addSpecie(s);
         }
       });
     }
   }
 
   setAttributes(attributes) {
-    this.attributes = { atom: {}, kind: {}, "inter-kind": {} };
+    this.attributes = { atom: {}, specie: {}, "inter-specie": {} };
     for (const domain in attributes) {
       for (const name in attributes[domain]) {
         this.newAttribute(name, attributes[domain][name], domain);
@@ -90,17 +90,17 @@ class Atoms {
         throw new Error("The number of values does not match the number of atoms.");
       }
       this.attributes["atom"][name] = JSON.parse(JSON.stringify(values));
-    } else if (domain === "kind") {
-      for (const key of Object.keys(this.kinds)) {
+    } else if (domain === "specie") {
+      for (const key of Object.keys(this.species)) {
         if (!(key in values)) {
-          throw new Error(`Value for kind '${key}' is missing.`);
+          throw new Error(`Value for specie '${key}' is missing.`);
         }
       }
-      this.attributes["kind"][name] = JSON.parse(JSON.stringify(values));
-    } else if (domain === "inter-kind") {
-      this.attributes["inter-kind"][name] = JSON.parse(JSON.stringify(values));
+      this.attributes["specie"][name] = JSON.parse(JSON.stringify(values));
+    } else if (domain === "inter-specie") {
+      this.attributes["inter-specie"][name] = JSON.parse(JSON.stringify(values));
     } else {
-      throw new Error('Invalid domain. Must be either "atom", "kind", or "inter-kind".');
+      throw new Error('Invalid domain. Must be either "atom", "specie", or "inter-specie".');
     }
   }
 
@@ -117,18 +117,18 @@ class Atoms {
         throw new Error(`Attribute '${name}' is not defined. The available attributes are: ${Object.keys(this.attributes["atom"])}`);
       }
       return this.attributes["atom"][name];
-    } else if (domain === "kind") {
-      if (!this.attributes["kind"][name]) {
-        throw new Error(`Attribute '${name}' is not defined. The available attributes are: ${Object.keys(this.attributes["kind"])}`);
+    } else if (domain === "specie") {
+      if (!this.attributes["specie"][name]) {
+        throw new Error(`Attribute '${name}' is not defined. The available attributes are: ${Object.keys(this.attributes["specie"])}`);
       }
-      return this.attributes["kind"][name];
-    } else if (domain === "inter-kind") {
+      return this.attributes["specie"][name];
+    } else if (domain === "inter-specie") {
       if (!this.attributes[domain][name]) {
-        throw new Error(`Attribute '${name}' is not defined in inter-kind domain. The available attributes are: ${Object.keys(this.attributes[domain])}`);
+        throw new Error(`Attribute '${name}' is not defined in inter-specie domain. The available attributes are: ${Object.keys(this.attributes[domain])}`);
       }
       return this.attributes[domain][name];
     } else {
-      throw new Error('Invalid domain. Must be either "atom", "kind", or "inter-kind".');
+      throw new Error('Invalid domain. Must be either "atom", "specie", or "inter-specie".');
     }
   }
 
@@ -172,19 +172,19 @@ class Atoms {
     this.pbc = pbc;
   }
 
-  addKind(symbol, element = null) {
-    // if the kind is already defined, raise an error
-    if (this.kinds[symbol]) {
-      throw new Error(`Kind '${symbol}' is already defined.`);
+  addSpecie(symbol, element = null) {
+    // if the specie is already defined, raise an error
+    if (this.species[symbol]) {
+      throw new Error(`Specie '${symbol}' is already defined.`);
     } else {
       if (!element) {
         element = symbol;
       }
-      // if element is a Kind, add it directly
-      if (element instanceof Kind) {
-        this.kinds[symbol] = element;
+      // if element is a Specie, add it directly
+      if (element instanceof Specie) {
+        this.species[symbol] = element;
       } else {
-        this.kinds[symbol] = new Kind(element);
+        this.species[symbol] = new Specie(element);
       }
     }
   }
@@ -194,12 +194,12 @@ class Atoms {
   }
 
   getElements() {
-    return this.symbols.map((symbol) => this.kinds[symbol].element);
+    return this.symbols.map((symbol) => this.species[symbol].element);
   }
 
   addAtom(atom) {
-    if (!this.kinds[atom.symbol]) {
-      throw new Error(`Kind '${atom.symbol}' is not defined.`);
+    if (!this.species[atom.symbol]) {
+      throw new Error(`Specie '${atom.symbol}' is not defined.`);
     }
     this.positions.push(atom.position);
     this.symbols.push(atom.symbol);
@@ -216,8 +216,8 @@ class Atoms {
     }
   }
 
-  getKindsCount() {
-    return Object.keys(this.kinds).length;
+  getSpeciesCount() {
+    return Object.keys(this.species).length;
   }
 
   getAtomsCount() {
@@ -225,25 +225,25 @@ class Atoms {
   }
 
   add(otherAtoms) {
-    // if there same kind symbol, check if the element is the same
-    for (const symbol in otherAtoms.kinds) {
-      if (this.kinds[symbol] && this.kinds[symbol].element !== otherAtoms.kinds[symbol].element) {
-        throw new Error(`Kind '${symbol}' is defined in both Atoms objects with different elements.`);
+    // if there same specie symbol, check if the element is the same
+    for (const symbol in otherAtoms.species) {
+      if (this.species[symbol] && this.species[symbol].element !== otherAtoms.species[symbol].element) {
+        throw new Error(`Specie '${symbol}' is defined in both Atoms objects with different elements.`);
       }
     }
-    this.kinds = { ...this.kinds, ...otherAtoms.kinds };
+    this.species = { ...this.species, ...otherAtoms.species };
     this.positions = [...this.positions, ...otherAtoms.positions];
     this.symbols = [...this.symbols, ...otherAtoms.symbols];
     // Merge attributes in atom domain
     for (const name in this.attributes["atom"]) {
       this.attributes["atom"][name] = [...this.attributes["atom"][name], ...otherAtoms.attributes["atom"][name]];
     }
-    // Merge attributes in kind domain
-    for (const name in this.attributes["kind"]) {
-      this.attributes["kind"][name] = {
+    // Merge attributes in specie domain
+    for (const name in this.attributes["specie"]) {
+      this.attributes["specie"][name] = {
         // the order is important, the attributes of the added atoms should not overwrite the original ones
-        ...otherAtoms.attributes["kind"][name],
-        ...this.attributes["kind"][name],
+        ...otherAtoms.attributes["specie"][name],
+        ...this.attributes["specie"][name],
       };
     }
     return result;
@@ -254,7 +254,7 @@ class Atoms {
       throw new Error("Cell matrix is not defined.");
     }
     const newAtoms = new Atoms();
-    newAtoms.kinds = { ...this.kinds };
+    newAtoms.species = { ...this.species };
 
     const [[ax, ay, az], [bx, by, bz], [cx, cy, cz]] = this.cell;
     newAtoms.setCell([
@@ -293,9 +293,9 @@ class Atoms {
       }
       newAtoms.newAttribute(name, newValues, "atom");
     }
-    // copy attributes in kind domain, copy is necessary because the attributes of the added atoms should not overwrite the original ones
-    for (const name in this.attributes["kind"]) {
-      newAtoms.newAttribute(name, JSON.parse(JSON.stringify(this.attributes["kind"][name])), "kind");
+    // copy attributes in specie domain, copy is necessary because the attributes of the added atoms should not overwrite the original ones
+    for (const name in this.attributes["specie"]) {
+      newAtoms.newAttribute(name, JSON.parse(JSON.stringify(this.attributes["specie"][name])), "specie");
     }
     return newAtoms;
   }
@@ -392,25 +392,25 @@ class Atoms {
         this.attributes[domain][name] = this.attributes[domain][name].filter((_, i) => !indexSet.has(i));
       }
     }
-    // Remove kind symbols that are not used anymore and their attributes
+    // Remove specie symbols that are not used anymore and their attributes
     const usedSymbols = new Set(this.symbols);
-    for (const symbol in this.kinds) {
+    for (const symbol in this.species) {
       if (!usedSymbols.has(symbol)) {
-        delete this.kinds[symbol];
-        for (const name in this.attributes["kind"]) {
-          delete this.attributes["kind"][name][symbol];
+        delete this.species[symbol];
+        for (const name in this.attributes["specie"]) {
+          delete this.attributes["specie"][name][symbol];
         }
       }
     }
   }
 
-  replaceAtoms(indices, newKindSymbol, newKindElement = null) {
-    if (!this.kinds[newKindSymbol]) {
-      this.addKind(newKindSymbol, newKindElement);
+  replaceAtoms(indices, newSpecieSymbol, newSpecieElement = null) {
+    if (!this.species[newSpecieSymbol]) {
+      this.addSpecie(newSpecieSymbol, newSpecieElement);
     }
     for (const index of indices) {
       if (index >= 0 && index < this.symbols.length) {
-        this.symbols[index] = newKindSymbol;
+        this.symbols[index] = newSpecieSymbol;
       } else {
         throw new Error("Index out of bounds.");
       }
@@ -420,15 +420,15 @@ class Atoms {
   toDict() {
     const dict = {
       uuid: this.uuid,
-      kinds: {},
+      species: {},
       positions: [],
       cell: Array.from(this.cell || []),
       pbc: Array.from(this.pbc),
       symbols: [],
     };
 
-    for (const [symbol, kind] of Object.entries(this.kinds)) {
-      dict.kinds[symbol] = kind.element;
+    for (const [symbol, specie] of Object.entries(this.species)) {
+      dict.species[symbol] = specie.element;
     }
 
     dict.positions = this.positions.map((position) => [...position]);
@@ -456,12 +456,12 @@ class Atoms {
     const newAtomsData = {
       cell: JSON.parse(JSON.stringify(this.cell)),
       pbc: JSON.parse(JSON.stringify(this.pbc)),
-      kinds: {},
+      species: {},
       symbols: [],
       positions: [],
     };
 
-    const newAttributes = { atom: {}, kind: {} };
+    const newAttributes = { atom: {}, specie: {} };
     for (const domain in this.attributes) {
       for (const name in this.attributes[domain]) {
         newAttributes[domain][name] = domain === "atom" ? [] : this.attributes[domain][name];
@@ -479,9 +479,9 @@ class Atoms {
         newAttributes["atom"][name].push(this.attributes["atom"][name][index]);
       }
     });
-    const kindsSet = new Set(newAtomsData.symbols);
-    kindsSet.forEach((kind) => {
-      newAtomsData.kinds[kind] = this.kinds[kind].element;
+    const speciesSet = new Set(newAtomsData.symbols);
+    speciesSet.forEach((specie) => {
+      newAtomsData.species[specie] = this.species[specie].element;
     });
 
     const newAtoms = new Atoms(newAtomsData);
@@ -506,7 +506,7 @@ class Atoms {
   copy() {
     const newAtomsData = this.toDict();
     const newAtoms = new Atoms(newAtomsData);
-    const newAttributes = { atom: {}, kind: {}, "inter-kind": {} };
+    const newAttributes = { atom: {}, specie: {}, "inter-specie": {} };
     for (const domain in this.attributes) {
       for (const name in this.attributes[domain]) {
         newAttributes[domain][name] = JSON.parse(JSON.stringify(this.attributes[domain][name]));
@@ -517,4 +517,4 @@ class Atoms {
   }
 }
 
-export { Kind, Atom, Atoms };
+export { Specie, Atom, Atoms };

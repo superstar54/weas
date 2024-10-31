@@ -35,17 +35,17 @@ export class PolyhedraManager {
 
   init() {
     /* Initialize the polyhedra settings from the viewer.atoms
-    The default max is the sum of two radius of the kinds.
+    The default max is the sum of two radius of the species.
     The default color is from the elementColors.
     */
     this.viewer.logger.debug("init PolyhedraManager");
     this.settings = [];
     const atoms = this.viewer.atoms;
-    Object.entries(this.viewer.originalAtoms.kinds).forEach(([symbol, kind]) => {
-      if (!elementsWithPolyhedra.includes(kind.element)) {
+    Object.entries(this.viewer.originalAtoms.species).forEach(([symbol, specie]) => {
+      if (!elementsWithPolyhedra.includes(specie.element)) {
         return;
       }
-      const color = elementColors[this.viewer.colorType][kind.element];
+      const color = elementColors[this.viewer.colorType][specie.element];
       const setting = new Setting({ symbol, color });
       this.settings.push(setting);
     });
@@ -170,7 +170,7 @@ export function drawPolyhedras(atoms, polyhedras, bondList, colorType = "CPK", m
 export function filterBondMap(bondMap, symbols, elements, modelPolyhedras) {
   /*
     loop through bondMap and filter out only those atoms that have
-    four or more bonds and whose kind (retrieved from atoms.symbols[atomIndex])
+    four or more bonds and whose specie (retrieved from atoms.symbols[atomIndex])
     are in a specified list of elements (elements)
     */
   const filteredMap = {};
@@ -179,9 +179,9 @@ export function filterBondMap(bondMap, symbols, elements, modelPolyhedras) {
   Object.keys(bondMap).forEach((key) => {
     const atomIndex = bondMap[key]["atomIndex"];
     const numBond = bondMap[key]["sticks"].length;
-    const kindName = symbols[atomIndex];
+    const specieName = symbols[atomIndex];
 
-    if (modelPolyhedras[atomIndex] && numBond >= 4 && elements.includes(kindName)) {
+    if (modelPolyhedras[atomIndex] && numBond >= 4 && elements.includes(specieName)) {
       filteredMap[key] = bondMap[key];
     }
   });

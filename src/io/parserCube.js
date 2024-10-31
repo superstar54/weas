@@ -24,7 +24,7 @@ export function parseCube(cubeContent) {
 
   // Initialize data structure for Atoms
   const data = {
-    kinds: {},
+    species: {},
     positions: [],
     symbols: [],
   };
@@ -37,12 +37,12 @@ export function parseCube(cubeContent) {
     // Find the element symbol by atomic number
     const elementSymbol = Object.keys(elementAtomicNumbers).find((key) => elementAtomicNumbers[key] === atomicNumber);
 
-    // Update kinds data if it's a new element
-    if (!data.kinds[elementSymbol]) {
-      data.kinds[elementSymbol] = elementSymbol;
+    // Update species data if it's a new element
+    if (!data.species[elementSymbol]) {
+      data.species[elementSymbol] = elementSymbol;
     }
 
-    // Add kinds and position data for the current atom
+    // Add species and position data for the current atom
     data.symbols.push(elementSymbol);
     data.positions.push(position);
   }

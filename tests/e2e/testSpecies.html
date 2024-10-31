@@ -24,7 +24,7 @@
       const filename = "c2h6so.xyz";
       fetchFile(filename).then((fileContent) => {
         const atoms = weas.parseXYZ(fileContent);
-        atoms[0].addKind("C1", "C");
+        atoms[0].addSpecie("C1", "C");
         atoms[0].symbols[3] = "C1";
         let editor = new weas.WEAS({ domElement });
         editor.avr.atoms = atoms;

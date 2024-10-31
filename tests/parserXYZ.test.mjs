@@ -13,10 +13,10 @@ H 0.000000 0.757160 0.482080
     console.log("atoms: ", atoms);
 
     expect(atoms).toBeDefined();
-    expect(atoms.kinds).toHaveProperty("H");
-    expect(atoms.kinds).toHaveProperty("O");
-    expect(atoms.kinds["H"]).toEqual(new Species("H"));
-    expect(atoms.kinds["O"]).toEqual(new Species("O"));
+    expect(atoms.species).toHaveProperty("H");
+    expect(atoms.species).toHaveProperty("O");
+    expect(atoms.species["H"]).toEqual(new Species("H"));
+    expect(atoms.species["O"]).toEqual(new Species("O"));
     expect(atoms.positions.length).toBe(3);
     expect(atoms.symbols).toEqual(["O", "H", "H"]);
     console.log(atoms.positions[0]);

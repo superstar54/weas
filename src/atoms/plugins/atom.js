@@ -39,8 +39,8 @@ export class AtomManager {
     this.viewer.logger.debug("init atom settings");
     this.settings = {};
 
-    Object.entries(this.viewer.originalAtoms.kinds).forEach(([symbol, kind]) => {
-      this.settings[symbol] = this.getDefaultSetting(symbol, kind.element);
+    Object.entries(this.viewer.originalAtoms.species).forEach(([symbol, specie]) => {
+      this.settings[symbol] = this.getDefaultSetting(symbol, specie.element);
     });
     this.updateAtomColors();
   }
@@ -48,7 +48,7 @@ export class AtomManager {
   updateAtomColors() {
     const colors = [];
     this.viewer.atoms.symbols.forEach((symbol, globalIndex) => {
-      // if this.viewer.atoms has color attribute in the kind domain, use it
+      // if this.viewer.atoms has color attribute in the specie domain, use it
       const color = new THREE.Color(this.settings[symbol].color);
       colors.push(color);
     });
@@ -59,18 +59,18 @@ export class AtomManager {
   }
 
   getDefaultSetting(symbol, element) {
-    /* Get the default bond setting for the kind1 and kind2 */
+    /* Get the default bond setting for the specie1 and specie2 */
     let color;
     let radius;
-    // if color attribute in the kind domain, use it
-    if ("color" in this.viewer.atoms.attributes["kind"]) {
-      color = this.viewer.atoms.attributes["kind"]["color"][symbol] || "#3d82ed";
+    // if color attribute in the specie domain, use it
+    if ("color" in this.viewer.atoms.attributes["specie"]) {
+      color = this.viewer.atoms.attributes["specie"]["color"][symbol] || "#3d82ed";
     } else {
       color = elementColors[this.viewer.colorType][element];
     }
-    // if atoms has radii attribute in the kind domain, use it
-    if ("radii" in this.viewer.atoms.attributes["kind"]) {
-      radius = this.viewer.atoms.attributes["kind"]["radii"][symbol] || 1;
+    // if atoms has radii attribute in the specie domain, use it
+    if ("radii" in this.viewer.atoms.attributes["specie"]) {
+      radius = this.viewer.atoms.attributes["specie"]["radii"][symbol] || 1;
     } else {
       radius = radiiData[this.viewer.radiusType][element] || 1;
     }
@@ -130,7 +130,7 @@ export class AtomManager {
       }
       const atomColors = [];
       imageAtomsList.symbols.forEach((symbol, globalIndex) => {
-        // if this.viewer.atoms has color attribute in the kind domain, use it
+        // if this.viewer.atoms has color attribute in the specie domain, use it
         const color = new THREE.Color(this.settings[symbol].color);
         atomColors.push(color);
       });

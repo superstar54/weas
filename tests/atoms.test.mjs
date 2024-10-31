@@ -39,7 +39,7 @@ describe("Atoms class", () => {
   });
 
   it("initializes an empty Atoms instance", () => {
-    expect(atoms.kinds).toEqual({});
+    expect(atoms.species).toEqual({});
     expect(atoms.symbols).toEqual([]);
     expect(atoms.positions).toEqual([]);
     expect(atoms.cell).toEqual([
@@ -51,9 +51,9 @@ describe("Atoms class", () => {
   });
 
   it("adds a species correctly", () => {
-    atoms.addKind("H");
-    expect(atoms.kinds).toHaveProperty("H");
-    expect(atoms.kinds["H"]).toEqual(new Species("H"));
+    atoms.addSpecie("H");
+    expect(atoms.species).toHaveProperty("H");
+    expect(atoms.species["H"]).toEqual(new Species("H"));
   });
 
   // Add more tests for other methods like setCell, addAtom, removeAtom, etc.
