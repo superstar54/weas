@@ -30,23 +30,20 @@ export class BoundaryManager {
   }
 
   init() {
-    /* Initialize the species settings from the viewer.atoms
+    /* Initialize the settings from the viewer.atoms
      */
     this.viewer.logger.debug("init atom settings");
     this.settings = {};
-    const speciesSet = new Set(this.viewer.originalAtoms.symbols);
-    const speciesList = Array.from(speciesSet);
-    for (let i = 0; i < speciesList.length; i++) {
-      const species = speciesList[i];
-      this.settings[species] = this.getDefaultSetting(species);
-    }
+    Object.entries(this.viewer.originalAtoms.species).forEach(([symbol, specie]) => {
+      this.settings[symbol] = this.getDefaultSetting(symbol, specie);
+    });
   }
 
-  getDefaultSetting(species) {
-    /* Get the default bond setting for the species1 and species2 */
-    const color = elementColors[this.viewer.colorType][species];
-    const radius = radiiData[this.viewer.radiusType][species];
-    const setting = new Setting({ element: species, symbol: species, radius, color });
+  getDefaultSetting(symbol, specie) {
+    /* Get the default bond setting for the specie1 and specie2 */
+    const color = elementColors[this.viewer.colorType][specie.element];
+    const radius = radiiData[this.viewer.radiusType][specie.element];
+    const setting = new Setting({ element: specie.element, symbol: symbol, radius, color });
     return setting;
   }
 
@@ -60,10 +57,10 @@ export class BoundaryManager {
     });
   }
 
-  addSetting({ species1, species2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
+  addSetting({ specie1, specie2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
     /* Add a new setting to the bond */
-    const setting = new Setting({ species1, species2, radius, min, max, color1, color2, order });
-    const key = species1 + "-" + species2;
+    const setting = new Setting({ specie1, specie2, radius, min, max, color1, color2, order });
+    const key = specie1 + "-" + specie2;
     this.settings[key] = setting;
   }
 

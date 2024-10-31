@@ -1,6 +1,6 @@
 Atoms
 =========
-The Atoms object represents a collection of atoms. It is used to store the positions, species, and other properties of the atoms. The sytax is very similar to ASE `Atoms <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#module-ase.atoms>`_ object. However, there are also some key differences regarding the species and attributes.
+The Atoms object represents a collection of atoms. It is used to store the positions, symbols, and other properties of the atoms. The sytax is very similar to ASE `Atoms <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#module-ase.atoms>`_ object. However, there are also some key differences regarding the species and attributes.
 
 
 Example:
@@ -16,16 +16,16 @@ Example:
 
 In this example, an Atoms object is created to represent a water molecule within a cubic unit cell with periodic boundaries. The object includes definitions for the symbols, positions of the atoms.
 
-Species
+Specie
 -------
 Why do we use species instead of elements? Because of we want to store different properties for the same element:
 
 - such as: colors, bonds, etc.
 - In DFT calculation, different potentials, basis sets, charge, magnetic moment, etc.
 
-A species has:
+A specie has:
 
-- symbol: the name of the species, e.g. 'O', 'H1', 'Fe_up', etc.
+- symbol: the name of the specie, e.g. 'O', 'H1', 'Fe_up', etc.
 - element: the element symbol, e.g. 'O', 'H', 'Fe', etc.
 - number: the atomic number of the element, e.g. 8, 1, 26, etc.
 
@@ -42,16 +42,16 @@ Attributes and domain
 ----------------------
 One can store additional data in the Atoms object using the `attributes`. The `attributes` has two domains:
 
-- `atoms`: store data that is specific to each atom, such as the charge or force.
-- `species`: store data that is specific to each species, such as the mass, color, or radius.
+- `atom`: store data that is specific to each atom, such as the charge or force.
+- `specie`: store data that is specific to each specie, such as the mass, color, or radius.
 
 
 .. code-block:: javascript
 
-    attributes: {'atoms': {'charge': [0, 0, 0],
+    attributes: {'atom': {'charge': [0, 0, 0],
                             'force': [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
                             },
-                'species': {'mass': {'O': 15.999, 'H': 1.008},
+                'specie': {'mass': {'O': 15.999, 'H': 1.008},
                             "color", {C: "red", H: "#b434eb", O: "#34eb77", S: "#FFFF00" },
                             "radius", {C: 0.77, H: 0.37, O: 0.66, S: 1.04},
                             },
@@ -63,13 +63,12 @@ Methods
 The Atoms object has a number of methods that can be used to manipulate the data. These include methods to:
 
 
-Atomic and Species Manipulation
+Atomic and Specie Manipulation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- addSpecies(symbol, element = null)
+- addSpecie(symbol, element = null)
 - addAtom(atom)
-- removeAtom(index)
-- replaceAtoms(indices, newSpeciesSymbol)
+- replaceAtoms(indices, newSpecieSymbol)
 
 Cell and Boundary Conditions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

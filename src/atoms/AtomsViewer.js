@@ -369,7 +369,7 @@ class AtomsViewer {
       // Remove labels
       this.ALManager.settings = [];
     } else if (newValue === "Symbol") {
-      this.ALManager.settings = [{ origins: "positions", texts: "species" }];
+      this.ALManager.settings = [{ origins: "positions", texts: "symbols" }];
     } else if (newValue === "Index") {
       this.ALManager.settings = [{ origins: "positions", texts: "index" }];
     }
@@ -572,7 +572,10 @@ class AtomsViewer {
   addAtom(element, position = { x: 0, y: 0, z: 0 }) {
     // Remove the selected atoms from the scene and data
     const atom = new Atom(element, [position.x, position.y, position.z]);
-    this.atoms.addSpecies(element);
+    // if element is not in the species, add it to the species
+    if (!this.atoms.species[element]) {
+      this.atoms.addSpecie(element);
+    }
     this.atoms.addAtom(atom);
     // this.logger.debug("atoms: ", this.atoms);
 
@@ -598,7 +601,7 @@ class AtomsViewer {
     }
     const copied_atoms = this.atoms.getAtomsByIndices(indices);
     this.logger.debug("copied_atoms: ", copied_atoms);
-    this.atoms.addToSelf(copied_atoms);
+    this.atoms.add(copied_atoms);
     this.logger.debug("atoms: ", this.atoms);
 
     // also copy the properties, e.g. modelStyles, that are associated with the copied atoms

@@ -1,32 +1,30 @@
-import { Species, Atom, Atoms } from "../dist/weas.mjs";
+import { Specie, Atom, Atoms } from "../dist/weas.mjs";
 
-describe("Species class", () => {
-  it("creates a new Species instance correctly", () => {
-    const species = new Species("C1", "C");
-    expect(species.symbol).toBe("C1");
+describe("Specie class", () => {
+  it("creates a new Specie instance correctly", () => {
+    const species = new Specie("C");
     expect(species.element).toBe("C");
     expect(species.number).toBe(6);
   });
-  it("creates a new Species use only symbol", () => {
-    const species = new Species("C");
-    expect(species.symbol).toBe("C");
+  it("creates a new Specie use only symbol", () => {
+    const species = new Specie("C");
     expect(species.element).toBe("C");
     expect(species.number).toBe(6);
   });
   it("throws an error when adding an unknown species", () => {
     const value = "Unknown";
     expect(() => {
-      const species = new Species("Unknown"); // This species does not exist in the atoms instance
-    }).toThrowError(`Element '${value}' is wrong.`);
+      const species = new Specie("Unknown"); // This species does not exist in the atoms instance
+    }).toThrowError(`Element '${value}' is invalid.`);
   });
 });
 
 describe("Atom class", () => {
   it("creates a new Atom instance correctly", () => {
-    const species = "H"; // Assuming this refers to an existing species
+    const symbol = "H"; // Assuming this refers to an existing symbol
     const position = [1.0, 2.0, 3.0];
-    const atom = new Atom(species, position);
-    expect(atom.species).toBe(species);
+    const atom = new Atom(symbol, position);
+    expect(atom.symbol).toBe(symbol);
     expect(atom.position).toEqual(position);
   });
 });
@@ -51,9 +49,9 @@ describe("Atoms class", () => {
   });
 
   it("adds a species correctly", () => {
-    atoms.addSpecies("H");
+    atoms.addSpecie("H");
     expect(atoms.species).toHaveProperty("H");
-    expect(atoms.species["H"]).toEqual(new Species("H"));
+    expect(atoms.species["H"]).toEqual(new Specie("H"));
   });
 
   // Add more tests for other methods like setCell, addAtom, removeAtom, etc.
