@@ -1,4 +1,4 @@
-import { parseXYZ, Species } from "../dist/weas.mjs";
+import { parseXYZ, Specie } from "../dist/weas.mjs";
 
 describe("parseXYZ", () => {
   it("parses valid XYZ data correctly", () => {
@@ -15,8 +15,8 @@ H 0.000000 0.757160 0.482080
     expect(atoms).toBeDefined();
     expect(atoms.species).toHaveProperty("H");
     expect(atoms.species).toHaveProperty("O");
-    expect(atoms.species["H"]).toEqual(new Species("H"));
-    expect(atoms.species["O"]).toEqual(new Species("O"));
+    expect(atoms.species["H"]).toEqual(new Specie("H"));
+    expect(atoms.species["O"]).toEqual(new Specie("O"));
     expect(atoms.positions.length).toBe(3);
     expect(atoms.symbols).toEqual(["O", "H", "H"]);
     console.log(atoms.positions[0]);

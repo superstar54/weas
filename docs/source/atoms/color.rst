@@ -21,9 +21,9 @@ Supported style are:
 
 
 -----------------------------
-Custom color for each specie
+Custom color for each species
 -----------------------------
-Use can set custom color for each specie. The color can be in the form of hex code or color name.
+Use can set custom color for each species. The color can be in the form of hex code or color name.
 
 
 .. code-block:: javascript

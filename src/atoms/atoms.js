@@ -246,7 +246,6 @@ class Atoms {
         ...this.attributes["specie"][name],
       };
     }
-    return result;
   }
 
   multiply(mx, my, mz) {
