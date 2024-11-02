@@ -105,6 +105,8 @@ export class BlendJS {
     renderer.setSize(clientWidth, clientHeight);
     // renderer.shadowMap.enabled = true;
     // renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+    // For high DPI screens
+    renderer.setPixelRatio(window.devicePixelRatio);
 
     this.addRenderer("MainRenderer", renderer);
     // Create a label renderer
