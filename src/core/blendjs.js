@@ -321,12 +321,16 @@ export class BlendJS {
   }
 
   renderSceneInfo(scene, camera, left, bottom, width, height, renderer) {
-    const canvas = renderer.domElement;
+    /*
+     */
+    // Use renderer size instead of container size, because the pixel ratio is taken into account
+    const size = renderer.getSize(new THREE.Vector2());
 
-    var nleft = Math.floor(canvas.width * left);
-    var nbottom = Math.floor(canvas.height * bottom);
-    var nwidth = Math.floor(canvas.width * width);
-    var nheight = Math.floor(canvas.height * height);
+    var nleft = Math.floor(size.width * left);
+    var nbottom = Math.floor(size.height * bottom);
+    var nwidth = Math.floor(size.width * width);
+    var nheight = Math.floor(size.height * height);
+
     renderer.setViewport(nleft, nbottom, nwidth, nheight);
     renderer.setScissor(nleft, nbottom, nwidth, nheight);
     renderer.setScissorTest(false);
@@ -368,7 +372,7 @@ export class BlendJS {
     renderer.setPixelRatio(highResPixelRatio);
 
     // Render the scene for high-res output
-    renderer.render(this.scene, this.camera);
+    this.render();
 
     // Get the image data URL
     var imgData = renderer.domElement.toDataURL("image/png");
