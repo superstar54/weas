@@ -212,7 +212,7 @@ class AtomsViewer {
   }
 
   // set atoms from phonon trajectory
-  fromPhononMode({ atoms, eigenvectors, amplitude = 1, nframes = 30, kpoint = [0, 0, 0], repeat = [1, 1, 1], color = "#ff0000", radius = 0.1 }) {
+  fromPhononMode({ atoms, eigenvectors, amplitude = 1, factor = 1, nframes = 30, kpoint = [0, 0, 0], repeat = [1, 1, 1], color = "#ff0000", radius = 0.1 }) {
     this.logger.debug("--------------------------------------From Phonon Mode--------------------------------------");
     const phonon = new Phonon(atoms, kpoint, eigenvectors, true);
     const trajectory = phonon.getTrajectory(amplitude, nframes, null, null, null, repeat);
@@ -220,7 +220,7 @@ class AtomsViewer {
     this._cell = atoms.cell;
     this._atoms = atoms.multiply(...repeat);
     this._atoms.uuid = this.uuid;
-    this.VFManager.addSetting("phonon", { origins: "positions", vectors: "movement", color: color, radius: radius });
+    this.VFManager.addSetting("phonon", { origins: "positions", vectors: "movement", factor: factor, color: color, radius: radius });
     this.bondManager.hideLongBonds = false;
     this.drawModels();
     this.play();

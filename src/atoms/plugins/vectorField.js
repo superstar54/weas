@@ -4,13 +4,14 @@ import { materials } from "../../tools/materials.js";
 import { convertColor } from "../utils.js";
 
 class Setting {
-  constructor({ origins = [], vectors = [], color = "#3d82ed", radius = 0.05, centerOnAtoms = false }) {
+  constructor({ origins = [], vectors = [], factor = 1, color = "#3d82ed", radius = 0.05, centerOnAtoms = false }) {
     /* A class to store vectorfield settings */
 
     this.origins = origins;
     this.vectors = vectors;
     this.color = convertColor(color);
     this.radius = radius;
+    this.factor = factor;
     this.centerOnAtoms = centerOnAtoms;
   }
 }
@@ -30,7 +31,7 @@ export class VectorField {
   set show(value) {
     this._show = value;
     Object.values(this.meshes).forEach((data) => {
-      data.forEach((mesh) => {
+      Object.values(data).forEach((mesh) => {
         mesh.visible = value;
       });
     });
@@ -80,14 +81,14 @@ export class VectorField {
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting(name, { origins, vectors, color = "#3d82ed", radius = 0.05, centerOnAtoms = false }) {
+  addSetting(name, { origins, vectors, factor = 1, color = "#3d82ed", radius = 0.05, centerOnAtoms = false }) {
     /* Add a new setting to the vectorfield */
     if (typeof origins === "string") {
       if (!this.viewer.atoms.getAttribute(origins)) {
         throw new Error(`Attribute '${origins}' is not defined. The available attributes are: ${Object.keys(this.viewer.atoms.attributes["atom"])}`);
       }
     }
-    const setting = new Setting({ origins, vectors, color, radius, centerOnAtoms });
+    const setting = new Setting({ origins, vectors, factor, color, radius, centerOnAtoms });
     // if name is not set, use the length of the settings
     if (name === undefined) {
       name = "vf-" + Object.keys(this.settings).length;
@@ -98,14 +99,30 @@ export class VectorField {
   clearMeshes() {
     /* Remove highlighted atom meshes from the selectedAtomsMesh group */
     Object.values(this.meshes).forEach((data) => {
-      data.forEach((mesh) => {
+      Object.values(data).forEach((mesh) => {
         clearObject(this.scene, mesh);
       });
     });
     this.meshes = {};
   }
 
-  drawVectorFields(showVectorField = true) {
+  getData(setting) {
+    let origins;
+    let vectors;
+    if (typeof setting.origins === "string") {
+      origins = this.viewer.atoms.getAttribute(setting.origins);
+    } else {
+      origins = setting.origins;
+    }
+    if (typeof setting.vectors === "string") {
+      vectors = this.viewer.atoms.getAttribute(setting.vectors);
+    } else {
+      vectors = setting.vectors;
+    }
+    return [origins, vectors];
+  }
+
+  drawVectorFields() {
     /* Draw vectorfields */
     this.viewer.logger.debug("drawVectorFields");
     this.clearMeshes();
@@ -113,28 +130,16 @@ export class VectorField {
     Object.entries(this.settings).forEach(([name, setting]) => {
       // Generate vectorfield geometry
       // if origin and vector are string, which means they are from atoms attributes
-      let origins;
-      let vectors;
-      if (typeof setting.origins === "string") {
-        origins = this.viewer.atoms.getAttribute(setting.origins);
-      } else {
-        origins = setting.origins;
-      }
-      if (typeof setting.vectors === "string") {
-        vectors = this.viewer.atoms.getAttribute(setting.vectors);
-      } else {
-        vectors = setting.vectors;
-      }
-      console.log("origins: ", origins);
-      console.log("vectors: ", vectors);
-      const [shaftMesh, headMesh] = drawAtomArrows(origins, vectors, setting.radius, setting.color, "Standard");
+      const [origins, vectors] = this.getData(setting);
+      const [shaftMesh, headMesh] = drawAtomArrows(vectors.length, setting, setting.color, "Standard");
+      shaftMesh.visible = this.show;
+      headMesh.visible = this.show;
       // Add mesh to the scene
       this.scene.add(shaftMesh);
       this.scene.add(headMesh);
-      this.meshes[name] = [shaftMesh, headMesh];
-      shaftMesh.visible = this.show;
-      headMesh.visible = this.show;
+      this.meshes[name] = { shaft: shaftMesh, head: headMesh };
     });
+    this.updateArrowMesh();
   }
 
   updateArrowMesh(atomIndex = null, atoms = null) {
@@ -146,26 +151,23 @@ export class VectorField {
     if (atoms === null) {
       atoms = this.viewer.atoms;
     }
-    let atomIndices = [];
-    if (atomIndex) {
-      atomIndices[atomIndex];
-    } else {
-      // use all atoms
-      atomIndices = [...Array(atoms.positions.length).keys()];
-    }
     // console.log("atomIndices: ", atomIndices);
     // loop all settings with index
     Object.entries(this.settings).forEach(([name, setting]) => {
-      if (typeof setting.origins !== "string") {
-        return;
+      const [origins, vectors] = this.getData(setting);
+      let atomIndices = [];
+      if (atomIndex) {
+        atomIndices = [atomIndex];
+      } else {
+        // use all atoms
+        atomIndices = [...Array(origins.length).keys()];
       }
-      const origins = atoms.getAttribute(setting.origins);
-      const vectors = atoms.getAttribute(setting.vectors);
-      const shaftMesh = this.meshes[name][0];
-      const headMesh = this.meshes[name][1];
+      const shaftMesh = this.meshes[name]["shaft"];
+      const headMesh = this.meshes[name]["head"];
       atomIndices.forEach((i) => {
         const position1 = new THREE.Vector3(...origins[i]);
-        const position2 = position1.clone().add(new THREE.Vector3(...vectors[i]));
+        const scaledVector = new THREE.Vector3(...vectors[i]).multiplyScalar(setting.factor);
+        const position2 = position1.clone().add(scaledVector);
         const midpoint = new THREE.Vector3().lerpVectors(position1, position2, 0.5);
         const quaternion = calculateQuaternion(position1, position2);
         const scale = new THREE.Vector3(setting.radius, position1.distanceTo(position2), setting.radius);
@@ -180,33 +182,19 @@ export class VectorField {
   }
 }
 
-export function drawAtomArrows(origins, vectors, radius, color = "0x000000", materialType = "Standard") {
+export function drawAtomArrows(length, setting, color = "0x000000", materialType = "Standard") {
   // Arrow Shaft (Cylinder)
   const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1); // Adjust segment count as needed
   const material = materials[materialType].clone();
+  material.color = new THREE.Color(color);
   // Arrowhead (Cone)
-  const coneGeometry = new THREE.ConeGeometry(radius * 2, 6 * radius, 8); // 0.5 is the base radius, 2 is the height
+  const coneGeometry = new THREE.ConeGeometry(setting.radius * 2, 6 * setting.radius, 8); // 0.5 is the base radius, 2 is the height
   // align cone to point up
   coneGeometry.rotateX(Math.PI);
 
-  const shaftMesh = new THREE.InstancedMesh(cylinderGeometry, material, vectors.length);
-  const headMesh = new THREE.InstancedMesh(coneGeometry, material, vectors.length);
+  const shaftMesh = new THREE.InstancedMesh(cylinderGeometry, material, length);
+  const headMesh = new THREE.InstancedMesh(coneGeometry, material, length);
   color = new THREE.Color(color);
-
-  // Iterate over atoms and update arrows
-  for (let i = 0; i < origins.length; i++) {
-    const position1 = new THREE.Vector3(...origins[i]);
-    const position2 = position1.clone().add(new THREE.Vector3(...vectors[i]));
-    const midpoint = new THREE.Vector3().lerpVectors(position1, position2, 0.5);
-    const quaternion = calculateQuaternion(position1, position2);
-    const scale = new THREE.Vector3(radius, position1.distanceTo(position2), radius);
-    const shaftMatrix = new THREE.Matrix4().compose(midpoint, quaternion, scale);
-    const coneMatrix = new THREE.Matrix4().compose(position2, quaternion, new THREE.Vector3(1, 1, 1));
-    shaftMesh.setMatrixAt(i, shaftMatrix);
-    shaftMesh.setColorAt(i, color);
-    headMesh.setMatrixAt(i, coneMatrix);
-    headMesh.setColorAt(i, color);
-  }
   shaftMesh.userData.type = "arrow";
   headMesh.userData.type = "arrow";
   return [shaftMesh, headMesh];

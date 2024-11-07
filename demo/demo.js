@@ -190,6 +190,7 @@ async function updateAtoms(filename, fileContent = null) {
         atoms: atoms,
         eigenvectors: eigenvectors,
         amplitude: 2,
+        factor: 1,
         nframes: 50,
         kpoint: kpoint,
         // repeat: [1, 1, 1],
