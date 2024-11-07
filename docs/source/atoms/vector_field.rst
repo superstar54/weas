@@ -83,6 +83,7 @@ In order to update the vector fields when the atom is moved in a animation, the 
               ],
             ],
             amplitude: 1,
+            factor: 1, // scale the length of arrow
             nframes: 50,
             kpoint: [0, 0, 0],
             repeat: [4, 4, 1],
