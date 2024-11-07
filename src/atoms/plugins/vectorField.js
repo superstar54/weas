@@ -31,7 +31,7 @@ export class VectorField {
   set show(value) {
     this._show = value;
     Object.values(this.meshes).forEach((data) => {
-      data.forEach((mesh) => {
+      Object.values(data).forEach((mesh) => {
         mesh.visible = value;
       });
     });

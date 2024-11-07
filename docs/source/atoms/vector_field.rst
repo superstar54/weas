@@ -82,7 +82,7 @@ In order to update the vector fields when the atom is moved in a animation, the 
                 [0, 0],
               ],
             ],
-            amplitude: 1,
+            amplitude: 1, // scale the motion of atoms
             factor: 1, // scale the length of arrow
             nframes: 50,
             kpoint: [0, 0, 0],
