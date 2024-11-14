@@ -28,6 +28,13 @@ const defaultGuiConfig = {
     colorControl: true,
     cameraControls: true,
   },
+  timeline: {
+    enabled: true, // Added this line to control timeline visibility
+  },
+  legend: {
+    enabled: false,
+    position: "bottom-right", // Options: 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+  },
   buttons: {
     enabled: true,
     fullscreen: true,
@@ -35,6 +42,16 @@ const defaultGuiConfig = {
     redo: true,
     download: true,
     measurement: true,
+  },
+  buttonStyle: {
+    // Added this object to allow button style customization
+    fontSize: "12px",
+    color: "black",
+    backgroundColor: "transparent",
+    border: "none",
+    padding: "1px",
+    cursor: "pointer",
+    borderRadius: "1px",
   },
 };
 

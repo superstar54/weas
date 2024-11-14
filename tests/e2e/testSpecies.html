@@ -20,16 +20,23 @@
 
       let domElement = document.getElementById("viewer");
 
+      const guiConfig = {
+        legend: {
+          enabled: true,
+          position: "bottom-right", // Options: 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+        },
+      };
       // read atoms from file
       const filename = "c2h6so.xyz";
       fetchFile(filename).then((fileContent) => {
         const atoms = weas.parseXYZ(fileContent);
         atoms[0].addSpecie("C1", "C");
         atoms[0].symbols[3] = "C1";
-        let editor = new weas.WEAS({ domElement });
+        let editor = new weas.WEAS({ domElement, guiConfig });
         editor.avr.atoms = atoms;
         editor.avr.atomManager.settings["C1"].color = "blue";
         editor.avr.atomManager.settings["C1"].radius = 1.5;
+        editor.avr.guiManager.updateLegend();
         editor.avr.modelStyle = 1;
         editor.avr.bondManager.init();
         editor.avr.drawModels();

@@ -50,7 +50,7 @@ class AtomsViewer {
     this.atomManager = new AtomManager(this);
     this.cellManager = new CellManager(this);
     this.highlightManager = new HighlightManager(this);
-    this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui);
+    this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui, this.weas.guiManager.guiConfig); // Pass guiConfig
     this.bondManager = new BondManager(this, viewerSettings._hideLongBonds, viewerSettings._showHydrogenBonds);
     this.boundaryManager = new BoundaryManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
@@ -94,12 +94,16 @@ class AtomsViewer {
   play() {
     this.isPlaying = true;
     this.animate();
-    this.guiManager.playPauseBtn.textContent = "Pause";
+    if (this.guiManager.timeline) {
+      this.guiManager.playPauseBtn.textContent = "Pause";
+    }
   }
 
   pause() {
     this.isPlaying = false;
-    this.guiManager.playPauseBtn.textContent = "Play";
+    if (this.guiManager.timeline) {
+      this.guiManager.playPauseBtn.textContent = "Play";
+    }
   }
 
   animate() {
@@ -118,8 +122,10 @@ class AtomsViewer {
       return;
     }
     const atoms = this.trajectory[frameIndex % this.trajectory.length];
-    this.guiManager.timeline.value = frameIndex;
-    this.guiManager.currentFrameDisplay.textContent = frameIndex;
+    if (this.guiManager.timeline) {
+      this.guiManager.timeline.value = frameIndex;
+      this.guiManager.currentFrameDisplay.textContent = frameIndex;
+    }
     // update the atoms
     this.atomManager.updateAtomMesh(null, atoms);
     // update the bonds
@@ -202,6 +208,7 @@ class AtomsViewer {
     this.Measurement.reset();
     // if trajectory data is provided, add the trajectory controller
     this.guiManager.update(this.trajectory);
+    this.guiManager.updateLegend();
     // this.atoms.uuid = this.uuid;
     this.modelStyle = this._modelStyle;
     this.drawModels();
@@ -525,8 +532,8 @@ class AtomsViewer {
     if (this.atomManager.meshes["atom"]) {
       this.atomManager.meshes["atom"].dispose();
     }
-    if (this.atomManager.meshes["boundary"]) {
-      this.atomManager.meshes["boundary"].dispose();
+    if (this.atomManager.meshes["image"]) {
+      this.atomManager.meshes["image"].dispose();
     }
     // Remove the unit cell
     clearObjects(this.tjs.scene, this.uuid);
@@ -623,7 +630,7 @@ class AtomsViewer {
     this.atomManager.meshes["atom"].setMatrixAt(index, matrix);
     this.atoms.positions[index] = [position.x, position.y, position.z];
     // update the other meshes
-    this.atomManager.updateBoundaryAtomsMesh(index);
+    this.atomManager.updateImageAtomsMesh(index);
     this.bondManager.updateBondMesh(index);
   }
 
@@ -659,9 +666,9 @@ class AtomsViewer {
     });
 
     this.atomManager.meshes["atom"].instanceMatrix.needsUpdate = true;
-    // if boundaryAtomsMesh has instanceMatrix, update it
-    if (this.atomManager.meshes["boundary"]) {
-      this.atomManager.meshes["boundary"].instanceMatrix.needsUpdate = true;
+    // if imageAtomsMesh has instanceMatrix, update it
+    if (this.atomManager.meshes["image"]) {
+      this.atomManager.meshes["image"].instanceMatrix.needsUpdate = true;
     }
     if (this.bondManager.bondMesh) {
       this.bondManager.bondMesh.instanceMatrix.needsUpdate = true;
@@ -700,9 +707,9 @@ class AtomsViewer {
     });
 
     this.atomManager.meshes["atom"].instanceMatrix.needsUpdate = true;
-    // if boundaryAtomsMesh has instanceMatrix, update it
-    if (this.atomManager.meshes["boundary"]) {
-      this.atomManager.meshes["boundary"].instanceMatrix.needsUpdate = true;
+    // if imageAtomsMesh has instanceMatrix, update it
+    if (this.atomManager.meshes["image"]) {
+      this.atomManager.meshes["image"].instanceMatrix.needsUpdate = true;
     }
   }
 

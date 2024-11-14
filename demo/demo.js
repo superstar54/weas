@@ -23,6 +23,13 @@ const guiConfig = {
     colorControl: true, // Disable color control
     cameraControls: true,
   },
+  legend: {
+    enabled: true,
+    position: "bottom-right", // Options: 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+  },
+  timeline: {
+    enabled: true, // Added this line to control timeline visibility
+  },
   buttons: {
     enabled: true,
     // New section for button visibility
@@ -248,6 +255,7 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.modelStyle = 1;
       editor.avr.atomManager.settings["C1"].color = "blue";
       editor.avr.atomManager.settings["C1"].radius = 1.5;
+      editor.avr.guiManager.updateLegend();
       editor.avr.bondManager.init();
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
       editor.avr.drawModels();
