@@ -33,28 +33,35 @@ class Atom {
 }
 
 class Atoms {
-  constructor({
-    symbols = [],
-    positions = [],
-    cell = [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-    ],
-    pbc = [true, true, true],
-    species = {},
-    attributes = { atom: {}, specie: {} },
-  } = {}) {
+  constructor({ symbols = null, positions = null, cell = null, pbc = null, species = null, attributes = null } = {}) {
     this.uuid = null;
-    if (symbols.length !== positions.length) {
-      throw new Error("The length of symbols should be the same with positions.");
+
+    // Initialize symbols and positions safely
+    this.symbols = symbols ? [...symbols] : [];
+    this.positions = positions ? [...positions] : [];
+
+    if (this.symbols.length !== this.positions.length) {
+      throw new Error("The length of symbols should be the same as positions.");
     }
-    this.symbols = symbols;
-    this.positions = positions;
-    this.setSpecies(species, symbols);
-    this.setCell(cell);
-    this.setPBC(pbc);
-    this.setAttributes(attributes);
+
+    this.setCell(
+      cell || [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+      ],
+    );
+
+    this.setPBC(pbc || [false, false, false]);
+
+    // Raise an error if PBC is true and cell is all zeros
+    if (this.isUndefinedCell() && this.pbc.some((value) => value)) {
+      throw new Error("Periodic boundary conditions (pbc) cannot be true when the cell dimensions are all zero.");
+    }
+
+    // Initialize other properties safely
+    this.setSpecies(species || {}, this.symbols);
+    this.setAttributes(attributes || { atom: {}, specie: {} });
   }
 
   setSpecies(species, symbols = null) {

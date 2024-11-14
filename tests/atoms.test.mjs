@@ -45,7 +45,7 @@ describe("Atoms class", () => {
       [0, 0, 0],
       [0, 0, 0],
     ]);
-    expect(atoms.pbc).toEqual([true, true, true]);
+    expect(atoms.pbc).toEqual([false, false, false]);
   });
 
   it("adds a species correctly", () => {
