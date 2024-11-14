@@ -23,6 +23,9 @@ const guiConfig = {
     colorControl: true, // Disable color control
     cameraControls: true,
   },
+  timeline: {
+    enabled: false, // Added this line to control timeline visibility
+  },
   buttons: {
     enabled: true,
     // New section for button visibility

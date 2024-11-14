@@ -50,7 +50,7 @@ class AtomsViewer {
     this.atomManager = new AtomManager(this);
     this.cellManager = new CellManager(this);
     this.highlightManager = new HighlightManager(this);
-    this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui);
+    this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui, this.weas.guiManager.guiConfig); // Pass guiConfig
     this.bondManager = new BondManager(this, viewerSettings._hideLongBonds, viewerSettings._showHydrogenBonds);
     this.boundaryManager = new BoundaryManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
@@ -94,12 +94,16 @@ class AtomsViewer {
   play() {
     this.isPlaying = true;
     this.animate();
-    this.guiManager.playPauseBtn.textContent = "Pause";
+    if (this.guiManager.timeline) {
+      this.guiManager.playPauseBtn.textContent = "Pause";
+    }
   }
 
   pause() {
     this.isPlaying = false;
-    this.guiManager.playPauseBtn.textContent = "Play";
+    if (this.guiManager.timeline) {
+      this.guiManager.playPauseBtn.textContent = "Play";
+    }
   }
 
   animate() {
@@ -118,8 +122,10 @@ class AtomsViewer {
       return;
     }
     const atoms = this.trajectory[frameIndex % this.trajectory.length];
-    this.guiManager.timeline.value = frameIndex;
-    this.guiManager.currentFrameDisplay.textContent = frameIndex;
+    if (this.guiManager.timeline) {
+      this.guiManager.timeline.value = frameIndex;
+      this.guiManager.currentFrameDisplay.textContent = frameIndex;
+    }
     // update the atoms
     this.atomManager.updateAtomMesh(null, atoms);
     // update the bonds

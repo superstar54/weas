@@ -28,6 +28,9 @@ const defaultGuiConfig = {
     colorControl: true,
     cameraControls: true,
   },
+  timeline: {
+    enabled: true, // Added this line to control timeline visibility
+  },
   buttons: {
     enabled: true,
     fullscreen: true,
@@ -35,6 +38,16 @@ const defaultGuiConfig = {
     redo: true,
     download: true,
     measurement: true,
+  },
+  buttonStyle: {
+    // Added this object to allow button style customization
+    fontSize: "12px",
+    color: "black",
+    backgroundColor: "white",
+    border: "none",
+    padding: "1px",
+    cursor: "pointer",
+    borderRadius: "1px",
   },
 };
 

@@ -213,7 +213,6 @@ export class AtomManager {
       instanceMatrix.decompose(position, rotation, scale);
       // Set the scale to the new value
       scale.set(radius * atomScale, radius * atomScale, radius * atomScale);
-      console.log("scale: ", scale);
       // Recompose the matrix with the new scale
       instanceMatrix.compose(position, rotation, scale);
       mesh.setMatrixAt(i, instanceMatrix);

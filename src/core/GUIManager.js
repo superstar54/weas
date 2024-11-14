@@ -1,26 +1,21 @@
 import { GUI } from "dat.gui";
-import { setupCameraGUI } from "../tools/camera.js"; // Assuming these are utility functions
+import { setupCameraGUI } from "../tools/camera.js";
 import { createViewpointButtons } from "../tools/viewpoint.js";
 import { defaultGuiConfig } from "../config.js";
 
 class GUIManager {
   constructor(weas, guiConfig) {
     this.weas = weas;
-    this.tempBoundary = [
-      [0, 0],
-      [0, 0],
-      [0, 0],
-    ]; // Initialize with default values
     this.guiConfig = { ...defaultGuiConfig, ...guiConfig };
     this.gui = new GUI();
-    this.gui.closed = true; // Set the GUI to be closed by default
-    // controls
+    this.gui.closed = true;
+
     if (!this.guiConfig.controls.enabled) {
       this.gui.hide();
     } else {
       this.initGUI();
     }
-    // buttons
+
     if (this.guiConfig.buttons.enabled) {
       this.addButtons();
     }
@@ -54,22 +49,19 @@ class GUIManager {
   }
 
   addButtons() {
-    // Create a container for the buttons
     const buttonContainer = document.createElement("div");
     buttonContainer.style.display = "flex";
     buttonContainer.style.position = "absolute";
     buttonContainer.style.right = "5px";
     buttonContainer.style.top = "5px";
-    buttonContainer.style.gap = "5px"; // Adds space between buttons
+    buttonContainer.style.gap = "5px";
     // Add event listeners to stop propagation
     const stopPropagation = (event) => event.stopPropagation();
     buttonContainer.addEventListener("click", stopPropagation);
     buttonContainer.addEventListener("mousedown", stopPropagation);
     buttonContainer.addEventListener("mouseup", stopPropagation);
-    // Append the container to the viewer
     this.weas.tjs.containerElement.appendChild(buttonContainer);
 
-    // Create buttons
     // Conditional creation of buttons based on the configuration
     if (this.guiConfig.buttons.fullscreen) {
       const expandSVG = `
@@ -84,7 +76,6 @@ class GUIManager {
       `;
       const fullscreenButton = this.createButton(expandSVG, "fullscreen");
       buttonContainer.appendChild(fullscreenButton);
-      // Fullscreen button click event
       fullscreenButton.addEventListener("click", () => {
         if (!document.fullscreenElement) {
           this.weas.tjs.containerElement.requestFullscreen().catch((err) => {
@@ -151,22 +142,17 @@ class GUIManager {
 
   createButton(html, id = "button") {
     const button = document.createElement("button");
-    // add id
     button.id = id;
     button.innerHTML = html;
-    this.setStyle(button); // Assume setStyle now only sets the common style
+    this.setStyle(button);
     return button;
   }
 
   setStyle(button) {
-    // Set common styles for buttons
-    button.style.fontSize = "12px";
-    button.style.color = "black";
-    button.style.backgroundColor = "white";
-    button.style.border = "none";
-    button.style.padding = "1px";
-    button.style.cursor = "pointer";
-    button.style.borderRadius = "1px";
+    const styleConfig = this.guiConfig.buttonStyle || {};
+    for (const [key, value] of Object.entries(styleConfig)) {
+      button.style[key] = value;
+    }
   }
 }
 
