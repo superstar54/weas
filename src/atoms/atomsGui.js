@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { covalentRadii } from "./atoms_data.js";
 import { ReplaceOperation, AddAtomOperation } from "../operation/atoms.js";
 import { MODEL_STYLE_MAP, colorTypes, colorBys, radiusTypes } from "../config.js";
+import AtomsLegend from "./plugins/AtomsLegend.js";
 
 class AtomsGUI {
   constructor(viewer, gui, guiConfig) {
@@ -22,6 +23,8 @@ class AtomsGUI {
     if (this.guiConfig.controls.colorControl) {
       this.addColorControl();
     }
+    // Initialize legend
+    this.legend = new AtomsLegend(this.viewer, this.guiConfig);
   }
 
   update(trajectory) {
@@ -230,6 +233,78 @@ class AtomsGUI {
   applyBoundaryChanges() {
     this.viewer.boundary = this.tempBoundary;
     this.viewer.drawModels();
+  }
+
+  addLegend() {
+    // Remove existing legend if any
+    this.removeLegend();
+
+    // Create legend container
+    const legendContainer = document.createElement("div");
+    legendContainer.id = "legend-container";
+    legendContainer.style.position = "absolute";
+    legendContainer.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
+    legendContainer.style.padding = "10px";
+    legendContainer.style.borderRadius = "5px";
+    legendContainer.style.zIndex = "1000";
+    // Positioning based on configuration
+    this.setLegendPosition(legendContainer);
+
+    console.log("settings: ", this.viewer.atomManager.settings);
+
+    // Add entries for each unique element
+    Object.entries(this.viewer.atomManager.settings).forEach(([symbol, setting]) => {
+      const legendEntry = document.createElement("div");
+      legendEntry.style.display = "flex";
+      legendEntry.style.alignItems = "center";
+      legendEntry.style.marginBottom = "5px";
+
+      // Sphere representation
+      const sphereCanvas = document.createElement("canvas");
+      sphereCanvas.width = 20;
+      sphereCanvas.height = 20;
+      const context = sphereCanvas.getContext("2d");
+      context.fillStyle = `#${setting.color.getHexString()}`;
+      const radius = setting.radius * 10;
+      console.log("color: ", context.fillStyle);
+      console.log("radius: ", radius);
+      context.beginPath();
+      context.arc(10, 10, radius, 0, Math.PI * 2);
+      context.fill();
+
+      legendEntry.appendChild(sphereCanvas);
+
+      // Symbol label
+      const elementLabel = document.createElement("span");
+      elementLabel.textContent = ` ${symbol}`;
+      elementLabel.style.marginLeft = "5px";
+      elementLabel.style.fontSize = "14px";
+      legendEntry.appendChild(elementLabel);
+
+      legendContainer.appendChild(legendEntry);
+    });
+
+    // Append legend to viewer container
+    this.viewer.tjs.containerElement.appendChild(legendContainer);
+  }
+
+  removeLegend() {
+    const existingLegend = this.viewer.tjs.containerElement.querySelector("#legend-container");
+    if (existingLegend) {
+      existingLegend.remove();
+    }
+  }
+
+  updateLegend() {
+    this.legend.updateLegend();
+  }
+
+  setLegendPosition(legendContainer) {
+    const position = this.guiConfig.legend.position || "top-right";
+    legendContainer.style.top = position.includes("top") ? "10px" : "";
+    legendContainer.style.bottom = position.includes("bottom") ? "10px" : "";
+    legendContainer.style.left = position.includes("left") ? "10px" : "";
+    legendContainer.style.right = position.includes("right") ? "10px" : "";
   }
 }
 

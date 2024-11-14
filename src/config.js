@@ -31,6 +31,10 @@ const defaultGuiConfig = {
   timeline: {
     enabled: true, // Added this line to control timeline visibility
   },
+  legend: {
+    enabled: false,
+    position: "bottom-right", // Options: 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+  },
   buttons: {
     enabled: true,
     fullscreen: true,
@@ -43,7 +47,7 @@ const defaultGuiConfig = {
     // Added this object to allow button style customization
     fontSize: "12px",
     color: "black",
-    backgroundColor: "white",
+    backgroundColor: "transparent",
     border: "none",
     padding: "1px",
     cursor: "pointer",

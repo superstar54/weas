@@ -208,6 +208,7 @@ class AtomsViewer {
     this.Measurement.reset();
     // if trajectory data is provided, add the trajectory controller
     this.guiManager.update(this.trajectory);
+    this.guiManager.updateLegend();
     // this.atoms.uuid = this.uuid;
     this.modelStyle = this._modelStyle;
     this.drawModels();
