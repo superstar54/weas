@@ -19,6 +19,8 @@ export default class AtomsLegend {
     this.legendContainer.style.position = "absolute";
     this.legendContainer.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
     this.legendContainer.style.padding = "10px";
+    // bottom margin to avoid overlapping with other GUI elements
+    this.legendContainer.style.marginBottom = "30px";
     this.legendContainer.style.borderRadius = "5px";
     this.legendContainer.style.zIndex = "1000";
 

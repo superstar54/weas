@@ -206,6 +206,8 @@ class AtomsGUI {
     }
     const animation_div = document.createElement("div");
     animation_div.id = "animation-controls";
+    animation_div.style.backgroundColor = "transparent";
+
     animation_div.innerHTML =
       '<button id="play-pause-btn">Play</button><button id="reset-btn">Reset</button><input type="range" id="timeline" min="0" max="100" value="0"><span id="current-frame">0</span>';
     this.div.appendChild(animation_div);
