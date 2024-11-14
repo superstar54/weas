@@ -155,8 +155,8 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.isosurfaceManager.volumetricData = cubeData.volumetricData;
       // editor.avr.isosurfaceManager.addSetting(0.0002);
       editor.avr.isosurfaceManager.fromSettings({
-        positive: { isovalue: 0.00001, mode: 1, step_size: 1 },
-        negative: { isovalue: -0.00001, color: "#ff0000", mode: 1 },
+        positive: { isovalue: 0.00002, mode: 1, step_size: 1 },
+        negative: { isovalue: -0.00002, color: "#ff0000", mode: 1 },
       });
       editor.avr.isosurfaceManager.drawIsosurfaces();
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives

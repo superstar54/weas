@@ -316,15 +316,18 @@ export function marchingCubes(dims, volume, bounds, isovalue, step_size = 1) {
   const scale = [0, 0, 0];
   const shift = [0, 0, 0];
   for (let i = 0; i < 3; ++i) {
-    scale[i] = (bounds[1][i] - bounds[0][i] + 1) / dims[i];
+    scale[i] = (bounds[1][i] - bounds[0][i]) / dims[i];
     shift[i] = bounds[0][i];
   }
 
   const vertices = [],
     faces = [],
+    faceMaterials = [],
     grid = new Array(8),
     edges = new Array(12),
-    x = [0, 0, 0];
+    x = [0, 0, 0],
+    boundaryVertices = [],
+    vertexMap = new Map(); // Map to store vertex index and its boundary status
 
   // Use a default scalar value that is guaranteed to be less than the isovalue, regardless of its sign
   const defaultScalar = isovalue - Math.sign(isovalue || 1) * Number.MAX_VALUE;
@@ -338,10 +341,9 @@ export function marchingCubes(dims, volume, bounds, isovalue, step_size = 1) {
     }
   }
 
-  // Adjust loop bounds to include boundary cubes
-  for (x[0] = 0; x[0] < dims[0] + step_size; x[0] += step_size)
-    for (x[1] = 0; x[1] < dims[1] + step_size; x[1] += step_size)
-      for (x[2] = 0; x[2] < dims[2] + step_size; x[2] += step_size) {
+  for (x[0] = -step_size; x[0] < dims[0] + step_size; x[0] += step_size)
+    for (x[1] = -step_size; x[1] < dims[1] + step_size; x[1] += step_size)
+      for (x[2] = -step_size; x[2] < dims[2] + step_size; x[2] += step_size) {
         let cube_index = 0;
         for (let i = 0; i < 8; ++i) {
           const v = cubeVerts[i];
@@ -359,6 +361,12 @@ export function marchingCubes(dims, volume, bounds, isovalue, step_size = 1) {
         for (let i = 0; i < 12; ++i) {
           if ((edge_mask & (1 << i)) === 0) continue;
 
+          const key = `${x[0]}_${x[1]}_${x[2]}_${i}`;
+          if (vertexMap.has(key)) {
+            edges[i] = vertexMap.get(key).index;
+            continue;
+          }
+
           edges[i] = vertices.length;
           const nv = [0, 0, 0],
             e = edgeIndex[i],
@@ -369,17 +377,40 @@ export function marchingCubes(dims, volume, bounds, isovalue, step_size = 1) {
             d = b - a,
             t = Math.abs(d) > 1e-6 ? (isovalue - a) / d : 0;
 
+          const gridPos = [0, 0, 0];
+          let onBoundary = false;
           for (let j = 0; j < 3; ++j) {
-            nv[j] = scale[j] * (x[j] + p0[j] * step_size + t * (p1[j] - p0[j]) * step_size) + shift[j];
+            gridPos[j] = x[j] + p0[j] * step_size + t * (p1[j] - p0[j]) * step_size;
+
+            // Adjust the position to lie exactly on the boundary if necessary
+            if (gridPos[j] <= 0) {
+              gridPos[j] = 0;
+              onBoundary = true;
+            }
+            if (gridPos[j] >= dims[j] - 1) {
+              gridPos[j] = dims[j] - 1;
+              onBoundary = true;
+            }
+
+            nv[j] = scale[j] * gridPos[j] + shift[j];
           }
           vertices.push(nv);
+          boundaryVertices.push(onBoundary);
+          vertexMap.set(key, { index: edges[i], onBoundary });
         }
 
         // Add faces
         const f = triTable[cube_index];
         for (let i = 0; i < f.length; i += 3) {
-          faces.push(edges[f[i]], edges[f[i + 1]], edges[f[i + 2]]);
+          const v0 = edges[f[i]];
+          const v1 = edges[f[i + 1]];
+          const v2 = edges[f[i + 2]];
+          faces.push(v0, v1, v2);
+
+          // Determine if face is on the boundary
+          const isFaceOnBoundary = boundaryVertices[v0] && boundaryVertices[v1] && boundaryVertices[v2];
+          faceMaterials.push(isFaceOnBoundary ? 1 : 0);
         }
       }
-  return { positions: vertices, cells: faces };
+  return { positions: vertices, cells: faces, faceMaterials };
 }

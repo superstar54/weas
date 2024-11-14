@@ -152,25 +152,29 @@ export class Isosurface {
           return [x, y, z];
         });
 
-        let geometry = createGeometryFromMarchingCubesOutput(isoData.positions, isoData.cells);
-        // Create material
-        // const material = new THREE.MeshBasicMaterial({
-        //     color: setting.color,
-        //     transparent: true, // Make it transparent
-        //     opacity: 0.8, // Set the transparency level (0.0 to 1.0)
-        // side: THREE.DoubleSide, // Render both sides
-        // });
-        const material = new THREE.MeshStandardMaterial({
-          color: colors[i],
-          metalness: 0.1,
-          roughness: 0.01,
-          transparent: true, // Make it transparent
-          opacity: 0.8,
-          side: THREE.DoubleSide, // Render both sides
-        });
+        let geometry = createGeometryFromMarchingCubesOutput(isoData.positions, isoData.cells, isoData.faceMaterials);
+        // Create materials
+        const materials = [
+          new THREE.MeshStandardMaterial({
+            color: colors[i],
+            metalness: 0.1,
+            roughness: 0.01,
+            transparent: true, // Make it transparent
+            opacity: 0.8,
+            side: THREE.DoubleSide, // Render both sides
+          }),
+          new THREE.MeshStandardMaterial({
+            color: "#c2f542",
+            metalness: 0.1,
+            roughness: 0.01,
+            transparent: true, // Make it transparent
+            opacity: 1,
+            side: THREE.DoubleSide, // Render both sides
+          }),
+        ];
 
         // Create mesh
-        var mesh = new THREE.Mesh(geometry, material);
+        var mesh = new THREE.Mesh(geometry, materials);
         mesh.geometry.computeVertexNormals();
         mesh.material.flatShading = false;
         // mesh.position.copy(setting.center);
@@ -189,20 +193,39 @@ export class Isosurface {
   }
 }
 
-function createGeometryFromMarchingCubesOutput(positions, cells) {
+function createGeometryFromMarchingCubesOutput(positions, cells, faceMaterials) {
   /* Create a geometry from the output of the marching cubes algorithm */
   var geometry = new THREE.BufferGeometry();
   var vertices = [];
-  console.log("cells: ", cells);
+  var indices = [];
+  var indicesByMaterial = [[], []]; // Two materials: internal (0) and boundary (1)
 
-  // Convert positions and cells to vertices and indices arrays
+  // Convert positions to vertices array
   positions.forEach(function (pos) {
     vertices.push(pos[0], pos[1], pos[2]);
   });
 
-  // Add vertices and indices to the geometry
+  // Add vertices to the geometry
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-  geometry.setIndex(cells);
+
+  // Process cells and faceMaterials to create index arrays per material
+  for (let i = 0; i < cells.length; i += 3) {
+    const materialIndex = faceMaterials[i / 3];
+    indicesByMaterial[materialIndex].push(cells[i], cells[i + 1], cells[i + 2]);
+  }
+
+  // Concatenate indices and set up groups
+  var allIndices = [];
+  var groupStart = 0;
+  for (let materialIndex = 0; materialIndex <= 1; materialIndex++) {
+    const indicesForMaterial = indicesByMaterial[materialIndex];
+    const count = indicesForMaterial.length;
+    geometry.addGroup(groupStart, count, materialIndex);
+    allIndices = allIndices.concat(indicesForMaterial);
+    groupStart += count;
+  }
+
+  geometry.setIndex(allIndices);
 
   // Compute normals for the lighting
   geometry.computeVertexNormals();
