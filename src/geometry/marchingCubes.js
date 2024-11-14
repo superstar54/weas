@@ -313,66 +313,104 @@ export function marchingCubes(dims, volume, bounds, isovalue, step_size = 1) {
   if (!bounds) {
     bounds = [[0, 0, 0], dims];
   }
-  var scale = [0, 0, 0];
-  var shift = [0, 0, 0];
-  for (var i = 0; i < 3; ++i) {
+  const scale = [0, 0, 0];
+  const shift = [0, 0, 0];
+  for (let i = 0; i < 3; ++i) {
     scale[i] = (bounds[1][i] - bounds[0][i]) / dims[i];
     shift[i] = bounds[0][i];
   }
 
-  var vertices = [],
+  const vertices = [],
     faces = [],
+    faceMaterials = [],
     grid = new Array(8),
     edges = new Array(12),
-    x = [0, 0, 0];
-  // March over the volume - now in X, Y, Z order
-  for (x[0] = 0; x[0] < dims[0] - 1; x[0] += step_size)
-    for (x[1] = 0; x[1] < dims[1] - 1; x[1] += step_size)
-      for (x[2] = 0; x[2] < dims[2] - 1; x[2] += step_size) {
-        // For each cell, compute cube mask
-        var cube_index = 0;
-        for (var i = 0; i < 8; ++i) {
-          var v = cubeVerts[i];
-          // Update index calculation for XYZ order and consider step_size for index calculation
-          var index = ((x[0] + v[0] * step_size) * dims[1] + (x[1] + v[1] * step_size)) * dims[2] + (x[2] + v[2] * step_size);
-          var s = volume[index];
+    x = [0, 0, 0],
+    boundaryVertices = [],
+    vertexMap = new Map(); // Map to store vertex index and its boundary status
+
+  // Use a default scalar value that is guaranteed to be less than the isovalue, regardless of its sign
+  const defaultScalar = isovalue - Math.sign(isovalue || 1) * Number.MAX_VALUE;
+
+  function getScalar(x0, x1, x2) {
+    if (x0 >= 0 && x0 < dims[0] && x1 >= 0 && x1 < dims[1] && x2 >= 0 && x2 < dims[2]) {
+      const index = (x0 * dims[1] + x1) * dims[2] + x2;
+      return volume[index];
+    } else {
+      return defaultScalar;
+    }
+  }
+
+  for (x[0] = -step_size; x[0] < dims[0] + step_size; x[0] += step_size)
+    for (x[1] = -step_size; x[1] < dims[1] + step_size; x[1] += step_size)
+      for (x[2] = -step_size; x[2] < dims[2] + step_size; x[2] += step_size) {
+        let cube_index = 0;
+        for (let i = 0; i < 8; ++i) {
+          const v = cubeVerts[i];
+          const x0 = x[0] + v[0] * step_size;
+          const x1 = x[1] + v[1] * step_size;
+          const x2 = x[2] + v[2] * step_size;
+          const s = getScalar(x0, x1, x2);
           grid[i] = s;
           cube_index |= s > isovalue ? 1 << i : 0;
         }
-        // Compute vertices
-        var edge_mask = edgeTable[cube_index];
-        if (edge_mask === 0) {
-          continue;
-        }
-        for (var i = 0; i < 12; ++i) {
-          if ((edge_mask & (1 << i)) === 0) {
+
+        const edge_mask = edgeTable[cube_index];
+        if (edge_mask === 0) continue;
+
+        for (let i = 0; i < 12; ++i) {
+          if ((edge_mask & (1 << i)) === 0) continue;
+
+          const key = `${x[0]}_${x[1]}_${x[2]}_${i}`;
+          if (vertexMap.has(key)) {
+            edges[i] = vertexMap.get(key).index;
             continue;
           }
+
           edges[i] = vertices.length;
-          var nv = [0, 0, 0],
+          const nv = [0, 0, 0],
             e = edgeIndex[i],
             p0 = cubeVerts[e[0]],
             p1 = cubeVerts[e[1]],
             a = grid[e[0]],
             b = grid[e[1]],
             d = b - a,
-            t = 0;
-          // Modified interpolation based on isovalue
-          if (Math.abs(d) > 1e-6) {
-            t = (isovalue - a) / d;
-          }
+            t = Math.abs(d) > 1e-6 ? (isovalue - a) / d : 0;
 
-          for (var j = 0; j < 3; ++j) {
-            // Adjust vertex position calculation to account for step_size
-            nv[j] = scale[j] * (x[j] + p0[j] * step_size + t * (p1[j] - p0[j]) * step_size) + shift[j];
+          const gridPos = [0, 0, 0];
+          let onBoundary = false;
+          for (let j = 0; j < 3; ++j) {
+            gridPos[j] = x[j] + p0[j] * step_size + t * (p1[j] - p0[j]) * step_size;
+
+            // Adjust the position to lie exactly on the boundary if necessary
+            if (gridPos[j] <= 0) {
+              gridPos[j] = 0;
+              onBoundary = true;
+            }
+            if (gridPos[j] >= dims[j] - 1) {
+              gridPos[j] = dims[j] - 1;
+              onBoundary = true;
+            }
+
+            nv[j] = scale[j] * gridPos[j] + shift[j];
           }
           vertices.push(nv);
+          boundaryVertices.push(onBoundary);
+          vertexMap.set(key, { index: edges[i], onBoundary });
         }
+
         // Add faces
-        var f = triTable[cube_index];
-        for (var i = 0; i < f.length; i += 3) {
-          faces.push(edges[f[i]], edges[f[i + 1]], edges[f[i + 2]]);
+        const f = triTable[cube_index];
+        for (let i = 0; i < f.length; i += 3) {
+          const v0 = edges[f[i]];
+          const v1 = edges[f[i + 1]];
+          const v2 = edges[f[i + 2]];
+          faces.push(v0, v1, v2);
+
+          // Determine if face is on the boundary
+          const isFaceOnBoundary = boundaryVertices[v0] && boundaryVertices[v1] && boundaryVertices[v2];
+          faceMaterials.push(isFaceOnBoundary ? 1 : 0);
         }
       }
-  return { positions: vertices, cells: faces };
+  return { positions: vertices, cells: faces, faceMaterials };
 }
