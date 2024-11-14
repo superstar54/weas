@@ -38,6 +38,7 @@ class AtomsGUI {
 
   addAtomsControl() {
     const atomsFolder = this.gui.addFolder("Atoms");
+
     // Model Style Control
     this.modelStyleController = atomsFolder
       .add({ modelStyle: this.viewer.modelStyle }, "modelStyle", MODEL_STYLE_MAP)
@@ -46,6 +47,7 @@ class AtomsGUI {
         this.viewer.drawModels();
       })
       .name("Model Style");
+
     // Radius Type Control
     this.radiusTypeController = atomsFolder
       .add({ radiusType: this.viewer.radiusType }, "radiusType", radiusTypes)
@@ -54,6 +56,7 @@ class AtomsGUI {
         this.viewer.drawModels();
       })
       .name("Radius Type");
+
     // Atom Label Control
     this.atomLabelTypeController = atomsFolder
       .add(this.viewer, "atomLabelType", ["None", "Symbol", "Index"])
@@ -61,6 +64,7 @@ class AtomsGUI {
         this.viewer.atomLabelType = value;
       })
       .name("Atom Label");
+
     // Material Type Control
     this.materialTypeController = atomsFolder
       .add(this.viewer, "materialType", ["Standard", "Phong", "Basic"])
@@ -69,8 +73,10 @@ class AtomsGUI {
         this.viewer.drawModels();
       })
       .name("Material Type");
+
     // Atom Scale Control
     atomsFolder.add(this.viewer, "atomScale", 0.1, 2.0).onChange(this.viewer.atomManager.updateAtomScale.bind(this.viewer.atomManager)).name("Atom Scale");
+
     // Show Cell Control
     this.showCellController = atomsFolder
       .add(this.viewer, "showCell")
@@ -78,6 +84,7 @@ class AtomsGUI {
       .onChange((value) => {
         this.viewer.showCell = value;
       });
+
     // Show Bonded Atoms Control
     this.showBondedAtomsController = atomsFolder
       .add(this.viewer, "showBondedAtoms")
@@ -86,6 +93,16 @@ class AtomsGUI {
         this.viewer.showBondedAtoms = value;
         this.viewer.drawModels();
       });
+
+    // Legend Toggle Control
+    this.legendToggleController = atomsFolder
+      .add(this.guiConfig.legend, "enabled")
+      .name("Show Legend")
+      .onChange((value) => {
+        this.guiConfig.legend.enabled = value;
+        this.updateLegend(); // Toggle legend visibility
+      });
+
     // Replace Atom Folder
     this.addReplaceAtomControl(atomsFolder);
     // Add Atom Folder
