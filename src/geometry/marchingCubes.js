@@ -316,7 +316,7 @@ export function marchingCubes(dims, volume, bounds, isovalue, step_size = 1) {
   const scale = [0, 0, 0];
   const shift = [0, 0, 0];
   for (let i = 0; i < 3; ++i) {
-    scale[i] = (bounds[1][i] - bounds[0][i]) / dims[i];
+    scale[i] = (bounds[1][i] - bounds[0][i] + 1) / dims[i];
     shift[i] = bounds[0][i];
   }
 
@@ -339,9 +339,9 @@ export function marchingCubes(dims, volume, bounds, isovalue, step_size = 1) {
   }
 
   // Adjust loop bounds to include boundary cubes
-  for (x[0] = -step_size; x[0] < dims[0]; x[0] += step_size)
-    for (x[1] = -step_size; x[1] < dims[1]; x[1] += step_size)
-      for (x[2] = -step_size; x[2] < dims[2]; x[2] += step_size) {
+  for (x[0] = 0; x[0] < dims[0] + step_size; x[0] += step_size)
+    for (x[1] = 0; x[1] < dims[1] + step_size; x[1] += step_size)
+      for (x[2] = 0; x[2] < dims[2] + step_size; x[2] += step_size) {
         let cube_index = 0;
         for (let i = 0; i < 8; ++i) {
           const v = cubeVerts[i];
