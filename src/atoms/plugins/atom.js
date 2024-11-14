@@ -134,17 +134,17 @@ export class AtomManager {
         const color = new THREE.Color(this.settings[symbol].color);
         atomColors.push(color);
       });
-      const boundaryAtomsMesh = drawAtoms({
+      const imageAtomsMesh = drawAtoms({
         scene: this.scene,
         atoms: imageAtomsList,
         atomScales: atomScales,
         settings: this.settings,
         colors: atomColors,
         materialType: this.viewer._materialType,
-        data_type: "boundary",
+        data_type: "image",
       });
-      atomsMesh.add(boundaryAtomsMesh);
-      this.meshes["boundary"] = boundaryAtomsMesh;
+      atomsMesh.add(imageAtomsMesh);
+      this.meshes["image"] = imageAtomsMesh;
     }
     this.meshes["atom"] = atomsMesh;
     return atomsMesh;
@@ -155,23 +155,23 @@ export class AtomManager {
       this.meshes["atom"].getMatrixAt(i, matrix);
       matrix.setPosition(new THREE.Vector3(...atoms.positions[i]));
       this.meshes["atom"].setMatrixAt(i, matrix);
-      this.updateBoundaryAtomsMesh(i);
+      this.updateImageAtomsMesh(i);
     }
     this.meshes["atom"].instanceMatrix.needsUpdate = true;
-    // if boundaryAtomsMesh has instanceMatrix, update it
-    if (this.meshes["boundary"]) {
-      this.meshes["boundary"].instanceMatrix.needsUpdate = true;
+    // if imageAtomsMesh has instanceMatrix, update it
+    if (this.meshes["image"]) {
+      this.meshes["image"].instanceMatrix.needsUpdate = true;
     }
   }
 
-  updateBoundaryAtomsMesh(atomIndex) {
+  updateImageAtomsMesh(atomIndex) {
     /* When the atom is moved, the boundary atoms should be moved as well.
      */
-    // this.logger.debug("this.viewer.boundaryList: ", this.viewer.boundaryList);
-    // this.logger.debug("updateBoundaryAtomsMesh: ", atomIndex);
+    // this.logger.debug("this.viewer.imageAtomsList: ", this.viewer.imageAtomsList);
+    // this.logger.debug("updateImageAtomsMesh: ", atomIndex);
     // this.logger.debug("this.viewer.boundaryMap[atomIndex]:", this.viewer.boundaryMap[atomIndex]);
-    if (this.viewer.boundaryList.length > 0 && this.viewer.boundaryMap[atomIndex]) {
-      // this.logger.debug("updateBoundaryAtomsMesh: ", atomIndex);
+    if (this.viewer.imageAtomsList.length > 0 && this.viewer.boundaryMap[atomIndex]) {
+      // this.logger.debug("updateImageAtomsMesh: ", atomIndex);
       const atomList = this.viewer.boundaryMap[atomIndex];
       // loop all atomList and update the boundary atoms
       atomList.forEach((atom) => {
@@ -179,9 +179,9 @@ export class AtomManager {
         const newPosition = this.viewer.atoms.positions[atomIndex].map((value, index) => value + calculateCartesianCoordinates(this.viewer.atoms.cell, atom.offset)[index]);
         // Update the atom position
         const matrix = new THREE.Matrix4();
-        this.meshes["boundary"].getMatrixAt(boundaryAtomIndex, matrix);
+        this.meshes["image"].getMatrixAt(boundaryAtomIndex, matrix);
         matrix.setPosition(new THREE.Vector3(...newPosition));
-        this.meshes["boundary"].setMatrixAt(boundaryAtomIndex, matrix);
+        this.meshes["image"].setMatrixAt(boundaryAtomIndex, matrix);
       });
     }
   }
@@ -190,11 +190,11 @@ export class AtomManager {
     let mesh = this.meshes["atom"];
     this.updateMeshScale(mesh, this.viewer.atoms.symbols, this.viewer.atomScale);
     // update the boundary atoms
-    mesh = this.meshes["boundary"];
+    mesh = this.meshes["image"];
     if (mesh) {
       const symbols = [];
-      for (let i = 0; i < this.viewer.boundaryList.length; i++) {
-        symbols.push(this.viewer.atoms.symbols[this.viewer.boundaryList[i][0]]);
+      for (let i = 0; i < this.viewer.imageAtomsList.length; i++) {
+        symbols.push(this.viewer.atoms.symbols[this.viewer.imageAtomsList[i][0]]);
       }
       this.updateMeshScale(mesh, symbols, this.viewer.atomScale);
     }
@@ -204,9 +204,11 @@ export class AtomManager {
     const position = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
     const scale = new THREE.Vector3();
+    console.log("settings: ", this.settings);
 
     for (let i = 0; i < mesh.count; i++) {
       const instanceMatrix = new THREE.Matrix4();
+      console.log("symbols[i]: ", symbols[i]);
       const radius = this.settings[symbols[i]].radius || 1;
       mesh.getMatrixAt(i, instanceMatrix); // Get the original matrix of the instance
       // Decompose the original matrix into its components

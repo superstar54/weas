@@ -531,8 +531,8 @@ class AtomsViewer {
     if (this.atomManager.meshes["atom"]) {
       this.atomManager.meshes["atom"].dispose();
     }
-    if (this.atomManager.meshes["boundary"]) {
-      this.atomManager.meshes["boundary"].dispose();
+    if (this.atomManager.meshes["image"]) {
+      this.atomManager.meshes["image"].dispose();
     }
     // Remove the unit cell
     clearObjects(this.tjs.scene, this.uuid);
@@ -629,7 +629,7 @@ class AtomsViewer {
     this.atomManager.meshes["atom"].setMatrixAt(index, matrix);
     this.atoms.positions[index] = [position.x, position.y, position.z];
     // update the other meshes
-    this.atomManager.updateBoundaryAtomsMesh(index);
+    this.atomManager.updateImageAtomsMesh(index);
     this.bondManager.updateBondMesh(index);
   }
 
@@ -665,9 +665,9 @@ class AtomsViewer {
     });
 
     this.atomManager.meshes["atom"].instanceMatrix.needsUpdate = true;
-    // if boundaryAtomsMesh has instanceMatrix, update it
-    if (this.atomManager.meshes["boundary"]) {
-      this.atomManager.meshes["boundary"].instanceMatrix.needsUpdate = true;
+    // if imageAtomsMesh has instanceMatrix, update it
+    if (this.atomManager.meshes["image"]) {
+      this.atomManager.meshes["image"].instanceMatrix.needsUpdate = true;
     }
     if (this.bondManager.bondMesh) {
       this.bondManager.bondMesh.instanceMatrix.needsUpdate = true;
@@ -706,9 +706,9 @@ class AtomsViewer {
     });
 
     this.atomManager.meshes["atom"].instanceMatrix.needsUpdate = true;
-    // if boundaryAtomsMesh has instanceMatrix, update it
-    if (this.atomManager.meshes["boundary"]) {
-      this.atomManager.meshes["boundary"].instanceMatrix.needsUpdate = true;
+    // if imageAtomsMesh has instanceMatrix, update it
+    if (this.atomManager.meshes["image"]) {
+      this.atomManager.meshes["image"].instanceMatrix.needsUpdate = true;
     }
   }
 
