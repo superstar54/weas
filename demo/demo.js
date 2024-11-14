@@ -161,6 +161,18 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.isosurfaceManager.drawIsosurfaces();
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
       break;
+    case "2d-slice":
+      editor.clear();
+
+      structureData = fileContent || (await fetchFile("h2o-homo.cube"));
+      let cubeData1 = parseCube(structureData);
+      editor.avr.atoms = cubeData1.atoms;
+      editor.avr.volumeSliceManager.volumetricData = cubeData1.volumetricData;
+      // editor.avr.volumeSliceManager.addSetting(0.0002);
+      editor.avr.volumeSliceManager.addSetting("Slice 1", { axis: "z", index: 12, colorMap: "viridis", opacity: 0.8 });
+      editor.avr.volumeSliceManager.drawSlices();
+      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      break;
     case "deca_ala_md.xyz":
       editor.clear();
       structureData = fileContent || (await fetchFile(filename));
