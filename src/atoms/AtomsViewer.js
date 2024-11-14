@@ -375,9 +375,9 @@ class AtomsViewer {
     if (newValue === "None") {
       // Remove labels
       this.ALManager.settings = [];
-    } else if (newValue === "Symbol") {
+    } else if (newValue.toUpperCase() === "SYMBOL") {
       this.ALManager.settings = [{ origins: "positions", texts: "symbols" }];
-    } else if (newValue === "Index") {
+    } else if (newValue.toLocaleUpperCase() === "INDEX") {
       this.ALManager.settings = [{ origins: "positions", texts: "index" }];
     }
     this.ALManager.drawAtomLabels();
