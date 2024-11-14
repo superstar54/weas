@@ -52,6 +52,9 @@ class GUIManager {
     const buttonContainer = document.createElement("div");
     buttonContainer.style.display = "flex";
     buttonContainer.style.position = "absolute";
+    buttonContainer.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
+    buttonContainer.style.padding = "10px";
+    buttonContainer.style.borderRadius = "5px";
     buttonContainer.style.right = "5px";
     buttonContainer.style.top = "5px";
     buttonContainer.style.gap = "5px";
