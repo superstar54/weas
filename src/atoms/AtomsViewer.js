@@ -8,6 +8,7 @@ import { BoundaryManager } from "./plugins/boundary.js";
 import { AtomLabelManager } from "./plugins/atomLabel.js";
 import { Atom, Atoms } from "./atoms.js";
 import { Isosurface } from "./plugins/isosurface.js";
+import { VolumeSlice } from "./plugins/VolumeSlice.js";
 import { VectorField } from "./plugins/vectorField.js";
 import { Measurement } from "./plugins/measurement.js";
 import { HighlightManager } from "./plugins/highlight.js";
@@ -55,6 +56,7 @@ class AtomsViewer {
     this.boundaryManager = new BoundaryManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
     this.isosurfaceManager = new Isosurface(this);
+    this.volumeSliceManager = new VolumeSlice(this);
     this.ALManager = new AtomLabelManager(this);
     this.Measurement = new Measurement(this);
     this.VFManager = new VectorField(this);
@@ -205,6 +207,7 @@ class AtomsViewer {
     this.VFManager.init();
     // for other plugins, they need to be reset
     this.isosurfaceManager.reset();
+    this.volumeSliceManager.reset();
     this.Measurement.reset();
     // if trajectory data is provided, add the trajectory controller
     this.guiManager.update(this.trajectory);
@@ -516,6 +519,7 @@ class AtomsViewer {
     const polyhedraMesh = this.polyhedraManager.drawPolyhedras();
     this.atomManager.meshes["atom"].add(polyhedraMesh);
     this.isosurfaceManager.drawIsosurfaces();
+    this.volumeSliceManager.drawSlices();
     this.VFManager.drawVectorFields();
     this.highlightManager.drawHighlightAtoms();
     this.ALManager.drawAtomLabels();

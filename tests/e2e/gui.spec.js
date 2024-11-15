@@ -37,6 +37,17 @@ test("Isosurface", async ({ page }) => {
   await expect(page).toHaveScreenshot("Isosurface-reset.png");
 });
 
+test("VolumeSlice", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testVolumeSlice.html");
+  await expect(page).toHaveScreenshot();
+  // reset slice
+  await page.evaluate(() => {
+    window.editor.avr.volumeSliceManager.reset();
+    window.editor.tjs.render();
+  });
+  await expect(page).toHaveScreenshot("VolumeSlice-reset.png");
+});
+
 test("VectorField", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testVectorField.html");
   await expect(page).toHaveScreenshot();

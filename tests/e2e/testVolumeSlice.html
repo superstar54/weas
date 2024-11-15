@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS Test</title>
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 600px; height: 400px"></div>
+
+    <script type="module">
+      import * as weas from "../../dist/weas.mjs";
+
+      async function fetchFile(filename) {
+        const response = await fetch(`../../demo/datas/${filename}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load file for structure: ${filename}`);
+        }
+        return await response.text();
+      }
+
+      let domElement = document.getElementById("viewer");
+      // read atoms from file
+      const filename = "h2o-homo.cube";
+      fetchFile(filename).then((fileContent) => {
+        const cubeData = weas.parseCube(fileContent);
+        const editor = new weas.WEAS({ domElement });
+        editor.avr.atoms = cubeData.atoms;
+        editor.avr.volumeSliceManager.volumetricData = cubeData.volumetricData;
+        // editor.avr.isosurfaceManager.addSetting(0.0002);
+        editor.avr.volumeSliceManager.addSetting("Slice 1", { h: 0, k: 1, l: 0, distance: 5.5, colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
+        editor.avr.volumeSliceManager.addSetting("Slice 2", { h: 1, k: 1, l: 0, distance: 5.5, colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
+        editor.avr.drawModels();
+        editor.avr.tjs.updateCameraAndControls({ direction: [0.5, 1, 2] });
+        editor.render();
+        window.editor = editor;
+      });
+    </script>
+  </body>
+</html>
