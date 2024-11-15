@@ -28,7 +28,6 @@ export class Isosurface {
     this.viewer = viewer;
     this.scene = viewer.tjs.scene;
     this.settings = {};
-    this.volumetricData = null;
     this.guiFolder = null;
     this.meshes = {};
   }
@@ -52,7 +51,6 @@ export class Isosurface {
     this.removeGui();
     this.clearIossurfaces();
     this.settings = {};
-    this.volumetricData = null;
   }
   fromSettings(settings) {
     /* Set the isosurface settings */
@@ -72,11 +70,11 @@ export class Isosurface {
     /* Add a new setting to the isosurface */
     // if isoValue is not set, use the average value if the volumetric data is set
     if (isovalue === null) {
-      if (this.volumetricData === null) {
+      if (this.viewer.volumetricData === null) {
         isovalue = 0;
       } else {
-        const max = this.volumetricData.values.reduce((acc, val) => Math.max(acc, val), -Infinity);
-        const min = this.volumetricData.values.reduce((acc, val) => Math.min(acc, val), Infinity);
+        const max = this.viewer.volumetricData.values.reduce((acc, val) => Math.max(acc, val), -Infinity);
+        const min = this.viewer.volumetricData.values.reduce((acc, val) => Math.min(acc, val), Infinity);
         const average = (max + min) / 2;
         isovalue = average;
       }
@@ -103,13 +101,13 @@ export class Isosurface {
 
   drawIsosurfaces() {
     /* Draw isosurfaces */
-    if (this.volumetricData === null) {
+    if (this.viewer.volumetricData === null) {
       this.viewer.logger.debug("No volumetric data is set");
       return;
     }
     this.viewer.logger.debug("drawIsosurfaces");
     this.clearIossurfaces();
-    const volumetricData = this.volumetricData;
+    const volumetricData = this.viewer.volumetricData;
     const data = volumetricData.values;
     const dims = volumetricData.dims;
     const cell = volumetricData.cell;

@@ -152,7 +152,7 @@ async function updateAtoms(filename, fileContent = null) {
       structureData = fileContent || (await fetchFile(filename));
       let cubeData = parseCube(structureData);
       editor.avr.atoms = cubeData.atoms;
-      editor.avr.isosurfaceManager.volumetricData = cubeData.volumetricData;
+      editor.avr.volumetricData = cubeData.volumetricData;
       // editor.avr.isosurfaceManager.addSetting(0.0002);
       editor.avr.isosurfaceManager.fromSettings({
         positive: { isovalue: 0.00002, mode: 1, step_size: 1 },
@@ -167,7 +167,7 @@ async function updateAtoms(filename, fileContent = null) {
       structureData = fileContent || (await fetchFile("h2o-homo.cube"));
       let cubeData1 = parseCube(structureData);
       editor.avr.atoms = cubeData1.atoms;
-      editor.avr.volumeSliceManager.volumetricData = cubeData1.volumetricData;
+      editor.avr.volumetricData = cubeData1.volumetricData;
       // editor.avr.volumeSliceManager.addSetting(0.0002);
       editor.avr.volumeSliceManager.addSetting("Slice 1", { h: 0, k: 1, l: 0, distance: 5.5, colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
       editor.avr.volumeSliceManager.addSetting("Slice 2", { method: "bestFit", selectedAtomIndices: [0, 1, 2], colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
@@ -182,8 +182,6 @@ async function updateAtoms(filename, fileContent = null) {
       // atomsList[0].newAttribute("moment", [1, 1, 1, 1, 1, -1, -1, -1, -1, -1], "atom");
       // atomsList[0].newAttribute("charge", [-1, 0.5, 1, 0.5, 0.3, 0.2, 2, 1, 0, -0.5], "atom");
       editor.avr.atoms = trajectory;
-      console.log("bond settings: ", editor.avr.bondManager.settings);
-      console.log("polyhedra settings: ", editor.avr.polyhedraManager.settings);
       // editor.avr.bondManager.settings[1].color1 = "blue";
       // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
       editor.avr.modelStyle = 1;

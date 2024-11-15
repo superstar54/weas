@@ -67,6 +67,7 @@ class AtomsViewer {
   }
 
   init(atoms) {
+    this.volumetricData = null;
     this.lastFrameTime = Date.now();
     this.selectedAtomsLabelElement = document.createElement("div");
     this.selectedAtomsLabelElement.id = "selectedAtomSymbol";
@@ -77,6 +78,7 @@ class AtomsViewer {
   }
 
   reset() {
+    this.volumetricData = null;
     this.atomLabels = [];
     this.atomArrows = null;
     this.atomColors = new Array();

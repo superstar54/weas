@@ -29,7 +29,6 @@ export class VolumeSlice {
     this.viewer = viewer;
     this.scene = viewer.tjs.scene;
     this.settings = {};
-    this.volumetricData = null;
     this.guiFolder = null;
     this.slices = {};
   }
@@ -52,7 +51,6 @@ export class VolumeSlice {
     this.removeGui();
     this.clearSlices();
     this.settings = {};
-    this.volumetricData = null;
   }
 
   fromSettings(settings) {
@@ -113,14 +111,14 @@ export class VolumeSlice {
 
   drawSlices() {
     /* Draw slices */
-    if (this.volumetricData === null) {
+    if (this.viewer.volumetricData === null) {
       this.viewer.logger.debug("No volumetric data is set");
       return;
     }
     this.viewer.logger.debug("drawSlices");
     console.log("drawSlices");
     this.clearSlices();
-    const volumetricData = this.volumetricData;
+    const volumetricData = this.viewer.volumetricData;
     const data = volumetricData.values;
     const dims = volumetricData.dims;
     const cell = volumetricData.cell;
