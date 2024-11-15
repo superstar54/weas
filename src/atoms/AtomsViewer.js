@@ -253,32 +253,37 @@ class AtomsViewer {
   }
 
   set modelStyle(newValue) {
-    this.logger.debug("updateModelStyle: ", newValue);
     newValue = parseInt(newValue);
+    this.logger.debug("updateModelStyle: ", newValue);
     if (this.selectedAtomsIndices.length > 0) {
       if (newValue === 0) {
-        this.logger.debug("newValue: ", newValue);
         this.selectedAtomsIndices.forEach((atomIndex) => {
           this.atomScales[atomIndex] = 1;
-          this.modelSticks[atomIndex] = 0;
+          this.modelSticks[atomIndex] = newValue;
           this.modelPolyhedras[atomIndex] = 0;
         });
       } else if (newValue === 1) {
         this.selectedAtomsIndices.forEach((atomIndex) => {
           this.atomScales[atomIndex] = 0.4;
-          this.modelSticks[atomIndex] = 1;
+          this.modelSticks[atomIndex] = newValue;
           this.modelPolyhedras[atomIndex] = 0;
         });
       } else if (newValue === 2) {
         this.selectedAtomsIndices.forEach((atomIndex) => {
           this.atomScales[atomIndex] = 0.4;
-          this.modelSticks[atomIndex] = 1;
+          this.modelSticks[atomIndex] = newValue;
           this.modelPolyhedras[atomIndex] = 1;
         });
       } else if (newValue === 3) {
         this.selectedAtomsIndices.forEach((atomIndex) => {
           this.atomScales[atomIndex] = 0;
-          this.modelSticks[atomIndex] = 1;
+          this.modelSticks[atomIndex] = newValue;
+          this.modelPolyhedras[atomIndex] = 0;
+        });
+      } else if (newValue === 4) {
+        this.selectedAtomsIndices.forEach((atomIndex) => {
+          this.atomScales[atomIndex] = 0;
+          this.modelSticks[atomIndex] = newValue;
           this.modelPolyhedras[atomIndex] = 0;
         });
       }
@@ -294,14 +299,14 @@ class AtomsViewer {
         this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(1);
       } else if (this._modelStyle === 2) {
         this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0.4);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(1);
+        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(2);
         this.modelPolyhedras = new Array(this.atoms.getAtomsCount()).fill(1);
       } else if (this._modelStyle === 3) {
         this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(1);
+        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(3);
       } else if (this._modelStyle === 4) {
         this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(1);
+        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(4);
       }
     }
     // avoid the recursive loop
@@ -514,16 +519,8 @@ class AtomsViewer {
 
     this.logger.debug("bondedAtoms: ", this.bondedAtoms);
     this.atomManager.meshes["atom"] = this.atomManager.drawBalls();
-    const { bondMesh, bondLine, bondCap } = this.bondManager.drawBonds();
-    if (bondMesh) {
-      this.atomManager.meshes["atom"].add(bondMesh);
-    }
-    if (bondLine) {
-      this.atomManager.meshes["atom"].add(bondLine);
-    }
-    if (bondCap) {
-      this.atomManager.meshes["atom"].add(bondCap);
-    }
+    const bondMesh = this.bondManager.drawBonds();
+    this.atomManager.meshes["atom"].add(bondMesh);
     const polyhedraMesh = this.polyhedraManager.drawPolyhedras();
     this.atomManager.meshes["atom"].add(polyhedraMesh);
     this.isosurfaceManager.drawIsosurfaces();
