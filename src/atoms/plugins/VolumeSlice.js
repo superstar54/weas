@@ -147,13 +147,15 @@ export class VolumeSlice {
 
       // Extract the slice data along the arbitrary plane
       const samplingDistance = setting.samplingDistance || 0.5; // User-controlled parameter
+      console.log("planeNormal", planeNormal);
+      console.log("planePoint", planePoint);
       const sliceResult = extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint, samplingDistance);
+      console.log("sliceResult", sliceResult);
       if (!sliceResult) {
         this.viewer.logger.debug("Slice does not intersect the unit cell sufficiently");
         return;
       }
-      console.log("sliceResult", sliceResult);
-      const { sliceData, width, height, minX, maxX, minY, maxY, projectedPoints } = sliceResult;
+      const { sliceData, width, height, minX, maxX, minY, maxY, projectedPoints, intersectionPoints } = sliceResult;
 
       // Determine min and max sliceData values for color mapping
       const maxValue = Math.max(...sliceData.flat());
@@ -165,7 +167,7 @@ export class VolumeSlice {
       const texture = createTextureFromSlice(sliceData, minValue, maxValue, setting.colorMap);
 
       // Create plane geometry and apply the texture
-      const planeMesh = createSlicePlaneArbitrary(projectedPoints, planeNormal, planePoint, texture, setting.opacity, minX, maxX, minY, maxY);
+      const planeMesh = createSlicePlaneArbitrary(intersectionPoints, planeNormal, planePoint, texture, setting.opacity, minX, maxX, minY, maxY);
 
       planeMesh.userData.type = "slice";
       planeMesh.userData.uuid = this.viewer.uuid;
@@ -182,10 +184,6 @@ export class VolumeSlice {
 }
 
 function computePlaneNormalFromMillerIndices(h, k, l, cell) {
-  /*
-    Compute the plane normal in direct space given Miller indices (h, k, l) and cell parameters.
-    Returns a THREE.Vector3 representing the plane normal.
-  */
   // Compute reciprocal lattice vectors
   const a1 = new THREE.Vector3(...cell[0]);
   const a2 = new THREE.Vector3(...cell[1]);
@@ -263,6 +261,9 @@ function computeBestFitPlane(points) {
 
 function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint, samplingDistance) {
   const intersectionPoints = computePlaneUnitCellIntersections(cell, origin, planeNormal, planePoint);
+  console.log("planeNormal", planeNormal);
+  console.log("planePoint", planePoint);
+  console.log("intersectionPoints", intersectionPoints);
 
   if (intersectionPoints.length < 3) {
     // Plane does not intersect the unit cell sufficiently
@@ -271,6 +272,7 @@ function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint
 
   // Project the intersection points onto the plane coordinate system
   const planeBasis = computePlaneBasis(planeNormal);
+  console.log("planeBasis", planeBasis);
 
   const projectedPoints = intersectionPoints.map((pt) => {
     const localPt = pt.clone().sub(planePoint);
@@ -278,6 +280,7 @@ function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint
     const y = localPt.dot(planeBasis.v);
     return new THREE.Vector2(x, y);
   });
+  console.log("projectedPoints", projectedPoints);
 
   // Compute the bounding box of the projected points
   let minX = Infinity,
@@ -320,7 +323,7 @@ function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint
     sliceData.push(row);
   }
 
-  return { sliceData, width, height, minX, maxX, minY, maxY, projectedPoints };
+  return { sliceData, width, height, minX, maxX, minY, maxY, projectedPoints, intersectionPoints };
 }
 
 function cellToGridCoordinates(position, cell, dims) {
@@ -436,35 +439,57 @@ function createSlicePlaneArbitrary(intersectionPoints, planeNormal, planePoint, 
     return new THREE.Vector2(x, y);
   });
 
-  // Create a shape from the projectedPoints
-  console.log("projectedPoints", projectedPoints);
-  const shape = new THREE.Shape(projectedPoints);
+  // Compute the centroid
+  const centroid = new THREE.Vector2(0, 0);
+  projectedPoints.forEach((pt) => {
+    centroid.add(pt);
+  });
+  centroid.divideScalar(projectedPoints.length);
+
+  // Calculate angles and sort the points
+  const pointsWithAngles = projectedPoints.map((pt) => ({
+    point: pt,
+    angle: Math.atan2(pt.y - centroid.y, pt.x - centroid.x),
+  }));
+  pointsWithAngles.sort((a, b) => a.angle - b.angle);
+
+  // Extract sorted points
+  const sortedProjectedPoints = pointsWithAngles.map((item) => item.point);
+
+  // Create a shape from the sorted projectedPoints
+  const shape = new THREE.Shape(sortedProjectedPoints);
 
   // Create geometry from shape
   const geometry = new THREE.ShapeGeometry(shape);
 
   // Assign UV coordinates to the geometry
-  geometry.attributes.uv.array = new Float32Array(geometry.attributes.position.count * 2);
+  geometry.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.count * 2), 2));
 
   for (let i = 0; i < geometry.attributes.position.count; i++) {
-    const vertex = new THREE.Vector3(geometry.attributes.position.getX(i), geometry.attributes.position.getY(i), geometry.attributes.position.getZ(i));
-
-    // Project vertex onto plane coordinates
-    const localPt = vertex.clone().sub(planePoint);
-    const x = localPt.dot(planeBasis.u);
-    const y = localPt.dot(planeBasis.v);
+    const x = geometry.attributes.position.getX(i);
+    const y = geometry.attributes.position.getY(i);
     const u = (x - minX) / (maxX - minX);
     const v = (y - minY) / (maxY - minY);
 
     geometry.attributes.uv.setXY(i, u, v);
   }
 
-  // Align the geometry onto the plane
-  const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), planeNormal);
-  geometry.applyQuaternion(quaternion);
+  // Create a transformation matrix to rotate and translate the geometry
+  const matrix = new THREE.Matrix4();
 
-  // Position the geometry at the correct point
-  geometry.translate(planePoint.x, planePoint.y, planePoint.z);
+  // Create basis vectors for the plane
+  const u = planeBasis.u;
+  const v = planeBasis.v;
+  const w = planeNormal;
+
+  // Construct the rotation matrix from the plane's basis vectors
+  matrix.makeBasis(u, v, w);
+
+  // Set the position of the plane
+  matrix.setPosition(planePoint);
+
+  // Apply the transformation matrix to the geometry
+  geometry.applyMatrix4(matrix);
 
   // Create material with the texture
   const material = new THREE.MeshBasicMaterial({
@@ -476,7 +501,6 @@ function createSlicePlaneArbitrary(intersectionPoints, planeNormal, planePoint, 
 
   // Create mesh
   const mesh = new THREE.Mesh(geometry, material);
-  console.log("mesh", mesh);
 
   return mesh;
 }
