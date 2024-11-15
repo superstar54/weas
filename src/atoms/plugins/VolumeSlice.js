@@ -3,12 +3,12 @@ import { clearObject } from "../../utils.js";
 import { convertColor } from "../utils.js";
 
 class SliceSetting {
-  constructor({ method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtoms = [], colorMap = "viridis", opacity = 1.0, samplingDistance = 0.2 }) {
+  constructor({ method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtomIndices = [], colorMap = "viridis", opacity = 1.0, samplingDistance = 0.2 }) {
     /*
       method: 'miller' or 'bestFit'
       h, k, l: Miller indices for method 'miller'
       distance: Distance from the origin along the plane normal
-      selectedAtoms: Array of atom indices or positions for method 'bestFit'
+      selectedAtomIndices: Array of atom indices or positions for method 'bestFit'
       colorMap: The color map to use for mapping data values to colors.
       opacity: The opacity of the slice (between 0 and 1).
     */
@@ -17,7 +17,7 @@ class SliceSetting {
     this.k = k;
     this.l = l;
     this.distance = distance;
-    this.selectedAtoms = selectedAtoms;
+    this.selectedAtomIndices = selectedAtomIndices;
     this.colorMap = colorMap;
     this.opacity = opacity;
     this.samplingDistance = samplingDistance;
@@ -69,7 +69,7 @@ export class VolumeSlice {
     });
   }
 
-  addSetting(name, { method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtoms = [], colorMap = "viridis", opacity = 1.0, samplingDistance = 0.2 }) {
+  addSetting(name, { method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtomIndices = [], colorMap = "viridis", opacity = 1.0, samplingDistance = 0.2 }) {
     /* Add a new setting to the slices */
     const setting = new SliceSetting({
       method,
@@ -77,7 +77,7 @@ export class VolumeSlice {
       k,
       l,
       distance,
-      selectedAtoms,
+      selectedAtomIndices,
       colorMap,
       opacity,
       samplingDistance,
@@ -98,7 +98,7 @@ export class VolumeSlice {
       sliceFolder.add(setting, "distance").name("Distance").onChange(this.drawSlices.bind(this));
     } else if (setting.method === "bestFit") {
       // For bestFit method, you might need to provide a UI to select atoms
-      // For simplicity, we assume selectedAtoms is already set
+      // For simplicity, we assume selectedAtomIndices is already set
     }
 
     sliceFolder.add(setting, "opacity", 0, 1).name("Opacity").onChange(this.drawSlices.bind(this));
@@ -136,8 +136,8 @@ export class VolumeSlice {
         planePoint = planeNormal.clone().multiplyScalar(setting.distance).add(origin);
       } else if (setting.method === "bestFit") {
         // Compute best-fit plane from selected atoms
-        const atomPositions = setting.selectedAtoms.map((atom) => {
-          return new THREE.Vector3(atom.x, atom.y, atom.z);
+        const atomPositions = setting.selectedAtomIndices.map((index) => {
+          return new THREE.Vector3(...this.viewer.atoms.positions[index]);
         });
         const plane = computeBestFitPlane(atomPositions);
         planeNormal = plane.normal;
@@ -211,6 +211,11 @@ function computeBestFitPlane(points) {
     Compute the best-fit plane from an array of THREE.Vector3 points.
     Returns an object with normal (THREE.Vector3) and point (THREE.Vector3).
   */
+
+  if (points.length < 3) {
+    throw new Error("At least three points are required to define a plane.");
+  }
+
   // Calculate the centroid of the points
   const centroid = new THREE.Vector3(0, 0, 0);
   points.forEach((point) => {
@@ -246,7 +251,7 @@ function computeBestFitPlane(points) {
   ];
 
   // Compute eigenvalues and eigenvectors of the covariance matrix
-  const { eigenvalues, eigenvectors } = numeric.eig(covarianceMatrix);
+  const { eigenvalues, eigenvectors } = computeEigenvaluesAndEigenvectors(covarianceMatrix);
 
   // The normal of the plane is the eigenvector corresponding to the smallest eigenvalue
   const minIndex = eigenvalues.findIndex((val) => val === Math.min(...eigenvalues));
@@ -682,4 +687,71 @@ function computeConvexHull(points) {
 
 function cross(o, a, b) {
   return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+
+function computeEigenvaluesAndEigenvectors(matrix) {
+  const EPSILON = 1e-10;
+  const MAX_ITERATIONS = 100;
+
+  let a = matrix.map((row) => row.slice()); // Copy the matrix
+  const n = a.length;
+  let eigenvectors = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
+
+  for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
+    // Find the largest off-diagonal element
+    let max = 0;
+    let p = 0,
+      q = 0;
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        if (Math.abs(a[i][j]) > Math.abs(max)) {
+          max = a[i][j];
+          p = i;
+          q = j;
+        }
+      }
+    }
+
+    if (Math.abs(max) < EPSILON) {
+      // Convergence reached
+      break;
+    }
+
+    // Compute the rotation angle
+    const theta = 0.5 * Math.atan2(2 * max, a[p][p] - a[q][q]);
+
+    const cos = Math.cos(theta);
+    const sin = Math.sin(theta);
+
+    // Perform the rotation
+    const app = cos * cos * a[p][p] - 2 * sin * cos * a[p][q] + sin * sin * a[q][q];
+    const aqq = sin * sin * a[p][p] + 2 * sin * cos * a[p][q] + cos * cos * a[q][q];
+    const apq = 0;
+
+    for (let k = 0; k < n; k++) {
+      if (k !== p && k !== q) {
+        const aik = cos * a[p][k] - sin * a[q][k];
+        const aiq = sin * a[p][k] + cos * a[q][k];
+        a[p][k] = aik;
+        a[k][p] = aik;
+        a[q][k] = aiq;
+        a[k][q] = aiq;
+      }
+    }
+
+    a[p][p] = app;
+    a[q][q] = aqq;
+    a[p][q] = apq;
+    a[q][p] = apq;
+
+    for (let k = 0; k < n; k++) {
+      const eik = cos * eigenvectors[k][p] - sin * eigenvectors[k][q];
+      const eiq = sin * eigenvectors[k][p] + cos * eigenvectors[k][q];
+      eigenvectors[k][p] = eik;
+      eigenvectors[k][q] = eiq;
+    }
+  }
+
+  const eigenvalues = a.map((row, i) => row[i]);
+  return { eigenvalues, eigenvectors };
 }

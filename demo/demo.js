@@ -170,8 +170,9 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.volumeSliceManager.volumetricData = cubeData1.volumetricData;
       // editor.avr.volumeSliceManager.addSetting(0.0002);
       editor.avr.volumeSliceManager.addSetting("Slice 1", { h: 0, k: 1, l: 0, distance: 5.5, colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
-      editor.avr.volumeSliceManager.addSetting("Slice 2", { h: 1, k: 1, l: 0, distance: 6, colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
+      editor.avr.volumeSliceManager.addSetting("Slice 2", { method: "bestFit", selectedAtomIndices: [0, 1, 2], colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
       editor.avr.volumeSliceManager.drawSlices();
+      editor.avr.tjs.updateCameraAndControls({ direction: [0.5, 1, 2] });
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
       break;
     case "deca_ala_md.xyz":
