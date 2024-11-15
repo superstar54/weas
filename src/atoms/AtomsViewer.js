@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { CellManager } from "./cell.js";
 import { AtomManager } from "./plugins/atom.js";
-import { BondManager, searchBondedAtoms } from "./plugins/bond.js";
+import { BondManager, defaultBondRadius, searchBondedAtoms } from "./plugins/bond.js";
 import { clearObjects, clearObject } from "../utils.js";
 import { PolyhedraManager } from "./plugins/polyhedra.js";
 import { BoundaryManager } from "./plugins/boundary.js";
@@ -297,7 +297,10 @@ class AtomsViewer {
         this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(1);
         this.modelPolyhedras = new Array(this.atoms.getAtomsCount()).fill(1);
       } else if (this._modelStyle === 3) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0.0);
+        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
+        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(1);
+      } else if (this._modelStyle === 4) {
+        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
         this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(1);
       }
     }
@@ -511,12 +514,15 @@ class AtomsViewer {
 
     this.logger.debug("bondedAtoms: ", this.bondedAtoms);
     this.atomManager.meshes["atom"] = this.atomManager.drawBalls();
-    const { bondMesh, bondLine } = this.bondManager.drawBonds();
+    const { bondMesh, bondLine, bondCap } = this.bondManager.drawBonds();
     if (bondMesh) {
       this.atomManager.meshes["atom"].add(bondMesh);
     }
     if (bondLine) {
       this.atomManager.meshes["atom"].add(bondLine);
+    }
+    if (bondCap) {
+      this.atomManager.meshes["atom"].add(bondCap);
     }
     const polyhedraMesh = this.polyhedraManager.drawPolyhedras();
     this.atomManager.meshes["atom"].add(polyhedraMesh);
