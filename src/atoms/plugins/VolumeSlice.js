@@ -69,7 +69,7 @@ export class VolumeSlice {
     });
   }
 
-  addSetting(name, { method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtoms = [], colorMap = "viridis", opacity = 1.0 }) {
+  addSetting(name, { method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtoms = [], colorMap = "viridis", opacity = 1.0, samplingDistance = 0.2 }) {
     /* Add a new setting to the slices */
     const setting = new SliceSetting({
       method,
@@ -80,6 +80,7 @@ export class VolumeSlice {
       selectedAtoms,
       colorMap,
       opacity,
+      samplingDistance,
     });
     if (name === undefined) {
       name = "slice-" + Object.keys(this.settings).length;
@@ -147,10 +148,7 @@ export class VolumeSlice {
 
       // Extract the slice data along the arbitrary plane
       const samplingDistance = setting.samplingDistance || 0.5; // User-controlled parameter
-      console.log("planeNormal", planeNormal);
-      console.log("planePoint", planePoint);
       const sliceResult = extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint, samplingDistance);
-      console.log("sliceResult", sliceResult);
       if (!sliceResult) {
         this.viewer.logger.debug("Slice does not intersect the unit cell sufficiently");
         return;
@@ -160,8 +158,6 @@ export class VolumeSlice {
       // Determine min and max sliceData values for color mapping
       const maxValue = Math.max(...sliceData.flat());
       const minValue = Math.min(...sliceData.flat());
-      console.log("minValue", minValue);
-      console.log("maxValue", maxValue);
 
       // Create a texture from the slice data
       const texture = createTextureFromSlice(sliceData, minValue, maxValue, setting.colorMap);
@@ -261,7 +257,6 @@ function computeBestFitPlane(points) {
 
 function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint, samplingDistance) {
   const intersectionPoints = computePlaneUnitCellIntersections(cell, origin, planeNormal, planePoint);
-  console.log("intersectionPoints", intersectionPoints);
 
   if (intersectionPoints.length < 3) {
     // Plane does not intersect the unit cell sufficiently
@@ -280,7 +275,6 @@ function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint
 
   // Compute the convex hull of the projected points
   const convexHullPoints = computeConvexHull(projectedPoints);
-  console.log("convexHullPoints", convexHullPoints);
 
   // Compute the bounding box of the projected points
   let minX = Infinity,
@@ -394,7 +388,7 @@ function getDataValue(data, x, y, z, dims) {
   if (x < 0 || x >= nx || y < 0 || y >= ny || z < 0 || z >= nz) {
     return 0; // or some appropriate background value
   }
-  const index = x + y * nx + z * nx * ny;
+  const index = (x * ny + y) * nz + z;
   return data[index];
 }
 
