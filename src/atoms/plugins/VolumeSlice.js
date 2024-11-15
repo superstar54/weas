@@ -3,16 +3,7 @@ import { clearObject } from "../../utils.js";
 import { convertColor } from "../utils.js";
 
 class SliceSetting {
-  constructor({
-    method = "miller", // 'miller' or 'bestFit'
-    h = 0,
-    k = 0,
-    l = 1,
-    distance = 0,
-    selectedAtoms = [],
-    colorMap = "viridis",
-    opacity = 1.0,
-  }) {
+  constructor({ method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtoms = [], colorMap = "viridis", opacity = 1.0, samplingDistance = 0.5 }) {
     /*
       method: 'miller' or 'bestFit'
       h, k, l: Miller indices for method 'miller'
@@ -29,6 +20,7 @@ class SliceSetting {
     this.selectedAtoms = selectedAtoms;
     this.colorMap = colorMap;
     this.opacity = opacity;
+    this.samplingDistance = samplingDistance;
   }
 }
 
@@ -96,6 +88,7 @@ export class VolumeSlice {
     this.createGui();
     const sliceFolder = this.guiFolder.addFolder(name);
     sliceFolder.add(setting, "method", ["miller", "bestFit"]).name("Method").onChange(this.drawSlices.bind(this));
+    sliceFolder.add(setting, "samplingDistance", 0.1, 5).name("Sampling Distance").onChange(this.drawSlices.bind(this));
 
     if (setting.method === "miller") {
       sliceFolder.add(setting, "h").name("Miller h").onChange(this.drawSlices.bind(this));
@@ -153,17 +146,26 @@ export class VolumeSlice {
       }
 
       // Extract the slice data along the arbitrary plane
-      const sliceData = extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint);
+      const samplingDistance = setting.samplingDistance || 0.5; // User-controlled parameter
+      const sliceResult = extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint, samplingDistance);
+      if (!sliceResult) {
+        this.viewer.logger.debug("Slice does not intersect the unit cell sufficiently");
+        return;
+      }
+      console.log("sliceResult", sliceResult);
+      const { sliceData, width, height, minX, maxX, minY, maxY, projectedPoints } = sliceResult;
 
       // Determine min and max sliceData values for color mapping
       const maxValue = Math.max(...sliceData.flat());
       const minValue = Math.min(...sliceData.flat());
+      console.log("minValue", minValue);
+      console.log("maxValue", maxValue);
 
       // Create a texture from the slice data
       const texture = createTextureFromSlice(sliceData, minValue, maxValue, setting.colorMap);
 
       // Create plane geometry and apply the texture
-      const planeMesh = createSlicePlaneArbitrary(planeNormal, planePoint, texture, setting.opacity);
+      const planeMesh = createSlicePlaneArbitrary(projectedPoints, planeNormal, planePoint, texture, setting.opacity, minX, maxX, minY, maxY);
 
       planeMesh.userData.type = "slice";
       planeMesh.userData.uuid = this.viewer.uuid;
@@ -259,43 +261,66 @@ function computeBestFitPlane(points) {
   return { normal: normal, point: centroid };
 }
 
-function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint) {
-  /*
-    Extract a 2D slice from the 3D data array along an arbitrary plane.
-    This function resamples the volumetric data onto the plane.
-    Returns a 2D array of data values.
-  */
-  // Implementing this requires sampling the data grid along the plane
-  // For simplicity, let's assume we create a grid on the plane and sample the data
+function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint, samplingDistance) {
+  const intersectionPoints = computePlaneUnitCellIntersections(cell, origin, planeNormal, planePoint);
+
+  if (intersectionPoints.length < 3) {
+    // Plane does not intersect the unit cell sufficiently
+    return null;
+  }
+
+  // Project the intersection points onto the plane coordinate system
+  const planeBasis = computePlaneBasis(planeNormal);
+
+  const projectedPoints = intersectionPoints.map((pt) => {
+    const localPt = pt.clone().sub(planePoint);
+    const x = localPt.dot(planeBasis.u);
+    const y = localPt.dot(planeBasis.v);
+    return new THREE.Vector2(x, y);
+  });
+
+  // Compute the bounding box of the projected points
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  projectedPoints.forEach((pt) => {
+    if (pt.x < minX) minX = pt.x;
+    if (pt.y < minY) minY = pt.y;
+    if (pt.x > maxX) maxX = pt.x;
+    if (pt.y > maxY) maxY = pt.y;
+  });
+
+  // Generate a grid of sample points within the bounding box
+  const samples = [];
   const [nx, ny, nz] = dims;
-  const planeSize = 100; // Adjust as needed
-  const resolution = 256; // Number of samples along each axis
+  const width = Math.ceil((maxX - minX) / samplingDistance) + 1;
+  const height = Math.ceil((maxY - minY) / samplingDistance) + 1;
   const sliceData = [];
 
-  // Generate two vectors on the plane
-  const u = new THREE.Vector3().random().cross(planeNormal).normalize();
-  const v = planeNormal.clone().cross(u).normalize();
-
-  // Define the grid on the plane
-  for (let i = 0; i < resolution; i++) {
+  for (let j = 0; j < height; j++) {
     const row = [];
-    for (let j = 0; j < resolution; j++) {
-      const du = (i / (resolution - 1) - 0.5) * planeSize;
-      const dv = (j / (resolution - 1) - 0.5) * planeSize;
-      const samplePoint = planePoint.clone().add(u.clone().multiplyScalar(du)).add(v.clone().multiplyScalar(dv));
+    for (let i = 0; i < width; i++) {
+      const x = minX + i * samplingDistance;
+      const y = minY + j * samplingDistance;
+      const samplePt2D = new THREE.Vector2(x, y);
 
-      // Map samplePoint to grid indices
-      const localPos = samplePoint.clone().sub(origin);
-      const gridCoords = cellToGridCoordinates(localPos, cell, dims);
+      let value = 0; // default background value
+      if (pointInPolygon(samplePt2D, projectedPoints)) {
+        const samplePt3D = planePoint.clone().add(planeBasis.u.clone().multiplyScalar(x)).add(planeBasis.v.clone().multiplyScalar(y));
 
-      // Interpolate data value at gridCoords
-      const value = trilinearInterpolation(data, gridCoords, dims);
+        const localPos = samplePt3D.clone().sub(origin);
+        const gridCoords = cellToGridCoordinates(localPos, cell, dims);
+
+        value = trilinearInterpolation(data, gridCoords, dims);
+      }
+
       row.push(value);
     }
     sliceData.push(row);
   }
 
-  return sliceData;
+  return { sliceData, width, height, minX, maxX, minY, maxY, projectedPoints };
 }
 
 function cellToGridCoordinates(position, cell, dims) {
@@ -400,21 +425,46 @@ function createTextureFromSlice(sliceData, minValue, maxValue, colorMap) {
   return texture;
 }
 
-function createSlicePlaneArbitrary(normal, point, texture, opacity) {
-  /*
-    Create a plane geometry at the correct position and orientation, and apply the texture.
-  */
-  // Create a plane geometry
-  const planeSize = 100; // Adjust size as needed
-  const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
+function createSlicePlaneArbitrary(intersectionPoints, planeNormal, planePoint, texture, opacity, minX, maxX, minY, maxY) {
+  // Project the intersection points onto the plane coordinate system
+  const planeBasis = computePlaneBasis(planeNormal);
 
-  // Align the plane geometry so that it's perpendicular to the normal
-  const up = new THREE.Vector3(0, 0, 1); // Default up direction
-  const quaternion = new THREE.Quaternion().setFromUnitVectors(up, normal);
-  planeGeometry.applyQuaternion(quaternion);
+  const projectedPoints = intersectionPoints.map((pt) => {
+    const localPt = pt.clone().sub(planePoint);
+    const x = localPt.dot(planeBasis.u);
+    const y = localPt.dot(planeBasis.v);
+    return new THREE.Vector2(x, y);
+  });
 
-  // Position the plane at the correct point
-  planeGeometry.translate(point.x, point.y, point.z);
+  // Create a shape from the projectedPoints
+  console.log("projectedPoints", projectedPoints);
+  const shape = new THREE.Shape(projectedPoints);
+
+  // Create geometry from shape
+  const geometry = new THREE.ShapeGeometry(shape);
+
+  // Assign UV coordinates to the geometry
+  geometry.attributes.uv.array = new Float32Array(geometry.attributes.position.count * 2);
+
+  for (let i = 0; i < geometry.attributes.position.count; i++) {
+    const vertex = new THREE.Vector3(geometry.attributes.position.getX(i), geometry.attributes.position.getY(i), geometry.attributes.position.getZ(i));
+
+    // Project vertex onto plane coordinates
+    const localPt = vertex.clone().sub(planePoint);
+    const x = localPt.dot(planeBasis.u);
+    const y = localPt.dot(planeBasis.v);
+    const u = (x - minX) / (maxX - minX);
+    const v = (y - minY) / (maxY - minY);
+
+    geometry.attributes.uv.setXY(i, u, v);
+  }
+
+  // Align the geometry onto the plane
+  const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), planeNormal);
+  geometry.applyQuaternion(quaternion);
+
+  // Position the geometry at the correct point
+  geometry.translate(planePoint.x, planePoint.y, planePoint.z);
 
   // Create material with the texture
   const material = new THREE.MeshBasicMaterial({
@@ -425,9 +475,10 @@ function createSlicePlaneArbitrary(normal, point, texture, opacity) {
   });
 
   // Create mesh
-  const planeMesh = new THREE.Mesh(planeGeometry, material);
+  const mesh = new THREE.Mesh(geometry, material);
+  console.log("mesh", mesh);
 
-  return planeMesh;
+  return mesh;
 }
 
 function getColorMapFunction(colorMapName) {
@@ -475,4 +526,123 @@ function viridisColorMap(t) {
   const c0 = data[i];
   const c1 = data[Math.min(i + 1, n)];
   return [c0[0] + (c1[0] - c0[0]) * f, c0[1] + (c1[1] - c0[1]) * f, c0[2] + (c1[2] - c0[2]) * f];
+}
+
+function getUnitCellVertices(cell, origin) {
+  const a1 = new THREE.Vector3(...cell[0]);
+  const a2 = new THREE.Vector3(...cell[1]);
+  const a3 = new THREE.Vector3(...cell[2]);
+
+  const V0 = origin.clone();
+  const V1 = origin.clone().add(a1);
+  const V2 = origin.clone().add(a2);
+  const V3 = origin.clone().add(a3);
+  const V4 = origin.clone().add(a1).add(a2);
+  const V5 = origin.clone().add(a1).add(a3);
+  const V6 = origin.clone().add(a2).add(a3);
+  const V7 = origin.clone().add(a1).add(a2).add(a3);
+
+  return [V0, V1, V2, V3, V4, V5, V6, V7];
+}
+
+function getUnitCellEdges(vertices) {
+  const [V0, V1, V2, V3, V4, V5, V6, V7] = vertices;
+
+  const edges = [
+    [V0, V1],
+    [V0, V2],
+    [V0, V3],
+    [V1, V4],
+    [V1, V5],
+    [V2, V4],
+    [V2, V6],
+    [V3, V5],
+    [V3, V6],
+    [V4, V7],
+    [V5, V7],
+    [V6, V7],
+  ];
+
+  return edges;
+}
+
+function computeLinePlaneIntersection(P0, P1, planeNormal, planePoint) {
+  const lineDir = P1.clone().sub(P0);
+  const denom = planeNormal.dot(lineDir);
+  const num = planeNormal.dot(planePoint.clone().sub(P0));
+
+  if (Math.abs(denom) < 1e-6) {
+    if (Math.abs(num) < 1e-6) {
+      // Line lies in the plane; return both endpoints
+      return [P0.clone(), P1.clone()];
+    } else {
+      // Line is parallel and not in the plane
+      return null;
+    }
+  } else {
+    const t = num / denom;
+    if (t < 0 || t > 1) {
+      // Intersection not within the segment
+      return null;
+    }
+    const intersectionPoint = P0.clone().add(lineDir.multiplyScalar(t));
+    return intersectionPoint;
+  }
+}
+
+function computePlaneUnitCellIntersections(cell, origin, planeNormal, planePoint) {
+  const vertices = getUnitCellVertices(cell, origin);
+  const edges = getUnitCellEdges(vertices);
+  const intersectionPoints = [];
+
+  for (let i = 0; i < edges.length; i++) {
+    const [P0, P1] = edges[i];
+    const intersection = computeLinePlaneIntersection(P0, P1, planeNormal, planePoint);
+    if (intersection) {
+      if (Array.isArray(intersection)) {
+        // Line lies in the plane; add both endpoints
+        intersectionPoints.push(...intersection);
+      } else {
+        intersectionPoints.push(intersection);
+      }
+    }
+  }
+
+  // Remove duplicate points
+  const uniquePoints = [];
+  const tol = 1e-6;
+  intersectionPoints.forEach((pt) => {
+    const isDuplicate = uniquePoints.some((upt) => upt.distanceToSquared(pt) < tol * tol);
+    if (!isDuplicate) {
+      uniquePoints.push(pt);
+    }
+  });
+
+  return uniquePoints;
+}
+
+function computePlaneBasis(planeNormal) {
+  // Create two vectors orthogonal to the plane normal
+  let u = new THREE.Vector3();
+  if (Math.abs(planeNormal.z) > Math.abs(planeNormal.x)) {
+    u.set(1, 0, 0).cross(planeNormal).normalize();
+  } else {
+    u.set(0, 0, 1).cross(planeNormal).normalize();
+  }
+  const v = planeNormal.clone().cross(u).normalize();
+  return { u, v };
+}
+
+function pointInPolygon(point, polygon) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x,
+      yi = polygon[i].y;
+    const xj = polygon[j].x,
+      yj = polygon[j].y;
+
+    const intersect = yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
 }
