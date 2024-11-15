@@ -3,7 +3,7 @@ import { clearObject } from "../../utils.js";
 import { convertColor } from "../utils.js";
 
 class SliceSetting {
-  constructor({ method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtoms = [], colorMap = "viridis", opacity = 1.0, samplingDistance = 0.5 }) {
+  constructor({ method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtoms = [], colorMap = "viridis", opacity = 1.0, samplingDistance = 0.2 }) {
     /*
       method: 'miller' or 'bestFit'
       h, k, l: Miller indices for method 'miller'
@@ -155,7 +155,7 @@ export class VolumeSlice {
         this.viewer.logger.debug("Slice does not intersect the unit cell sufficiently");
         return;
       }
-      const { sliceData, width, height, minX, maxX, minY, maxY, projectedPoints, intersectionPoints } = sliceResult;
+      const { sliceData, width, height, minX, maxX, minY, maxY, projectedPoints } = sliceResult;
 
       // Determine min and max sliceData values for color mapping
       const maxValue = Math.max(...sliceData.flat());
@@ -167,7 +167,7 @@ export class VolumeSlice {
       const texture = createTextureFromSlice(sliceData, minValue, maxValue, setting.colorMap);
 
       // Create plane geometry and apply the texture
-      const planeMesh = createSlicePlaneArbitrary(intersectionPoints, planeNormal, planePoint, texture, setting.opacity, minX, maxX, minY, maxY);
+      const planeMesh = createSlicePlaneArbitrary(projectedPoints, planeNormal, planePoint, texture, setting.opacity, minX, maxX, minY, maxY);
 
       planeMesh.userData.type = "slice";
       planeMesh.userData.uuid = this.viewer.uuid;
@@ -261,8 +261,6 @@ function computeBestFitPlane(points) {
 
 function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint, samplingDistance) {
   const intersectionPoints = computePlaneUnitCellIntersections(cell, origin, planeNormal, planePoint);
-  console.log("planeNormal", planeNormal);
-  console.log("planePoint", planePoint);
   console.log("intersectionPoints", intersectionPoints);
 
   if (intersectionPoints.length < 3) {
@@ -272,7 +270,6 @@ function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint
 
   // Project the intersection points onto the plane coordinate system
   const planeBasis = computePlaneBasis(planeNormal);
-  console.log("planeBasis", planeBasis);
 
   const projectedPoints = intersectionPoints.map((pt) => {
     const localPt = pt.clone().sub(planePoint);
@@ -280,14 +277,17 @@ function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint
     const y = localPt.dot(planeBasis.v);
     return new THREE.Vector2(x, y);
   });
-  console.log("projectedPoints", projectedPoints);
+
+  // Compute the convex hull of the projected points
+  const convexHullPoints = computeConvexHull(projectedPoints);
+  console.log("convexHullPoints", convexHullPoints);
 
   // Compute the bounding box of the projected points
   let minX = Infinity,
     minY = Infinity,
     maxX = -Infinity,
     maxY = -Infinity;
-  projectedPoints.forEach((pt) => {
+  convexHullPoints.forEach((pt) => {
     if (pt.x < minX) minX = pt.x;
     if (pt.y < minY) minY = pt.y;
     if (pt.x > maxX) maxX = pt.x;
@@ -309,7 +309,7 @@ function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint
       const samplePt2D = new THREE.Vector2(x, y);
 
       let value = 0; // default background value
-      if (pointInPolygon(samplePt2D, projectedPoints)) {
+      if (pointInPolygon(samplePt2D, convexHullPoints)) {
         const samplePt3D = planePoint.clone().add(planeBasis.u.clone().multiplyScalar(x)).add(planeBasis.v.clone().multiplyScalar(y));
 
         const localPos = samplePt3D.clone().sub(origin);
@@ -323,7 +323,7 @@ function extractSliceArbitrary(data, dims, cell, origin, planeNormal, planePoint
     sliceData.push(row);
   }
 
-  return { sliceData, width, height, minX, maxX, minY, maxY, projectedPoints, intersectionPoints };
+  return { sliceData, width, height, minX, maxX, minY, maxY, projectedPoints: convexHullPoints };
 }
 
 function cellToGridCoordinates(position, cell, dims) {
@@ -428,41 +428,16 @@ function createTextureFromSlice(sliceData, minValue, maxValue, colorMap) {
   return texture;
 }
 
-function createSlicePlaneArbitrary(intersectionPoints, planeNormal, planePoint, texture, opacity, minX, maxX, minY, maxY) {
-  // Project the intersection points onto the plane coordinate system
+function createSlicePlaneArbitrary(projectedPoints, planeNormal, planePoint, texture, opacity, minX, maxX, minY, maxY) {
+  // Compute the basis vectors for the plane
   const planeBasis = computePlaneBasis(planeNormal);
 
-  const projectedPoints = intersectionPoints.map((pt) => {
-    const localPt = pt.clone().sub(planePoint);
-    const x = localPt.dot(planeBasis.u);
-    const y = localPt.dot(planeBasis.v);
-    return new THREE.Vector2(x, y);
-  });
+  // Create a shape from the sorted projected points
+  const shape = new THREE.Shape(projectedPoints);
 
-  // Compute the centroid
-  const centroid = new THREE.Vector2(0, 0);
-  projectedPoints.forEach((pt) => {
-    centroid.add(pt);
-  });
-  centroid.divideScalar(projectedPoints.length);
-
-  // Calculate angles and sort the points
-  const pointsWithAngles = projectedPoints.map((pt) => ({
-    point: pt,
-    angle: Math.atan2(pt.y - centroid.y, pt.x - centroid.x),
-  }));
-  pointsWithAngles.sort((a, b) => a.angle - b.angle);
-
-  // Extract sorted points
-  const sortedProjectedPoints = pointsWithAngles.map((item) => item.point);
-
-  // Create a shape from the sorted projectedPoints
-  const shape = new THREE.Shape(sortedProjectedPoints);
-
-  // Create geometry from shape
+  // Create geometry from the shape
   const geometry = new THREE.ShapeGeometry(shape);
 
-  // Assign UV coordinates to the geometry
   geometry.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.count * 2), 2));
 
   for (let i = 0; i < geometry.attributes.position.count; i++) {
@@ -499,7 +474,7 @@ function createSlicePlaneArbitrary(intersectionPoints, planeNormal, planePoint, 
     opacity: opacity,
   });
 
-  // Create mesh
+  // Create and return the mesh
   const mesh = new THREE.Mesh(geometry, material);
 
   return mesh;
@@ -658,15 +633,58 @@ function computePlaneBasis(planeNormal) {
 }
 
 function pointInPolygon(point, polygon) {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x,
-      yi = polygon[i].y;
-    const xj = polygon[j].x,
-      yj = polygon[j].y;
+  let windingNumber = 0;
+  const n = polygon.length;
 
-    const intersect = yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi + xi);
-    if (intersect) inside = !inside;
+  for (let i = 0; i < n; i++) {
+    const curr = polygon[i];
+    const next = polygon[(i + 1) % n];
+
+    if (curr.y <= point.y) {
+      if (next.y > point.y && isLeft(curr, next, point) > 0) {
+        windingNumber++;
+      }
+    } else {
+      if (next.y <= point.y && isLeft(curr, next, point) < 0) {
+        windingNumber--;
+      }
+    }
   }
-  return inside;
+  return windingNumber !== 0;
+}
+
+function isLeft(p0, p1, p2) {
+  return (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y);
+}
+
+// Add this function to compute the convex hull of a set of 2D points
+function computeConvexHull(points) {
+  // Andrew's Monotone Chain Algorithm
+  points.sort((a, b) => a.x - b.x || a.y - b.y);
+
+  const lower = [];
+  for (let p of points) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
+      lower.pop();
+    }
+    lower.push(p);
+  }
+
+  const upper = [];
+  for (let i = points.length - 1; i >= 0; i--) {
+    const p = points[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) {
+      upper.pop();
+    }
+    upper.push(p);
+  }
+
+  // Concatenate lower and upper to get full hull
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+function cross(o, a, b) {
+  return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
 }
