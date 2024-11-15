@@ -181,7 +181,6 @@ export class BondManager {
     const { bondMesh, bondCap } = drawStick(this.viewer.originalAtoms, this.bondList, this.bondMap["stickCaps"], this.viewer.cutoffs, this.bondRadius, this.viewer._materialType, atomColors, true);
     const dashedBondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["dashedLines"], this.viewer.cutoffs, "dashed", atomColors);
     const solidBondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["solidLines"], this.viewer.cutoffs, "solid", atomColors);
-    console.log("bondMesh: ", bondMesh);
     this.meshes = { stickBondMesh: stickBondMesh, stickCapBondMesh: bondMesh, stickCapBondCap: bondCap, dashedBondLine: dashedBondLine, solidBondLine: solidBondLine };
     Object.values(this.meshes).forEach((mesh) => {
       if (mesh) {

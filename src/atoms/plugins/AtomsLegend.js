@@ -29,8 +29,6 @@ export default class AtomsLegend {
 
     // Add entries for each unique element
     Object.entries(this.viewer.atomManager.settings).forEach(([symbol, setting]) => {
-      console.log("symbol: ", symbol);
-      console.log("setting: ", setting);
       const legendEntry = document.createElement("div");
       legendEntry.style.display = "flex";
       legendEntry.style.alignItems = "center";
@@ -41,13 +39,11 @@ export default class AtomsLegend {
       sphereCanvas.width = 20;
       sphereCanvas.height = 20;
       const context = sphereCanvas.getContext("2d");
-      console.log("setting.color: ", setting.color);
       if (typeof setting.color === "string") {
         context.fillStyle = setting.color;
       } else {
         context.fillStyle = `#${setting.color.getHexString()}`;
       }
-      console.log("fillStyle: ", context.fillStyle);
       const radius = Math.min(setting.radius * 10, 8); // Cap radius to maintain a spherical look
       context.beginPath();
       context.arc(10, 10, radius, 0, Math.PI * 2);
