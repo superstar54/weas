@@ -11,6 +11,7 @@ Atoms
     bond
     edit
     isosurface
+    volume_slice
     vector_field
     measurement
     boundary

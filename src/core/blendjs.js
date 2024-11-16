@@ -310,6 +310,10 @@ export class BlendJS {
         }
         // Temporary bounding box to hold the object's world bounding box
         objectBoundingBox = new THREE.Box3().copy(objectBoundingBox).applyMatrix4(object.matrixWorld);
+        // if objectBoundingBox is NaN, skip this object
+        if (isNaN(objectBoundingBox.min.x) || isNaN(objectBoundingBox.min.y) || isNaN(objectBoundingBox.min.z)) {
+          return;
+        }
         sceneBoundingBox.union(objectBoundingBox); // Union this with the scene bounding box
       }
     });

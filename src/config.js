@@ -60,6 +60,7 @@ const MODEL_STYLE_MAP = {
   "Ball + Stick": 1,
   Polyhedra: 2,
   Stick: 3,
+  Line: 4,
 };
 
 const colorTypes = {

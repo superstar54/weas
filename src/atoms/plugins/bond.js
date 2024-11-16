@@ -6,8 +6,11 @@ import { convertColor } from "../utils.js";
 import { kdTree } from "../../geometry/kdTree.js";
 import { searchBoundary } from "./boundary.js";
 
+// default bond radius
+export const defaultBondRadius = 0.1;
+
 class Setting {
-  constructor({ specie1, specie2, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", radius = 0.1, order = 1, type = 0 }) {
+  constructor({ specie1, specie2, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", radius = defaultBondRadius, order = 1, type = 0 }) {
     this.specie1 = specie1;
     this.specie2 = specie2;
     this.min = min;
@@ -53,9 +56,6 @@ export class BondManager {
     */
     this.viewer.logger.debug("init bond settings");
     this.settings = {};
-    this.stickBonds = [];
-    this.lineBonds = [];
-    this.springBonds = [];
     Object.entries(this.viewer.originalAtoms.species).forEach(([symbol1, specie1]) => {
       Object.entries(this.viewer.originalAtoms.species).forEach(([symbol2, specie2]) => {
         const elementPair = specie1.element + "-" + specie2.element;
@@ -67,6 +67,10 @@ export class BondManager {
         this.settings[key] = this.getDefaultSetting(symbol1, specie1, symbol2, specie2);
       });
     });
+  }
+
+  reset() {
+    this.meshes = {};
   }
 
   getDefaultSetting(symbol1, specie1, symbol2, specie2) {
@@ -137,6 +141,8 @@ export class BondManager {
   }
 
   drawBonds() {
+    this.reset();
+    const bondGroup = new THREE.Group();
     const offsets = [];
     for (let i = 0; i < this.viewer.modelSticks.length; i++) {
       if (this.viewer.modelSticks[i] !== 0) {
@@ -164,24 +170,27 @@ export class BondManager {
     if (this.viewer.debug) {
       this.viewer.logger.debug("bondList: ", this.bondList);
     }
-    this.bondMap = buildBondMap(this.bondList, this.viewer.originalAtoms, this.settings);
+    this.bondMap = buildBondMap(this.bondList, this.viewer.originalAtoms, this.settings, this.viewer.modelSticks);
     // this.viewer.logger.debug("bondMap: ", this.bondMap);
     let atomColors = null;
     if (this.viewer.colorBy !== "Element") {
       atomColors = this.viewer.atomColors;
     }
 
-    this.bondMesh = drawStick(this.viewer.originalAtoms, this.bondList, this.bondMap["stickBonds"], this.viewer.cutoffs, this.bondRadius, this.viewer._materialType, atomColors);
-    // if showHydrogenBonds is true, draw the hydrogen bonds
+    const stickBondMesh = drawStick(this.viewer.originalAtoms, this.bondList, this.bondMap["sticks"], this.viewer.cutoffs, this.bondRadius, this.viewer._materialType, atomColors);
+    const { bondMesh, bondCap } = drawStick(this.viewer.originalAtoms, this.bondList, this.bondMap["stickCaps"], this.viewer.cutoffs, this.bondRadius, this.viewer._materialType, atomColors, true);
+    let dashedBondLine;
     if (this.showHydrogenBonds) {
-      this.bondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["lineBonds"], this.viewer.cutoffs, this.viewer._materialType, atomColors);
-    } else {
-      this.bondLine = null;
+      dashedBondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["dashedLines"], this.viewer.cutoffs, "dashed", atomColors);
     }
-    return {
-      bondMesh: this.bondMesh,
-      bondLine: this.bondLine,
-    };
+    const solidBondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["solidLines"], this.viewer.cutoffs, "solid", atomColors);
+    this.meshes = { stickBondMesh: stickBondMesh, stickCapBondMesh: bondMesh, stickCapBondCap: bondCap, dashedBondLine: dashedBondLine, solidBondLine: solidBondLine };
+    Object.values(this.meshes).forEach((mesh) => {
+      if (mesh) {
+        bondGroup.add(mesh);
+      }
+    });
+    return bondGroup;
   }
 
   updateBondMesh(atomIndex = null, atoms = null) {
@@ -189,18 +198,20 @@ export class BondManager {
     if atomIndex is null, update all bonds
     if atoms is null, use this.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
     */
-    this.updateBondStick(atomIndex, atoms);
-    if (this.showHydrogenBonds) {
-      this.updateBondLine(atomIndex, atoms);
-    }
+    this.updateBondStick(atomIndex, atoms, this.meshes["stickBondMesh"], null, "sticks");
+    this.updateBondStick(atomIndex, atoms, this.meshes["stickCapBondMesh"], this.meshes["stickCapBondCap"], "stickCaps");
+    this.updateBondLine(atomIndex, atoms, this.meshes["dashedBondLine"], "dashedLines");
+    this.updateBondLine(atomIndex, atoms, this.meshes["solidBondLine"], "solidLines");
   }
 
-  updateBondStick(atomIndex = null, atoms = null) {
+  updateBondStick(atomIndex = null, atoms = null, stickBondMesh, stickBondCap = null, name = "sticks") {
     /* When the atom is moved, the bonds should be moved as well.
     if atomIndex is null, update all bonds
-    if atoms is null, use this.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
+    if atoms is null, use this.atoms, otherwise use the provided atoms to update the bonds, e.g., trajectory data
     */
-    // this.viewer.logger.debug("updateBondStick: ", atomIndex);
+    if (!stickBondMesh) {
+      return;
+    }
     if (atoms === null) {
       atoms = this.viewer.originalAtoms;
     }
@@ -208,17 +219,16 @@ export class BondManager {
     if (atomIndex) {
       const bondMap = this.bondMap["bondMap"][atomIndex];
       if (bondMap) {
-        bondMap.sticks.forEach((bondData) => {
+        bondMap[name].forEach((bondData) => {
           bondIndices.push(bondData[0]);
         });
       }
     } else {
-      bondIndices = this.bondMap["stickBonds"].map((_, index) => index);
+      bondIndices = this.bondMap[name].map((_, index) => index);
     }
-    // this.viewer.logger.debug("bondIndices: ", bondIndices);
-    // loop all bond indices and update the bonds
+
     bondIndices.forEach((i) => {
-      const bond = this.bondList[this.bondMap["stickBonds"][i]];
+      const bond = this.bondList[this.bondMap[name][i]];
       const atomIndex1 = bond[0];
       const atomIndex2 = bond[1];
       const offset1 = bond[2];
@@ -229,7 +239,6 @@ export class BondManager {
       position2 = new THREE.Vector3(...position2);
       const midpoint1 = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
       const key = atoms.symbols[atomIndex1] + "-" + atoms.symbols[atomIndex2];
-      // if key is not in the cutoffs, skip. In principle, this should not happen
       if (!this.viewer.cutoffs[key]) {
         return;
       }
@@ -237,44 +246,64 @@ export class BondManager {
       const quaternion = calculateQuaternion(position1, position2);
       const scale = calculateScale(position1, position2, this.bondRadius, cutoff, this.hideLongBonds);
       const instanceMatrix = new THREE.Matrix4().compose(midpoint1, quaternion, scale);
-      this.bondMesh.setMatrixAt(i * 2, instanceMatrix);
-      // set the second bond
+      stickBondMesh.setMatrixAt(i * 2, instanceMatrix);
+
       const midpoint2 = new THREE.Vector3().lerpVectors(position1, position2, 0.75);
       const instanceMatrix2 = new THREE.Matrix4().compose(midpoint2, quaternion, scale);
-      this.bondMesh.setMatrixAt(i * 2 + 1, instanceMatrix2);
+      stickBondMesh.setMatrixAt(i * 2 + 1, instanceMatrix2);
+
+      // Update bond caps if they exist
+      if (stickBondCap) {
+        const capScale = new THREE.Vector3(this.bondRadius, this.bondRadius, this.bondRadius);
+
+        // Set the first cap at position1
+        const capMatrix1 = new THREE.Matrix4().compose(position1, new THREE.Quaternion(), capScale);
+        stickBondCap.setMatrixAt(i * 2, capMatrix1);
+
+        // Set the second cap at position2
+        const capMatrix2 = new THREE.Matrix4().compose(position2, new THREE.Quaternion(), capScale);
+        stickBondCap.setMatrixAt(i * 2 + 1, capMatrix2);
+      }
     });
-    this.bondMesh.instanceMatrix.needsUpdate = true;
+
+    stickBondMesh.instanceMatrix.needsUpdate = true;
+
+    if (stickBondCap) {
+      stickBondCap.instanceMatrix.needsUpdate = true;
+    }
   }
 
-  updateBondLine(atomIndex = null, atoms = null) {
+  updateBondLine(atomIndex = null, atoms = null, bondLine, name = "dashedLines") {
     /* When the atom is moved, the bonds should be moved as well.
     if atomIndex is null, update all bonds
     if atoms is null, use this.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
     */
     // this.viewer.logger.debug("updateBondStick: ", atomIndex);
+    if (!bondLine) {
+      return;
+    }
     if (atoms === null) {
       atoms = this.viewer.originalAtoms;
     }
     let bondIndices = [];
     if (atomIndex) {
-      console.log("atomIndex: ", atomIndex);
       const bondMap = this.bondMap["bondMap"][atomIndex];
       if (bondMap) {
-        bondMap.lines.forEach((bondData) => {
+        bondMap[name].forEach((bondData) => {
           bondIndices.push(bondData[0]);
         });
       }
     } else {
-      bondIndices = this.bondMap["lineBonds"].map((_, index) => index);
+      bondIndices = this.bondMap[name].map((_, index) => index);
     }
     // Assuming lineSegments is already created
-    const positionAttribute = this.bondLine.geometry.attributes.position;
+    const positionAttribute = bondLine.geometry.attributes.position;
     const array = positionAttribute.array; // Access the array storing positions
 
     // this.viewer.logger.debug("bondIndices: ", bondIndices);
     // loop all bond indices and update the bonds
     bondIndices.forEach((i) => {
-      const bond = this.bondList[this.bondMap["lineBonds"][i]];
+      const bond = this.bondList[this.bondMap[name][i]];
       const atomIndex1 = bond[0];
       const atomIndex2 = bond[1];
       const offset1 = bond[2];
@@ -298,25 +327,23 @@ export class BondManager {
       }
 
       // Update the position1 and end positions in the buffer
-      console.log(array[i * 6]);
       array[i * 6] = position1.x; // x of position1
       array[i * 6 + 1] = position1.y; // y of position1
       array[i * 6 + 2] = position1.z; // z of position1
       array[i * 6 + 3] = position2.x; // x of position2
       array[i * 6 + 4] = position2.y; // y of position2
       array[i * 6 + 5] = position2.z; // z of position2
-      console.log(array[i * 6]);
     });
     // Mark the position attribute as needing an update
     positionAttribute.needsUpdate = true;
 
     // If the length of lines or geometry changes, you might also need to call:
-    this.bondLine.geometry.computeBoundingBox();
-    this.bondLine.geometry.computeBoundingSphere();
+    bondLine.geometry.computeBoundingBox();
+    bondLine.geometry.computeBoundingSphere();
   }
 }
 
-export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, materialType = "standard", atomColors = null) {
+export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, materialType = "standard", atomColors = null, withCap = false) {
   /* Draw bonds between atoms.
   atoms: the atoms object
   bondList: list of bonds, each bond is a list of 4 elements:
@@ -328,59 +355,87 @@ export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, 
   instancedMesh: the instancedMesh object of the bonds
   */
   console.time("drawBonds Time");
-  // console.log("bondList: ", bondList);
-  // console.log("atomColors: ", atomColors);
 
   const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1); // Adjust segment count as needed
+  const sphereGeometry = new THREE.SphereGeometry(1, 8, 8); // Sphere geometry for caps
 
   const material = materials[materialType].clone();
-  const instancedMesh = new THREE.InstancedMesh(cylinderGeometry, material, bondIndices.length * 2);
+  const bondMesh = new THREE.InstancedMesh(cylinderGeometry, material, bondIndices.length * 2);
+  const bondCap = withCap ? new THREE.InstancedMesh(sphereGeometry, material, bondIndices.length * 2) : null;
 
   for (let i = 0; i < bondIndices.length; i++) {
     const [index1, index2, offset1, offset2] = bondList[bondIndices[i]];
-    // console.log(index1, index2, offset1, offset2);
     var position1 = atoms.positions[index1].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset1)[index]);
     position1 = new THREE.Vector3(...position1);
-    // update position2 to include offset, dot product with cell
+
     var position2 = atoms.positions[index2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
     position2 = new THREE.Vector3(...position2);
-    // Setting color for each material
+
     const key = atoms.symbols[index1] + "-" + atoms.symbols[index2];
-    // if atomColors is not null, use the atomColors, otherwise use the settings
     const color1 = atomColors ? atomColors[index1] : settings[key].color1;
+    const color2 = atomColors ? atomColors[index2] : settings[key].color2;
+
+    // Midpoints and quaternion for cylinder placement
     const midpoint1 = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
+    const midpoint2 = new THREE.Vector3().lerpVectors(position1, position2, 0.75);
     const quaternion = calculateQuaternion(position1, position2);
     const scale = calculateScale(position1, position2, radius);
-    const instanceMatrix = new THREE.Matrix4().compose(midpoint1, quaternion, scale);
-    instancedMesh.setMatrixAt(i * 2, instanceMatrix);
-    instancedMesh.setColorAt(i * 2, color1);
-    // set the second bond
-    const color2 = atomColors ? atomColors[index2] : settings[key].color2;
-    const midpoint2 = new THREE.Vector3().lerpVectors(position1, position2, 0.75);
+
+    // Set the first cylinder
+    const instanceMatrix1 = new THREE.Matrix4().compose(midpoint1, quaternion, scale);
+    bondMesh.setMatrixAt(i * 2, instanceMatrix1);
+    bondMesh.setColorAt(i * 2, color1);
+
+    // Set the second cylinder
     const instanceMatrix2 = new THREE.Matrix4().compose(midpoint2, quaternion, scale);
-    instancedMesh.setMatrixAt(i * 2 + 1, instanceMatrix2);
-    instancedMesh.setColorAt(i * 2 + 1, color2);
+    bondMesh.setMatrixAt(i * 2 + 1, instanceMatrix2);
+    bondMesh.setColorAt(i * 2 + 1, color2);
+
+    // If withCap is true, add spheres at ends
+    if (withCap) {
+      const capScale = new THREE.Vector3(radius, radius, radius);
+
+      // Cap at position1
+      const capMatrix1 = new THREE.Matrix4().compose(position1, new THREE.Quaternion(), capScale);
+      bondCap.setMatrixAt(i * 2, capMatrix1);
+      bondCap.setColorAt(i * 2, color1);
+
+      // Cap at position2
+      const capMatrix2 = new THREE.Matrix4().compose(position2, new THREE.Quaternion(), capScale);
+      bondCap.setMatrixAt(i * 2 + 1, capMatrix2);
+      bondCap.setColorAt(i * 2 + 1, color2);
+    }
   }
 
-  instancedMesh.userData.type = "bond";
-  instancedMesh.userData.uuid = atoms.uuid;
-  instancedMesh.userData.objectMode = "edit";
+  bondMesh.userData.type = "bond";
+  bondMesh.userData.uuid = atoms.uuid;
+  bondMesh.userData.objectMode = "edit";
+
+  if (bondCap) {
+    bondCap.userData.type = "bond";
+    bondCap.userData.uuid = atoms.uuid;
+    bondCap.userData.objectMode = "edit";
+  }
 
   console.timeEnd("drawBonds Time");
-  return instancedMesh;
+
+  return withCap ? { bondMesh, bondCap } : bondMesh;
 }
 
-export function drawLine(atoms, bondList, bondIndices, settings, materialType = "dashed", atomColors = null) {
+export function drawLine(atoms, bondList, bondIndices, settings, lineType = "dashed", atomColors = null) {
   /* Draw dashed bonds between atoms.
   atoms: the atoms object
   bondList: list of bonds, each bond is a list of 4 elements:
   [atomIndex1, atomIndex2, offset1, offset2]
-  materialType: material type of the bond
+  lineType: material type of the bond
 
   Returns:
   lineSegments: the LineSegments object of the dashed bonds
   */
-  console.time("drawDashedBonds Time");
+  if (bondIndices === undefined || bondIndices.length === 0) {
+    return null;
+  }
+  console.time("draw lineBonds Time");
 
   const vertices = [];
   const colors = [];
@@ -412,14 +467,22 @@ export function drawLine(atoms, bondList, bondIndices, settings, materialType = 
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
   geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
-  // Create the dashed line material
-  const material = new THREE.LineDashedMaterial({
-    color: 0xffffff, // Set a default color if needed, but we'll use vertex colors
-    vertexColors: true, // Use the colors provided by the geometry
-    dashSize: 0.1, // Length of each dash
-    gapSize: 0.1, // Length of each gap
-    linewidth: 3, // Optional: adjust line thickness (supported in WebGL2 contexts)
-  });
+  let material;
+  if (lineType === "dashed") {
+    material = new THREE.LineDashedMaterial({
+      color: 0xffffff, // Set a default color if needed, but we'll use vertex colors
+      vertexColors: true, // Use the colors provided by the geometry
+      dashSize: 0.1, // Length of each dash
+      gapSize: 0.1, // Length of each gap
+      linewidth: 3, // Optional: adjust line thickness (supported in WebGL2 contexts)
+    });
+  } else {
+    material = new THREE.LineBasicMaterial({
+      color: 0xffffff, // Set a default color if needed, but we'll use vertex colors
+      vertexColors: true, // Use the colors provided by the geometry
+      linewidth: 3, // Optional: adjust line thickness (supported in WebGL2 contexts)
+    });
+  }
 
   // Create the LineSegments object
   const lineSegments = new THREE.LineSegments(geometry, material);
@@ -607,7 +670,7 @@ export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks) {
   return bonds;
 }
 
-export function buildBondMap(bondList, atoms, settings) {
+export function buildBondMap(bondList, atoms, settings, modelSticks) {
   /* find bond list for each atom, so that when the atoms are moved,
   the bonds can be updated.
   bondMap: {atomIndex, bonds: [[bondIndex, isStart]]}}
@@ -615,54 +678,78 @@ export function buildBondMap(bondList, atoms, settings) {
   */
   const bondMap = {};
   const bondMapWithOffset = {};
-  const stickBonds = [];
-  const lineBonds = [];
-  const springBonds = [];
+  const sticks = [];
+  const stickCaps = [];
+  const dashedLines = [];
+  const solidLines = [];
+  const springs = [];
 
   for (let i = 0; i < bondList.length; i++) {
     const bond = bondList[i];
     const [index1, index2] = bond;
     // without offset
     if (!bondMap[index1]) {
-      bondMap[index1] = { atomIndex: index1, sticks: [], lines: [], springs: [] };
+      bondMap[index1] = { atomIndex: index1, sticks: [], stickCaps: [], dashedLines: [], solidLines: [], springs: [] };
     }
     if (!bondMap[index2]) {
-      bondMap[index2] = { atomIndex: index2, sticks: [], lines: [], springs: [] };
+      bondMap[index2] = { atomIndex: index2, sticks: [], stickCaps: [], dashedLines: [], solidLines: [], springs: [] };
     }
     // with offset
     const key1 = index1 + "-" + bond[2].join("-");
     if (!bondMapWithOffset[key1]) {
-      bondMapWithOffset[key1] = { atomIndex: index1, sticks: [], lines: [], springs: [] };
+      bondMapWithOffset[key1] = { atomIndex: index1, sticks: [], stickCaps: [], dashedLines: [], solidLines: [], springs: [] };
     }
     const key2 = index2 + "-" + bond[3].join("-");
     if (!bondMapWithOffset[key2]) {
-      bondMapWithOffset[key2] = { atomIndex: index2, sticks: [], lines: [], springs: [] };
+      bondMapWithOffset[key2] = { atomIndex: index2, sticks: [], stickCaps: [], dashedLines: [], solidLines: [], springs: [] };
     }
     // Split the bondList into three categories based on bond type
     const key = atoms.symbols[index1] + "-" + atoms.symbols[index2];
-    const bondType = settings[key].type;
+    let bondType;
+    if (modelSticks[index1] <= 2) {
+      bondType = settings[key].type;
+    } else {
+      bondType = modelSticks[index1];
+    }
     // Split into stick, line (dashed), and spring bonds based on type
     if (bondType === 0) {
-      stickBonds.push(i);
-      bondMap[index1]["sticks"].push([stickBonds.length - 1, true]);
-      bondMap[index2]["sticks"].push([stickBonds.length - 1, false]);
-      bondMapWithOffset[key1]["sticks"].push([stickBonds.length - 1, true]);
-      bondMapWithOffset[key2]["sticks"].push([stickBonds.length - 1, false]);
+      // stick
+      sticks.push(i);
+      bondMap[index1]["sticks"].push([sticks.length - 1, true]);
+      bondMap[index2]["sticks"].push([sticks.length - 1, false]);
+      bondMapWithOffset[key1]["sticks"].push([sticks.length - 1, true]);
+      bondMapWithOffset[key2]["sticks"].push([sticks.length - 1, false]);
     } else if (bondType === 1) {
-      lineBonds.push(i);
-      bondMap[index1]["lines"].push([lineBonds.length - 1, true]);
-      bondMap[index2]["lines"].push([lineBonds.length - 1, false]);
-      bondMapWithOffset[key1]["lines"].push([lineBonds.length - 1, true]);
-      bondMapWithOffset[key2]["lines"].push([lineBonds.length - 1, false]);
+      // dashed line
+      dashedLines.push(i);
+      bondMap[index1]["dashedLines"].push([dashedLines.length - 1, true]);
+      bondMap[index2]["dashedLines"].push([dashedLines.length - 1, false]);
+      bondMapWithOffset[key1]["dashedLines"].push([dashedLines.length - 1, true]);
+      bondMapWithOffset[key2]["dashedLines"].push([dashedLines.length - 1, false]);
     } else if (bondType === 2) {
-      springBonds.push(i);
-      bondMap[index1]["springs"].push([springBonds.length - 1, true]);
-      bondMap[index2]["springs"].push([springBonds.length - 1, false]);
-      bondMapWithOffset[key1]["springs"].push([springBonds.length - 1, true]);
-      bondMapWithOffset[key2]["springs"].push([springBonds.length - 1, false]);
+      // spring
+      springs.push(i);
+      bondMap[index1]["springs"].push([springs.length - 1, true]);
+      bondMap[index2]["springs"].push([springs.length - 1, false]);
+      bondMapWithOffset[key1]["springs"].push([springs.length - 1, true]);
+      bondMapWithOffset[key2]["springs"].push([springs.length - 1, false]);
+    } else if (bondType === 3) {
+      // stick with cap
+      stickCaps.push(i);
+      bondMap[index1]["stickCaps"].push([stickCaps.length - 1, true]);
+      bondMap[index2]["stickCaps"].push([stickCaps.length - 1, false]);
+      bondMapWithOffset[key1]["stickCaps"].push([stickCaps.length - 1, true]);
+      bondMapWithOffset[key2]["stickCaps"].push([stickCaps.length - 1, false]);
+    } else if (bondType === 4) {
+      // line
+      solidLines.push(i);
+      bondMap[index1]["solidLines"].push([solidLines.length - 1, true]);
+      bondMap[index2]["solidLines"].push([solidLines.length - 1, false]);
+      bondMapWithOffset[key1]["solidLines"].push([solidLines.length - 1, true]);
+      bondMapWithOffset[key2]["solidLines"].push([solidLines.length - 1, false]);
     }
   }
-  return { bondMap: bondMap, bondMapWithOffset: bondMapWithOffset, stickBonds: stickBonds, lineBonds: lineBonds, springBonds: springBonds };
+  return { bondMap: bondMap, bondMapWithOffset: bondMapWithOffset, sticks, stickCaps, dashedLines, solidLines, springs };
 }
 
 export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) {

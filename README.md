@@ -16,6 +16,8 @@ Features:
 - Volumetric data (isosurface).
 - Vector fields, e.g., magnetic moment.
 
+### Demo
+
 Here are some demo pages:
 
 - [Codepen Demo](https://codepen.io/superstar54/full/MWRgKaG)
@@ -24,6 +26,32 @@ Here are some demo pages:
 ### How to use
 
 Please visit: [WEAS Documentation](https://weas.readthedocs.io/en/latest/index.html)
+
+### Examples
+
+### Molecule
+
+<img src="docs/source/_static/images/example_color_by_species.png"  width="300px"/>
+
+### Crystal structure
+
+<img src="docs/source/_static/images/model_style_2.png"  width="300px"/>
+
+#### Isosurfaces
+
+<img src="docs/source/_static/images/example-isosurface.png"  width="300px"/>
+
+#### Volume Slice
+
+<img src="docs/source/_static/images/example-volume-slice.png"  width="300px"/>
+
+#### Animation
+
+<img src="docs/source/_static/images/animation_md.gif"  width="500px"/>
+
+#### Phonons
+
+<img src="docs/source/_static/images/example-phonon.gif"  width="300px"/>
 
 ### How to run a demo locally
 
