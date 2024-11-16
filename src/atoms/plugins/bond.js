@@ -179,7 +179,10 @@ export class BondManager {
 
     const stickBondMesh = drawStick(this.viewer.originalAtoms, this.bondList, this.bondMap["sticks"], this.viewer.cutoffs, this.bondRadius, this.viewer._materialType, atomColors);
     const { bondMesh, bondCap } = drawStick(this.viewer.originalAtoms, this.bondList, this.bondMap["stickCaps"], this.viewer.cutoffs, this.bondRadius, this.viewer._materialType, atomColors, true);
-    const dashedBondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["dashedLines"], this.viewer.cutoffs, "dashed", atomColors);
+    let dashedBondLine;
+    if (this.showHydrogenBonds) {
+      dashedBondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["dashedLines"], this.viewer.cutoffs, "dashed", atomColors);
+    }
     const solidBondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["solidLines"], this.viewer.cutoffs, "solid", atomColors);
     this.meshes = { stickBondMesh: stickBondMesh, stickCapBondMesh: bondMesh, stickCapBondCap: bondCap, dashedBondLine: dashedBondLine, solidBondLine: solidBondLine };
     Object.values(this.meshes).forEach((mesh) => {
