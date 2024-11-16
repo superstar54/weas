@@ -25,5 +25,5 @@ One can add one highlight item:
     editor.avr.highlightManager.settings['fixed'] = {indices: [0, 1], type: 'cross'};
     editor.avr.highlightManager.drawHighlightAtoms()
 
-.. image:: ../_static/images/example_highlight.png
+.. image:: ../_static/images/example-highlight.png
    :width: 4cm

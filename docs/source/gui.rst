@@ -16,6 +16,13 @@ The default configuration is:
       colorControl: true,
       cameraControls: true,
    },
+   timeline: {
+      enabled: true, // Added this line to control timeline visibility
+   },
+   legend: { // atoms legend
+      enabled: false,
+      position: "bottom-right", // Options: 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+   },
    buttons: {
       enabled: true,
       fullscreen: true,
