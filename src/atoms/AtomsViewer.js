@@ -198,6 +198,7 @@ class AtomsViewer {
     this._cell = null;
     this._atoms = null;
     this._currentFrame = 0;
+    this.selectedAtomsIndices = [];
     // set cell
     this.cellManager.cell = this.atoms.cell;
     // initialize the bond settings
