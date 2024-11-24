@@ -186,11 +186,14 @@ export class AtomManager {
     }
   }
   // Method to update the scale of atoms
-  updateAtomScale() {
+  updateAtomScale(value) {
+    if (value === undefined) {
+      value = this.viewer.atomScale;
+    }
     let mesh = this.meshes["atom"];
     // only update the selected atoms if there are selected atoms
     const indices = this.viewer.selectedAtomsIndices.length > 0 ? this.viewer.selectedAtomsIndices : [...Array(this.viewer.atoms.positions.length).keys()];
-    this.updateMeshScale(mesh, indices, this.viewer.atoms.symbols, this.viewer.atomScale);
+    this.updateMeshScale(mesh, indices, this.viewer.atoms.symbols, value);
     // update the boundary atoms
     mesh = this.meshes["image"];
     if (mesh) {
@@ -202,8 +205,9 @@ export class AtomManager {
           imageAtomsIndices.push(i);
         }
       }
-      this.updateMeshScale(mesh, imageAtomsIndices, symbols, this.viewer.atomScale);
+      this.updateMeshScale(mesh, imageAtomsIndices, symbols, value);
     }
+    this.viewer.tjs.render();
   }
 
   updateMeshScale(mesh, indices, symbols, atomScale) {

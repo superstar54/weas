@@ -36,7 +36,7 @@ class AtomsViewer {
     this._showBondedAtoms = viewerSettings._showBondedAtoms;
     this._showCell = viewerSettings._showCell;
     this._boundary = viewerSettings._boundary;
-    this.atomScale = viewerSettings.atomScale;
+    this._atomScale = viewerSettings._atomScale;
     this.backgroundColor = viewerSettings.backgroundColor;
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.debug = viewerSettings.debug;
@@ -256,64 +256,7 @@ class AtomsViewer {
   set modelStyle(newValue) {
     newValue = parseInt(newValue);
     this.logger.debug("updateModelStyle: ", newValue);
-    if (this.selectedAtomsIndices.length > 0) {
-      if (newValue === 0) {
-        this.selectedAtomsIndices.forEach((atomIndex) => {
-          this.atomScales[atomIndex] = 1;
-          this.modelSticks[atomIndex] = newValue;
-          this.modelPolyhedras[atomIndex] = 0;
-        });
-      } else if (newValue === 1) {
-        this.selectedAtomsIndices.forEach((atomIndex) => {
-          this.atomScales[atomIndex] = 0.4;
-          this.modelSticks[atomIndex] = newValue;
-          this.modelPolyhedras[atomIndex] = 0;
-        });
-      } else if (newValue === 2) {
-        this.selectedAtomsIndices.forEach((atomIndex) => {
-          this.atomScales[atomIndex] = 0.4;
-          this.modelSticks[atomIndex] = newValue;
-          this.modelPolyhedras[atomIndex] = 1;
-        });
-      } else if (newValue === 3) {
-        this.selectedAtomsIndices.forEach((atomIndex) => {
-          this.atomScales[atomIndex] = 0;
-          this.modelSticks[atomIndex] = newValue;
-          this.modelPolyhedras[atomIndex] = 0;
-        });
-      } else if (newValue === 4) {
-        this.selectedAtomsIndices.forEach((atomIndex) => {
-          this.atomScales[atomIndex] = 0;
-          this.modelSticks[atomIndex] = newValue;
-          this.modelPolyhedras[atomIndex] = 0;
-        });
-      }
-    } else {
-      this._modelStyle = parseInt(newValue);
-      // clear this.models
-      this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(0);
-      this.modelPolyhedras = new Array(this.atoms.getAtomsCount()).fill(0);
-      if (this._modelStyle === 0) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(1);
-      } else if (this._modelStyle === 1) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0.4);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(1);
-      } else if (this._modelStyle === 2) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0.4);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(2);
-        this.modelPolyhedras = new Array(this.atoms.getAtomsCount()).fill(1);
-      } else if (this._modelStyle === 3) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(3);
-      } else if (this._modelStyle === 4) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(4);
-      }
-    }
-    // avoid the recursive loop
-    if (this.guiManager.modelStyleController && this.guiManager.modelStyleController.getValue() !== newValue) {
-      this.guiManager.modelStyleController.setValue(newValue); // Update the GUI
-    }
+    this.updateModelStyles(newValue);
     this.weas.eventHandlers.dispatchViewerUpdated({ modelStyle: newValue });
   }
 
@@ -322,14 +265,13 @@ class AtomsViewer {
   }
 
   set radiusType(newValue) {
-    this._radiusType = newValue;
-    if (this.guiManager.radiusTypeController && this.guiManager.radiusTypeController.getValue() !== newValue) {
-      this.guiManager.radiusTypeController.setValue(newValue); // Update the GUI
+    if (this._radiusType !== newValue) {
+      this._radiusType = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ radiusType: newValue });
+      this.atomManager.init();
+      this.bondManager.init();
+      this.polyhedraManager.init();
     }
-    this.weas.eventHandlers.dispatchViewerUpdated({ radiusType: newValue });
-    this.atomManager.init();
-    this.bondManager.init();
-    this.polyhedraManager.init();
   }
 
   get colorBy() {
@@ -446,6 +388,18 @@ class AtomsViewer {
       this.guiManager.showBondedAtomsController.setValue(newValue); // Update the GUI
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ showBondedAtoms: newValue });
+  }
+
+  get atomScale() {
+    return this._atomScale;
+  }
+
+  set atomScale(newValue) {
+    if (this._atomScale !== newValue) {
+      this._atomScale = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ atomScale: newValue });
+      this.atomManager.updateAtomScale(newValue);
+    }
   }
 
   get atomScales() {
@@ -728,6 +682,63 @@ class AtomsViewer {
     this.trajectory.forEach((atoms) => {
       atoms.newAttribute(name, values, domain);
     });
+  }
+
+  updateModelStyles(newValue) {
+    if (this.selectedAtomsIndices.length > 0) {
+      if (newValue === 0) {
+        this.selectedAtomsIndices.forEach((atomIndex) => {
+          this.atomScales[atomIndex] = 1;
+          this.modelSticks[atomIndex] = newValue;
+          this.modelPolyhedras[atomIndex] = 0;
+        });
+      } else if (newValue === 1) {
+        this.selectedAtomsIndices.forEach((atomIndex) => {
+          this.atomScales[atomIndex] = 0.4;
+          this.modelSticks[atomIndex] = newValue;
+          this.modelPolyhedras[atomIndex] = 0;
+        });
+      } else if (newValue === 2) {
+        this.selectedAtomsIndices.forEach((atomIndex) => {
+          this.atomScales[atomIndex] = 0.4;
+          this.modelSticks[atomIndex] = newValue;
+          this.modelPolyhedras[atomIndex] = 1;
+        });
+      } else if (newValue === 3) {
+        this.selectedAtomsIndices.forEach((atomIndex) => {
+          this.atomScales[atomIndex] = 0;
+          this.modelSticks[atomIndex] = newValue;
+          this.modelPolyhedras[atomIndex] = 0;
+        });
+      } else if (newValue === 4) {
+        this.selectedAtomsIndices.forEach((atomIndex) => {
+          this.atomScales[atomIndex] = 0;
+          this.modelSticks[atomIndex] = newValue;
+          this.modelPolyhedras[atomIndex] = 0;
+        });
+      }
+    } else {
+      // clear this.models
+      this._modelStyle = newValue;
+      this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(0);
+      this.modelPolyhedras = new Array(this.atoms.getAtomsCount()).fill(0);
+      if (newValue === 0) {
+        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(1);
+      } else if (newValue === 1) {
+        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0.4);
+        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(1);
+      } else if (newValue === 2) {
+        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0.4);
+        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(2);
+        this.modelPolyhedras = new Array(this.atoms.getAtomsCount()).fill(1);
+      } else if (newValue === 3) {
+        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
+        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(3);
+      } else if (newValue === 4) {
+        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
+        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(4);
+      }
+    }
   }
 }
 
