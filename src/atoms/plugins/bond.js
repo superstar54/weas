@@ -46,6 +46,7 @@ export class BondManager {
     this.meshes = {};
     this.hideLongBonds = hideLongBonds;
     this.showHydrogenBonds = showHydrogenBonds;
+    this.showOutBoundaryBonds = false;
     this.bondRadius = 0.1;
     this.init();
   }
@@ -161,7 +162,7 @@ export class BondManager {
     }
     // I don't add bonded atoms to offsets, because the bondlist will add them through the bondedAtoms["bonds"]
     // this.viewer.logger.debug("offsets: ", offsets);
-    this.bondList = buildBonds(this.viewer.originalAtoms, offsets, this.viewer.neighbors["map"], this.viewer._boundary, this.viewer.modelSticks);
+    this.bondList = buildBonds(this.viewer.originalAtoms, offsets, this.viewer.neighbors["map"], this.viewer._boundary, this.viewer.modelSticks, this.showOutBoundaryBonds);
     // loop the bondedAtoms["bonds"] and add the bonds to the bondList
     this.viewer.bondedAtoms["bonds"].forEach((bond) => {
       // if key not in the settings, skip
@@ -583,7 +584,7 @@ export function searchBondedAtoms(symbols, atomsList, neighbors, modelSticks) {
   return { atoms: bondedAtomList, bonds: bondList };
 }
 
-export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks) {
+export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks, showOutBoundaryBonds = false) {
   /* build bonds between atoms
   atoms: list of atoms to be drawn
   offsets: list of offsets for each atom
@@ -642,18 +643,20 @@ export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks) {
           continue;
         }
         const offset2 = neighborsList[j][1];
-        // if offset2 is [0, 0, 0], the neighbor atom is in the original cell
+        // if offset1 is [0, 0, 0], the orginal atom is in the original cell
         // just add the bond
-        // if (offset2[0] === 0 && offset2[1] === 0 && offset2[2] === 0) {
-        //   bonds.push([atomIndex1, atomIndex2, offset1, offset1]);
+        // if (offset1[0] === 0 && offset1[1] === 0 && offset1[2] === 0) {
+        //   bonds.push([atomIndex1, atomIndex2, offset1, offset2]);
         //   continue;
         // }
         // else, sum the two offsets, and check if the neighbor atom is inside the boundary
         const offsetSum = offset1.map((value, index) => value + offset2[index]);
         // check if the neighbor atom is inside the boundary
         const newPosition = fract_positions[atomIndex2].map((value, index) => value + offsetSum[index]);
-        // console.log("newPosition: ", newPosition);
-        if (
+        if (showOutBoundaryBonds) {
+          bonds.push([atomIndex1, atomIndex2, offset1, offsetSum]);
+          continue;
+        } else if (
           boundary[0][0] <= newPosition[0] &&
           newPosition[0] <= boundary[0][1] &&
           boundary[1][0] <= newPosition[1] &&
