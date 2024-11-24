@@ -489,6 +489,12 @@ test("Bond", async ({ page }) => {
     window.editor.avr.drawModels();
   });
   await expect(page).toHaveScreenshot("Bond-delete-bond-pair.png");
+  // bond outside boundary
+  await page.evaluate(() => {
+    window.editor.avr.bondManager.showOutBoundaryBonds = true;
+    window.editor.avr.drawModels();
+  });
+  await expect(page).toHaveScreenshot("Bond-outside-boundary.png");
 });
 
 test("ModelStyle", async ({ page }) => {
