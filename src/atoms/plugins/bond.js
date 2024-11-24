@@ -5,6 +5,7 @@ import { elementsWithPolyhedra, covalentRadii, elementColors, default_bond_pairs
 import { convertColor } from "../utils.js";
 import { kdTree } from "../../geometry/kdTree.js";
 import { searchBoundary } from "./boundary.js";
+import { clearObject } from "../../utils.js";
 
 // default bond radius
 export const defaultBondRadius = 0.1;
@@ -42,7 +43,7 @@ export class BondManager {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
     this.settings = {};
-    this.meshes = [];
+    this.meshes = {};
     this.hideLongBonds = hideLongBonds;
     this.showHydrogenBonds = showHydrogenBonds;
     this.bondRadius = 0.1;
@@ -134,10 +135,12 @@ export class BondManager {
 
   clearMeshes() {
     /* Remove highlighted atom meshes from the selectedAtomsMesh group */
-    this.meshes.forEach((mesh) => {
-      clearObject(this.scene, mesh);
+    Object.values(this.meshes).forEach((mesh) => {
+      if (mesh) {
+        clearObject(this.scene, mesh);
+      }
     });
-    this.meshes = [];
+    this.meshes = {};
   }
 
   drawBonds() {
