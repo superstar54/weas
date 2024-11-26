@@ -94,6 +94,16 @@ export class AtomManager {
     this.settings[symbol] = setting;
   }
 
+  getMaxRadius() {
+    /* Get the maximum radius of the atoms */
+    return Math.max(...Object.values(this.settings).map((setting) => setting.radius));
+  }
+
+  getMinRadius() {
+    /* Get the minimum radius of the atoms */
+    return Math.min(...Object.values(this.settings).map((setting) => setting.radius));
+  }
+
   clearMeshes() {
     /* Remove highlighted atom meshes from the selectedAtomsMesh group */
     Object.values(this.meshes).forEach((mesh) => {
