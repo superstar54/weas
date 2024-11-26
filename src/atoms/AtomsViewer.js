@@ -304,6 +304,7 @@ class AtomsViewer {
     this.weas.eventHandlers.dispatchViewerUpdated({ colorType: newValue });
     // update the bondManager settings
     this.atomManager.init();
+    this.guiManager.updateLegend();
     this.bondManager.init();
     this.polyhedraManager.init();
   }
@@ -483,6 +484,7 @@ class AtomsViewer {
     this.VFManager.drawVectorFields();
     this.highlightManager.drawHighlightAtoms();
     this.ALManager.drawAtomLabels();
+    this.guiManager.updateLegend();
     this.ready = true;
     this.weas.tjs.render();
   }
