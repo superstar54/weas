@@ -1,17 +1,18 @@
 // Default settings
 const defaultViewerSettings = {
-  _modelStyle: 0, // Default viz type
-  _colorBy: "Element", // Default color by
-  _colorType: "JMOL",
-  _colorRamp: ["red", "blue"],
-  _radiusType: "Covalent",
-  _materialType: "Standard",
-  _atomLabelType: "None",
-  _showBondedAtoms: false,
-  _hideLongBonds: true,
-  _showHydrogenBonds: false,
-  _showCell: true, // Default show cell
-  _boundary: [
+  modelStyle: 0, // Default viz type
+  colorBy: "Element", // Default color by
+  colorType: "JMOL",
+  colorRamp: ["red", "blue"],
+  radiusType: "Covalent",
+  materialType: "Standard",
+  atomLabelType: "None",
+  showBondedAtoms: false,
+  hideLongBonds: true,
+  showHydrogenBonds: false,
+  showCell: true, // Default show cell
+  showAxes: true, // Default show axes
+  boundary: [
     [0, 1],
     [0, 1],
     [0, 1],

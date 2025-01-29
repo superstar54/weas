@@ -3,26 +3,27 @@ import { createLabel } from "../utils.js";
 import { drawArrow } from "../tools/primitives.js";
 
 export class CellManager {
-  constructor(viewer) {
+  constructor(viewer, settings = {}) {
     this.viewer = viewer;
     this.cellMesh = null;
     this.cellVectors = null;
-    this._showCell = viewer._showCell;
-    this._showAxes = viewer._showAxes;
+    this._show = settings.showCell ?? true;
+    this._showAxes = settings.showAxes ?? true;
   }
 
-  get showCell() {
-    return this._showCell;
+  get show() {
+    return this._show;
   }
 
-  set showCell(newValue) {
-    this._showCell = newValue;
+  set show(newValue) {
+    this._show = newValue;
     if (this.cellMesh) {
       this.cellMesh.visible = newValue;
     }
     if (this.cellVectors) {
       this.cellVectors.visible = newValue;
     }
+    this.viewer.tjs.render();
   }
 
   get showAxes() {
@@ -34,6 +35,7 @@ export class CellManager {
     if (this.cellVectors) {
       this.cellVectors.visible = newValue;
     }
+    this.viewer.tjs.render();
   }
 
   clear() {
@@ -100,7 +102,7 @@ export class CellManager {
     line.userData.notSelectable = true;
     line.layers.set(1);
     this.viewer.tjs.scene.add(line);
-    line.visible = this.showCell;
+    line.visible = this.show;
     return line;
   }
 
@@ -156,7 +158,7 @@ export class CellManager {
 
     // Add the group to the scene
     this.viewer.tjs.coordScene.add(unitCellGroup);
-    unitCellGroup.visible = this.showCell;
+    unitCellGroup.visible = this.show;
 
     // Return the group for further control if needed
     return unitCellGroup;
