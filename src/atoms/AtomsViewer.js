@@ -48,14 +48,10 @@ class AtomsViewer {
     // Initialize components
     // other plugins
     this.atomManager = new AtomManager(this);
-    this.cellManager = new CellManager(this, { showCell: viewerSettings.showCell, showAxes: viewerSettings.showAxes });
+    this.cellManager = new CellManager(this, viewerSettings.cellSettings);
     this.highlightManager = new HighlightManager(this);
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui, this.weas.guiManager.guiConfig); // Pass guiConfig
-    this.bondManager = new BondManager(this, {
-      hideLongBonds: viewerSettings.hideLongBonds,
-      showHydrogenBonds: viewerSettings.showHydrogenBonds,
-      showOutBoundaryBonds: viewerSettings.showOutBoundaryBonds,
-    });
+    this.bondManager = new BondManager(this, viewerSettings.bondSettings);
     this.boundaryManager = new BoundaryManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
     this.isosurfaceManager = new Isosurface(this);
