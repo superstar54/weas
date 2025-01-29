@@ -6,7 +6,7 @@ One can see the bond setting:
 .. code-block:: javascript
 
     // Bond settings
-    weas.avr.bondManager.settings
+    editor.avr.bondManager.settings
 
 Delete one bond pair
 ----------------

@@ -28,11 +28,11 @@ Use can set custom color for each species. The color can be in the form of hex c
 
 .. code-block:: javascript
 
-    weas.avr.atomManager.settings["C"].color = "red";
-    weas.avr.atomManager.settings["H"].color = "#b434eb";
-    weas.avr.atomManager.settings["O"].color = "#34eb77";
-    weas.avr.atomManager.settings["S"].color = "#FFFF00";
-    weas.avr.drawModels()
+    editor.avr.atomManager.settings["C"].color = "red";
+    editor.avr.atomManager.settings["H"].color = "#b434eb";
+    editor.avr.atomManager.settings["O"].color = "#34eb77";
+    editor.avr.atomManager.settings["S"].color = "#FFFF00";
+    editor.avr.drawModels()
 
 
 .. image:: ../_static/images/example_color_by_species.png
@@ -49,8 +49,8 @@ Here we show how to color the atoms by their forces.
 .. code-block:: javascript
 
 
-    weas.avr.colorBy = "Force"
-    weas.avr._colorRamp = ["red", "yellow", "blue"]
+    editor.avr.colorBy = "Force"
+    editor.avr._colorRamp = ["red", "yellow", "blue"]
 
 
 

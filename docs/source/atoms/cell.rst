@@ -1,11 +1,28 @@
 Cell
 ===============
 
+One can see the cell setting:
+
+.. code-block:: javascript
+
+    // Cell settings
+    editor.avr.cellManager.settings
+
+Update the cell width and color:
+
+.. code-block:: javascript
+
+    // Cell settings
+    editor.avr.cellManager.settings.cellLineWidth = 5
+    editor.avr.cellManager.settings.cellColor = "red"
+    editor.avr.cellManager.draw()
+
+
 One can hide the cell by:
 
 .. code-block:: javascript
 
     // hide the cell
-    weas.avr.cellManager.show = false;
+    editor.avr.cellManager.show = false;
     // hide the axes
-    weas.avr.cellManager.showAxes = false;
+    editor.avr.cellManager.showAxes = false;
