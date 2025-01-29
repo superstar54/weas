@@ -39,14 +39,14 @@ class Setting {
 }
 
 export class BondManager {
-  constructor(viewer, hideLongBonds = true, showHydrogenBonds = false) {
+  constructor(viewer, settings = {}) {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
     this.settings = {};
     this.meshes = {};
-    this.hideLongBonds = hideLongBonds;
-    this.showHydrogenBonds = showHydrogenBonds;
-    this.showOutBoundaryBonds = false;
+    this.hideLongBonds = settings.hideLongBonds ?? true;
+    this.showHydrogenBonds = settings.showHydrogenBonds ?? false;
+    this.showOutBoundaryBonds = settings.showOutBoundaryBonds ?? false;
     this.bondRadius = 0.1;
     this.init();
   }

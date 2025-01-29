@@ -89,10 +89,10 @@ class AtomsGUI {
 
     // Show Cell Control
     this.showCellController = atomsFolder
-      .add(this.viewer, "showCell")
+      .add(this.viewer.cellManager, "show")
       .name("Unit Cell")
       .onChange((value) => {
-        this.viewer.showCell = value;
+        this.viewer.cellManager.show = value;
       });
 
     // Show Bonded Atoms Control

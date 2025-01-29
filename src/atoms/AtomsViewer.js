@@ -26,17 +26,16 @@ class AtomsViewer {
     const viewerSettings = { ...defaultViewerSettings, ...viewerConfig };
     // Apply merged settings
     this._ready = false;
-    this._modelStyle = viewerSettings._modelStyle;
-    this._colorBy = viewerSettings._colorBy;
-    this._colorType = viewerSettings._colorType;
-    this._colorRamp = viewerSettings._colorRamp;
-    this._radiusType = viewerSettings._radiusType;
-    this._materialType = viewerSettings._materialType;
-    this._atomLabelType = viewerSettings._atomLabelType;
-    this._showBondedAtoms = viewerSettings._showBondedAtoms;
-    this._showCell = viewerSettings._showCell;
-    this._boundary = viewerSettings._boundary;
-    this._atomScale = viewerSettings._atomScale;
+    this._modelStyle = viewerSettings.modelStyle;
+    this._colorBy = viewerSettings.colorBy;
+    this._colorType = viewerSettings.colorType;
+    this._colorRamp = viewerSettings.colorRamp;
+    this._radiusType = viewerSettings.radiusType;
+    this._materialType = viewerSettings.materialType;
+    this._atomLabelType = viewerSettings.atomLabelType;
+    this._showBondedAtoms = viewerSettings.showBondedAtoms;
+    this._boundary = viewerSettings.boundary;
+    this._atomScale = viewerSettings.atomScale;
     this.backgroundColor = viewerSettings.backgroundColor;
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.debug = viewerSettings.debug;
@@ -49,10 +48,14 @@ class AtomsViewer {
     // Initialize components
     // other plugins
     this.atomManager = new AtomManager(this);
-    this.cellManager = new CellManager(this);
+    this.cellManager = new CellManager(this, { showCell: viewerSettings.showCell, showAxes: viewerSettings.showAxes });
     this.highlightManager = new HighlightManager(this);
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui, this.weas.guiManager.guiConfig); // Pass guiConfig
-    this.bondManager = new BondManager(this, viewerSettings._hideLongBonds, viewerSettings._showHydrogenBonds);
+    this.bondManager = new BondManager(this, {
+      hideLongBonds: viewerSettings.hideLongBonds,
+      showHydrogenBonds: viewerSettings.showHydrogenBonds,
+      showOutBoundaryBonds: viewerSettings.showOutBoundaryBonds,
+    });
     this.boundaryManager = new BoundaryManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
     this.isosurfaceManager = new Isosurface(this);
@@ -361,21 +364,6 @@ class AtomsViewer {
       }
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ boundary: newValue });
-  }
-
-  get showCell() {
-    return this._showCell;
-  }
-
-  set showCell(newValue) {
-    this._showCell = newValue;
-    this.cellManager.showCell = newValue;
-    // avoid the recursive loop
-    if (this.guiManager.showCellController && this.guiManager.showCellController.getValue() !== newValue) {
-      this.guiManager.showCellController.setValue(newValue); // Update the GUI
-    }
-    this.weas.eventHandlers.dispatchViewerUpdated({ showCell: newValue });
-    this.weas.tjs.render();
   }
 
   get showBondedAtoms() {
