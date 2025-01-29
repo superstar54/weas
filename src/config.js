@@ -10,6 +10,7 @@ const defaultViewerSettings = {
   showBondedAtoms: false,
   hideLongBonds: true,
   showHydrogenBonds: false,
+  showOutBoundaryBonds: false,
   showCell: true, // Default show cell
   showAxes: true, // Default show axes
   boundary: [
@@ -17,7 +18,7 @@ const defaultViewerSettings = {
     [0, 1],
     [0, 1],
   ],
-  _atomScale: 0.4, // Default atom scale
+  atomScale: 0.4, // Default atom scale
   backgroundColor: "#ffffff", // Default background color (white)
   logLevel: "warn", // Default log level
 };

@@ -46,7 +46,7 @@ export class BondManager {
     this.meshes = {};
     this.hideLongBonds = settings.hideLongBonds ?? true;
     this.showHydrogenBonds = settings.showHydrogenBonds ?? false;
-    this.showOutBoundaryBonds = false;
+    this.showOutBoundaryBonds = settings.showOutBoundaryBonds ?? false;
     this.bondRadius = 0.1;
     this.init();
   }
