@@ -94,6 +94,16 @@ export class AtomManager {
     this.settings[symbol] = setting;
   }
 
+  getMaxRadius() {
+    /* Get the maximum radius of the atoms */
+    return Math.max(...Object.values(this.settings).map((setting) => setting.radius));
+  }
+
+  getMinRadius() {
+    /* Get the minimum radius of the atoms */
+    return Math.min(...Object.values(this.settings).map((setting) => setting.radius));
+  }
+
   clearMeshes() {
     /* Remove highlighted atom meshes from the selectedAtomsMesh group */
     Object.values(this.meshes).forEach((mesh) => {
@@ -186,27 +196,37 @@ export class AtomManager {
     }
   }
   // Method to update the scale of atoms
-  updateAtomScale() {
+  updateAtomScale(value) {
+    if (value === undefined) {
+      value = this.viewer.atomScale;
+    }
     let mesh = this.meshes["atom"];
-    this.updateMeshScale(mesh, this.viewer.atoms.symbols, this.viewer.atomScale);
+    // only update the selected atoms if there are selected atoms
+    const indices = this.viewer.selectedAtomsIndices.length > 0 ? this.viewer.selectedAtomsIndices : [...Array(this.viewer.atoms.positions.length).keys()];
+    this.updateMeshScale(mesh, indices, this.viewer.atoms.symbols, value);
     // update the boundary atoms
     mesh = this.meshes["image"];
     if (mesh) {
       const symbols = [];
+      const imageAtomsIndices = [];
       for (let i = 0; i < this.viewer.imageAtomsList.length; i++) {
         symbols.push(this.viewer.atoms.symbols[this.viewer.imageAtomsList[i][0]]);
+        if (this.viewer.selectedAtomsIndices.includes(this.viewer.imageAtomsList[i][0])) {
+          imageAtomsIndices.push(i);
+        }
       }
-      this.updateMeshScale(mesh, symbols, this.viewer.atomScale);
+      this.updateMeshScale(mesh, imageAtomsIndices, symbols, value);
     }
+    this.viewer.tjs.render();
   }
 
-  updateMeshScale(mesh, symbols, atomScale) {
+  updateMeshScale(mesh, indices, symbols, atomScale) {
     const position = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
     const scale = new THREE.Vector3();
     console.log("settings: ", this.settings);
 
-    for (let i = 0; i < mesh.count; i++) {
+    indices.forEach((i) => {
       const instanceMatrix = new THREE.Matrix4();
       console.log("symbols[i]: ", symbols[i]);
       const radius = this.settings[symbols[i]].radius || 1;
@@ -218,7 +238,7 @@ export class AtomManager {
       // Recompose the matrix with the new scale
       instanceMatrix.compose(position, rotation, scale);
       mesh.setMatrixAt(i, instanceMatrix);
-    }
+    });
     mesh.instanceMatrix.needsUpdate = true;
   }
 }

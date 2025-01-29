@@ -25,6 +25,7 @@ export function parseCube(cubeContent) {
   // Initialize data structure for Atoms
   const data = {
     species: {},
+    pbc: [true, true, true],
     positions: [],
     symbols: [],
   };

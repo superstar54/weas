@@ -17,6 +17,11 @@ class AtomsGUI {
     this.div = document.createElement("div");
     this.viewer.tjs.containerElement.appendChild(this.div);
 
+    // Listen to viewer events
+    this.viewer.tjs.containerElement.addEventListener("viewerUpdated", (event) => {
+      this.updateViewerControl(event.detail);
+    });
+
     if (this.guiConfig.controls.atomsControl) {
       this.addAtomsControl();
     }
@@ -50,12 +55,12 @@ class AtomsGUI {
 
     // Radius Type Control
     this.radiusTypeController = atomsFolder
-      .add({ radiusType: this.viewer.radiusType }, "radiusType", radiusTypes)
+      .add(this.viewer, "radiusType", radiusTypes)
+      .name("Radius Type")
       .onChange((value) => {
         this.viewer.radiusType = value;
         this.viewer.drawModels();
-      })
-      .name("Radius Type");
+      });
 
     // Atom Label Control
     this.atomLabelTypeController = atomsFolder
@@ -75,7 +80,12 @@ class AtomsGUI {
       .name("Material Type");
 
     // Atom Scale Control
-    atomsFolder.add(this.viewer, "atomScale", 0.1, 2.0).onChange(this.viewer.atomManager.updateAtomScale.bind(this.viewer.atomManager)).name("Atom Scale");
+    this.atomScaleController = atomsFolder
+      .add(this.viewer, "atomScale", 0.1, 2.0)
+      .name("Atom Scale")
+      .onChange((value) => {
+        this.viewer.atomScale = value; // Viewer setter handles the update
+      });
 
     // Show Cell Control
     this.showCellController = atomsFolder
@@ -324,6 +334,74 @@ class AtomsGUI {
     legendContainer.style.bottom = position.includes("bottom") ? "10px" : "";
     legendContainer.style.left = position.includes("left") ? "10px" : "";
     legendContainer.style.right = position.includes("right") ? "10px" : "";
+  }
+
+  updateViewerControl(detail) {
+    // detail is a object containing the updated viewer properties
+    // Update the GUI controls with the new values
+    Object.entries(detail).forEach(([key, value]) => {
+      switch (key) {
+        case "modelStyle":
+          this.updateModelStyle(value);
+          break;
+        case "radiusType":
+          this.updateRadiusType(value);
+          break;
+        case "atomLabelType":
+          // this.updateAtomLabelType(value);
+          break;
+        case "materialType":
+          // this.updateMaterialType(value);
+          break;
+        case "atomScale":
+          this.updateAtomScale(value);
+          break;
+        case "showCell":
+          // this.updateShowCell(value);
+          break;
+        case "showBondedAtoms":
+          // this.updateShowBondedAtoms(value);
+          break;
+        case "colorBy":
+          // this.updateColorBy(value);
+          break;
+        case "colorType":
+          // this.updateColorType(value);
+          break;
+        case "backgroundColor":
+          // this.updateBackgroundColor(value);
+          break;
+        case "isPlaying":
+          // this.updateIsPlaying(value);
+          break;
+        case "currentFrame":
+          // this.updateCurrentFrame(value);
+          break;
+        case "boundary":
+          // this.updateBoundary(value);
+          break;
+        default:
+          break;
+      }
+    });
+  }
+  updateAtomScale(newValue) {
+    if (this.atomScaleController && this.atomScaleController.getValue() !== newValue) {
+      this.atomScaleController.setValue(newValue);
+    }
+  }
+
+  updateModelStyle(newValue) {
+    if (this.modelStyleController && this.modelStyleController.getValue() !== newValue) {
+      this.modelStyleController.setValue(newValue);
+      this.viewer.drawModels();
+    }
+  }
+
+  updateRadiusType(newValue) {
+    if (this.radiusTypeController && this.radiusTypeController.getValue() !== newValue) {
+      this.radiusTypeController.setValue(newValue);
+    }
   }
 }
 

@@ -39,6 +39,7 @@ function parsePOSCAR(poscarString) {
   // Create a data object for Atoms
   const data = {
     cell: latticeVectors.flat(),
+    pbc: [true, true, true],
     species: {},
     positions: positions,
     symbols: atomTypes.flatMap((type, idx) => Array(atomCounts[idx]).fill(type)),

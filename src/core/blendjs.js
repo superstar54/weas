@@ -79,6 +79,21 @@ export class BlendJS {
     this.coordScene.add(directionalLight);
   }
 
+  createLegendScene() {
+    this.legendScene = new THREE.Scene();
+
+    const legendSceneRatio = 0.3;
+    this.legendSceneView = {
+      left: 0.8,
+      bottom: 0,
+      width: this.sceneView.width * legendSceneRatio,
+      height: this.sceneView.height * legendSceneRatio,
+    };
+
+    this.legendCamera = new THREE.OrthographicCamera(this.orthographicCamera.left, this.orthographicCamera.right, this.orthographicCamera.top, this.orthographicCamera.bottom, 1, 2000);
+    this.legendCamera.position.set(0, 0, 100);
+  }
+
   get cameraType() {
     return this._cameraType;
   }
@@ -168,6 +183,7 @@ export class BlendJS {
     this.containerElement.addEventListener("wheel", this.render.bind(this));
     this.containerElement.addEventListener("atomsUpdated", this.render.bind(this));
     this.createCoordScene();
+    this.createLegendScene();
   }
 
   addObject(name, geometry, material) {
@@ -222,6 +238,16 @@ export class BlendJS {
     this.camera.updateProjectionMatrix();
     this.coordCamera.updateProjectionMatrix();
 
+    // Update legendCamera
+    // Compute the aspect ratio for the legendCamera based on the legendSceneView dimensions
+    const legendWidth = clientWidth * this.legendSceneView.width;
+    const legendHeight = clientHeight * this.legendSceneView.height;
+    const legendAspect = legendWidth / legendHeight;
+    const frustumHeightLegend = this.legendCamera.top - this.legendCamera.bottom;
+    this.legendCamera.left = (-frustumHeightLegend * legendAspect) / 2;
+    this.legendCamera.right = (frustumHeightLegend * legendAspect) / 2;
+    this.legendCamera.updateProjectionMatrix();
+
     // Resize all renderers
     Object.values(this.renderers).forEach((rndr) => {
       rndr.renderer.setSize(clientWidth, clientHeight);
@@ -229,6 +255,7 @@ export class BlendJS {
     this.viewerRect = this.containerElement.getBoundingClientRect();
     this.render();
   }
+
   //
   updateCameraAndControls({ lookAt = null, direction = [0, 0, 1], distance = null, zoom = 1, fov = 50 }) {
     /*
@@ -358,6 +385,18 @@ export class BlendJS {
       this.coordSceneView.height,
       this.renderers["MainRenderer"].renderer,
     );
+    // this.legendCamera.position.copy(this.camera.position);
+    this.renderSceneInfo(
+      this.legendScene,
+      this.legendCamera,
+      this.legendSceneView.left,
+      this.legendSceneView.bottom,
+      this.legendSceneView.width,
+      this.legendSceneView.height,
+      this.renderers["MainRenderer"].renderer,
+    );
+    // legend
+
     this.controls.update();
   }
 
