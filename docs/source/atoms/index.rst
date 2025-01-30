@@ -8,6 +8,7 @@ Atoms
 
     atoms
     color
+    cell
     bond
     edit
     isosurface

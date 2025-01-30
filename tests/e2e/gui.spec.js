@@ -443,7 +443,7 @@ test("Cell", async ({ page }) => {
   await expect(page).toHaveScreenshot("Cell-frame-10.png");
   // hide cell
   await page.evaluate(() => {
-    window.editor.avr.cellManager.show = false;
+    window.editor.avr.cellManager.showCell = false;
     window.editor.tjs.render();
   });
   await expect(page).toHaveScreenshot("Cell-hide.png");

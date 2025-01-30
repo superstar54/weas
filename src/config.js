@@ -8,11 +8,22 @@ const defaultViewerSettings = {
   materialType: "Standard",
   atomLabelType: "None",
   showBondedAtoms: false,
-  hideLongBonds: true,
-  showHydrogenBonds: false,
-  showOutBoundaryBonds: false,
-  showCell: true, // Default show cell
-  showAxes: true, // Default show axes
+  bondSettings: {
+    hideLongBonds: true,
+    showHydrogenBonds: false,
+    showOutBoundaryBonds: false,
+  },
+  cellSettings: {
+    showCell: true, // Show unit cell
+    showAxes: true, // Show cell axes
+    cellColor: 0x000000, // Default cell line color (black)
+    cellLineWidth: 2, // Default line width
+    axisColors: { a: 0xff0000, b: 0x00ff00, c: 0x0000ff }, // RGB colors for axes
+    axisRadius: 0.15, // Default axis cylinder radius
+    axisConeHeight: 0.8, // Cone height for axis arrows
+    axisConeRadius: 0.3, // Cone radius for axis arrows
+    axisSphereRadius: 0.3, // Sphere radius at the cell origin
+  },
   boundary: [
     [0, 1],
     [0, 1],
