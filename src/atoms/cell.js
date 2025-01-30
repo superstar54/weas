@@ -65,6 +65,7 @@ export class CellManager {
       this.currentCell = this.viewer.originalCell.map((row) => row.slice());
       this.cellMesh = this.drawUnitCell();
       this.cellVectors = this.drawUnitCellVectors();
+      this.cellVectors.visible = this.showAxes;
     }
   }
 

@@ -95,6 +95,14 @@ class AtomsGUI {
         this.viewer.cellManager.show = value;
       });
 
+    // Show Cell Axes Control
+    this.showCellAxesController = atomsFolder
+      .add(this.viewer.cellManager, "showAxes")
+      .name("Axes")
+      .onChange((value) => {
+        this.viewer.cellManager.showAxes = value;
+      });
+
     // Show Bonded Atoms Control
     this.showBondedAtomsController = atomsFolder
       .add(this.viewer, "showBondedAtoms")
