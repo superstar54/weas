@@ -8,7 +8,7 @@ One can see the cell setting:
     // Cell settings
     editor.avr.cellManager.settings
 
-Update the cell width and color:
+Update the cell width and color etc:
 
 .. code-block:: javascript
 
@@ -23,6 +23,6 @@ One can hide the cell by:
 .. code-block:: javascript
 
     // hide the cell
-    editor.avr.cellManager.show = false;
+    editor.avr.cellManager.showCell = false;
     // hide the axes
     editor.avr.cellManager.showAxes = false;

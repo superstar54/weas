@@ -21,16 +21,16 @@ export class CellManager {
       axisSphereRadius: settings.axisSphereRadius ?? 0.3,
     };
 
-    this._show = this.settings.showCell;
+    this._showCell = this.settings.showCell;
     this._showAxes = this.settings.showAxes;
   }
 
-  get show() {
-    return this._show;
+  get showCell() {
+    return this._showCell;
   }
 
-  set show(newValue) {
-    this._show = newValue;
+  set showCell(newValue) {
+    this._showCell = newValue;
     if (this.cellMesh) this.cellMesh.visible = newValue;
     if (this.cellVectors) this.cellVectors.visible = newValue;
     this.viewer.tjs.render();
@@ -104,7 +104,7 @@ export class CellManager {
     line.userData = { type: "cell", uuid: this.viewer.uuid, objectMode: "edit", notSelectable: true };
     line.layers.set(1);
     this.viewer.tjs.scene.add(line);
-    line.visible = this.show;
+    line.visible = this.showCell;
     return line;
   }
 
@@ -164,7 +164,7 @@ export class CellManager {
     unitCellGroup.add(new THREE.Mesh(sphereGeometry, sphereMaterial));
 
     this.viewer.tjs.coordScene.add(unitCellGroup);
-    unitCellGroup.visible = this.show;
+    unitCellGroup.visible = this.showCell;
     return unitCellGroup;
   }
 
