@@ -75,8 +75,21 @@ test("ColorBy", async ({ page }) => {
 });
 
 test("Highlight Atoms", async ({ page }) => {
+  // highlight selected atoms
   await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");
   await expect(page).toHaveScreenshot();
+  // add another highlight
+  await page.evaluate(() => {
+    window.editor.avr.highlightManager.addSetting("sphere", { indices: [0, 1], color: "red", scale: 1.2 });
+    window.editor.avr.drawModels();
+  });
+  await expect(page).toHaveScreenshot("Highlight-sphere.png");
+  // highlight using cross
+  await page.evaluate(() => {
+    window.editor.avr.highlightManager.addSetting("sphere", { indices: [0, 1], color: "red", scale: 1.3, type: "cross" });
+    window.editor.avr.drawModels();
+  });
+  await expect(page).toHaveScreenshot("Highlight-cross.png");
 });
 
 test("Instanced Primitive", async ({ page }) => {
