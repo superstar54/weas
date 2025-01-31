@@ -130,23 +130,22 @@ export class HighlightManager {
     return crossGeometry;
   }
 
-  updateHighlightAtomsMesh({ indices = [], factor = 1.1, color = "yellow", type = "sphere" }) {
+  updateHighlightAtomsMesh({ indices = [], scale = 1.1, color = "yellow", type = "sphere" }) {
     /* When the atom is moved, the boundary atoms should be moved as well.
      */
     if (this.viewer.atoms.symbols.length > 0 && this.meshes[type]) {
       const position = new THREE.Vector3();
       const rotation = new THREE.Quaternion();
-      const scale = new THREE.Vector3();
+      const scaleVector = new THREE.Vector3();
       indices.forEach((index) => {
         // Update the atom position
         const matrix = new THREE.Matrix4();
         this.viewer.atomManager.meshes["atom"].getMatrixAt(index, matrix);
         // Decompose the original matrix into its components
-        matrix.decompose(position, rotation, scale);
-        // scale by factor
-        scale.multiplyScalar(factor);
+        matrix.decompose(position, rotation, scaleVector);
+        scaleVector.multiplyScalar(scale);
         // Recompose the matrix with the new scale
-        matrix.compose(position, rotation, scale);
+        matrix.compose(position, rotation, scaleVector);
         this.meshes[type].setMatrixAt(index, matrix);
         this.meshes[type].setColorAt(index, convertColor(color));
       });
