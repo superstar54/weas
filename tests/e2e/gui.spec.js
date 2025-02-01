@@ -462,6 +462,23 @@ test("Cell", async ({ page }) => {
   await expect(page).toHaveScreenshot("Cell-hide.png");
 });
 
+test("Polyhedra", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testPolyhedra.html");
+  await expect(page).toHaveScreenshot("Polyhedra-frame-0.png");
+  // animation Polyhedra
+  await page.evaluate(() => {
+    const timeline = document.getElementById("timeline");
+    timeline.value = 10;
+    // Creating and dispatching the event must happen within the page context
+    const event = new Event("input", {
+      bubbles: true,
+      cancelable: true,
+    });
+    timeline.dispatchEvent(event);
+  });
+  await expect(page).toHaveScreenshot("Polyhedra-frame-10.png");
+});
+
 test("Ops", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testOps.html");
   await expect(page).toHaveScreenshot("Ops-replace.png");

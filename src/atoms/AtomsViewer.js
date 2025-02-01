@@ -133,6 +133,8 @@ class AtomsViewer {
     this.atomManager.updateAtomMesh(null, atoms);
     // update the bonds
     this.bondManager.updateBondMesh(null, atoms);
+    // update the polyhedra
+    this.polyhedraManager.updatePolyhedraMesh(null, atoms);
     // update vector fields related to the atoms attribute
     this.VFManager.updateArrowMesh(null, atoms);
     // update cell
@@ -582,6 +584,7 @@ class AtomsViewer {
     // update the other meshes
     this.atomManager.updateImageAtomsMesh(index);
     this.bondManager.updateBondMesh(index);
+    this.polyhedraManager.updatePolyhedraMesh(index);
   }
 
   resetSelectedAtomsPositions(initialAtomPositions, indices = null) {

@@ -29,7 +29,7 @@ export class PolyhedraManager {
     this.scene = this.viewer.tjs.scene;
     this.settings = [];
     // create a group to store the polyhedra meshes
-    this.meshes = new THREE.Group();
+    this.mesh = null;
     this.allVertices = [];
     this.allNormals = [];
     this.allColors = [];
@@ -85,7 +85,7 @@ export class PolyhedraManager {
     this.allVertices = [];
     this.allNormals = [];
     this.allColors = [];
-    clearObject(this.scene, this.meshes);
+    clearObject(this.scene, this.mesh);
   }
 
   drawPolyhedras() {
@@ -94,8 +94,8 @@ export class PolyhedraManager {
     this.viewer.logger.debug("polyhedras: ", polyhedras);
     this.buildPolyhedras(this.viewer.atoms, polyhedras, this.viewer.bondManager.bondList, this.viewer._colorType, this.viewer._materialType);
     const mesh = this.drawPolyhedraMesh(this.viewer.atoms, this.viewer._materialType);
-    this.meshes.add(mesh);
-    return this.meshes;
+    this.mesh = mesh;
+    return mesh;
   }
 
   buildPolyhedras(atoms, polyhedras, bondList, colorType = "CPK", materialType = "standard") {
@@ -107,6 +107,7 @@ export class PolyhedraManager {
     const allVertices = [];
     const allNormals = [];
     const allColors = [];
+    const vertexAtomMap = {};
     for (const key of Object.keys(polyhedras)) {
       const polyhedra = polyhedras[key];
       const verticesData = [];
@@ -131,7 +132,6 @@ export class PolyhedraManager {
         vertex.offset = offset2;
         verticesData.push(vertex);
       }
-      // console.log("vertices: ", vertices);
 
       // Skip the polyhedron if vertices are not sufficient for ConvexGeometry
       if (verticesData.length < 4) {
@@ -141,7 +141,7 @@ export class PolyhedraManager {
 
       try {
         // find convex hull
-        const { hull, vertices, normals } = calculateConvexHull(verticesData);
+        const { hull, vertices, normals, indices, offsets } = calculateConvexHull(verticesData);
         allVertices.push(...vertices);
         allNormals.push(...normals);
         const symbol = atoms.symbols[polyhedra.atomIndex];
@@ -150,6 +150,15 @@ export class PolyhedraManager {
         for (let i = 0; i < vertices.length / 3; i++) {
           allColors.push(faceColor.r, faceColor.g, faceColor.b);
         }
+        // build the vertexAtomMap
+        indices.forEach((vertex, index) => {
+          const atomIndex = indices[index];
+          const offset = offsets[index];
+          if (vertexAtomMap[atomIndex] === undefined) {
+            vertexAtomMap[atomIndex] = [];
+          }
+          vertexAtomMap[atomIndex].push([allVertices.length / 3 - vertices.length / 3 + index, offset]);
+        });
       } catch (error) {
         console.warn(`Skipping polyhedron with key "${key}" due to ConvexGeometry error:`, error);
         continue;
@@ -158,6 +167,7 @@ export class PolyhedraManager {
     this.allVertices = allVertices;
     this.allNormals = allNormals;
     this.allColors = allColors;
+    this.vertexAtomMap = vertexAtomMap;
   }
 
   drawPolyhedraMesh(atoms, materialType = "standard") {
@@ -169,7 +179,6 @@ export class PolyhedraManager {
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(this.allVertices, 3));
     geometry.setAttribute("normal", new THREE.Float32BufferAttribute(this.allNormals, 3));
     geometry.setAttribute("color", new THREE.Float32BufferAttribute(this.allColors, 3)); // Correct color assignment
-
     const mesh = new THREE.Mesh(geometry, material);
     mesh.userData.type = "polyhedra";
     mesh.userData.uuid = atoms.uuid;
@@ -185,6 +194,31 @@ export class PolyhedraManager {
     if atomIndex is null, update all polyhedras
     if atoms is null, use this.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
     */
+    var atomIndices = [];
+    if (atomIndex === null) {
+      atomIndices = Object.keys(this.vertexAtomMap);
+    } else {
+      atomIndices = [atomIndex];
+    }
+    if (atoms === null) {
+      atoms = this.viewer.atoms;
+    }
+    atomIndices.forEach((atomIndex) => {
+      const verticesData = this.vertexAtomMap[atomIndex];
+      if (verticesData === undefined) {
+        return;
+      }
+      verticesData.forEach(([vertexIndex, offset]) => {
+        const new_position = atoms.positions[atomIndex].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset)[index]);
+        this.allVertices[vertexIndex * 3] = new_position[0];
+        this.allVertices[vertexIndex * 3 + 1] = new_position[1];
+        this.allVertices[vertexIndex * 3 + 2] = new_position[2];
+      });
+    });
+    // update the geometry of the mesh
+    this.mesh.geometry.setAttribute("position", new THREE.Float32BufferAttribute(this.allVertices, 3));
+    this.mesh.geometry.attributes.position.needsUpdate = true;
+    this.mesh.geometry.computeVertexNormals();
   }
 }
 
@@ -214,6 +248,8 @@ export function calculateConvexHull(points) {
   var faces = [];
   var vertices = [];
   var normals = [];
+  var indices = [];
+  var offsets = [];
   // generate vertices and normals
   var hull = new ConvexHull().setFromPoints(points);
 
@@ -229,10 +265,12 @@ export function calculateConvexHull(points) {
       var point = edge.head().point;
 
       vertices.push(point.x, point.y, point.z);
+      indices.push(point.atomIndex);
+      offsets.push(point.offset);
       normals.push(face.normal.x, face.normal.y, face.normal.z);
 
       edge = edge.next;
     } while (edge !== face.edge);
   }
-  return { hull, vertices, normals };
+  return { hull, vertices, normals, indices, offsets };
 }
