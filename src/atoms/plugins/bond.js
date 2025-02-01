@@ -703,11 +703,11 @@ export function buildBondMap(bondList, atoms, settings, modelSticks) {
     // with offset
     const key1 = index1 + "-" + bond[2].join("-");
     if (!bondMapWithOffset[key1]) {
-      bondMapWithOffset[key1] = { atomIndex: index1, sticks: [], stickCaps: [], dashedLines: [], solidLines: [], springs: [] };
+      bondMapWithOffset[key1] = { atomIndex: index1, offset: bond[2], sticks: [], stickCaps: [], dashedLines: [], solidLines: [], springs: [] };
     }
     const key2 = index2 + "-" + bond[3].join("-");
     if (!bondMapWithOffset[key2]) {
-      bondMapWithOffset[key2] = { atomIndex: index2, sticks: [], stickCaps: [], dashedLines: [], solidLines: [], springs: [] };
+      bondMapWithOffset[key2] = { atomIndex: index2, offset: bond[3], sticks: [], stickCaps: [], dashedLines: [], solidLines: [], springs: [] };
     }
     // Split the bondList into three categories based on bond type
     const key = atoms.symbols[index1] + "-" + atoms.symbols[index2];
