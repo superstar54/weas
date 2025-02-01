@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>WEAS Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
   </head>
   <body>
     <div id="viewer" style="position: relative; width: 600px; height: 400px"></div>
@@ -18,24 +19,33 @@
         return await response.text();
       }
 
-      let domElement = document.getElementById("viewer");
-      // read atoms from file
-      const filename = "Li2Mn3NiO8.cif";
-      fetchFile(filename).then((fileContent) => {
-        const atoms = weas.parseCIF(fileContent);
-        // generate a trajectory by add random displacement to the atoms
+      function generateReproducibleTrajectory(atoms, numFrames, seed = 42) {
         const trajectory = [];
-        for (let i = 0; i < 10; i++) {
+        const rng = new Math.seedrandom(seed); // Seeded random number generator
+
+        for (let i = 0; i < numFrames; i++) {
           const newAtoms = atoms.copy();
           const positions = newAtoms.positions;
           for (let j = 0; j < positions.length; j++) {
-            positions[j][0] += Math.random() * 0.2 - 0.1;
-            positions[j][1] += Math.random() * 0.2 - 0.1;
-            positions[j][2] += Math.random() * 0.2 - 0.1;
+            positions[j][0] += rng() * 0.2 - 0.1;
+            positions[j][1] += rng() * 0.2 - 0.1;
+            positions[j][2] += rng() * 0.2 - 0.1;
           }
           newAtoms.positions = positions;
           trajectory.push(newAtoms);
         }
+        return trajectory;
+      }
+
+      let domElement = document.getElementById("viewer");
+      const filename = "Li2Mn3NiO8.cif";
+
+      fetchFile(filename).then((fileContent) => {
+        const atoms = weas.parseCIF(fileContent);
+
+        // Generate a reproducible trajectory
+        const trajectory = generateReproducibleTrajectory(atoms, 10, "my-seed"); // Can set any seed string/number
+
         const editor = new weas.WEAS({ domElement });
         editor.avr.atoms = trajectory;
         editor.avr.colorType = "VESTA";
