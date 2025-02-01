@@ -128,9 +128,9 @@ export class AtomManager {
     // atoms to be drawn, boundary atoms, and the bonded atoms
     // merge the boundaryList and the bondedAtoms
     this.viewer.imageAtomsList = this.viewer.bondedAtoms["atoms"].concat(this.viewer.boundaryList);
-    // if boundaryList length > 0, draw boundary atoms
+    this.imageAtomMap = createImageAtomsMapping(this.viewer.imageAtomsList);
+    // if imageAtomsList length > 0, draw image atoms
     if (this.viewer.imageAtomsList.length > 0) {
-      // draw boundary atoms
       const imageAtomsList = getImageAtoms(this.viewer.atoms, this.viewer.imageAtomsList);
       // get the models, the indices and scales should read from this.viewer.atomScales
       let atomScales = new Array(imageAtomsList.getAtomsCount()).fill(1);
@@ -179,10 +179,10 @@ export class AtomManager {
      */
     // this.logger.debug("this.viewer.imageAtomsList: ", this.viewer.imageAtomsList);
     // this.logger.debug("updateImageAtomsMesh: ", atomIndex);
-    // this.logger.debug("this.viewer.boundaryMap[atomIndex]:", this.viewer.boundaryMap[atomIndex]);
-    if (this.viewer.imageAtomsList.length > 0 && this.viewer.boundaryMap[atomIndex]) {
+    // this.logger.debug("this.imageAtomMap[atomIndex]:", this.imageAtomMap[atomIndex]);
+    if (this.viewer.imageAtomsList.length > 0 && this.imageAtomMap[atomIndex]) {
       // this.logger.debug("updateImageAtomsMesh: ", atomIndex);
-      const atomList = this.viewer.boundaryMap[atomIndex];
+      const atomList = this.imageAtomMap[atomIndex];
       // loop all atomList and update the boundary atoms
       atomList.forEach((atom) => {
         const boundaryAtomIndex = atom.index;
@@ -241,4 +241,24 @@ export class AtomManager {
     });
     mesh.instanceMatrix.needsUpdate = true;
   }
+}
+
+export function createImageAtomsMapping(imageAtomsList) {
+  /*
+    include both the index and the offset in the imageAtomMap.
+    */
+  const imageAtomMap = {};
+
+  imageAtomsList.forEach((imageAtoms, index) => {
+    const atomIndex = imageAtoms[0];
+    const offset = imageAtoms[1];
+
+    if (imageAtomMap[atomIndex]) {
+      imageAtomMap[atomIndex].push({ index: index, offset: offset });
+    } else {
+      imageAtomMap[atomIndex] = [{ index: index, offset: offset }];
+    }
+  });
+
+  return imageAtomMap;
 }

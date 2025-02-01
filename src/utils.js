@@ -35,6 +35,9 @@ export function clearGroup(scene, group) {
 }
 
 export function clearObject(scene, obj) {
+  if (obj === null) {
+    return;
+  }
   // remove all children
   if (obj.children) {
     obj.remove(...obj.children);
