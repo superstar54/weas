@@ -39,6 +39,7 @@ class AtomsViewer {
     this.backgroundColor = viewerSettings.backgroundColor;
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.debug = viewerSettings.debug;
+    this.continuousUpdate = viewerSettings.continuousUpdate;
     this._currentFrame = 0;
     this.logger = new Logger(viewerSettings.logLevel || "warn"); // Default log level is "warn"
     this.trajectory = [new Atoms()];
@@ -131,10 +132,16 @@ class AtomsViewer {
     }
     // update the atoms
     this.atomManager.updateAtomMesh(null, atoms);
-    // update the bonds
-    this.bondManager.updateBondMesh(null, atoms);
-    // update the polyhedra
-    this.polyhedraManager.updatePolyhedraMesh(null, atoms);
+    // if in playing mode, we only update the mesh to avoid performance issue
+    if (this.isPlaying) {
+      // update the bonds
+      this.bondManager.updateBondMesh(null, atoms);
+      // update the polyhedra
+      this.polyhedraManager.updatePolyhedraMesh(null, atoms);
+    } else {
+      // re-draw the models to update the image atoms, bonds and polyhedra
+      this.drawModels();
+    }
     // update vector fields related to the atoms attribute
     this.VFManager.updateArrowMesh(null, atoms);
     // update cell
@@ -151,6 +158,7 @@ class AtomsViewer {
     }
     this._currentFrame = newValue;
     this.lastFrameTime = Date.now(); // Update the last frame time
+
     this.updateFrame(newValue);
     this.tjs.render();
   }

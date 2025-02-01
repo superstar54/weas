@@ -252,7 +252,18 @@ class AtomsGUI {
     });
 
     this.timeline.addEventListener("input", () => {
-      this.viewer.currentFrame = parseInt(this.timeline.value, 10);
+      // If dragging, prevent unnecessary redraws
+      if (this.viewer.weas.eventHandlers.isDragging & !this.viewer.continuousUpdate) {
+        this.timelineIsDragging = true;
+      } else {
+        this.timelineIsDragging = false; // Allow full redraw
+        this.viewer.currentFrame = parseInt(this.timeline.value, 10);
+      }
+    });
+    // Ensure full redraw when mouse is released
+    this.timeline.addEventListener("mouseup", () => {
+      this.timelineIsDragging = false; // Force full redraw
+      this.viewer.currentFrame = parseInt(this.timeline.value, 10); // Ensure last frame is applied
     });
   }
 
