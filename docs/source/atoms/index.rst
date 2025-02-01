@@ -17,3 +17,4 @@ Atoms
     measurement
     boundary
     highlight
+    animation
