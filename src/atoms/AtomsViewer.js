@@ -39,6 +39,7 @@ class AtomsViewer {
     this.backgroundColor = viewerSettings.backgroundColor;
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.debug = viewerSettings.debug;
+    this.continuousUpdate = viewerSettings.continuousUpdate;
     this._currentFrame = 0;
     this.logger = new Logger(viewerSettings.logLevel || "warn"); // Default log level is "warn"
     this.trajectory = [new Atoms()];
@@ -68,7 +69,6 @@ class AtomsViewer {
   init(atoms) {
     this.volumetricData = null;
     this.lastFrameTime = Date.now();
-    this.continuousUpdate = true;
     this.selectedAtomsLabelElement = document.createElement("div");
     this.selectedAtomsLabelElement.id = "selectedAtomSymbol";
     this.tjs.containerElement.appendChild(this.selectedAtomsLabelElement);
