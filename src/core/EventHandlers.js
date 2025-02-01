@@ -25,6 +25,7 @@ class EventHandlers {
     this.previousMousePosition = new THREE.Vector2();
     this.boxselect = false;
     this.dragMode = null; // 'move' or 'rotate'
+    this.isDragging = false;
   }
 
   setupEventListeners() {
@@ -47,6 +48,7 @@ class EventHandlers {
   onMouseUp(event) {
     // Implement the logic for mouse up events
     this.isMouseDown = false;
+    this.isDragging = false;
     this.mouseUpPosition.set(event.clientX, event.clientY);
   }
 
@@ -54,6 +56,18 @@ class EventHandlers {
     // Implement the logic for mouse move events
     this.previousMousePosition.copy(this.currentMousePosition);
     this.currentMousePosition.set(event.clientX, event.clientY);
+    // check if the mouse is dragging
+    if (this.isMouseDown) {
+      // calculate the distance the mouse moved
+      const dx = event.clientX - this.mouseDownPosition.x;
+      const dy = event.clientY - this.mouseDownPosition.y;
+      const distanceMoved = Math.sqrt(dx * dx + dy * dy);
+      if (distanceMoved > 5) {
+        // customize the threshold as needed)
+        this.isDragging = true;
+      }
+    }
+
     if (this.transformControls.mode !== null) {
       this.transformControls.onMouseMove(event);
     } else if (this.isMouseDown && event.shiftKey) {
@@ -145,13 +159,9 @@ class EventHandlers {
     }
     // hdie the operation last operation GUI
     this.weas.ops.hideGUI();
-    // Calculate the distance the mouse moved
-    const dx = event.clientX - this.mouseDownPosition.x;
-    const dy = event.clientY - this.mouseDownPosition.y;
-    const distanceMoved = Math.sqrt(dx * dx + dy * dy);
 
-    // Check if the mouse was dragged (customize the threshold as needed)
-    if (distanceMoved > 5) {
+    // Check if the mouse was dragged
+    if (this.isDragging) {
       return; // Ignore clicks that involve dragging
     }
     this.weas.selectionManager.pickSelection(event);
