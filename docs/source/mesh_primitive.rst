@@ -37,51 +37,144 @@ If you want to draw hundreds of cubes, spheres, or any other geometry, you can u
 The following example shows how to use the mesh primitive to draw two cubes and a sphere.
 
 
-.. figure:: _static/images/mesh_primitive_example.png
-   :align: center
-   :width: 50%
+The following example shows how to draw two cubes and a cylinder.
 
-.. code-block:: JavaScript
+.. code-block:: html
 
-    data = [
-        {
-            "type": "cube",
-            "data": [
-                {
-                    "positions": [-5, 0, 0],
-                    "size": 2,
-                    "scale": [1, 0.5, 1],
-                    "rotation": [0, 0, 0]
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <title>WEAS Molecule</title>
+      </head>
+      <body>
+        <div id="viewer" style="position: relative; width: 600px; height: 600px"></div>
+        <script type="module">
+          import { WEAS, Atoms } from 'https://unpkg.com/weas/dist/weas.mjs';
+          let domElement = document.getElementById("viewer");
+          let data = [
+            {
+                "type": "cube",
+                "materialType": "Standard",
+                "shape": {
+                "width": 1,
+                "height": 1,
+                "depth": 1
                 },
+                "instances": [
                 {
-                    "positions": [5, 0, 1],
-                    "size": 1,
-                    "scale": [1, 0.5, 1],
-                    "rotation": [1, 1, 0],
-                    "color": "#bd0d87"
-                }
-            ]
-        },
-        {
-            "type": "cylinder",
-            "data": [
+                            "position": [-5, 0, 0],
+                            "size": 2,
+                            "scale": [1, 0.5, 1],
+                            "rotation": [0, 0, 0]
+                        },
+                        {
+                            "position": [5, 0, 1],
+                            "size": 1,
+                            "scale": [1, 0.5, 1],
+                            "rotation": [1, 1, 0],
+                            "color": "#bd0d87"
+                        }
+                ]
+            },
+            {
+                "type": "cylinder",
+                "shape": {
+                "radiusTop": 1,
+                "radiusBottom": 1,
+                "height": 1,
+                "radialSegments": 12,
+                "heightSegments": 1
+                },
+                "instances": [
                 {
-                    "positions": [0, 0, 0],
-                    "segments": 12,
-                    "radius": 1,
-                    "depth": 5,
-                    "scale": [1, 1, 1],
-                    "rotation": [0, 0, 0],
-                    "color": "#0d87bd"
-                }
+                            "position": [0, 0, 0],
+                            "segments": 12,
+                            "radius": 1,
+                            "scale": [1, 5, 1],
+                            "rotation": [0, 0, 0],
+                            "color": "#0d87bd"
+                        }
+                ]
+            },
             ]
-        }
-    ]
+          let editor = new WEAS({ domElement });
+          editor.instancedMeshPrimitive.fromSettings(data);
+          editor.instancedMeshPrimitive.drawMesh();
+          editor.render();
+        </script>
+      </body>
+    </html>
 
-    let editor = new weas.WEAS({ domElement });
-    editor.instancedMeshPrimitive.fromSettings(data);
-    editor.instancedMeshPrimitive.drawMesh();
-    editor.render();
+
+Here is the result of the above code:
+
+.. raw:: html
+
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <title>WEAS Molecule</title>
+      </head>
+      <body>
+        <div id="viewer" style="position: relative; width: 600px; height: 600px"></div>
+        <script type="module">
+          import { WEAS, Atoms } from 'https://unpkg.com/weas/dist/weas.mjs';
+          let domElement = document.getElementById("viewer");
+          let data = [
+            {
+                "type": "cube",
+                "materialType": "Standard",
+                "shape": {
+                "width": 1,
+                "height": 1,
+                "depth": 1
+                },
+                "instances": [
+                {
+                            "position": [-5, 0, 0],
+                            "size": 2,
+                            "scale": [1, 0.5, 1],
+                            "rotation": [0, 0, 0]
+                        },
+                        {
+                            "position": [5, 0, 1],
+                            "size": 1,
+                            "scale": [1, 0.5, 1],
+                            "rotation": [1, 1, 0],
+                            "color": "#bd0d87"
+                        }
+                ]
+            },
+            {
+                "type": "cylinder",
+                "shape": {
+                "radiusTop": 1,
+                "radiusBottom": 1,
+                "height": 1,
+                "radialSegments": 12,
+                "heightSegments": 1
+                },
+                "instances": [
+                {
+                            "position": [0, 0, 0],
+                            "segments": 12,
+                            "radius": 1,
+                            "scale": [1, 5, 1],
+                            "rotation": [0, 0, 0],
+                            "color": "#0d87bd"
+                        }
+                ]
+            },
+            ]
+          let editor = new WEAS({ domElement });
+          editor.instancedMeshPrimitive.fromSettings(data);
+          editor.instancedMeshPrimitive.drawMesh();
+          editor.render();
+        </script>
+      </body>
+    </html>
 
 
 Primitive Parameters
