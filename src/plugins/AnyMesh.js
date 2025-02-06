@@ -66,6 +66,7 @@ export class AnyMesh {
       geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
       const faces = new Uint32Array(setting.faces);
       geometry.setIndex(new THREE.BufferAttribute(faces, 1));
+      geometry.computeVertexNormals();
       const object = new THREE.Mesh(geometry, material);
       // set position
       object.position.set(setting.position[0], setting.position[1], setting.position[2]);
