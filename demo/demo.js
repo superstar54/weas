@@ -1,4 +1,4 @@
-import { WEAS, Atoms, Specie, parseXYZ, parseCIF, parseCube } from "../src/index.js"; // Adjust the path as necessary
+import { WEAS, Atoms, Specie, parseXYZ, parseCIF, parseCube, parseXSF } from "../src/index.js"; // Adjust the path as necessary
 import * as THREE from "three";
 
 window.THREE = THREE;
@@ -131,21 +131,25 @@ async function updateAtoms(filename, fileContent = null) {
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
       editor.avr.modelStyle = 2;
       break;
-    case "CoO.cif":
+    case "GaAs.xsf":
       editor.clear();
       structureData = fileContent || (await fetchFile(filename));
-      atoms = parseCIF(structureData);
-      // atoms = atoms.multiply(1, 1, 1);
-      editor.avr.atoms = atoms;
-      editor.avr.showBondedAtoms = true;
+      let xsfData = parseXSF(structureData);
+      editor.avr.atoms = xsfData.atoms;
+      editor.avr.volumetricData = xsfData.volumetricData;
+      editor.avr.isosurfaceManager.fromSettings({
+        positive: { isovalue: 0.15, mode: 1, step_size: 1 },
+        negative: { isovalue: -0.15, color: "#ff0000", mode: 1 },
+      });
+      // editor.avr.showBondedAtoms = true;
       editor.avr.colorType = "VESTA";
+      editor.avr.modelStyle = 1;
       editor.avr.boundary = [
-        [-0.01, 1.01],
-        [-0.01, 1.01],
-        [-0.01, 1.01],
+        [-0.05, 1.05],
+        [-0.05, 1.05],
+        [-0.05, 1.05],
       ];
-      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
-      editor.avr.modelStyle = 2;
+      editor.avr.drawModels();
       break;
     case "h2o-homo.cube":
       editor.clear();
@@ -153,7 +157,6 @@ async function updateAtoms(filename, fileContent = null) {
       let cubeData = parseCube(structureData);
       editor.avr.atoms = cubeData.atoms;
       editor.avr.volumetricData = cubeData.volumetricData;
-      // editor.avr.isosurfaceManager.addSetting(0.0002);
       editor.avr.isosurfaceManager.fromSettings({
         positive: { isovalue: 0.00002, mode: 1, step_size: 1 },
         negative: { isovalue: -0.00002, color: "#ff0000", mode: 1 },

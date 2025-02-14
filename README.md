@@ -9,7 +9,7 @@ The WEAS package is a JavaScript library designed to visualize and edit atomic s
 Features:
 
 - Model: space-filling, ball-stick, polyhedral.
-- Supported File types: CIF, XYZ, cube.
+- Supported File types: cif, xyz, cube, xsf, POSCAR.
 - Edit structure: move, rotate, delete, and replace atoms.
 - Support periodic boundary conditions.
 - Animation (view and edit).
