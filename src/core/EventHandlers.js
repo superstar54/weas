@@ -159,9 +159,10 @@ class EventHandlers {
     }
     // hdie the operation last operation GUI
     this.weas.ops.hideGUI();
-
-    // Check if the mouse was dragged
-    if (this.isDragging) {
+    const dx = event.clientX - this.mouseDownPosition.x;
+    const dy = event.clientY - this.mouseDownPosition.y;
+    const distanceMoved = Math.sqrt(dx * dx + dy * dy);
+    if (distanceMoved > 5) {
       return; // Ignore clicks that involve dragging
     }
     this.weas.selectionManager.pickSelection(event);
