@@ -815,8 +815,6 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) 
   const tree = new kdTree(points, distance, ["x", "y", "z"]);
   // Iterate over each atom with offset
   offsets.forEach(([atomIndex1, offset1], idx1) => {
-    // skip the atoms not in the original cell
-    if (offset1[0] != 0 || offset1[1] != 0 || offset1[2] != 0) return;
     const specie1 = atoms.symbols[atomIndex1];
     const radius1 = covalentRadii[specie1] * 1.1 || 1;
     const pos1 = positions[idx1];
@@ -830,6 +828,11 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) 
     potentialNeighbors.forEach((neighbor) => {
       const idx2 = neighbor[0].index;
       if (idx1 == idx2) return;
+      const offset2 = offsets[idx2][1];
+      // skip the both atoms are not in the original cell
+      if (offset1.some((v) => v !== 0) && offset2.some((v) => v !== 0)) {
+        return;
+      }
       const atomIndex2 = offsets[idx2][0];
       if (!include_self && atomIndex1 == atomIndex2) return;
       const key = specie1 + "-" + atoms.symbols[atomIndex2];
@@ -837,18 +840,21 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) 
       if (!cutoffs[key]) return;
       const pos2 = positions[idx2];
       const distance = calculateDistance(pos1, pos2);
-      // console.log(atomIndex1, atomIndex2, distance, cutoff);
+      // console.log(atomIndex1, atomIndex2, offset1, offset2, distance);
       if (distance < cutoffs[key].max && distance > cutoffs[key].min) {
-        neighborsList.push([atomIndex1, atomIndex2, offsets[idx2][1]]);
+        // we need shift the offset2 by offset1
+        const offset = offset2.map((value, index) => value - offset1[index]);
+        neighborsList.push([atomIndex1, atomIndex2, offset]);
         if (!neighborsMap[atomIndex1]) {
-          neighborsMap[atomIndex1] = [[atomIndex2, offsets[idx2][1]]];
+          neighborsMap[atomIndex1] = [[atomIndex2, offset]];
         } else {
-          neighborsMap[atomIndex1].push([atomIndex2, offsets[idx2][1]]);
+          if (!neighborsMap[atomIndex1].some(([idx, off]) => idx === atomIndex2 && off.every((v, i) => v === offset[i]))) {
+            neighborsMap[atomIndex1].push([atomIndex2, offset]);
+          }
         }
       }
     });
   });
-
   console.timeEnd("findNeighbors Time");
   return { list: neighborsList, map: neighborsMap };
 }
