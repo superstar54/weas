@@ -58,11 +58,10 @@ export class InstancedMeshPrimitive {
       const material = materials[materialType].clone();
       material.transparent = true; // Enable transparency
       material.opacity = setting.opacity || 1;
-      if (material.opacity < 1) {
-        material.depthWrite = false;
-        material.side = THREE.DoubleSide;
-      }
       const instancedMesh = new THREE.InstancedMesh(geometry, material, setting.instances.length);
+      if (material.opacity < 1) {
+        instancedMesh.renderOrder = 2;
+      }
       // set position, scale, and color for each instance
       setting.instances.forEach((instance, index) => {
         const dummy = new THREE.Object3D();
