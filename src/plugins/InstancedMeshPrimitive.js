@@ -3,12 +3,14 @@ import { clearObject } from "../utils.js";
 import { materials } from "../tools/materials.js";
 
 class Setting {
-  constructor({ type, shape, instances }) {
+  constructor({ type, shape, instances, materialType = "Standard", opacity = 1 }) {
     /* A class to store settings */
 
     this.type = type;
     this.shape = shape;
     this.instances = instances;
+    this.materialType = materialType;
+    this.opacity = opacity;
   }
 }
 
@@ -31,9 +33,9 @@ export class InstancedMeshPrimitive {
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting({ type, shape, instances }) {
+  addSetting({ type, shape, instances, materialType = "Standard", opacity = 1 }) {
     /* Add a new setting */
-    const setting = new Setting({ type, shape, instances });
+    const setting = new Setting({ type, shape, instances, materialType, opacity });
     this.settings.push(setting);
   }
 
@@ -54,7 +56,12 @@ export class InstancedMeshPrimitive {
       const geometry = this.getGeometry(setting);
       const materialType = setting.materialType || "Standard";
       const material = materials[materialType].clone();
-      console.log("setting: ", setting);
+      material.transparent = true; // Enable transparency
+      material.opacity = setting.opacity || 1;
+      if (material.opacity < 1) {
+        material.depthWrite = false;
+        material.side = THREE.DoubleSide;
+      }
       const instancedMesh = new THREE.InstancedMesh(geometry, material, setting.instances.length);
       // set position, scale, and color for each instance
       setting.instances.forEach((instance, index) => {
