@@ -50,9 +50,7 @@ export class AnyMesh {
 
   drawMesh() {
     /* Draw Mesh*/
-    console.log("drawMesh");
     this.clearMeshes();
-    // console.log("this.settings: ", this.settings);
     this.settings.forEach((setting) => {
       const materialType = setting.materialType || "Standard";
       const material = materials[materialType].clone();

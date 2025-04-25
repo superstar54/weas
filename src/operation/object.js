@@ -24,7 +24,6 @@ class DeleteOperation extends BaseOperation {
   }
 
   undo() {
-    console.log("undo delete");
     if (this.indices.length > 0) {
       this.weas.avr.atoms = this.initialAtoms.copy();
     }
@@ -65,7 +64,6 @@ class CopyOperation extends BaseOperation {
   }
 
   undo() {
-    console.log("Undo copy operation.");
     if (this.indices.length > 0) {
       this.weas.avr.atoms = this.initialAtoms.copy();
     }

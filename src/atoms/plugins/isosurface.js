@@ -137,9 +137,7 @@ export class Isosurface {
       for (let i = 0; i < isovalues.length; i++) {
         const isovalue = isovalues[i];
         this.viewer.logger.debug("isovalue: ", isovalue);
-        console.time("marchingCubes Time");
         var isoData = marchingCubes(dims, data, null, isovalue, setting.step_size);
-        console.timeEnd("marchingCubes Time");
 
         //
         // Convert positions to real positions

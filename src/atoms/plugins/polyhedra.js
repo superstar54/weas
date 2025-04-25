@@ -102,8 +102,6 @@ export class PolyhedraManager {
     /*
       Draw polyhedra using the ConvexGeometry class from three.js
     */
-    // console.log("bondList: ", bondList);
-    // console.log("polyhedras: ", polyhedras);
     const allVertices = [];
     const allNormals = [];
     const allColors = [];
@@ -112,8 +110,6 @@ export class PolyhedraManager {
       const polyhedra = polyhedras[key];
       const verticesData = [];
       let new_position;
-      // console.log("key: ", key);
-      // console.log("polyhedra: ", polyhedra);
       // Assuming bonds.length is the number of verticesData
       for (const bondData of polyhedra.sticks) {
         const bond = bondList[bondData[0]];
@@ -229,7 +225,6 @@ export function filterBondMap(bondMap, symbols, elements, modelPolyhedras) {
     are in a specified list of elements (elements)
     */
   const filteredMap = {};
-  // console.log("bondMap: ", bondMap);
 
   Object.keys(bondMap).forEach((key) => {
     const atomIndex = bondMap[key]["atomIndex"];

@@ -298,8 +298,6 @@ class AtomsGUI {
     // Positioning based on configuration
     this.setLegendPosition(legendContainer);
 
-    console.log("settings: ", this.viewer.atomManager.settings);
-
     // Add entries for each unique element
     Object.entries(this.viewer.atomManager.settings).forEach(([symbol, setting]) => {
       const legendEntry = document.createElement("div");
@@ -314,8 +312,6 @@ class AtomsGUI {
       const context = sphereCanvas.getContext("2d");
       context.fillStyle = `#${setting.color.getHexString()}`;
       const radius = setting.radius * 10;
-      console.log("color: ", context.fillStyle);
-      console.log("radius: ", radius);
       context.beginPath();
       context.arc(10, 10, radius, 0, Math.PI * 2);
       context.fill();

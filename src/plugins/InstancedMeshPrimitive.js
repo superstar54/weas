@@ -49,9 +49,7 @@ export class InstancedMeshPrimitive {
 
   drawMesh() {
     /* Draw Mesh*/
-    console.log("drawMesh");
     this.clearMeshes();
-    // console.log("this.settings: ", this.settings);
     this.settings.forEach((setting) => {
       const geometry = this.getGeometry(setting);
       const materialType = setting.materialType || "Standard";

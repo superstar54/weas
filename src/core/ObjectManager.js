@@ -83,7 +83,6 @@ export function createOutline(object, outlineScale = 1.1) {
 }
 
 export function removeOutline(object) {
-  console.log("removeOutline: ", object);
   if (object.userData.outlineMesh) {
     object.remove(object.userData.outlineMesh);
     object.userData.outlineMesh = undefined;
@@ -91,7 +90,6 @@ export function removeOutline(object) {
 }
 
 export function initVertexIndicators(object) {
-  console.log("initVertexIndicators: ", object);
   const vertices = object.geometry.attributes.position;
   const vertexCount = vertices.count;
   const pointsMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 5, sizeAttenuation: false });

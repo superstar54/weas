@@ -19,7 +19,6 @@ class ReplaceOperation extends BaseOperation {
   }
 
   undo() {
-    console.log("undo replace");
     this.weas.avr.atoms = this.initialAtoms.copy();
   }
 
@@ -62,7 +61,6 @@ class AddAtomOperation extends BaseOperation {
   }
 
   undo() {
-    console.log("undo add atom");
     this.weas.avr.atoms = this.initialAtoms.copy();
   }
 
@@ -134,7 +132,6 @@ class ColorByAttribute extends BaseOperation {
   }
 
   undo() {
-    console.log("undo color by attribute");
     this.weas._colorRamp = this.previousColorRamp;
     this.weas.colorBy = this.previousAttribute;
     this.weas.drawModels();

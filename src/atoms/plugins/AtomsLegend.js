@@ -50,8 +50,6 @@ export default class AtomsLegend {
     // max radius of settings
     const maxRadius = this.viewer.atomManager.getMaxRadius();
     const minRadius = this.viewer.atomManager.getMinRadius();
-    console.log("maxRadius: ", maxRadius);
-    console.log("minRadius: ", minRadius);
 
     Object.entries(this.viewer.atomManager.settings).forEach(([symbol, setting]) => {
       const message = `${symbol}`;
@@ -69,7 +67,6 @@ export default class AtomsLegend {
       const color = typeof setting.color === "string" ? new THREE.Color(setting.color) : setting.color;
 
       const scale = Math.min(2.0, Math.max(1, setting.radius));
-      console.log("scale: ", scale);
       const circleSprite = createCircleSprite(color, { scale: scale });
 
       // Position sprites

@@ -308,7 +308,6 @@ export function marchingCubes(dims, volume, bounds, isovalue, step_size = 1) {
   isovalue: threshold value
   step_size: optional step size for marching cubes algorithm. Default is 1
   */
-  console.log("marchingCubes");
 
   if (!bounds) {
     bounds = [[0, 0, 0], dims];

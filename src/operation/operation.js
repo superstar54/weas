@@ -60,8 +60,6 @@ export class OperationManager {
   }
 
   undo() {
-    console.log("undo");
-    console.log("undoStack: ", this.undoStack);
     if (this.undoStack.length > 0) {
       const operation = this.undoStack.pop();
       operation.undo();
@@ -71,8 +69,6 @@ export class OperationManager {
   }
 
   redo() {
-    console.log("redo");
-    console.log("redoStack: ", this.redoStack);
     if (this.redoStack.length > 0) {
       const operation = this.redoStack.pop();
       operation.redo();

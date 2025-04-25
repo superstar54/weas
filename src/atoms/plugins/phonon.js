@@ -33,13 +33,11 @@ export class Phonon {
     const natoms = this.atoms.positions.length;
     let atom_phase = [];
 
-    // console.log("addatomphase: ", this.addatomphase);
     if (this.addatomphase) {
       atom_phase = fractional_positions.map((position) => vec_dot(this.kpoint, position));
     } else {
       atom_phase = new Array(natoms).fill(0);
     }
-    console.log("atom_phase: ", atom_phase);
     for (let ix = 0; ix < nx; ix++) {
       for (let iy = 0; iy < ny; iy++) {
         for (let iz = 0; iz < nz; iz++) {
@@ -51,7 +49,6 @@ export class Phonon {
         }
       }
     }
-    // console.log("vibrations: ", this.vibrations);
   }
 
   // Get the trajectory of the phonon mode

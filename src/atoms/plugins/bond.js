@@ -130,7 +130,7 @@ export class BondManager {
   buildNeighborList() {
     this.buildBondDict();
     // find neighbor atoms in the original cell
-    this.viewer.neighbors = findNeighbors(this.viewer.originalAtoms, this.viewer.cutoffs);
+    this.viewer.neighbors = findNeighbors(this.viewer.originalAtoms, this.viewer.cutoffs, false, true, this.viewer.logger);
     this.viewer.logger.debug("neighbors: ", this.viewer.neighbors);
   }
 
@@ -162,7 +162,7 @@ export class BondManager {
     }
     // I don't add bonded atoms to offsets, because the bondlist will add them through the bondedAtoms["bonds"]
     // this.viewer.logger.debug("offsets: ", offsets);
-    this.bondList = buildBonds(this.viewer.originalAtoms, offsets, this.viewer.neighbors["map"], this.viewer._boundary, this.viewer.modelSticks, this.showOutBoundaryBonds);
+    this.bondList = buildBonds(this.viewer.originalAtoms, offsets, this.viewer.neighbors["map"], this.viewer._boundary, this.viewer.modelSticks, this.showOutBoundaryBonds, this.viewer.logger);
     // loop the bondedAtoms["bonds"] and add the bonds to the bondList
     this.viewer.bondedAtoms["bonds"].forEach((bond) => {
       // if key not in the settings, skip
@@ -181,8 +181,28 @@ export class BondManager {
       atomColors = this.viewer.atomColors;
     }
 
-    const stickBondMesh = drawStick(this.viewer.originalAtoms, this.bondList, this.bondMap["sticks"], this.viewer.cutoffs, this.bondRadius, this.viewer._materialType, atomColors);
-    const { bondMesh, bondCap } = drawStick(this.viewer.originalAtoms, this.bondList, this.bondMap["stickCaps"], this.viewer.cutoffs, this.bondRadius, this.viewer._materialType, atomColors, true);
+    const stickBondMesh = drawStick(
+      this.viewer.originalAtoms,
+      this.bondList,
+      this.bondMap["sticks"],
+      this.viewer.cutoffs,
+      this.bondRadius,
+      this.viewer._materialType,
+      atomColors,
+      false,
+      this.viewer.logger,
+    );
+    const { bondMesh, bondCap } = drawStick(
+      this.viewer.originalAtoms,
+      this.bondList,
+      this.bondMap["stickCaps"],
+      this.viewer.cutoffs,
+      this.bondRadius,
+      this.viewer._materialType,
+      atomColors,
+      true,
+      this.viewer.logger,
+    );
     let dashedBondLine;
     if (this.showHydrogenBonds) {
       dashedBondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["dashedLines"], this.viewer.cutoffs, "dashed", atomColors);
@@ -347,7 +367,7 @@ export class BondManager {
   }
 }
 
-export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, materialType = "standard", atomColors = null, withCap = false) {
+export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, materialType = "standard", atomColors = null, withCap = false, logger = console) {
   /* Draw bonds between atoms.
   atoms: the atoms object
   bondList: list of bonds, each bond is a list of 4 elements:
@@ -358,7 +378,7 @@ export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, 
   Returns:
   instancedMesh: the instancedMesh object of the bonds
   */
-  console.time("drawBonds Time");
+  const t0 = performance.now();
 
   const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1); // Adjust segment count as needed
   const sphereGeometry = new THREE.SphereGeometry(1, 8, 8); // Sphere geometry for caps
@@ -421,7 +441,8 @@ export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, 
     bondCap.userData.objectMode = "edit";
   }
 
-  console.timeEnd("drawBonds Time");
+  const t1 = performance.now();
+  logger.debug("drawStick Time: ", t1 - t0);
 
   return withCap ? { bondMesh, bondCap } : bondMesh;
 }
@@ -439,7 +460,6 @@ export function drawLine(atoms, bondList, bondIndices, settings, lineType = "das
   if (bondIndices === undefined || bondIndices.length === 0) {
     return null;
   }
-  console.time("draw lineBonds Time");
 
   const vertices = [];
   const colors = [];
@@ -499,7 +519,6 @@ export function drawLine(atoms, bondList, bondIndices, settings, lineType = "das
   lineSegments.userData.uuid = atoms.uuid;
   lineSegments.userData.objectMode = "edit";
 
-  console.timeEnd("drawDashedBonds Time");
   return lineSegments;
 }
 
@@ -539,8 +558,6 @@ export function searchBondedAtoms(symbols, atomsList, neighbors, modelSticks) {
   [atomIndex1, atomIndex2, offset1, offset2]
   */
   // search atoms bonded to atoms to be drawn
-  console.time("searchBondedAtoms Time");
-  // console.log("modelSticks: ", modelSticks);
   let bondedAtomList = [];
   let bondList = [];
   atomsList.forEach((atom) => {
@@ -550,17 +567,14 @@ export function searchBondedAtoms(symbols, atomsList, neighbors, modelSticks) {
     }
     // only find the atoms that are in the elementsWithPolyhedra
     if (!elementsWithPolyhedra.includes(symbols[atomIndex])) {
-      // console.log("skip :", symbols[atomIndex])
       return;
     }
-    // console.log("Atom: ", atomIndex, symbols[atomIndex], atom[1]);
     const offset = atom[1];
     const neighborsList = neighbors["map"][atomIndex];
     // skip if the atom has no neighbors
     if (neighborsList === undefined) {
       return;
     }
-    // console.log("neighborsList: ", neighborsList)
     // loop neighborsList and find the atoms bonded to the boundary atoms
     neighborsList.forEach((neighbor) => {
       const neighborIndex = neighbor[0];
@@ -573,18 +587,16 @@ export function searchBondedAtoms(symbols, atomsList, neighbors, modelSticks) {
       // check if the neighbor atom is not in the original cell
       if (newOffset[0] != 0 || newOffset[1] != 0 || newOffset[2] != 0) {
         const bondedAtom = [neighborIndex, newOffset];
-        // console.log("Add atom : ", bondedAtom);
         bondedAtomList.push(bondedAtom);
         bondList.push([atomIndex, neighborIndex, offset, newOffset]);
         bondList.push([neighborIndex, atomIndex, newOffset, offset]);
       }
     });
   });
-  console.timeEnd("searchBondedAtoms Time");
   return { atoms: bondedAtomList, bonds: bondList };
 }
 
-export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks, showOutBoundaryBonds = false) {
+export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks, showOutBoundaryBonds = false, logger = console) {
   /* build bonds between atoms
   atoms: list of atoms to be drawn
   offsets: list of offsets for each atom
@@ -597,11 +609,7 @@ export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks, sho
   [atomIndex1, atomIndex2, offset1, offset2]
   */
   // Start timer for buildBonds
-  console.time("buildBonds Time");
-  // console.log("neighbors: ", neighbors);
-  // console.log("buildBond, offsets: ", offsets);
-  // console.log("boundary: ", boundary);
-  // console.log("modelSticks: ", modelSticks);
+  const t0 = performance.now();
   const bonds = [];
   // if the cell is undefined,
   // no boundary condition, just loop all offsets and find the neighbors
@@ -628,7 +636,6 @@ export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks, sho
   } else {
     // loop all offsets and find the neighbors
     const fract_positions = atoms.calculateFractionalCoordinates();
-    // console.log("fract_positions: ", fract_positions)
     for (let i = 0; i < offsets.length; i++) {
       const atomIndex1 = offsets[i][0];
       const offset1 = offsets[i][1];
@@ -665,13 +672,12 @@ export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks, sho
           newPosition[2] <= boundary[2][1]
         ) {
           bonds.push([atomIndex1, atomIndex2, offset1, offsetSum]);
-          // console.log(atomIndex1, atomIndex2, offset1, offsetSum);
         }
       }
     }
   }
-  // End timer for buildBonds
-  console.timeEnd("buildBonds Time");
+  const t1 = performance.now();
+  logger.debug("buildBonds Time: ", t1 - t0);
 
   return bonds;
 }
@@ -758,7 +764,7 @@ export function buildBondMap(bondList, atoms, settings, modelSticks) {
   return { bondMap: bondMap, bondMapWithOffset: bondMapWithOffset, sticks, stickCaps, dashedLines, solidLines, springs };
 }
 
-export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) {
+export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true, logger = console) {
   /* Function to find neighbors within a certain cutoff
   Args:
     atoms: Atoms object
@@ -766,12 +772,11 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) 
     include_self: Include self in the neighbors list
     pbc: Periodic boundary conditions
   */
-  console.time("findNeighbors Time");
+  const t0 = performance.now();
   // Create offsets for each atom
   let offsets = atoms.positions.map((_, index) => [index, [0, 0, 0]]);
   let offsets1;
   const maxCutoff = Math.max(...Object.values(cutoffs).map((cutoff) => cutoff.max));
-  // console.log("maxCutoff: ", maxCutoff);
   // if pbc is true, include the atoms just outside the boundary with maxCutoff
   if (pbc) {
     // calculate the boundary using max cutoff
@@ -840,7 +845,6 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) 
       if (!cutoffs[key]) return;
       const pos2 = positions[idx2];
       const distance = calculateDistance(pos1, pos2);
-      // console.log(atomIndex1, atomIndex2, offset1, offset2, distance);
       if (distance < cutoffs[key].max && distance > cutoffs[key].min) {
         // we need shift the offset2 by offset1
         const offset = offset2.map((value, index) => value - offset1[index]);
@@ -855,7 +859,8 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true) 
       }
     });
   });
-  console.timeEnd("findNeighbors Time");
+  const t1 = performance.now();
+  logger.info(`findNeighbors completed in ${(t1 - t0).toFixed(2)} ms`);
   return { list: neighborsList, map: neighborsMap };
 }
 

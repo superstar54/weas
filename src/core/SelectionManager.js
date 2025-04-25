@@ -31,7 +31,6 @@ export class SelectionManager {
   }
 
   set selectedObjects(objects) {
-    // console.log("Setting selected objects: ", objects);
     // skip nonSelectable objects
     objects = objects.filter((object) => {
       return !object.userData.notSelectable;
@@ -80,7 +79,6 @@ export class SelectionManager {
       }
       // if the object is lineSegments, return
       else if (object.isLineSegments) {
-        console.log("LineSegments selection not implemented");
         return;
       } else {
         // Handle normal mesh
@@ -119,13 +117,11 @@ export class SelectionManager {
       });
       if (isSelected) {
         // If the object is already selected, remove it from the selection
-        console.log("Removing object from selection: ", object);
         removeOutline(object);
         this.selectedObjects = this.selectedObjects.filter((selectedObject) => {
           return selectedObject !== object;
         });
       } else {
-        console.log("Adding object to selection: ", object);
         this.selectedObjects.push(object);
         createOutline(object, 1.1);
       }
@@ -166,7 +162,6 @@ export class SelectionManager {
     Object.keys(this.selectedInstances).forEach((objectUuid) => {
       const object = this.tjs.scene.getObjectByProperty("uuid", objectUuid);
       if (!object || !object.userData.vertexPoints) {
-        // console.log("Object or vertex points not found");
         return;
       }
 
@@ -190,7 +185,6 @@ export class SelectionManager {
       vertexPoints.geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
       vertexPoints.geometry.attributes.color.needsUpdate = true;
-      console.log("Colors updated for object:", objectUuid);
     });
   }
 
