@@ -41,7 +41,6 @@ export class TransformControls {
 
   enterMode(mode, mousePosition) {
     this.mode = mode;
-    console.log("Enter mode: ", this.mode);
     this.cameraDirection = new THREE.Vector3(0, 0, -1);
     this.cameraDirection.applyQuaternion(this.tjs.camera.quaternion);
     if (this.mode === "translate") {
@@ -65,7 +64,6 @@ export class TransformControls {
     } else if (this.mode === "scale") {
       this.scaleSelectedObjects(event);
     } else {
-      console.log("Invalid mode");
     }
   }
 
@@ -85,9 +83,7 @@ export class TransformControls {
       const scaleOperation = new ScaleOperation({ weas: this.weas, scale: scaleVector });
       this.weas.ops.execute(scaleOperation, false);
     } else {
-      console.log("Invalid mode");
     }
-    // console.log("confirm and exit transform mode");
     this.mode = null;
     this.initialAtomPositions.clear();
     // TODO: This is a temporary solution to fix the issue of intersection not working after moving atoms
@@ -108,7 +104,6 @@ export class TransformControls {
     }
     const mode = this.mode;
     this.mode = null;
-    console.log("Exit mode: ", mode);
     this.weas.avr.resetSelectedAtomsPositions(this.initialAtomPositions);
     this.weas.ops.hideGUI();
     // reset the selected objects positions, scales, and rotations
@@ -135,7 +130,6 @@ export class TransformControls {
       });
       this.centroid.divideScalar(this.weas.selectionManager.selectedObjects.length);
     } else {
-      console.log("No selected atoms or objects");
       this.mode = null;
       return;
     }
@@ -221,7 +215,6 @@ export class TransformControls {
     const initialNDC = this.getNDC(previousMousePosition);
     const newNDC = this.getNDC(currentMousePosition);
     if (initialNDC.equals(newNDC)) {
-      console.log("No mouse movement detected, skipping rotation.");
       return; // Skip further processing
     }
     // Calculate vectors from centroidNDC to initialNDC and newNDC

@@ -107,7 +107,6 @@ export class AtomManager {
   clearMeshes() {
     /* Remove highlighted atom meshes from the selectedAtomsMesh group */
     Object.values(this.meshes).forEach((mesh) => {
-      console.log("mesh: ", mesh);
       clearObject(this.scene, mesh);
     });
     this.meshes = {};
@@ -224,11 +223,9 @@ export class AtomManager {
     const position = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
     const scale = new THREE.Vector3();
-    console.log("settings: ", this.settings);
 
     indices.forEach((i) => {
       const instanceMatrix = new THREE.Matrix4();
-      console.log("symbols[i]: ", symbols[i]);
       const radius = this.settings[symbols[i]].radius || 1;
       mesh.getMatrixAt(i, instanceMatrix); // Get the original matrix of the instance
       // Decompose the original matrix into its components

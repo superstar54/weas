@@ -13,10 +13,8 @@ export function clearObjects(scene, uuid = null) {
     // if child is a group, remove all children
     // show type of child
     if (child instanceof THREE.Group) {
-      // console.log("clearing group: ", child);
       clearGroup(scene, child);
     } else if (!(child instanceof THREE.Camera) && !(child instanceof THREE.Light)) {
-      // console.log("clearing object: ", child.userData.type);
       clearObject(scene, child);
     }
   });
@@ -24,11 +22,9 @@ export function clearObjects(scene, uuid = null) {
 
 export function clearGroup(scene, group) {
   group.children.forEach((child) => {
-    // console.log("group child: ", child);
     if (child instanceof THREE.Group) {
       clearGroup(scene, child);
     } else {
-      // console.log("clearing group object: ", child);
       clearObject(scene, child);
     }
   });

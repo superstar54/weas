@@ -116,7 +116,6 @@ export class VolumeSlice {
       return;
     }
     this.viewer.logger.debug("drawSlices");
-    console.log("drawSlices");
     this.clearSlices();
     const volumetricData = this.viewer.volumetricData;
     const data = volumetricData.values;

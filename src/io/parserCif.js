@@ -13,10 +13,8 @@ export function parseCIF(cifString) {
   const cifData = CIFData.parseCIFBlock(cifString);
   cifData.applySymmetryOperations();
   data.cell = convertToMatrixFromABCAlphaBetaGamma([...cifData.unitCell.lengths, ...cifData.unitCell.angles]);
-  console.log("cifData: ", cifData);
   data.symbols = cifData.atoms.map((atom) => {
     // e.g., Fe2 to Fe
-    console.log(atom.type_symbol);
     const match = atom.type_symbol.match(/[A-Z][a-z]?/);
     return match ? match[0] : null;
   });

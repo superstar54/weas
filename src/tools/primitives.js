@@ -19,7 +19,6 @@ function createMesh(geometry, { position = [0, 0, 0], scale = [1, 1, 1], rotatio
 
 // Use the base function within specific shape functions
 function drawCube(options) {
-  console.log("options", options);
   const geometry = new THREE.BoxGeometry(options.size, options.size, options.size);
   return createMesh(geometry, options);
 }

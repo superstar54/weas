@@ -49,9 +49,7 @@ export class AtomLabelManager {
 
   drawAtomLabels() {
     /* Draw labels */
-    console.log("drawAtomLabels:");
     this.clearLabels();
-    // console.log("this.settings: ", this.settings);
     this.settings.forEach((setting) => {
       // if too many labels, skip
       if (setting.origins.length > 1000) {
@@ -92,7 +90,6 @@ export class AtomLabelManager {
     if atomIndex is null, update all bonds
     if atoms is null, use this.viewer.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
     */
-    // console.log("updateBondStick: ", atomIndex);
   }
 }
 

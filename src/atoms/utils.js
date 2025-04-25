@@ -27,7 +27,6 @@ export function convertColor(color) {
 }
 
 export function drawAtoms({ atoms, atomScales, settings, colors, materialType = "Standard", data_type = "atom" }) {
-  console.time("drawAtoms Time");
   // Create a basic sphere geometry for all atoms
   let radiusSegment = 32;
   let radius = 1;
@@ -45,7 +44,6 @@ export function drawAtoms({ atoms, atomScales, settings, colors, materialType = 
     radiusSegment = 32;
   }
   const atomGeometry = new THREE.SphereGeometry(1, radiusSegment, radiusSegment); // Unit sphere
-  // console.log("materialType: ", materialType);
   const material = materials[materialType].clone();
   // Create a single instanced mesh for all atoms
   // May be added in the future: allocating a sufficiently large amount of instances and temporarily and use updateRange
@@ -85,6 +83,5 @@ export function drawAtoms({ atoms, atomScales, settings, colors, materialType = 
     instancedMesh.instanceColor.needsUpdate = true;
   }
 
-  console.timeEnd("drawAtoms Time");
   return instancedMesh;
 }

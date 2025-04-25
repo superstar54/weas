@@ -31,9 +31,7 @@ export class Measurement {
     /* Reset the measurements */
     this.settings = {};
     Object.entries(this.meshes).forEach(([name, data]) => {
-      console.log(name, data);
       data.forEach((mesh) => {
-        console.log(mesh);
         this.scene.remove(mesh);
       });
     });
@@ -66,7 +64,6 @@ export class Measurement {
     } else if (indices.length === 4) {
       this.showDihedralAngle(name, indices);
     } else {
-      console.log("Invalid number of atoms for measurement");
     }
     // call the render function to update the scene
     this.viewer.tjs.render();
@@ -76,7 +73,6 @@ export class Measurement {
     const atomIndex = indices[0];
     const position = this.viewer.atoms.positions[atomIndex];
     const symbol = this.viewer.atoms.symbols[atomIndex];
-    console.log(position, symbol);
     // Construct and return the formatted string
     const text = `${symbol} [${position[0].toFixed(3)}, ${position[1].toFixed(3)}, ${position[2].toFixed(3)}]`;
     // lable shift by 1.0 in x direction

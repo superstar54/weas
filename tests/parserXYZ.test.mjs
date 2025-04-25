@@ -10,7 +10,6 @@ H 0.000000 0.757160 0.482080
 `;
 
     const atoms = parseXYZ(xyzString)[0];
-    console.log("atoms: ", atoms);
 
     expect(atoms).toBeDefined();
     expect(atoms.species).toHaveProperty("H");
@@ -19,7 +18,6 @@ H 0.000000 0.757160 0.482080
     expect(atoms.species["O"]).toEqual(new Specie("O"));
     expect(atoms.positions.length).toBe(3);
     expect(atoms.symbols).toEqual(["O", "H", "H"]);
-    console.log(atoms.positions[0]);
     expect(Array.from(atoms.positions[0])).toEqual([0, 0, 0]);
     expect(atoms.positions[1]).toEqual([0, 0, 0.9572]);
   });

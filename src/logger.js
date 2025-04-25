@@ -24,7 +24,6 @@ export class Logger {
 
   log(level, ...args) {
     if (this.levels[this.level] >= this.levels[level]) {
-      console.log(`${level.toUpperCase()}: ${this.getCallerInfo()}:`, ...args);
     }
   }
 

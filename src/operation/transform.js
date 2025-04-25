@@ -21,7 +21,6 @@ class TranslateOperation extends BaseOperation {
   }
 
   execute() {
-    console.log("execute translate");
     this.weas.avr.currentFrame = this.currentFrame;
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
     this.weas.avr.translateSelectedAtoms(this.vector, this.selectedAtomsIndices);
@@ -29,7 +28,6 @@ class TranslateOperation extends BaseOperation {
   }
 
   undo() {
-    console.log("undo translate");
     this.weas.avr.currentFrame = this.currentFrame;
     // negative vector
     const negativevector = this.vector.clone().negate();
@@ -97,7 +95,6 @@ class RotateOperation extends BaseOperation {
 
   undo() {
     // Undo logic
-    console.log("undo rotate");
     this.weas.avr.currentFrame = this.currentFrame;
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
     // rotate the atoms back
@@ -164,7 +161,6 @@ class ScaleOperation extends BaseOperation {
   }
 
   execute() {
-    console.log("execute scale");
     this.weas.avr.currentFrame = this.currentFrame;
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
     // this.weas.avr.scaleSelectedAtoms(this.scale, this.selectedAtomsIndices);
@@ -172,7 +168,6 @@ class ScaleOperation extends BaseOperation {
   }
 
   undo() {
-    console.log("undo scale");
     this.weas.avr.currentFrame = this.currentFrame;
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
     // scale back, by 1/scale

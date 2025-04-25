@@ -175,7 +175,6 @@ class EventHandlers {
     this.weas.avr.trajectory.uuid = THREE.MathUtils.generateUUID();
     const event = new CustomEvent("atomsUpdated", { detail: this.weas.avr.trajectory });
     this.tjs.containerElement.dispatchEvent(event);
-    // console.log("Dispatch atomsUpdated");
   }
 
   // Call this method after updating atoms
@@ -183,7 +182,6 @@ class EventHandlers {
     // create a list of picked atoms from the selectedAtomsIndices set
     const event = new CustomEvent("viewerUpdated", { detail: data });
     this.tjs.containerElement.dispatchEvent(event);
-    // console.log("Dispatch viewerUpdated");
   }
 }
 

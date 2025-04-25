@@ -1,6 +1,5 @@
 export function createViewpointButtons(weas, gui) {
   // Create a folder for the viewpoint buttons
-  console.log("weas", weas);
   const viewpointFolder = gui.addFolder("Viewpoint");
 
   // Create buttons for different viewpoints

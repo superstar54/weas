@@ -12,8 +12,6 @@ export function getAtomColors(atoms, colorBy, params) {
 
   let colors = [];
   let color;
-  // console.log("colorBy: ", colorBy);
-  // console.log("params: ", params);
   if (colorBy === "Random") {
     colors = [];
     atoms.symbols.forEach((symbol, globalIndex) => {

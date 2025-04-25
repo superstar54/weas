@@ -3,7 +3,6 @@ export class OperationSearchManager {
     this.weas = weas;
     // change the operations to an array
     this.operations = getAllOperations(ops);
-    console.log("operations", this.operations);
     this.overlay = this.createOverlay();
     this.bindEvents();
     this.updateSearchResults("");
@@ -103,7 +102,6 @@ export class OperationSearchManager {
 
   execute(operation) {
     // Placeholder for operation execution logic
-    console.log("Executing operation:", operation.name);
     // Add execution code
     const op = new operation({ weas: this.weas });
     this.weas.ops.execute(op);

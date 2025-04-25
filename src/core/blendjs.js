@@ -402,7 +402,6 @@ export class BlendJS {
 
   exportImage(resolution = 2) {
     // Render the scene first if not already rendering
-    console.log("Exporting image");
     // increasing the resolution significantly can cause the browser's canvas
     // to exceed the maximum allowable texture size
     // I set max resolution to 3, which works on my laptop
@@ -428,7 +427,6 @@ export class BlendJS {
 
   downloadImage(filenmae = "atomistic-model.png") {
     // Create a link and set the URL as the href
-    console.log("Downloading image");
     var imgData = this.exportImage();
     var link = document.createElement("a");
     link.href = imgData;
