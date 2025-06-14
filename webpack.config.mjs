@@ -1,21 +1,69 @@
-import path, { dirname } from "path";
+import path from "path";
 import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export default {
+// Put any shared rules/plugins here
+const common = {
   entry: "./src/index.js",
-  output: {
-    filename: "weas.mjs", // Use .mjs extension
-    path: path.resolve(__dirname, "dist"),
-    library: {
-      type: "module", // Set type as module
-    },
-    globalObject: "this",
+  module: {
+    rules: [
+      {
+        test: /\.[jt]sx?$/,
+        exclude: /node_modules/,
+        use: {
+          loader: "babel-loader",
+          options: {
+            presets: [
+              "@babel/preset-env",
+              // if you ever convert to TS:
+              // "@babel/preset-typescript",
+            ],
+          },
+        },
+      },
+      {
+        test: /\.css$/,
+        use: ["style-loader", "css-loader"],
+      },
+    ],
   },
-  experiments: {
-    outputModule: true, // Enable ECMAScript module output
+  resolve: {
+    extensions: [".js", ".mjs", ".json"],
   },
-  // ... other configurations like module rules for Babel, plugins, etc.
+  // any shared plugins…
 };
+
+export default [
+  // 1) ESM build
+  {
+    ...common,
+    output: {
+      path: path.resolve(__dirname, "dist"),
+      filename: "weas.mjs",
+      library: {
+        type: "module",
+      },
+      globalObject: "this",
+    },
+    experiments: {
+      outputModule: true,
+    },
+  },
+
+  // 2) CJS build
+  {
+    ...common,
+    output: {
+      path: path.resolve(__dirname, "dist"),
+      filename: "weas.cjs.js",
+      library: {
+        type: "commonjs2",
+      },
+      globalObject: "this",
+    },
+    // no outputModule experiment here
+  },
+];

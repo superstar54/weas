@@ -1,9 +1,15 @@
+// jest.config.js
 export default {
-  moduleFileExtensions: [
-    "mjs",
-    // must include "js" to pass validation https://github.com/facebook/jest/issues/12116
-    "js",
-  ],
-  testRegex: `test\.mjs$`,
+  // Transform both .js and .mjs via Babel
+  transform: {
+    "^.+\\.m?[tj]s$": "babel-jest",
+  },
+
+  // Only run your .mjs tests
+  testRegex: "\\.test\\.mjs$",
+
+  // Resolve these extensions
+  moduleFileExtensions: ["mjs", "js", "json", "node"],
+
   testEnvironment: "jsdom",
 };
