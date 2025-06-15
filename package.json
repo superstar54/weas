@@ -1,14 +1,14 @@
 {
   "name": "weas",
-  "version": "0.1.50",
+  "version": "0.1.51",
   "description": "WEAS (Web Environment for Atomic Structures) is a JavaScript library to visualize and manipulate atomistic structures in the browser",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
+  "style": "dist/style.css",
   "type": "module",
   "files": [
-    "dist/",
-    "src/style.css"
+    "dist/"
   ],
   "scripts": {
     "build": "webpack --mode production && cp src/style.css dist/",
