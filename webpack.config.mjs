@@ -42,7 +42,7 @@ export default [
     ...common,
     output: {
       path: path.resolve(__dirname, "dist"),
-      filename: "weas.mjs",
+      filename: "index.mjs",
       library: {
         type: "module",
       },
@@ -58,7 +58,7 @@ export default [
     ...common,
     output: {
       path: path.resolve(__dirname, "dist"),
-      filename: "weas.cjs.js",
+      filename: "index.cjs.js",
       library: {
         type: "commonjs2",
       },

@@ -1,4 +1,4 @@
-import { parseCIF } from "../dist/weas.mjs";
+import { parseCIF } from "../dist/index.mjs";
 
 describe("parseCIF with TiO2 CIF data", () => {
   test("correctly parses TiO2 CIF data and returns an Atoms instance with correct properties", () => {

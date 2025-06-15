@@ -1,4 +1,4 @@
-import { Specie, Atom, Atoms } from "../dist/weas.mjs";
+import { Specie, Atom, Atoms } from "../dist/index.mjs";
 
 describe("Specie class", () => {
   it("creates a new Specie instance correctly", () => {

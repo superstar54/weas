@@ -1,4 +1,4 @@
-import { parseXYZ, Specie } from "../dist/weas.mjs";
+import { parseXYZ, Specie } from "../dist/index.mjs";
 
 describe("parseXYZ", () => {
   it("parses valid XYZ data correctly", () => {
