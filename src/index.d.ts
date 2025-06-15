@@ -35,9 +35,9 @@ export declare class WEAS {
   /** The atoms viewer plugin */
   readonly avr: AtomsViewer;
   /** Instanced mesh primitive plugin */
-  readonly instancedMeshPrimitive: any;
+  readonly instancedMeshPrimitive: InstancedMeshPrimitive;
   /** AnyMesh plugin */
-  readonly anyMesh: any;
+  readonly anyMesh: AnyMesh;
 
   constructor(options: WEASOptions);
 
@@ -67,13 +67,335 @@ export interface AtomsViewerOptions {
  * 3D viewer for an Atoms structure.
  */
 export declare class AtomsViewer {
+  /**
+   * @param options.weas        The owning WEAS instance
+   * @param options.atoms       Initial Atoms array
+   * @param options.viewerConfig Viewer configuration overrides
+   */
   constructor(options: AtomsViewerOptions);
-  /** Render the atoms */
+
+  /** Unique identifier for this viewer */
+  readonly uuid: string;
+
+  /** Back-reference to the parent WEAS instance */
+  readonly weas: WEAS;
+
+  /** Underlying Three.js wrapper */
+  readonly tjs: any;
+
+  /** Manager for atom rendering */
+  readonly atomManager: any;
+  /** Manager for cell rendering */
+  readonly cellManager: CellManager;
+  /** Manager for bonded-atom highlighting */
+  readonly highlightManager: HighlightManager;
+  /** GUI integration manager */
+  readonly guiManager: any;
+  /** Manager for bonds */
+  readonly bondManager: BondManager;
+  /** Manager for boundary rendering */
+  readonly boundaryManager: BoundaryManager;
+  /** Manager for polyhedra rendering */
+  readonly polyhedraManager: any;
+  /** Manager for isosurface plugin */
+  readonly isosurfaceManager: Isosurface;
+  /** Manager for volume slicing */
+  readonly volumeSliceManager: any;
+  /** Manager for atom labels */
+  readonly ALManager: any;
+  /** Measurement helper */
+  readonly Measurement: any;
+  /** Vector-field helper */
+  readonly VFManager: VectorField;
+
+  /** The currently displayed Atoms object */
+  atoms: Atoms;
+  /** Render style/model index */
+  modelStyle: number;
+
+  /** Color‐by mode */
+  colorBy: string;
+  /** Color type */
+  colorType: string;
+  /** Color ramp settings */
+  colorRamp: any;
+  /** Radius type for atoms */
+  radiusType: string;
+  /** Material type for atoms */
+  materialType: string;
+  /** Atom label style */
+  atomLabelType: string;
+  /** Whether to show bonded atoms */
+  showBondedAtoms: boolean;
+  /** Boundary configuration */
+  boundary: any;
+  /** Atom scale factor */
+  atomScale: number;
+  /** Background color */
+  backgroundColor: string;
+  /** Indices of selected atoms */
+  selectedAtomsIndices: number[];
+  /** Trajectory frames */
+  trajectory: Atoms[];
+  /** Is animation playing */
+  isPlaying: boolean;
+  /** Frame duration (ms) */
+  frameDuration: number;
+  /** DOM element for selected‐atom labels */
+  selectedAtomsLabelElement: HTMLElement;
+  /** Any loaded volumetric data */
+  volumetricData: any;
+
+  /**
+   * Initialize the viewer with a set of Atoms.
+   */
+  init(atoms: Atoms[]): void;
+
+  /**
+   * Update the displayed Atoms (without full re‐init).
+   */
+  updateAtoms(atoms: Atoms[]): void;
+
+  /**
+   * Reset all viewer state (clears meshes, labels, etc).
+   */
+  reset(): void;
+
+  /**
+   * Perform a single render pass.
+   */
   render(): void;
-  /** Optional cleanup */
+
+  /**
+   * Remove all objects from the scene.
+   */
+  clear(): void;
+
+  /**
+   * Clean up WebGL contexts, event listeners, etc.
+   */
   destroy?(): void;
+
+  /**
+   * Bound animation loop callback.
+   */
+  animate: () => void;
 }
 
+/**
+ * Plugin for generating and rendering isosurfaces in the viewer.
+ */
+export declare class Isosurface {
+  /**
+   * @param viewer  The AtomsViewer instance this plugin attaches to
+   */
+  constructor(viewer: AtomsViewer);
+
+  /** Reference back to the viewer */
+  readonly viewer: AtomsViewer;
+
+  /** Three.js Scene where the meshes get added */
+  readonly scene: any;
+
+  /** Current isosurface settings (isovalue, color, mode, step_size) */
+  settings: Record<string, any>;
+
+  /** GUI folder for this plugin (if any) */
+  guiFolder: any;
+
+  /** Map from frame or key → generated Mesh objects */
+  meshes: Record<string, any>;
+}
+
+export declare class Phonon {
+  /**
+   * @param atoms          The Atoms object or collection to operate on
+   * @param kpoint         Optional k-point coordinates or data
+   * @param eigenvectors   Optional eigenvector data
+   * @param addatomphase   Whether to apply atomic phase to vibrations (default: true)
+   */
+  constructor(atoms: Atoms, kpoint?: any, eigenvectors?: any, addatomphase?: boolean);
+
+  /** The Atoms instance this plugin is bound to */
+  readonly atoms: Atoms;
+
+  /** K-point data (if provided) */
+  readonly kpoint: any;
+
+  /** Eigenvector data (if provided) */
+  readonly eigenvectors: any;
+
+  /** Whether atomic phase is added to the vibrations */
+  readonly addatomphase: boolean;
+
+  /** Computed vibration modes or geometry objects */
+  vibrations: any[];
+}
+/**
+ * Plugin for drawing vector fields in the viewer.
+ */
+export declare class VectorField {
+  /**
+   * @param viewer  The AtomsViewer instance this plugin attaches to
+   */
+  constructor(viewer: AtomsViewer);
+
+  /** Back‐reference to the viewer */
+  readonly viewer: AtomsViewer;
+
+  /** Three.js scene where the vectors are rendered */
+  readonly scene: any;
+
+  /** Internal “show” flag */
+  private _show: boolean;
+
+  /** Initialize the vector‐field plugin */
+  init(): void;
+}
+
+/**
+ * Plugin for managing bond rendering.
+ */
+export declare class BondManager {
+  /**
+   * @param viewer    The AtomsViewer instance
+   * @param settings  Optional settings object
+   */
+  constructor(
+    viewer: AtomsViewer,
+    settings?: {
+      hideLongBonds?: boolean;
+      showHydrogenBonds?: boolean;
+      showOutBoundaryBonds?: boolean;
+    },
+  );
+
+  readonly viewer: AtomsViewer;
+  readonly scene: any;
+  /** Runtime settings for bonds */
+  settings: Record<string, any>;
+  /** Map of bond‐meshes */
+  meshes: Record<string, any>;
+
+  /** Whether to hide overly long bonds */
+  hideLongBonds: boolean;
+  /** Whether to show hydrogen bonds */
+  showHydrogenBonds: boolean;
+  /** Whether to show bonds outside the boundary */
+  showOutBoundaryBonds: boolean;
+  /** Default bond radius */
+  bondRadius: number;
+
+  /** Initialize bond‐drawing routines */
+  init(): void;
+}
+
+/**
+ * Plugin for rendering periodic‐boundary cell outlines.
+ */
+export declare class BoundaryManager {
+  constructor(viewer: AtomsViewer);
+
+  readonly viewer: AtomsViewer;
+  readonly scene: any;
+  settings: Record<string, any>;
+  meshes: Record<string, any>;
+
+  /** Initialize boundary rendering */
+  init(): void;
+}
+
+/**
+ * Plugin for highlighting selected atoms.
+ */
+export declare class HighlightManager {
+  constructor(viewer: AtomsViewer);
+
+  readonly viewer: AtomsViewer;
+  readonly scene: any;
+  settings: Record<string, any>;
+  meshes: Record<string, any>;
+
+  /** Initialize highlighting routines */
+  init(): void;
+}
+
+/**
+ * Plugin for instanced‐mesh primitives (fast atom rendering).
+ */
+export declare class InstancedMeshPrimitive {
+  constructor(viewer: AtomsViewer);
+
+  readonly viewer: AtomsViewer;
+  readonly scene: any;
+  /** Settings arrays */
+  settings: any[];
+  /** Mesh instances */
+  meshes: any[];
+}
+
+/**
+ * Plugin for arbitrary mesh objects.
+ */
+export declare class AnyMesh {
+  constructor(viewer: AtomsViewer);
+
+  readonly viewer: AtomsViewer;
+  readonly scene: any;
+  settings: any[];
+  meshes: any[];
+}
+/**
+ * Plugin for rendering the unit‐cell and axes.
+ */
+export declare class CellManager {
+  /**
+   * @param viewer   The AtomsViewer instance this plugin attaches to
+   * @param settings Optional overrides for cell/axis display
+   */
+  constructor(
+    viewer: AtomsViewer,
+    settings?: {
+      showCell?: boolean;
+      showAxes?: boolean;
+      cellColor?: number;
+      cellLineWidth?: number;
+      axisColors?: { a: number; b: number; c: number };
+      axisRadius?: number;
+      axisConeHeight?: number;
+      axisConeRadius?: number;
+      axisSphereRadius?: number;
+    },
+  );
+
+  /** Back‐reference to the viewer */
+  readonly viewer: AtomsViewer;
+
+  /** The Three.js mesh representing the cell */
+  cellMesh: any | null;
+
+  /** The vectors (lines/cones) for each cell axis */
+  cellVectors: any | null;
+
+  /** Runtime settings for cell display */
+  settings: {
+    showCell: boolean;
+    showAxes: boolean;
+    cellColor: number;
+    cellLineWidth: number;
+    axisColors: { a: number; b: number; c: number };
+    axisRadius: number;
+    axisConeHeight: number;
+    axisConeRadius: number;
+    axisSphereRadius: number;
+  };
+
+  /** Internal flag for whether the cell is shown */
+  private _showCell: boolean;
+
+  /** Internal flag for whether the axes are shown */
+  private _showAxes: boolean;
+}
 /**
  * A single chemical specie.
  */
