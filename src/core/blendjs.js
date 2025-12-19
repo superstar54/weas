@@ -416,13 +416,69 @@ export class BlendJS {
     // Render the scene for high-res output
     this.render();
 
+    const compositeCanvas = document.createElement("canvas");
+    compositeCanvas.width = renderer.domElement.width;
+    compositeCanvas.height = renderer.domElement.height;
+    const compositeContext = compositeCanvas.getContext("2d");
+    compositeContext.drawImage(renderer.domElement, 0, 0);
+    this.drawLabelsToCanvas(compositeContext, compositeCanvas.width, compositeCanvas.height, highResPixelRatio);
     // Get the image data URL
-    var imgData = renderer.domElement.toDataURL("image/png");
+    var imgData = compositeCanvas.toDataURL("image/png");
 
     // Reset the pixel ratio to its original value
     renderer.setPixelRatio(originalPixelRatio);
     this.render();
     return imgData;
+  }
+
+  drawLabelsToCanvas(context, width, height, pixelRatio) {
+    const labelObjects = [];
+    this.scene.traverse((object) => {
+      if (object && object.isCSS2DObject && object.element) {
+        labelObjects.push(object);
+      }
+    });
+    if (labelObjects.length === 0) {
+      return;
+    }
+
+    this.scene.updateMatrixWorld(true);
+    this.camera.updateMatrixWorld(true);
+
+    const previousTextAlign = context.textAlign;
+    const previousTextBaseline = context.textBaseline;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+
+    const worldPosition = new THREE.Vector3();
+    labelObjects.forEach((label) => {
+      if (!label.visible) {
+        return;
+      }
+      const element = label.element;
+      const styles = window.getComputedStyle(element);
+      if (styles.display === "none" || styles.visibility === "hidden" || styles.opacity === "0") {
+        return;
+      }
+
+      label.getWorldPosition(worldPosition);
+      worldPosition.project(this.camera);
+      const x = (worldPosition.x * 0.5 + 0.5) * width;
+      const y = (-worldPosition.y * 0.5 + 0.5) * height;
+
+      const fontSize = parseFloat(styles.fontSize) || 14;
+      const fontFamily = styles.fontFamily || "sans-serif";
+      const fontWeight = styles.fontWeight || "normal";
+      context.font = `${fontWeight} ${fontSize * pixelRatio}px ${fontFamily}`;
+      context.fillStyle = styles.color || "#000";
+      const text = element.textContent || "";
+      if (text) {
+        context.fillText(text, x, y);
+      }
+    });
+
+    context.textAlign = previousTextAlign;
+    context.textBaseline = previousTextBaseline;
   }
 
   downloadImage(filenmae = "atomistic-model.png") {
