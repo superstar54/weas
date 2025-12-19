@@ -1,6 +1,30 @@
 import * as THREE from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 
+export function toVector3(value, name = "value") {
+  console.log("toVector3 called with value:", value);
+  if (value instanceof THREE.Vector3) {
+    return value;
+  }
+  if (Array.isArray(value) && value.length === 3) {
+    return new THREE.Vector3(value[0], value[1], value[2]);
+  }
+  if (value && typeof value === "object" && "length" in value && value.length === 3) {
+    return new THREE.Vector3(...value);
+  }
+  if (value && typeof value === "object" && "x" in value && "y" in value && "z" in value) {
+    return new THREE.Vector3(value.x, value.y, value.z);
+  }
+  throw new Error(`${name} must be a THREE.Vector3, an [x,y,z] array, or an {x,y,z} object, got ${typeof value}`);
+}
+
+export function toIndexArray(indices, name = "indices") {
+  if (indices === null) {
+    throw new Error(`${name} must not be null`);
+  }
+  return Array.isArray(indices) ? indices : [indices];
+}
+
 export function clearObjects(scene, uuid = null) {
   // Clone the children array since we'll be modifying it as we go
   const children = [...scene.children];

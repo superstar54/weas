@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { CellManager } from "./cell.js";
 import { AtomManager } from "./plugins/atom.js";
 import { BondManager, defaultBondRadius, searchBondedAtoms } from "./plugins/bond.js";
-import { clearObjects, clearObject } from "../utils.js";
+import { clearObjects, clearObject, toIndexArray, toVector3 } from "../utils.js";
 import { PolyhedraManager } from "./plugins/polyhedra.js";
 import { BoundaryManager } from "./plugins/boundary.js";
 import { AtomLabelManager } from "./plugins/atomLabel.js";
@@ -63,6 +63,7 @@ class AtomsViewer {
     this.animate = this.animate.bind(this); // Bind once in the constructor
     this._atoms = null;
     this._cell = null;
+    this._frameSignature = null;
     this.init(atoms);
   }
 
@@ -129,6 +130,13 @@ class AtomsViewer {
     if (this.guiManager.timeline) {
       this.guiManager.timeline.value = frameIndex;
       this.guiManager.currentFrameDisplay.textContent = frameIndex;
+    }
+    const frameSignature = this.getFrameSignature(atoms);
+    const atomMesh = this.atomManager.meshes["atom"];
+    if (!atomMesh || atomMesh.count !== atoms.getAtomsCount() || this._frameSignature !== frameSignature) {
+      this._frameSignature = frameSignature;
+      this.rebuildForFrame(atoms);
+      return;
     }
     // update the atoms
     this.atomManager.updateAtomMesh(null, atoms);
@@ -207,6 +215,7 @@ class AtomsViewer {
     this._cell = null;
     this._atoms = null;
     this._currentFrame = 0;
+    this._frameSignature = this.getFrameSignature(this.atoms);
     this.selectedAtomsIndices = [];
     // set cell
     this.cellManager.cell = this.atoms.cell;
@@ -617,9 +626,12 @@ class AtomsViewer {
     if (indices === null) {
       indices = this.selectedAtomsIndices;
     }
+    indices = toIndexArray(indices);
     if (indices.length === 0) {
       return;
     }
+    translateVector = toVector3(translateVector, "translateVector");
+
     indices.forEach((atomIndex) => {
       const initialPosition = new THREE.Vector3(...this.atoms.positions[atomIndex]);
       const newPosition = initialPosition.clone().add(translateVector);
@@ -640,13 +652,14 @@ class AtomsViewer {
     /* Rotate the selected atoms around the cameraDirection by rotationAngle
     rotationAngle is in degrees
     */
-    // normalize the cameraDirection
+    cameraDirection = toVector3(cameraDirection, "cameraDirection");
     cameraDirection = cameraDirection.normalize();
     rotationAngle = THREE.MathUtils.degToRad(rotationAngle);
     const rotationMatrix = new THREE.Matrix4().makeRotationAxis(cameraDirection, -rotationAngle);
     if (indices === null) {
       indices = this.selectedAtomsIndices;
     }
+    indices = toIndexArray(indices);
     if (indices.length === 0) {
       return;
     }
@@ -657,6 +670,7 @@ class AtomsViewer {
       });
       centroid.divideScalar(indices.length);
     }
+    centroid = toVector3(centroid, "centroid");
     indices.forEach((atomIndex) => {
       const newPosition = new THREE.Vector3(...this.atoms.positions[atomIndex]);
       // Translate to the centroid, apply rotation, then translate back
@@ -736,6 +750,41 @@ class AtomsViewer {
         this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(4);
       }
     }
+  }
+
+  getFrameSignature(atoms) {
+    const atomsCount = atoms.getAtomsCount();
+    const symbolsHash = this.hashSymbols(atoms.symbols);
+    return `${atomsCount}:${symbolsHash}`;
+  }
+
+  hashSymbols(symbols) {
+    let hash = 0;
+    for (let i = 0; i < symbols.length; i++) {
+      const symbol = symbols[i];
+      for (let j = 0; j < symbol.length; j++) {
+        hash = (hash * 31 + symbol.charCodeAt(j)) | 0;
+      }
+      hash = (hash * 31 + 124) | 0;
+    }
+    return hash >>> 0;
+  }
+
+  rebuildForFrame(atoms) {
+    this._atoms = null;
+    this._cell = null;
+    this.selectedAtomsIndices = [];
+    this.cellManager.cell = atoms.cell;
+    this.atomManager.init();
+    this.highlightManager.init();
+    this.bondManager.init();
+    this.polyhedraManager.init();
+    this.VFManager.init();
+    this.isosurfaceManager.reset();
+    this.volumeSliceManager.reset();
+    this.Measurement.reset();
+    this.updateModelStyles(this._modelStyle);
+    this.drawModels();
   }
 }
 
