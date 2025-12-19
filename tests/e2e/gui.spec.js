@@ -6,6 +6,12 @@ test("Gui config", async ({ page }) => {
   await expect(page).toHaveScreenshot();
 });
 
+test("Atom label", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testAtomLabel.html");
+
+  await expect(page).toHaveScreenshot();
+});
+
 test("Camera", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testCrystal.html");
   // open gui

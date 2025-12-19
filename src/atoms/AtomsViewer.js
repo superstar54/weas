@@ -38,6 +38,7 @@ class AtomsViewer {
     this._atomScale = viewerSettings.atomScale;
     this.backgroundColor = viewerSettings.backgroundColor;
     this._selectedAtomsIndices = new Array(); // Store selected atoms
+    this.baseAtomLabelSettings = [];
     this.debug = viewerSettings.debug;
     this.continuousUpdate = viewerSettings.continuousUpdate;
     this._currentFrame = 0;
@@ -238,6 +239,7 @@ class AtomsViewer {
     }
     // this.atoms.uuid = this.uuid;
     this.modelStyle = this._modelStyle;
+    this.atomLabelType = this._atomLabelType;
     this.drawModels();
     this.selectedAtomsIndices = [];
     // udpate camera position and target position based on the atoms
@@ -350,15 +352,8 @@ class AtomsViewer {
   set atomLabelType(newValue) {
     this.logger.debug("updateAtomLabelType: ", newValue);
     this._atomLabelType = newValue;
-    if (newValue === "None") {
-      // Remove labels
-      this.ALManager.settings = [];
-    } else if (newValue.toUpperCase() === "SYMBOL") {
-      this.ALManager.settings = [{ origins: "positions", texts: "symbols" }];
-    } else if (newValue.toLocaleUpperCase() === "INDEX") {
-      this.ALManager.settings = [{ origins: "positions", texts: "index" }];
-    }
-    this.ALManager.drawAtomLabels();
+    this.baseAtomLabelSettings = this.getAtomLabelSettingsFromType(newValue);
+    this.updateAtomLabels();
     // avoid the recursive loop
     if (this.guiManager.atomLabelTypeController && this.guiManager.atomLabelTypeController.getValue() !== newValue) {
       this.guiManager.atomLabelTypeController.setValue(newValue); // Update the GUI
@@ -455,9 +450,30 @@ class AtomsViewer {
     // update the highlight and atom label
     this.highlightManager.updateHighlightAtomsMesh({ indices: newSelectedAtoms, scale: 1.1, type: "sphere" });
     this.highlightManager.updateHighlightAtomsMesh({ indices: unselectedAtoms, scale: 0, type: "sphere" });
-    // draw atom label
-    // const texts = this.selectedAtomsIndices.map(index => this.atoms.symbols[index]);
-    this.ALManager.settings = [{ origins: "positions", texts: this.selectedAtomsIndices, selection: this.selectedAtomsIndices }];
+    this.updateAtomLabels();
+  }
+
+  getAtomLabelSettingsFromType(labelType) {
+    const normalized = String(labelType || "None").toUpperCase();
+    if (normalized === "SYMBOL") {
+      return [{ origins: "positions", texts: "symbols" }];
+    }
+    if (normalized === "INDEX") {
+      return [{ origins: "positions", texts: "index" }];
+    }
+    return [];
+  }
+
+  updateAtomLabels() {
+    const settings = [...this.baseAtomLabelSettings];
+    if (this._selectedAtomsIndices.length > 0) {
+      settings.push({
+        origins: "positions",
+        texts: this._selectedAtomsIndices,
+        selection: this._selectedAtomsIndices,
+      });
+    }
+    this.ALManager.settings = settings;
     this.ALManager.drawAtomLabels();
   }
 
