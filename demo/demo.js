@@ -15,7 +15,11 @@ async function fetchFile(filename) {
 }
 
 const domElement = document.getElementById("weas");
-const viewerConfig = { _modelStyle: 1, logLevel: "warn" }; // debug, warn
+const viewerConfig = {
+  _modelStyle: 1,
+  logLevel: "warn",
+  // atomLabelType: "index", // "element" | "index" | "none"
+}; // debug, warn
 const guiConfig = {
   controls: {
     enabled: true,

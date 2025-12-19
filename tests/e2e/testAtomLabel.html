@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS Test</title>
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 600px; height: 400px"></div>
+
+    <script type="module">
+      import * as weas from "../../dist/index.mjs";
+
+      async function fetchFile(filename) {
+        const response = await fetch(`../../demo/datas/${filename}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load file for structure: ${filename}`);
+        }
+        return await response.text();
+      }
+
+      let domElement = document.getElementById("viewer");
+
+      const viewerConfig = {
+        atomLabelType: "index", // "element" | "index" | "none"
+      };
+      // read atoms from file
+      const filename = "c2h6so.xyz";
+      fetchFile(filename).then((fileContent) => {
+        const atoms = weas.parseXYZ(fileContent);
+        let editor = new weas.WEAS({ domElement, atoms, viewerConfig });
+        editor.avr.drawModels();
+        editor.render();
+      });
+    </script>
+  </body>
+</html>

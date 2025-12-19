@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { marchingCubes } from "../../geometry/marchingCubes.js";
 import { clearObject } from "../../utils.js";
 import { convertColor } from "../utils.js";
@@ -149,6 +150,8 @@ export class Isosurface {
         });
 
         let geometry = createGeometryFromMarchingCubesOutput(isoData.positions, isoData.cells, isoData.faceMaterials);
+        geometry = mergeVertices(geometry, 1e-5);
+        geometry.computeVertexNormals();
         // Create materials
         const materials = [
           new THREE.MeshStandardMaterial({
@@ -171,8 +174,15 @@ export class Isosurface {
 
         // Create mesh
         var mesh = new THREE.Mesh(geometry, materials);
-        mesh.geometry.computeVertexNormals();
-        mesh.material.flatShading = false;
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach((material) => {
+            material.flatShading = false;
+            material.needsUpdate = true;
+          });
+        } else {
+          mesh.material.flatShading = false;
+          mesh.material.needsUpdate = true;
+        }
         // mesh.position.copy(setting.center);
         mesh.userData.type = "isosurface";
         mesh.userData.uuid = this.viewer.uuid;
@@ -222,9 +232,6 @@ function createGeometryFromMarchingCubesOutput(positions, cells, faceMaterials) 
   }
 
   geometry.setIndex(allIndices);
-
-  // Compute normals for the lighting
-  geometry.computeVertexNormals();
 
   return geometry;
 }
