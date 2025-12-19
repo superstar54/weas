@@ -29,6 +29,10 @@ The default configuration is:
       undo: true,
       redo: true,
       download: true,
+      downloadAnimation: false,
       measurement: true,
    }
    };
+
+Notes:
+- The downloadAnimation button is only shown when a trajectory has more than one frame.

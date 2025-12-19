@@ -233,6 +233,9 @@ class AtomsViewer {
     // if trajectory data is provided, add the trajectory controller
     this.guiManager.update(this.trajectory);
     this.guiManager.updateLegend();
+    if (this.weas.guiManager && this.weas.guiManager.setDownloadAnimationVisible) {
+      this.weas.guiManager.setDownloadAnimationVisible(this.trajectory.length > 1);
+    }
     // this.atoms.uuid = this.uuid;
     this.modelStyle = this._modelStyle;
     this.drawModels();

@@ -46,6 +46,45 @@ class WEAS {
   clear() {
     this.tjs.scene.clear();
   }
+
+  async exportAnimation({ format = "webm", fps = 12, startFrame = 0, endFrame = null, mimeType = null } = {}) {
+    if (!this.avr || !this.avr.trajectory || this.avr.trajectory.length === 0) {
+      throw new Error("No trajectory data available for animation export.");
+    }
+    return this.tjs.exportAnimation({
+      format,
+      fps,
+      startFrame,
+      endFrame,
+      mimeType,
+      frameCount: this.avr.trajectory.length,
+      setFrame: (frame) => {
+        this.avr.currentFrame = frame;
+      },
+      getFrame: () => this.avr.currentFrame,
+      isPlaying: () => this.avr.isPlaying,
+      pause: () => this.avr.pause(),
+      play: () => this.avr.play(),
+    });
+  }
+
+  async downloadAnimation({ filename = "trajectory.webm", ...options } = {}) {
+    if (!this.avr || !this.avr.trajectory || this.avr.trajectory.length === 0) {
+      throw new Error("No trajectory data available for animation export.");
+    }
+    await this.tjs.downloadAnimation({
+      filename,
+      ...options,
+      frameCount: this.avr.trajectory.length,
+      setFrame: (frame) => {
+        this.avr.currentFrame = frame;
+      },
+      getFrame: () => this.avr.currentFrame,
+      isPlaying: () => this.avr.isPlaying,
+      pause: () => this.avr.pause(),
+      play: () => this.avr.play(),
+    });
+  }
 }
 
 export { WEAS };

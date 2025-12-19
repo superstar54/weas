@@ -9,6 +9,7 @@ class GUIManager {
     this.guiConfig = { ...defaultGuiConfig, ...guiConfig };
     this.gui = new GUI();
     this.gui.closed = true;
+    this.downloadAnimationButton = null;
 
     if (!this.guiConfig.controls.enabled) {
       this.gui.hide();
@@ -129,6 +130,22 @@ class GUIManager {
         this.weas.tjs.downloadImage();
       });
     }
+    if (this.guiConfig.buttons.downloadAnimation) {
+      const filmSVG = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="14" height="14" rx="2"/>
+            <path d="M17 7l4-2v14l-4-2z"/>
+            <circle cx="10" cy="11" r="3" fill="currentColor" stroke="none"/>
+          </svg>
+      `;
+      const downloadAnimationButton = this.createButton(filmSVG, "downloadAnimation");
+      buttonContainer.appendChild(downloadAnimationButton);
+      downloadAnimationButton.addEventListener("click", () => {
+        this.weas.downloadAnimation();
+      });
+      downloadAnimationButton.style.display = "none";
+      this.downloadAnimationButton = downloadAnimationButton;
+    }
     if (this.guiConfig.buttons.measurement) {
       const measurementSVG = `
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512">
@@ -156,6 +173,13 @@ class GUIManager {
     for (const [key, value] of Object.entries(styleConfig)) {
       button.style[key] = value;
     }
+  }
+
+  setDownloadAnimationVisible(isVisible) {
+    if (!this.downloadAnimationButton) {
+      return;
+    }
+    this.downloadAnimationButton.style.display = isVisible ? "" : "none";
   }
 }
 
