@@ -55,6 +55,7 @@ const defaultGuiConfig = {
     undo: true,
     redo: true,
     download: true,
+    downloadAnimation: true,
     measurement: true,
   },
   buttonStyle: {

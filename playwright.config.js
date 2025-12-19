@@ -19,8 +19,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run start",
+    command: "npx live-server . --no-browser --host=127.0.0.1 --port=8080",
     url: "http://127.0.0.1:8080",
     reuseExistingServer: !process.env.CI,
+    timeout: 120000,
   },
 });

@@ -37,6 +37,7 @@ const guiConfig = {
     undo: true,
     redo: true,
     download: true,
+    downloadAnimation: true,
     measurement: true,
   },
 };

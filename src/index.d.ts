@@ -49,6 +49,16 @@ export declare class WEAS {
 
   /** Clear all objects from the scene */
   clear(): void;
+
+  /**
+   * Export a trajectory animation to a video Blob.
+   */
+  exportAnimation(options?: { format?: string; fps?: number; startFrame?: number; endFrame?: number | null; mimeType?: string | null; resolution?: number }): Promise<Blob>;
+
+  /**
+   * Export and download a trajectory animation.
+   */
+  downloadAnimation(options?: { filename?: string; format?: string; fps?: number; startFrame?: number; endFrame?: number | null; mimeType?: string | null; resolution?: number }): Promise<void>;
 }
 
 /**

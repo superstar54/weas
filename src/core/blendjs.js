@@ -437,6 +437,143 @@ export class BlendJS {
     link.click();
     document.body.removeChild(link);
   }
+
+  async exportAnimation({
+    format = "webm",
+    fps = 12,
+    startFrame = 0,
+    endFrame = null,
+    mimeType = null,
+    resolution = 2,
+    frameCount = null,
+    setFrame = null,
+    getFrame = null,
+    isPlaying = null,
+    pause = null,
+    play = null,
+  } = {}) {
+    if (typeof MediaRecorder === "undefined") {
+      throw new Error("MediaRecorder is not supported in this browser.");
+    }
+    if (!this.renderers || !this.renderers["MainRenderer"]) {
+      throw new Error("Renderer is not initialized.");
+    }
+    if (!Number.isFinite(fps) || fps <= 0) {
+      throw new Error("fps must be a positive number.");
+    }
+    if (!Number.isFinite(resolution) || resolution <= 0) {
+      throw new Error("resolution must be a positive number.");
+    }
+    if (!Number.isFinite(frameCount) || frameCount <= 0) {
+      throw new Error("frameCount must be a positive number.");
+    }
+    if (typeof setFrame !== "function") {
+      throw new Error("setFrame callback is required for animation export.");
+    }
+
+    const renderer = this.renderers["MainRenderer"].renderer;
+    const originalPixelRatio = renderer.getPixelRatio();
+    const highResPixelRatio = Math.min(resolution, 3);
+    const originalSize = renderer.getSize(new THREE.Vector2());
+    renderer.setPixelRatio(highResPixelRatio);
+    renderer.setSize(originalSize.x, originalSize.y, false);
+    const canvas = renderer.domElement;
+    if (!canvas.captureStream) {
+      renderer.setPixelRatio(originalPixelRatio);
+      renderer.setSize(originalSize.x, originalSize.y, false);
+      throw new Error("Canvas captureStream() is not supported in this browser.");
+    }
+
+    const formatKey = String(format || "webm").toLowerCase();
+    if (formatKey === "gif") {
+      throw new Error("GIF export is not supported without an external encoder. Use webm or mp4.");
+    }
+    let supportedMimeTypes = this.getSupportedAnimationMimeTypes(formatKey, mimeType);
+    if (formatKey === "mp4" && !supportedMimeTypes) {
+      supportedMimeTypes = this.getSupportedAnimationMimeTypes("webm");
+      console.warn("MP4 export is not supported in this browser. Falling back to WebM.");
+    }
+
+    const start = Math.max(0, Math.min(startFrame, frameCount - 1));
+    const end = Math.max(start, Math.min(endFrame ?? frameCount - 1, frameCount - 1));
+
+    const recorderOptions = supportedMimeTypes ? { mimeType: supportedMimeTypes } : undefined;
+    const stream = canvas.captureStream(fps);
+    const recorder = recorderOptions ? new MediaRecorder(stream, recorderOptions) : new MediaRecorder(stream);
+    const chunks = [];
+
+    recorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+
+    const previousFrame = typeof getFrame === "function" ? getFrame() : null;
+    const wasPlaying = typeof isPlaying === "function" ? isPlaying() : false;
+    if (wasPlaying && typeof pause === "function") {
+      pause();
+    }
+
+    const frameDelay = 1000 / fps;
+    try {
+      if (typeof setFrame === "function") {
+        setFrame(start);
+      }
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      recorder.start();
+      for (let frame = start; frame <= end; frame += 1) {
+        setFrame(frame);
+        await new Promise((resolve) => setTimeout(resolve, frameDelay));
+      }
+
+      const recorderStopped = new Promise((resolve) => {
+        recorder.onstop = resolve;
+      });
+      recorder.stop();
+      await recorderStopped;
+      stream.getTracks().forEach((track) => track.stop());
+    } finally {
+      renderer.setPixelRatio(originalPixelRatio);
+      renderer.setSize(originalSize.x, originalSize.y, false);
+      this.render();
+    }
+
+    if (previousFrame !== null && typeof setFrame === "function") {
+      setFrame(previousFrame);
+    }
+    if (wasPlaying && typeof play === "function") {
+      play();
+    }
+
+    const blobType = recorder.mimeType || supportedMimeTypes || "video/webm";
+    return new Blob(chunks, { type: blobType });
+  }
+
+  async downloadAnimation({ filename = "trajectory.webm", ...options } = {}) {
+    const blob = await this.exportAnimation(options);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  getSupportedAnimationMimeTypes(format, mimeType) {
+    if (mimeType && MediaRecorder.isTypeSupported(mimeType)) {
+      return mimeType;
+    }
+    const formatKey = String(format || "webm").toLowerCase();
+    if (formatKey === "gif") {
+      return null;
+    }
+    const candidates = formatKey === "mp4" ? ["video/mp4;codecs=avc1.42E01E", "video/mp4"] : ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || null;
+  }
 }
 
 function calculateBoundingBox(box, direction) {
