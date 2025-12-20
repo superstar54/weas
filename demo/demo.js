@@ -18,6 +18,7 @@ const domElement = document.getElementById("weas");
 const viewerConfig = {
   _modelStyle: 1,
   logLevel: "warn",
+  backgroundColor: "#d3d3d3",
   // atomLabelType: "index", // "element" | "index" | "none"
 }; // debug, warn
 const guiConfig = {

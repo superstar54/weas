@@ -19,6 +19,10 @@
       }
 
       let domElement = document.getElementById("viewer");
+      const viewerConfig = {
+        backgroundColor: "#d3d3d3",
+        // atomLabelType: "index", // "element" | "index" | "none"
+      }; // debug, warn
 
       const guiConfig = {
         controls: {
@@ -42,7 +46,7 @@
       const filename = "c2h6so.xyz";
       fetchFile(filename).then((fileContent) => {
         const atoms = weas.parseXYZ(fileContent);
-        let editor = new weas.WEAS({ domElement, guiConfig });
+        let editor = new weas.WEAS({ domElement, viewerConfig, guiConfig });
         editor.avr.atoms = atoms;
         editor.avr.drawModels();
         editor.render();

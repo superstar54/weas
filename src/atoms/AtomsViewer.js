@@ -37,6 +37,7 @@ class AtomsViewer {
     this._boundary = viewerSettings.boundary;
     this._atomScale = viewerSettings.atomScale;
     this.backgroundColor = viewerSettings.backgroundColor;
+    this.tjs.scene.background = new THREE.Color(this.backgroundColor);
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.baseAtomLabelSettings = [];
     this.debug = viewerSettings.debug;
