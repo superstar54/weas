@@ -155,6 +155,12 @@ class AtomsViewer {
     this.VFManager.updateArrowMesh(null, atoms);
     // update cell
     this.cellManager.updateCellMesh(this.originalCell);
+    // update the atom labels
+    this.updateAtomLabels();
+    // update the highlight atoms
+    Object.values(this.highlightManager.settings).forEach((setting) => {
+      this.highlightManager.updateHighlightAtomsMesh(setting);
+    });
   }
 
   get currentFrame() {
