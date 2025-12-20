@@ -37,6 +37,7 @@ class AtomsViewer {
     this._boundary = viewerSettings.boundary;
     this._atomScale = viewerSettings.atomScale;
     this.backgroundColor = viewerSettings.backgroundColor;
+    this.tjs.scene.background = new THREE.Color(this.backgroundColor);
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.baseAtomLabelSettings = [];
     this.debug = viewerSettings.debug;
@@ -155,6 +156,12 @@ class AtomsViewer {
     this.VFManager.updateArrowMesh(null, atoms);
     // update cell
     this.cellManager.updateCellMesh(this.originalCell);
+    // update the atom labels
+    this.updateAtomLabels();
+    // update the highlight atoms
+    Object.values(this.highlightManager.settings).forEach((setting) => {
+      this.highlightManager.updateHighlightAtomsMesh(setting);
+    });
   }
 
   get currentFrame() {
@@ -450,6 +457,7 @@ class AtomsViewer {
     // update the highlight and atom label
     this.highlightManager.updateHighlightAtomsMesh({ indices: newSelectedAtoms, scale: 1.1, type: "sphere" });
     this.highlightManager.updateHighlightAtomsMesh({ indices: unselectedAtoms, scale: 0, type: "sphere" });
+    this.baseAtomLabelSettings = [];
     this.updateAtomLabels();
   }
 
