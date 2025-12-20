@@ -104,7 +104,7 @@ export class TransformControls {
     }
     const mode = this.mode;
     this.mode = null;
-    this.weas.avr.resetSelectedAtomsPositions(this.initialAtomPositions);
+    this.weas.avr.resetSelectedAtomsPositions({ initialAtomPositions: this.initialAtomPositions });
     this.weas.ops.hideGUI();
     // reset the selected objects positions, scales, and rotations
     this.weas.selectionManager.selectedObjects.forEach((object) => {
@@ -162,9 +162,9 @@ export class TransformControls {
   translateSelectedObjects(event) {
     const translateVector = this.getTranslateVector(this.eventHandler.currentMousePosition, this.eventHandler.previousMousePosition);
     // Apply translateVector to atoms
-    this.weas.avr.translateSelectedAtoms(translateVector);
+    this.weas.avr.translateSelectedAtoms({ translateVector });
     // Apply translateVector to objects
-    this.weas.objectManager.translateSelectedObjects(translateVector);
+    this.weas.objectManager.translateSelectedObjects({ translateVector });
   }
 
   getNDC(mousePosition) {
@@ -184,16 +184,16 @@ export class TransformControls {
     const minRotationAngle = 0.0001;
     if (Math.abs(rotationAngle) > minRotationAngle) {
       // atoms
-      this.weas.avr.rotateSelectedAtoms(this.cameraDirection, rotationAngle);
+      this.weas.avr.rotateSelectedAtoms({ cameraDirection: this.cameraDirection, rotationAngle });
       // objects
-      this.weas.objectManager.rotateSelectedObjects(this.cameraDirection, rotationAngle);
+      this.weas.objectManager.rotateSelectedObjects({ rotationAxis: this.cameraDirection, rotationAngle });
     }
   }
 
   scaleSelectedObjects(event) {
     const scaleVector = this.getScaleVector(this.eventHandler.currentMousePosition, this.eventHandler.previousMousePosition);
     if (scaleVector) {
-      this.weas.objectManager.scaleSelectedObjects(scaleVector);
+      this.weas.objectManager.scaleSelectedObjects({ scale: scaleVector });
     }
   }
 

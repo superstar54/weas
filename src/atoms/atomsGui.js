@@ -139,7 +139,10 @@ class AtomsGUI {
           replaceSelectedAtoms: () => {
             const newElementSymbol = newElementData.symbol;
             if (this.viewer.selectedAtomsIndices && this.viewer.selectedAtomsIndices.length > 0) {
-              const replaceOperation = new ReplaceOperation(this.viewer.weas, newElementSymbol);
+              const replaceOperation = new ReplaceOperation({
+                weas: this.viewer.weas,
+                symbol: newElementSymbol,
+              });
               this.viewer.weas.ops.execute(replaceOperation);
               this.viewer.weas.eventHandlers.dispatchAtomsUpdated();
             } else {
@@ -160,7 +163,10 @@ class AtomsGUI {
       .add(
         {
           addAtoms: () => {
-            const addAtomOperation = new AddAtomOperation(this.viewer.weas, addElementData.symbol);
+            const addAtomOperation = new AddAtomOperation({
+              weas: this.viewer.weas,
+              symbol: addElementData.symbol,
+            });
             this.viewer.weas.ops.execute(addAtomOperation);
             this.viewer.weas.eventHandlers.dispatchAtomsUpdated();
           },

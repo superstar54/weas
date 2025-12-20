@@ -23,17 +23,17 @@ class TranslateOperation extends BaseOperation {
   execute() {
     this.weas.avr.currentFrame = this.currentFrame;
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
-    this.weas.avr.translateSelectedAtoms(this.vector, this.selectedAtomsIndices);
-    this.weas.objectManager.translateSelectedObjects(this.vector);
+    this.weas.avr.translateSelectedAtoms({ translateVector: this.vector, indices: this.selectedAtomsIndices });
+    this.weas.objectManager.translateSelectedObjects({ translateVector: this.vector });
   }
 
   undo() {
     this.weas.avr.currentFrame = this.currentFrame;
     // negative vector
     const negativevector = this.vector.clone().negate();
-    this.weas.avr.translateSelectedAtoms(negativevector, this.selectedAtomsIndices);
+    this.weas.avr.translateSelectedAtoms({ translateVector: negativevector, indices: this.selectedAtomsIndices });
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
-    this.weas.objectManager.translateSelectedObjects(negativevector);
+    this.weas.objectManager.translateSelectedObjects({ translateVector: negativevector });
   }
 
   adjust() {
@@ -89,8 +89,8 @@ class RotateOperation extends BaseOperation {
     // Implementation for rotating selected atoms
     this.weas.avr.currentFrame = this.currentFrame;
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
-    this.weas.avr.rotateSelectedAtoms(this.axis, this.angle, this.selectedAtomsIndices);
-    this.weas.objectManager.rotateSelectedObjects(this.axis, this.angle);
+    this.weas.avr.rotateSelectedAtoms({ cameraDirection: this.axis, rotationAngle: this.angle, indices: this.selectedAtomsIndices });
+    this.weas.objectManager.rotateSelectedObjects({ rotationAxis: this.axis, rotationAngle: this.angle });
   }
 
   undo() {
@@ -98,9 +98,9 @@ class RotateOperation extends BaseOperation {
     this.weas.avr.currentFrame = this.currentFrame;
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
     // rotate the atoms back
-    this.weas.avr.rotateSelectedAtoms(this.axis, -this.angle, this.selectedAtomsIndices);
+    this.weas.avr.rotateSelectedAtoms({ cameraDirection: this.axis, rotationAngle: -this.angle, indices: this.selectedAtomsIndices });
     // rotate the objects back
-    this.weas.objectManager.rotateSelectedObjects(this.axis, -this.angle);
+    this.weas.objectManager.rotateSelectedObjects({ rotationAxis: this.axis, rotationAngle: -this.angle });
   }
 
   adjust() {
@@ -164,7 +164,7 @@ class ScaleOperation extends BaseOperation {
     this.weas.avr.currentFrame = this.currentFrame;
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
     // this.weas.avr.scaleSelectedAtoms(this.scale, this.selectedAtomsIndices);
-    this.weas.objectManager.scaleSelectedObjects(this.scale);
+    this.weas.objectManager.scaleSelectedObjects({ scale: this.scale });
   }
 
   undo() {
@@ -173,7 +173,7 @@ class ScaleOperation extends BaseOperation {
     // scale back, by 1/scale
     const scale = new THREE.Vector3(1 / this.scale.x, 1 / this.scale.y, 1 / this.scale.z);
     // this.weas.avr.scaleSelectedAtoms(scale, this.selectedAtomsIndices);
-    this.weas.objectManager.scaleSelectedObjects(scale);
+    this.weas.objectManager.scaleSelectedObjects({ scale });
   }
 
   adjust() {

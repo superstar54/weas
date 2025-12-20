@@ -73,7 +73,7 @@ export class Phonon {
     const trajectory = [];
     const times = Array.from({ length: nframes }, (_, i) => 2 * Math.PI * (i / nframes));
     times.forEach((t) => {
-      const newAtoms = this.atoms.multiply(...repeat);
+      const newAtoms = this.atoms.multiply({ mx: repeat[0], my: repeat[1], mz: repeat[2] });
       let phase = complexPolar(amplitude, t);
       const movement = [];
       for (let i = 0; i < newAtoms.positions.length; i++) {
@@ -81,7 +81,7 @@ export class Phonon {
         newAtoms.positions[i] = newAtoms.positions[i].map((pos, index) => pos + displacement[index] / 5);
         movement.push(displacement);
       }
-      newAtoms.newAttribute("movement", movement);
+      newAtoms.newAttribute({ name: "movement", values: movement });
       // update the movement attribute by kpoint
 
       trajectory.push(newAtoms);

@@ -18,7 +18,7 @@ class DeleteOperation extends BaseOperation {
 
   execute() {
     if (this.indices.length > 0) {
-      this.weas.avr.deleteSelectedAtoms(this.indices);
+      this.weas.avr.deleteSelectedAtoms({ indices: this.indices });
     }
     this.weas.objectManager.deleteSelectedObjects();
   }
