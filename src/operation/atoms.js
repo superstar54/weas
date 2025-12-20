@@ -110,7 +110,7 @@ class ColorByAttribute extends BaseOperation {
   static description = "Color by attribute";
   static category = "Color";
 
-  constructor({ weas, attribute = "Symbol", color1 = "#ff0000", color2 = "#0000ff" }) {
+  constructor({ weas, attribute = "Element", color1 = "#ff0000", color2 = "#0000ff" }) {
     super(weas);
     // weas.meshPrimitive.settings is a array of objects
     // deep copy it to avoid modifying the original settings
@@ -126,15 +126,15 @@ class ColorByAttribute extends BaseOperation {
 
   execute() {
     // add cube to settings
-    this.weas._colorRamp = [this.color1, this.color2];
-    this.weas.colorBy = this.attribute;
-    this.weas.drawModels();
+    this.weas.avr._colorRamp = [this.color1, this.color2];
+    this.weas.avr.colorBy = this.attribute;
+    this.weas.avr.drawModels();
   }
 
   undo() {
-    this.weas._colorRamp = this.previousColorRamp;
-    this.weas.colorBy = this.previousAttribute;
-    this.weas.drawModels();
+    this.weas.avr._colorRamp = this.previousColorRamp;
+    this.weas.avr.colorBy = this.previousAttribute;
+    this.weas.avr.drawModels();
   }
 
   adjust() {

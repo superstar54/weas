@@ -503,6 +503,11 @@ test("Ops", async ({ page }) => {
     window.editor.ops.atoms.AddAtomOperation({ symbol: "Pt", position: { x: -1, y: 1, z: 1 } });
   });
   await expect(page).toHaveScreenshot("Ops-add-atom.png");
+  // color by index
+  await page.evaluate(() => {
+    window.editor.ops.atoms.ColorByAttribute({ attribute: "Index", color1: "#00ff00", color2: "#0000ff" });
+  });
+  await expect(page).toHaveScreenshot("Ops-color-by-index.png");
 });
 
 test("Species", async ({ page }) => {
