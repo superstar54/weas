@@ -373,8 +373,10 @@ export function marchingCubes(dims, volume, bounds, isovalue, step_size = 1) {
             p1 = cubeVerts[e[1]],
             a = grid[e[0]],
             b = grid[e[1]],
-            d = b - a,
-            t = Math.abs(d) > 1e-6 ? (isovalue - a) / d : 0;
+            d = b - a;
+          const magnitude = Math.max(1, Math.abs(a), Math.abs(b), Math.abs(isovalue));
+          const eps = 1e-12 * magnitude;
+          const t = Math.abs(d) > eps ? (isovalue - a) / d : 0.5;
 
           const gridPos = [0, 0, 0];
           let onBoundary = false;
