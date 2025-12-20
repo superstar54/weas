@@ -450,6 +450,7 @@ class AtomsViewer {
     // update the highlight and atom label
     this.highlightManager.updateHighlightAtomsMesh({ indices: newSelectedAtoms, scale: 1.1, type: "sphere" });
     this.highlightManager.updateHighlightAtomsMesh({ indices: unselectedAtoms, scale: 0, type: "sphere" });
+    this.baseAtomLabelSettings = [];
     this.updateAtomLabels();
   }
 

@@ -2,7 +2,11 @@ import * as THREE from "three";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { marchingCubes } from "../../geometry/marchingCubes.js";
 import { clearObject } from "../../utils.js";
-import { convertColor } from "../utils.js";
+
+function normalizeHexColor(color) {
+  const threeColor = color instanceof THREE.Color ? color : new THREE.Color(color);
+  return "#" + threeColor.getHexString();
+}
 
 class Setting {
   constructor({ isovalue = null, color = "#3d82ed", mode = 1, step_size = 1 }) {
@@ -18,7 +22,7 @@ class Setting {
                 Larger steps yield faster but coarser results.
     */
     this.isovalue = isovalue;
-    this.color = convertColor(color);
+    this.color = normalizeHexColor(color);
     this.mode = mode;
     this.step_size = step_size;
   }
@@ -89,8 +93,8 @@ export class Isosurface {
     // create the gui if it is not exist
     this.createGui();
     const isoFolder = this.guiFolder.addFolder(name);
-    isoFolder.add(setting, "isovalue", -1, 1).name("Level").onChange(this.drawIsosurfaces.bind(this));
-    isoFolder.addColor(setting, "color").name("Color").onChange(this.drawIsosurfaces.bind(this));
+    isoFolder.add(setting, "isovalue", -1, 1).name("Level").onFinishChange(this.drawIsosurfaces.bind(this));
+    isoFolder.addColor(setting, "color").name("Color").onFinishChange(this.drawIsosurfaces.bind(this));
   }
 
   clearIossurfaces() {
@@ -125,14 +129,15 @@ export class Isosurface {
       let isovalues;
       let colors;
 
+      const baseColor = normalizeHexColor(setting.color);
       if (setting.mode === 0) {
         isovalues = [-setting.isovalue, setting.isovalue];
-        // generate two different colors: setting.color and its complementary color
-        const complementaryColor = (0xffffff - parseInt(setting.color.substring(1), 16)).toString(16);
-        colors = [setting.color, "#" + complementaryColor];
+        // generate two different colors: baseColor and its complementary color
+        const complementaryColor = (0xffffff - parseInt(baseColor.substring(1), 16)).toString(16).padStart(6, "0");
+        colors = [baseColor, "#" + complementaryColor];
       } else {
         isovalues = [setting.isovalue];
-        colors = [setting.color];
+        colors = [baseColor];
       }
       // loop over isovalues to generate multiple isosurfaces
       for (let i = 0; i < isovalues.length; i++) {
