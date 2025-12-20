@@ -3,7 +3,7 @@ import { clearObject } from "../utils.js";
 import { materials } from "../tools/materials.js";
 
 class Setting {
-  constructor({ name, vertices, faces, color = [1, 0, 0, 1], position = [0, 0, 0], materialType = "Standard" }) {
+  constructor({ name, vertices, faces, color = [1, 0, 0, 1], position = [0, 0, 0], materialType = "Standard", showEdges = false, edgeColor = [0, 0, 0, 1] }) {
     /* A class to store settings */
 
     this.name = name;
@@ -12,6 +12,8 @@ class Setting {
     this.color = color;
     this.position = position;
     this.materialType = materialType;
+    this.showEdges = showEdges;
+    this.edgeColor = edgeColor;
   }
 }
 
@@ -34,9 +36,9 @@ export class AnyMesh {
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting({ name, vertices, faces, color, position, materialType }) {
+  addSetting({ name, vertices, faces, color, position, materialType, showEdges, edgeColor }) {
     /* Add a new setting */
-    const setting = new Setting({ name, vertices, faces, color, position, materialType });
+    const setting = new Setting({ name, vertices, faces, color, position, materialType, showEdges, edgeColor });
     this.settings.push(setting);
   }
 
@@ -70,6 +72,22 @@ export class AnyMesh {
       object.position.set(setting.position[0], setting.position[1], setting.position[2]);
       this.meshes.push(object);
       this.scene.add(object);
+
+      if (setting.showEdges) {
+        const edgeColor = setting.edgeColor || [0, 0, 0, 1];
+        const edgeOpacity = edgeColor.length === 4 ? edgeColor[3] : 1;
+        const edgeMaterial = new THREE.LineBasicMaterial({
+          color: new THREE.Color(edgeColor[0], edgeColor[1], edgeColor[2]),
+          transparent: edgeOpacity < 1,
+          opacity: edgeOpacity,
+        });
+        const edgeGeometry = new THREE.EdgesGeometry(geometry);
+        const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+        edgeLines.position.copy(object.position);
+        edgeLines.renderOrder = 3;
+        this.meshes.push(edgeLines);
+        this.scene.add(edgeLines);
+      }
     });
     this.viewer.tjs.render();
   }
