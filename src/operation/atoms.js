@@ -15,7 +15,7 @@ class ReplaceOperation extends BaseOperation {
   }
 
   execute() {
-    this.weas.avr.replaceSelectedAtoms(this.symbol, this.indices);
+    this.weas.avr.replaceSelectedAtoms({ element: this.symbol, indices: this.indices });
   }
 
   undo() {
@@ -57,7 +57,7 @@ class AddAtomOperation extends BaseOperation {
   }
 
   execute() {
-    this.weas.avr.addAtom(this.symbol, this.position);
+    this.weas.avr.addAtom({ element: this.symbol, position: this.position });
   }
 
   undo() {

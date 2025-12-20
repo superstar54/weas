@@ -8,7 +8,11 @@ export class ObjectManager {
     this.scene = weas.tjs.scene;
   }
 
-  translateSelectedObjects(translateVector, selectedObjects = null) {
+  translateSelectedObjects(translateVectorOrOptions, selectedObjects = null) {
+    let translateVector = translateVectorOrOptions;
+    if (translateVectorOrOptions && typeof translateVectorOrOptions === "object" && Object.prototype.hasOwnProperty.call(translateVectorOrOptions, "translateVector")) {
+      ({ translateVector, selectedObjects = null } = translateVectorOrOptions);
+    }
     if (selectedObjects === null) {
       selectedObjects = this.selectionManager.selectedObjects;
     }
@@ -18,7 +22,11 @@ export class ObjectManager {
     });
   }
 
-  rotateSelectedObjects(rotationAxis, rotationAngle, selectedObjects = null) {
+  rotateSelectedObjects(rotationAxisOrOptions, rotationAngle, selectedObjects = null) {
+    let rotationAxis = rotationAxisOrOptions;
+    if (rotationAxisOrOptions && typeof rotationAxisOrOptions === "object" && Object.prototype.hasOwnProperty.call(rotationAxisOrOptions, "rotationAxis")) {
+      ({ rotationAxis, rotationAngle, selectedObjects = null } = rotationAxisOrOptions);
+    }
     if (selectedObjects === null) {
       selectedObjects = this.selectionManager.selectedObjects;
     }
@@ -36,7 +44,11 @@ export class ObjectManager {
     this.selectionManager.clearSelection();
   }
 
-  scaleSelectedObjects(scale, selectedObjects = null) {
+  scaleSelectedObjects(scaleOrOptions, selectedObjects = null) {
+    let scale = scaleOrOptions;
+    if (scaleOrOptions && typeof scaleOrOptions === "object" && Object.prototype.hasOwnProperty.call(scaleOrOptions, "scale")) {
+      ({ scale, selectedObjects = null } = scaleOrOptions);
+    }
     if (selectedObjects === null) {
       selectedObjects = this.selectionManager.selectedObjects;
     }

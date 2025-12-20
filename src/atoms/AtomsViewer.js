@@ -261,7 +261,7 @@ class AtomsViewer {
     const trajectory = phonon.getTrajectory(amplitude, nframes, null, null, null, repeat);
     this.atoms = trajectory;
     this._cell = atoms.cell;
-    this._atoms = atoms.multiply(...repeat);
+    this._atoms = atoms.multiply({ mx: repeat[0], my: repeat[1], mz: repeat[2] });
     this._atoms.uuid = this.uuid;
     this.VFManager.addSetting("phonon", { origins: "positions", vectors: "movement", factor: factor, color: color, radius: radius });
     this.bondManager.hideLongBonds = false;
@@ -536,12 +536,12 @@ class AtomsViewer {
   }
 
   // Method to delete selected atoms
-  deleteSelectedAtoms(indices = null) {
+  deleteSelectedAtoms({ indices = null }) {
     if (indices === null) {
       indices = this.selectedAtomsIndices;
     }
     // Remove the selected atoms from the scene and data
-    this.atoms.deleteAtoms(indices);
+    this.atoms.deleteAtoms({ indices });
     // TODO: add modelStyles to Atoms's attributes
     // delete the properties, e.g. modelStyles, that are associated with the deleted atoms
     this.atomScales = this.atomScales.filter((value, index) => !indices.includes(index));
@@ -556,12 +556,12 @@ class AtomsViewer {
   }
 
   // Method to replace selected atoms
-  replaceSelectedAtoms(element, indices = null) {
+  replaceSelectedAtoms({ element, indices = null }) {
     if (indices === null) {
       indices = this.selectedAtomsIndices;
     }
     // Remove the selected atoms from the scene and data
-    this.atoms.replaceAtoms(Array.from(indices), element);
+    this.atoms.replaceAtoms({ indices: Array.from(indices), newSpecieSymbol: element });
 
     // Update the bond settings
     this.atomManager.init();
@@ -572,14 +572,14 @@ class AtomsViewer {
   }
 
   // Method to add atoms
-  addAtom(element, position = { x: 0, y: 0, z: 0 }) {
+  addAtom({ element, position = { x: 0, y: 0, z: 0 } }) {
     // Remove the selected atoms from the scene and data
     const atom = new Atom(element, [position.x, position.y, position.z]);
     // if element is not in the species, add it to the species
     if (!this.atoms.species[element]) {
-      this.atoms.addSpecie(element);
+      this.atoms.addSpecie({ symbol: element });
     }
-    this.atoms.addAtom(atom);
+    this.atoms.addAtom({ atom });
     // this.logger.debug("atoms: ", this.atoms);
 
     // add the properties, e.g. modelStyles, that are associated with the added atoms
@@ -596,15 +596,15 @@ class AtomsViewer {
   }
 
   // Method to copy atoms
-  copyAtoms(indices = null) {
+  copyAtoms({ indices = null }) {
     /* Copy the selected atoms and add them to the atoms object
      */
     if (indices === null) {
       indices = this.selectedAtomsIndices;
     }
-    const copied_atoms = this.atoms.getAtomsByIndices(indices);
+    const copied_atoms = this.atoms.getAtomsByIndices({ indices });
     this.logger.debug("copied_atoms: ", copied_atoms);
-    this.atoms.add(copied_atoms);
+    this.atoms.add({ otherAtoms: copied_atoms });
     this.logger.debug("atoms: ", this.atoms);
 
     // also copy the properties, e.g. modelStyles, that are associated with the copied atoms
@@ -618,7 +618,7 @@ class AtomsViewer {
     this.selectedAtomsIndices = Array.from({ length: copied_atoms.getAtomsCount() }, (_, i) => i + this.atoms.getAtomsCount() - copied_atoms.getAtomsCount());
   }
 
-  setAtomPosition(index, position) {
+  setAtomPosition({ index, position }) {
     // Update the atom position
     const matrix = new THREE.Matrix4();
     this.atomManager.meshes["atom"].getMatrixAt(index, matrix);
@@ -631,7 +631,11 @@ class AtomsViewer {
     this.polyhedraManager.updatePolyhedraMesh(index);
   }
 
-  resetSelectedAtomsPositions(initialAtomPositions, indices = null) {
+  resetSelectedAtomsPositions(initialAtomPositionsOrOptions, indices = null) {
+    let initialAtomPositions = initialAtomPositionsOrOptions;
+    if (initialAtomPositionsOrOptions && typeof initialAtomPositionsOrOptions === "object" && Object.prototype.hasOwnProperty.call(initialAtomPositionsOrOptions, "initialAtomPositions")) {
+      ({ initialAtomPositions, indices = null } = initialAtomPositionsOrOptions);
+    }
     // Reset the selected atoms to their initial positions
     if (indices === null) {
       indices = this.selectedAtomsIndices;
@@ -642,12 +646,12 @@ class AtomsViewer {
     indices.forEach((atomIndex) => {
       const initialPosition = initialAtomPositions.get(atomIndex);
       // Update the atom position
-      this.setAtomPosition(atomIndex, initialPosition);
+      this.setAtomPosition({ index: atomIndex, position: initialPosition });
     });
     this.atomManager.meshes["atom"].instanceMatrix.needsUpdate = true;
   }
 
-  translateSelectedAtoms(translateVector, indices = null) {
+  translateSelectedAtoms({ translateVector, indices = null }) {
     // translating selected atoms by translateVector
     // if indices is null, translate all selected atoms
     if (indices === null) {
@@ -662,7 +666,7 @@ class AtomsViewer {
     indices.forEach((atomIndex) => {
       const initialPosition = new THREE.Vector3(...this.atoms.positions[atomIndex]);
       const newPosition = initialPosition.clone().add(translateVector);
-      this.setAtomPosition(atomIndex, newPosition);
+      this.setAtomPosition({ index: atomIndex, position: newPosition });
     });
 
     this.atomManager.meshes["atom"].instanceMatrix.needsUpdate = true;
@@ -675,7 +679,7 @@ class AtomsViewer {
     }
   }
 
-  rotateSelectedAtoms(cameraDirection, rotationAngle, indices = null, centroid = null) {
+  rotateSelectedAtoms({ cameraDirection, rotationAngle, indices = null, centroid = null }) {
     /* Rotate the selected atoms around the cameraDirection by rotationAngle
     rotationAngle is in degrees
     */
@@ -705,7 +709,7 @@ class AtomsViewer {
         .sub(centroid) // Translate to centroid
         .applyMatrix4(rotationMatrix) // Apply rotation
         .add(centroid); // Translate back
-      this.setAtomPosition(atomIndex, newPosition);
+      this.setAtomPosition({ index: atomIndex, position: newPosition });
     });
 
     this.atomManager.meshes["atom"].instanceMatrix.needsUpdate = true;
@@ -715,10 +719,14 @@ class AtomsViewer {
     }
   }
 
-  setAttribute(name, values, domain = "atom") {
+  setAttribute(nameOrOptions, values, domain = "atom") {
+    let name = nameOrOptions;
+    if (nameOrOptions && typeof nameOrOptions === "object" && Object.prototype.hasOwnProperty.call(nameOrOptions, "name")) {
+      ({ name, values, domain = "atom" } = nameOrOptions);
+    }
     // loop all the atoms in the trajectory
     this.trajectory.forEach((atoms) => {
-      atoms.newAttribute(name, values, domain);
+      atoms.newAttribute({ name, values, domain });
     });
   }
 

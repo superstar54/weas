@@ -10,7 +10,7 @@ export const generatePhononTrajectory = (atoms, eigenvectors, amplitude, nframes
     for (let i = 0; i < newAtoms.positions.length; i++) {
       newAtoms.positions[i] = newAtoms.positions[i].map((pos, j) => pos + vectors[i][j] / 5);
     }
-    newAtoms.newAttribute("movement", vectors);
+    newAtoms.newAttribute({ name: "movement", values: vectors });
     trajectory.push(newAtoms);
   });
   return trajectory;

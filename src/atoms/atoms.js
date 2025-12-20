@@ -44,15 +44,15 @@ class Atoms {
       throw new Error("The length of symbols should be the same as positions.");
     }
 
-    this.setCell(
-      cell || [
+    this.setCell({
+      cell: cell || [
         [0, 0, 0],
         [0, 0, 0],
         [0, 0, 0],
       ],
-    );
+    });
 
-    this.setPBC(pbc || [false, false, false]);
+    this.setPBC({ pbc: pbc || [false, false, false] });
 
     // Raise an error if PBC is true and cell is all zeros
     if (this.isUndefinedCell() && this.pbc.some((value) => value)) {
@@ -60,38 +60,53 @@ class Atoms {
     }
 
     // Initialize other properties safely
-    this.setSpecies(species || {}, this.symbols);
-    this.setAttributes(attributes || { atom: {}, specie: {} });
+    this.setSpecies({ species: species || {}, symbols: this.symbols });
+    this.setAttributes({ attributes: attributes || { atom: {}, specie: {} } });
   }
 
-  setSpecies(species, symbols = null) {
+  setSpecies(speciesOrOptions, symbols = null) {
+    let species = speciesOrOptions;
+    if (speciesOrOptions && typeof speciesOrOptions === "object" && Object.prototype.hasOwnProperty.call(speciesOrOptions, "species")) {
+      ({ species, symbols = null } = speciesOrOptions);
+    }
     this.species = {};
     if (typeof species !== "object") {
       throw new Error("Species should be a dictionary.");
     }
     Object.entries(species).forEach(([symbol, element]) => {
-      this.addSpecie(symbol, element);
+      this.addSpecie({ symbol, element });
     });
     if (symbols) {
       const speciesSet = new Set(symbols);
       speciesSet.forEach((s) => {
         if (!this.species[s]) {
-          this.addSpecie(s);
+          this.addSpecie({ symbol: s });
         }
       });
     }
   }
 
-  setAttributes(attributes) {
+  setAttributes(attributesOrOptions) {
+    let attributes = attributesOrOptions;
+    if (attributesOrOptions && typeof attributesOrOptions === "object" && Object.prototype.hasOwnProperty.call(attributesOrOptions, "attributes")) {
+      ({ attributes } = attributesOrOptions);
+    }
+    if (!attributes) {
+      attributes = {};
+    }
     this.attributes = { atom: {}, specie: {}, "inter-specie": {} };
     for (const domain in attributes) {
       for (const name in attributes[domain]) {
-        this.newAttribute(name, attributes[domain][name], domain);
+        this.newAttribute({ name, values: attributes[domain][name], domain });
       }
     }
   }
 
-  newAttribute(name, values, domain = "atom") {
+  newAttribute(nameOrOptions, values, domain = "atom") {
+    let name = nameOrOptions;
+    if (nameOrOptions && typeof nameOrOptions === "object" && !Array.isArray(nameOrOptions)) {
+      ({ name, values, domain = "atom" } = nameOrOptions);
+    }
     if (domain === "atom") {
       if (values.length !== this.positions.length) {
         throw new Error("The number of values does not match the number of atoms.");
@@ -111,7 +126,11 @@ class Atoms {
     }
   }
 
-  getAttribute(name, domain = "atom") {
+  getAttribute(nameOrOptions, domain = "atom") {
+    let name = nameOrOptions;
+    if (nameOrOptions && typeof nameOrOptions === "object" && !Array.isArray(nameOrOptions)) {
+      ({ name, domain = "atom" } = nameOrOptions);
+    }
     if (domain === "atom") {
       if (name === "positions") {
         return this.positions;
@@ -139,7 +158,11 @@ class Atoms {
     }
   }
 
-  setCell(cell) {
+  setCell(cellOrOptions) {
+    let cell = cellOrOptions;
+    if (cellOrOptions && typeof cellOrOptions === "object" && Object.prototype.hasOwnProperty.call(cellOrOptions, "cell")) {
+      ({ cell } = cellOrOptions);
+    }
     if (cell.length === 9) {
       this.cell = [
         [cell[0], cell[1], cell[2]],
@@ -172,14 +195,22 @@ class Atoms {
     return [a, b, c, alpha, beta, gamma];
   }
 
-  setPBC(pbc) {
+  setPBC(pbcOrOptions) {
+    let pbc = pbcOrOptions;
+    if (pbcOrOptions && typeof pbcOrOptions === "object" && Object.prototype.hasOwnProperty.call(pbcOrOptions, "pbc")) {
+      ({ pbc } = pbcOrOptions);
+    }
     if (typeof pbc === "boolean") {
       pbc = [pbc, pbc, pbc];
     }
     this.pbc = pbc;
   }
 
-  addSpecie(symbol, element = null) {
+  addSpecie(symbolOrOptions, element = null) {
+    let symbol = symbolOrOptions;
+    if (symbolOrOptions && typeof symbolOrOptions === "object" && Object.prototype.hasOwnProperty.call(symbolOrOptions, "symbol")) {
+      ({ symbol, element = null } = symbolOrOptions);
+    }
     // if the specie is already defined, raise an error
     if (this.species[symbol]) {
       throw new Error(`Specie '${symbol}' is already defined.`);
@@ -204,7 +235,11 @@ class Atoms {
     return this.symbols.map((symbol) => this.species[symbol].element);
   }
 
-  addAtom(atom) {
+  addAtom(atomOrOptions) {
+    let atom = atomOrOptions;
+    if (atomOrOptions && typeof atomOrOptions === "object" && Object.prototype.hasOwnProperty.call(atomOrOptions, "atom")) {
+      ({ atom } = atomOrOptions);
+    }
     if (!this.species[atom.symbol]) {
       throw new Error(`Specie '${atom.symbol}' is not defined.`);
     }
@@ -212,7 +247,11 @@ class Atoms {
     this.symbols.push(atom.symbol);
   }
 
-  removeAtom(index) {
+  removeAtom(indexOrOptions) {
+    let index = indexOrOptions;
+    if (indexOrOptions && typeof indexOrOptions === "object" && Object.prototype.hasOwnProperty.call(indexOrOptions, "index")) {
+      ({ index } = indexOrOptions);
+    }
     this.positions.splice(index, 1);
     this.symbols.splice(index, 1);
     // Remove attributes in atom domain
@@ -231,7 +270,11 @@ class Atoms {
     return this.positions.length;
   }
 
-  add(otherAtoms) {
+  add(otherAtomsOrOptions) {
+    let otherAtoms = otherAtomsOrOptions;
+    if (otherAtomsOrOptions && typeof otherAtomsOrOptions === "object" && Object.prototype.hasOwnProperty.call(otherAtomsOrOptions, "otherAtoms")) {
+      ({ otherAtoms } = otherAtomsOrOptions);
+    }
     // if there same specie symbol, check if the element is the same
     for (const symbol in otherAtoms.species) {
       if (this.species[symbol] && this.species[symbol].element !== otherAtoms.species[symbol].element) {
@@ -255,7 +298,11 @@ class Atoms {
     }
   }
 
-  multiply(mx, my, mz) {
+  multiply(mxOrOptions, my, mz) {
+    let mx = mxOrOptions;
+    if (mxOrOptions && typeof mxOrOptions === "object" && Object.prototype.hasOwnProperty.call(mxOrOptions, "mx")) {
+      ({ mx, my, mz } = mxOrOptions);
+    }
     if (this.isUndefinedCell()) {
       throw new Error("Cell matrix is not defined.");
     }
@@ -263,11 +310,13 @@ class Atoms {
     newAtoms.species = { ...this.species };
 
     const [[ax, ay, az], [bx, by, bz], [cx, cy, cz]] = this.cell;
-    newAtoms.setCell([
-      [ax * mx, ay * mx, az * mx],
-      [bx * my, by * my, bz * my],
-      [cx * mz, cy * mz, cz * mz],
-    ]);
+    newAtoms.setCell({
+      cell: [
+        [ax * mx, ay * mx, az * mx],
+        [bx * my, by * my, bz * my],
+        [cx * mz, cy * mz, cz * mz],
+      ],
+    });
 
     for (let ix = 0; ix < mx; ix++) {
       for (let iy = 0; iy < my; iy++) {
@@ -297,20 +346,28 @@ class Atoms {
           }
         }
       }
-      newAtoms.newAttribute(name, newValues, "atom");
+      newAtoms.newAttribute({ name, values: newValues, domain: "atom" });
     }
     // copy attributes in specie domain, copy is necessary because the attributes of the added atoms should not overwrite the original ones
     for (const name in this.attributes["specie"]) {
-      newAtoms.newAttribute(name, JSON.parse(JSON.stringify(this.attributes["specie"][name])), "specie");
+      newAtoms.newAttribute({ name, values: JSON.parse(JSON.stringify(this.attributes["specie"][name])), domain: "specie" });
     }
     return newAtoms;
   }
 
-  translate(t) {
-    this.positions = this.positions.map(([x, y, z]) => [x + t[0], y + t[1], z + t[2]]);
+  translate(vectorOrOptions) {
+    let vector = vectorOrOptions;
+    if (vectorOrOptions && typeof vectorOrOptions === "object" && Object.prototype.hasOwnProperty.call(vectorOrOptions, "vector")) {
+      ({ vector } = vectorOrOptions);
+    }
+    this.positions = this.positions.map(([x, y, z]) => [x + vector[0], y + vector[1], z + vector[2]]);
   }
 
-  rotate(axis, angle, rotate_cell = false) {
+  rotate(axisOrOptions, angle, rotate_cell = false) {
+    let axis = axisOrOptions;
+    if (axisOrOptions && typeof axisOrOptions === "object" && Object.prototype.hasOwnProperty.call(axisOrOptions, "axis")) {
+      ({ axis, angle, rotate_cell = false } = axisOrOptions);
+    }
     const angleRad = (angle * Math.PI) / 180;
     const norm = Math.sqrt(axis[0] ** 2 + axis[1] ** 2 + axis[2] ** 2);
     const [u, v, w] = [axis[0] / norm, axis[1] / norm, axis[2] / norm];
@@ -349,7 +406,17 @@ class Atoms {
     }
   }
 
-  center(vacuum = 0.0, axis = [0, 1, 2], center = null) {
+  center(vacuumOrOptions = 0.0, axis = [0, 1, 2], center = null) {
+    let vacuum = vacuumOrOptions;
+    if (
+      vacuumOrOptions &&
+      typeof vacuumOrOptions === "object" &&
+      (Object.prototype.hasOwnProperty.call(vacuumOrOptions, "vacuum") ||
+        Object.prototype.hasOwnProperty.call(vacuumOrOptions, "axis") ||
+        Object.prototype.hasOwnProperty.call(vacuumOrOptions, "center"))
+    ) {
+      ({ vacuum = 0.0, axis = [0, 1, 2], center = null } = vacuumOrOptions);
+    }
     if (!this.cell) {
       throw new Error("Cell is not defined.");
     }
@@ -374,7 +441,7 @@ class Atoms {
     }
 
     const translationVector = targetCenter.map((x, i) => x - centerOfMass[i]);
-    this.translate(translationVector);
+    this.translate({ vector: translationVector });
 
     if (vacuum !== null) {
       for (let i = 0; i < 3; i++) {
@@ -385,7 +452,11 @@ class Atoms {
     }
   }
 
-  deleteAtoms(indices) {
+  deleteAtoms(indicesOrOptions) {
+    let indices = indicesOrOptions;
+    if (indicesOrOptions && typeof indicesOrOptions === "object" && Object.prototype.hasOwnProperty.call(indicesOrOptions, "indices")) {
+      ({ indices } = indicesOrOptions);
+    }
     if (!Array.isArray(indices)) {
       indices = [indices];
     }
@@ -410,9 +481,13 @@ class Atoms {
     }
   }
 
-  replaceAtoms(indices, newSpecieSymbol, newSpecieElement = null) {
+  replaceAtoms(indicesOrOptions, newSpecieSymbol, newSpecieElement = null) {
+    let indices = indicesOrOptions;
+    if (indicesOrOptions && typeof indicesOrOptions === "object" && Object.prototype.hasOwnProperty.call(indicesOrOptions, "indices")) {
+      ({ indices, newSpecieSymbol, newSpecieElement = null } = indicesOrOptions);
+    }
     if (!this.species[newSpecieSymbol]) {
-      this.addSpecie(newSpecieSymbol, newSpecieElement);
+      this.addSpecie({ symbol: newSpecieSymbol, element: newSpecieElement });
     }
     for (const index of indices) {
       if (index >= 0 && index < this.symbols.length) {
@@ -458,7 +533,11 @@ class Atoms {
     });
   }
 
-  getAtomsByIndices(indices) {
+  getAtomsByIndices(indicesOrOptions) {
+    let indices = indicesOrOptions;
+    if (indicesOrOptions && typeof indicesOrOptions === "object" && Object.prototype.hasOwnProperty.call(indicesOrOptions, "indices")) {
+      ({ indices } = indicesOrOptions);
+    }
     const newAtomsData = {
       cell: JSON.parse(JSON.stringify(this.cell)),
       pbc: JSON.parse(JSON.stringify(this.pbc)),
