@@ -3,13 +3,13 @@ import { test, expect } from "@playwright/test";
 test("Gui config", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testGui.html");
 
-  await expect(page).toHaveScreenshot();
+  await expect.soft(page).toHaveScreenshot();
 });
 
 test("Atom label", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testAtomLabel.html");
 
-  await expect(page).toHaveScreenshot();
+  await expect.soft(page).toHaveScreenshot();
 });
 
 test("Camera", async ({ page }) => {
@@ -18,56 +18,56 @@ test("Camera", async ({ page }) => {
   await page.evaluate(() => {
     window.editor.tjs.cameraType = "perspective";
   });
-  await expect(page).toHaveScreenshot("Camera-perspective.png");
+  await expect.soft(page).toHaveScreenshot("Camera-perspective.png");
 });
 
 test("Crystal", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testCrystal.html");
-  await expect(page).toHaveScreenshot();
+  await expect.soft(page).toHaveScreenshot();
 });
 
 test("Isosurface", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testIsosurface.html");
-  await expect(page).toHaveScreenshot();
+  await expect.soft(page).toHaveScreenshot();
   // open gui
   await page.evaluate(() => {
     window.editor.guiManager.gui.closed = false;
     window.editor.avr.isosurfaceManager.guiFolder.closed = false;
   });
-  await expect(page).toHaveScreenshot("Isosurface-gui.png");
+  await expect.soft(page).toHaveScreenshot("Isosurface-gui.png");
   // reset isosurface
   await page.evaluate(() => {
     window.editor.avr.isosurfaceManager.reset();
     window.editor.tjs.render();
   });
-  await expect(page).toHaveScreenshot("Isosurface-reset.png");
+  await expect.soft(page).toHaveScreenshot("Isosurface-reset.png");
 });
 
 test("VolumeSlice", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testVolumeSlice.html");
-  await expect(page).toHaveScreenshot();
+  await expect.soft(page).toHaveScreenshot();
   // reset slice
   await page.evaluate(() => {
     window.editor.avr.volumeSliceManager.reset();
     window.editor.tjs.render();
   });
-  await expect(page).toHaveScreenshot("VolumeSlice-reset.png");
+  await expect.soft(page).toHaveScreenshot("VolumeSlice-reset.png");
 });
 
 test("VectorField", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testVectorField.html");
-  await expect(page).toHaveScreenshot();
+  await expect.soft(page).toHaveScreenshot();
   // hide vector field
   await page.evaluate(() => {
     window.editor.avr.VFManager.show = false;
     window.editor.tjs.render();
   });
-  await expect(page).toHaveScreenshot("VectorField-hide-vector.png");
+  await expect.soft(page).toHaveScreenshot("VectorField-hide-vector.png");
 });
 
 test("ColorBy", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testColorBy.html");
-  await expect(page).toHaveScreenshot();
+  await expect.soft(page).toHaveScreenshot();
   // color by species
   await page.evaluate(() => {
     window.editor.avr.colorBy = "Element";
@@ -77,35 +77,35 @@ test("ColorBy", async ({ page }) => {
     window.editor.avr.atomManager.settings["S"].color = "#FFFF00";
     window.editor.avr.drawModels();
   });
-  await expect(page).toHaveScreenshot("Color-species.png");
+  await expect.soft(page).toHaveScreenshot("Color-species.png");
 });
 
 test("Highlight Atoms", async ({ page }) => {
   // highlight selected atoms
   await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");
-  await expect(page).toHaveScreenshot();
+  await expect.soft(page).toHaveScreenshot();
   // add another highlight
   await page.evaluate(() => {
     window.editor.avr.highlightManager.addSetting("sphere", { indices: [0, 1], color: "red", scale: 1.2 });
     window.editor.avr.drawModels();
   });
-  await expect(page).toHaveScreenshot("Highlight-sphere.png");
+  await expect.soft(page).toHaveScreenshot("Highlight-sphere.png");
   // highlight using cross
   await page.evaluate(() => {
     window.editor.avr.highlightManager.addSetting("sphere", { indices: [0, 1], color: "red", scale: 1.3, type: "cross" });
     window.editor.avr.drawModels();
   });
-  await expect(page).toHaveScreenshot("Highlight-cross.png");
+  await expect.soft(page).toHaveScreenshot("Highlight-cross.png");
 });
 
 test("Instanced Primitive", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testInstancedPrimitive.html");
-  await expect(page).toHaveScreenshot();
+  await expect.soft(page).toHaveScreenshot();
 });
 
 test("Any Mesh", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testAnyMesh.html");
-  await expect(page).toHaveScreenshot();
+  await expect.soft(page).toHaveScreenshot();
 });
 
 test("Viewer State Undo Redo", async ({ page }) => {
@@ -152,7 +152,7 @@ test.describe("Edit", () => {
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 100, page.centerY);
     await page.mouse.click(page.centerX + 100, page.centerY);
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Rotate Atoms", async ({ page }) => {
@@ -161,12 +161,12 @@ test.describe("Edit", () => {
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 100, page.centerY - 200);
     await page.mouse.click(page.centerX + 100, page.centerY - 200);
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Delete Atoms", async ({ page }) => {
     await page.keyboard.press("Delete");
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Duplicate Atoms", async ({ page }) => {
@@ -175,7 +175,7 @@ test.describe("Edit", () => {
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 100, page.centerY);
     await page.mouse.click(page.centerX + 100, page.centerY);
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Undo Redos", async ({ page }) => {
@@ -184,26 +184,26 @@ test.describe("Edit", () => {
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 100, page.centerY);
     await page.mouse.click(page.centerX + 100, page.centerY);
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
     // delete
     await page.keyboard.press("Delete");
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
     // undo
     await page.keyboard.down("Control");
     await page.keyboard.press("z");
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
     // undo
     const element = await page.$("#undo");
     await element.click();
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
     // redo
     await page.keyboard.down("Control");
     await page.keyboard.press("y");
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
     // redo
     const element2 = await page.$("#redo");
     await element2.click();
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Escape", async ({ page }) => {
@@ -212,7 +212,7 @@ test.describe("Edit", () => {
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 100, page.centerY);
     await page.keyboard.press("Escape");
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 });
 
@@ -233,7 +233,7 @@ test.describe("Edit Object", () => {
   });
 
   test("Mesh Primitive", async ({ page }) => {
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Move Object", async ({ page }) => {
@@ -242,7 +242,7 @@ test.describe("Edit Object", () => {
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 100, page.centerY);
     await page.mouse.click(page.centerX + 100, page.centerY);
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Rotate Object", async ({ page }) => {
@@ -251,12 +251,12 @@ test.describe("Edit Object", () => {
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 100, page.centerY - 200);
     await page.mouse.click(page.centerX + 100, page.centerY - 200);
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Delete Object", async ({ page }) => {
     await page.keyboard.press("Delete");
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Scale Object", async ({ page }) => {
@@ -265,7 +265,7 @@ test.describe("Edit Object", () => {
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 100, page.centerY - 200);
     await page.mouse.click(page.centerX + 100, page.centerY - 200);
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Duplicate Object", async ({ page }) => {
@@ -274,7 +274,7 @@ test.describe("Edit Object", () => {
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 100, page.centerY);
     await page.mouse.click(page.centerX + 100, page.centerY);
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 });
 
@@ -296,7 +296,7 @@ test.describe("Selection", () => {
   });
 
   test("Inside Selection", async ({ page }) => {
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 
   test("Move Selected", async ({ page }) => {
@@ -305,7 +305,7 @@ test.describe("Selection", () => {
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX - 100, page.centerY);
     await page.mouse.click(page.centerX - 100, page.centerY);
-    await expect(page).toHaveScreenshot();
+    await expect.soft(page).toHaveScreenshot();
   });
 });
 
@@ -327,14 +327,14 @@ test.describe("Animation", () => {
   });
 
   test("Undo Redos", async ({ page }) => {
-    await expect(page).toHaveScreenshot("Animation-frame-0.png");
+    await expect.soft(page).toHaveScreenshot("Animation-frame-0.png");
     // simulate keydown event
     await page.keyboard.press("g");
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 100, page.centerY);
     await page.mouse.click(page.centerX + 100, page.centerY);
     // current frame is 0, add name toHaveScreenshot
-    await expect(page).toHaveScreenshot("Animation-frame-0-move.png");
+    await expect.soft(page).toHaveScreenshot("Animation-frame-0-move.png");
     // set frame 10
     await page.evaluate(() => {
       const timeline = document.getElementById("timeline");
@@ -346,30 +346,30 @@ test.describe("Animation", () => {
       });
       timeline.dispatchEvent(event);
     });
-    await expect(page).toHaveScreenshot("Animation-frame-10.png");
+    await expect.soft(page).toHaveScreenshot("Animation-frame-10.png");
     //move atoms
     await page.keyboard.press("g");
     // mouse move to the center of the canvas element
     await page.mouse.move(page.centerX + 200, page.centerY);
     await page.mouse.click(page.centerX + 200, page.centerY);
-    await expect(page).toHaveScreenshot("Animation-frame-10-move.png");
+    await expect.soft(page).toHaveScreenshot("Animation-frame-10-move.png");
     // undo
     await page.keyboard.down("Control");
     await page.keyboard.press("z");
-    await expect(page).toHaveScreenshot("Animation-frame-10-undo.png");
+    await expect.soft(page).toHaveScreenshot("Animation-frame-10-undo.png");
     // undo, should go back to frame 0
     const element = await page.$("#undo");
     await element.click();
-    await expect(page).toHaveScreenshot("Animation-frame-0-undo.png");
+    await expect.soft(page).toHaveScreenshot("Animation-frame-0-undo.png");
     // redo
     await page.keyboard.down("Control");
     await page.keyboard.press("y");
-    await expect(page).toHaveScreenshot("Animation-frame-0-redo.png");
+    await expect.soft(page).toHaveScreenshot("Animation-frame-0-redo.png");
     // redo
     await page.waitForSelector("#redo", { state: "attached" });
     const element2 = await page.$("#redo");
     await element2.click();
-    await expect(page).toHaveScreenshot("Animation-frame-10-redo.png");
+    await expect.soft(page).toHaveScreenshot("Animation-frame-10-redo.png");
   });
 });
 
@@ -393,25 +393,25 @@ test.describe("Measurement", () => {
   test("Measurement", async ({ page }) => {
     // simulate keydown event
     await page.keyboard.press("m");
-    await expect(page).toHaveScreenshot("Measurement-bond-length.png");
+    await expect.soft(page).toHaveScreenshot("Measurement-bond-length.png");
     // select atoms
     await page.evaluate(() => {
       window.editor.avr.selectedAtomsIndices = [0, 1, 7];
     });
     await page.keyboard.press("m");
-    await expect(page).toHaveScreenshot("Measurement-bond-angle.png");
+    await expect.soft(page).toHaveScreenshot("Measurement-bond-angle.png");
     // select atoms
     await page.evaluate(() => {
       window.editor.avr.selectedAtomsIndices = [0, 1, 2, 7];
     });
     await page.keyboard.press("m");
-    await expect(page).toHaveScreenshot("Measurement-dihedral-angle.png");
+    await expect.soft(page).toHaveScreenshot("Measurement-dihedral-angle.png");
     // select no atoms
     await page.evaluate(() => {
       window.editor.avr.selectedAtomsIndices = [];
     });
     await page.keyboard.press("m");
-    await expect(page).toHaveScreenshot("Measurement-no-measurement.png");
+    await expect.soft(page).toHaveScreenshot("Measurement-no-measurement.png");
   });
 });
 
@@ -444,13 +444,13 @@ test.describe("Phonon", () => {
       });
       timeline.dispatchEvent(event);
     });
-    await expect(page).toHaveScreenshot("Phonon-frame-0.png");
+    await expect.soft(page).toHaveScreenshot("Phonon-frame-0.png");
     // change model style
     await page.evaluate(() => {
       window.editor.avr.modelStyle = 0;
       window.editor.avr.drawModels();
     });
-    await expect(page).toHaveScreenshot("Phonon-change-modelStyle.png");
+    await expect.soft(page).toHaveScreenshot("Phonon-change-modelStyle.png");
     // set frame 10
     await page.evaluate(() => {
       const timeline = document.getElementById("timeline");
@@ -462,13 +462,13 @@ test.describe("Phonon", () => {
       });
       timeline.dispatchEvent(event);
     });
-    await expect(page).toHaveScreenshot("Phonon-frame-10.png");
+    await expect.soft(page).toHaveScreenshot("Phonon-frame-10.png");
   });
 });
 
 test("Cell", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testCell.html");
-  await expect(page).toHaveScreenshot("Cell-frame-0.png");
+  await expect.soft(page).toHaveScreenshot("Cell-frame-0.png");
   // animation cell
   await page.evaluate(() => {
     const timeline = document.getElementById("timeline");
@@ -480,18 +480,18 @@ test("Cell", async ({ page }) => {
     });
     timeline.dispatchEvent(event);
   });
-  await expect(page).toHaveScreenshot("Cell-frame-10.png");
+  await expect.soft(page).toHaveScreenshot("Cell-frame-10.png");
   // hide cell
   await page.evaluate(() => {
     window.editor.avr.cellManager.showCell = false;
     window.editor.tjs.render();
   });
-  await expect(page).toHaveScreenshot("Cell-hide.png");
+  await expect.soft(page).toHaveScreenshot("Cell-hide.png");
 });
 
 test("Polyhedra", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testPolyhedra.html");
-  await expect(page).toHaveScreenshot("Polyhedra-frame-0.png");
+  await expect.soft(page).toHaveScreenshot("Polyhedra-frame-0.png");
   // animation Polyhedra
   await page.evaluate(() => {
     const timeline = document.getElementById("timeline");
@@ -503,63 +503,63 @@ test("Polyhedra", async ({ page }) => {
     });
     timeline.dispatchEvent(event);
   });
-  await expect(page).toHaveScreenshot("Polyhedra-frame-10.png");
+  await expect.soft(page).toHaveScreenshot("Polyhedra-frame-10.png");
 });
 
 test("Ops", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testOps.html");
-  await expect(page).toHaveScreenshot("Ops-replace.png");
+  await expect.soft(page).toHaveScreenshot("Ops-replace.png");
   // invert selection
   await page.evaluate(() => {
     window.editor.ops.selection.InvertSelection();
   });
-  await expect(page).toHaveScreenshot("Ops-invert-selection.png");
+  await expect.soft(page).toHaveScreenshot("Ops-invert-selection.png");
   // translate
   await page.evaluate(() => {
     window.editor.ops.transform.TranslateOperation({ vector: [1, 0, 0] });
   });
-  await expect(page).toHaveScreenshot("Ops-translate.png");
+  await expect.soft(page).toHaveScreenshot("Ops-translate.png");
   // add atom
   await page.evaluate(() => {
     window.editor.ops.atoms.AddAtomOperation({ symbol: "Pt", position: { x: -1, y: 1, z: 1 } });
   });
-  await expect(page).toHaveScreenshot("Ops-add-atom.png");
+  await expect.soft(page).toHaveScreenshot("Ops-add-atom.png");
   // color by index
   await page.evaluate(() => {
     window.editor.ops.atoms.ColorByAttribute({ attribute: "Index", color1: "#00ff00", color2: "#0000ff" });
   });
-  await expect(page).toHaveScreenshot("Ops-color-by-index.png");
+  await expect.soft(page).toHaveScreenshot("Ops-color-by-index.png");
 });
 
 test("Species", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testSpecies.html");
-  await expect(page).toHaveScreenshot("Species.png");
+  await expect.soft(page).toHaveScreenshot("Species.png");
 });
 
 test("Bond", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testBond.html");
-  await expect(page).toHaveScreenshot("Bond-frame-0.png");
+  await expect.soft(page).toHaveScreenshot("Bond-frame-0.png");
   // hydrogen bond
   await page.evaluate(() => {
     window.editor.avr.bondManager.showHydrogenBonds = true;
     window.editor.avr.drawModels();
   });
-  await expect(page).toHaveScreenshot("Bond-hydrogen-bond.png");
+  await expect.soft(page).toHaveScreenshot("Bond-hydrogen-bond.png");
   // bond settings
   await page.evaluate(() => {
     delete window.editor.avr.bondManager.settings["N-H"];
     window.editor.avr.drawModels();
   });
-  await expect(page).toHaveScreenshot("Bond-delete-bond-pair.png");
+  await expect.soft(page).toHaveScreenshot("Bond-delete-bond-pair.png");
   // bond outside boundary
   await page.evaluate(() => {
     window.editor.avr.bondManager.showOutBoundaryBonds = true;
     window.editor.avr.drawModels();
   });
-  await expect(page).toHaveScreenshot("Bond-outside-boundary.png");
+  await expect.soft(page).toHaveScreenshot("Bond-outside-boundary.png");
 });
 
 test("ModelStyle", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testModelStyle.html");
-  await expect(page).toHaveScreenshot("ModelStyle.png");
+  await expect.soft(page).toHaveScreenshot("ModelStyle.png");
 });
