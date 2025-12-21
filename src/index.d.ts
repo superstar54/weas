@@ -61,6 +61,13 @@ export declare class WEAS {
   downloadAnimation(options?: { filename?: string; format?: string; fps?: number; startFrame?: number; endFrame?: number | null; mimeType?: string | null; resolution?: number }): Promise<void>;
 }
 
+export declare class SetCellSettings {}
+export declare class SetBondSettings {}
+export declare class SetIsosurfaceSettings {}
+export declare class SetVolumeSliceSettings {}
+export declare class SetVectorFieldSettings {}
+export declare class SetHighlightSettings {}
+
 /**
  * Options for constructing an AtomsViewer.
  */

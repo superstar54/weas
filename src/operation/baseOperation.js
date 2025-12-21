@@ -106,6 +106,15 @@ export class BaseOperation {
   getUISchema() {
     return this.uiFields || this.constructor.ui || null;
   }
+
+  supportsAdjustGUI() {
+    const schema = this.getUISchema();
+    if (!schema) {
+      return false;
+    }
+    const { fields } = normalizeUISchema(schema);
+    return fields && Object.keys(fields).length > 0;
+  }
 }
 
 export function renameFolder(folder, newName) {
@@ -136,6 +145,9 @@ function resolveOptions(options, op) {
 function addController(guiFolder, state, key, field, options) {
   if (field.type === "color") {
     return guiFolder.addColor(state, key);
+  }
+  if (field.type === "boolean") {
+    return guiFolder.add(state, key);
   }
   if (field.type === "number" && field.min !== undefined && field.max !== undefined) {
     return guiFolder.add(state, key, field.min, field.max);

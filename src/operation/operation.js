@@ -6,6 +6,7 @@ import * as mesh from "./mesh.js";
 import * as atoms from "./atoms.js";
 import * as selection from "./selection.js";
 import * as viewer from "./viewer.js";
+import * as settings from "./settings.js";
 
 // Organize them under namespaces
 export const ops = {
@@ -15,6 +16,7 @@ export const ops = {
   atoms: atoms,
   selection: selection,
   viewer: viewer,
+  settings: settings,
 };
 
 export class OperationManager {
@@ -151,10 +153,19 @@ export class OperationManager {
       this.guiContainer.style.display = "block";
       const lastOperation = this.undoStack[this.undoStack.length - 1];
 
-      // Clear the existing GUI controls
+      if (typeof lastOperation.supportsAdjustGUI === "function" && !lastOperation.supportsAdjustGUI()) {
+        this.guiContainer.style.display = "none";
+        return;
+      }
+
+      // Clear the existing GUI controls and folders
       while (this.adjustLastOpFolder.__controllers.length > 0) {
         this.adjustLastOpFolder.remove(this.adjustLastOpFolder.__controllers[0]);
       }
+      const folderKeys = Object.keys(this.adjustLastOpFolder.__folders);
+      folderKeys.forEach((key) => {
+        this.adjustLastOpFolder.removeFolder(this.adjustLastOpFolder.__folders[key]);
+      });
 
       // Call the operation's setupGUI method if it exists
       if (typeof lastOperation.setupGUI === "function") {

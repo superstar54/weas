@@ -64,7 +64,7 @@ class SetViewerState extends BaseOperation {
       radiusType: { type: "select", options: (op) => op.radiusTypeOptions },
       materialType: { type: "select", options: ["Standard", "Phong", "Basic"] },
       atomLabelType: { type: "select", options: ["None", "Symbol", "Index"] },
-      showBondedAtoms: { type: "select", options: [true, false] },
+      showBondedAtoms: { type: "boolean" },
       atomScale: { type: "number", min: 0.1, max: 2.0, step: 0.01 },
       backgroundColor: { type: "color" },
     };
@@ -75,7 +75,7 @@ class SetViewerState extends BaseOperation {
         return;
       }
       if (typeof value === "boolean") {
-        fields[key] = { type: "select", options: [true, false] };
+        fields[key] = { type: "boolean" };
       } else if (typeof value === "number") {
         fields[key] = { type: "number" };
       } else if (typeof value === "string") {

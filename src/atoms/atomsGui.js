@@ -103,19 +103,23 @@ class AtomsGUI {
       });
 
     // Show Cell Control
+    const showCellState = { showCell: this.viewer.cellManager.showCell };
     this.showCellController = atomsFolder
-      .add(this.viewer.cellManager, "showCell")
+      .add(showCellState, "showCell")
       .name("Unit Cell")
       .onChange((value) => {
-        this.viewer.cellManager.showCell = value;
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.weas.ops.settings.SetCellSettings({ showCell: value });
       });
 
     // Show Cell Axes Control
+    const showAxesState = { showAxes: this.viewer.cellManager.showAxes };
     this.showCellAxesController = atomsFolder
-      .add(this.viewer.cellManager, "showAxes")
+      .add(showAxesState, "showAxes")
       .name("Crystal Axes")
       .onChange((value) => {
-        this.viewer.cellManager.showAxes = value;
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.weas.ops.settings.SetCellSettings({ showAxes: value });
       });
 
     // Show Bonded Atoms Control
