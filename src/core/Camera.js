@@ -36,6 +36,10 @@ export class OrthographicCamera extends THREE.OrthographicCamera {
   dispatchObjectEvent(data) {
     const event = new CustomEvent("weas", { detail: data });
     this.tjs.containerElement.dispatchEvent(event);
-    this.tjs.render();
+    if (this.tjs && typeof this.tjs.requestRedraw === "function") {
+      this.tjs.requestRedraw("render");
+    } else {
+      this.tjs.render();
+    }
   }
 }

@@ -14,17 +14,22 @@ import { InstancedMeshPrimitive } from "./plugins/InstancedMeshPrimitive.js";
 import { AnyMesh } from "./plugins/AnyMesh.js";
 import { AtomsViewer } from "./atoms/AtomsViewer.js";
 import { Atoms } from "./atoms/atoms.js";
+import { StateStore } from "./state/store.js";
+import { createDefaultState } from "./state/defaultState.js";
 
 class WEAS {
   constructor({ domElement, atoms = [new Atoms()], viewerConfig = {}, guiConfig = {} }) {
     this.uuid = THREE.MathUtils.generateUUID();
     // Initialize Three.js scene, camera, and renderer
     this.tjs = new BlendJS(domElement);
+    this.tjs.weas = this;
+    this.tjs.requestRedraw = this.requestRedraw.bind(this);
     this.guiManager = new GUIManager(this, guiConfig);
     this.eventHandlers = new EventHandlers(this);
     this.ops = new OperationManager(this);
     this.selectionManager = new SelectionManager(this);
     this.objectManager = new ObjectManager(this);
+    this.state = new StateStore(createDefaultState());
     // Initialize AtomsViewer
     this.avr = new AtomsViewer({ weas: this, atoms: atoms, viewerConfig: viewerConfig });
     // Initialize other plugins
@@ -40,6 +45,14 @@ class WEAS {
 
   render() {
     // Render
+    this.requestRedraw("render");
+  }
+
+  requestRedraw(kind = "render") {
+    if (this.avr && typeof this.avr.requestRedraw === "function") {
+      this.avr.requestRedraw(kind);
+      return;
+    }
     this.tjs.render();
   }
 

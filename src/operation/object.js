@@ -11,7 +11,8 @@ class DeleteOperation extends BaseOperation {
 
   constructor({ weas, indices = null }) {
     super(weas);
-    this.indices = indices ? indices : Array.from(this.weas.avr.selectedAtomsIndices);
+    const selectedIndices = this.stateGet("viewer.selectedAtomsIndices", []) || [];
+    this.indices = indices ? indices : Array.from(selectedIndices);
     this.initialAtoms = weas.avr.atoms.copy();
     // Capture the state of the selected objects
     this.initialObjectsState = this.weas.selectionManager.selectedObjects.map((object) => ({
@@ -58,7 +59,8 @@ class CopyOperation extends BaseOperation {
 
   constructor({ weas, indices = null }) {
     super(weas);
-    this.indices = indices ? indices : Array.from(this.weas.avr.selectedAtomsIndices);
+    const selectedIndices = this.stateGet("viewer.selectedAtomsIndices", []) || [];
+    this.indices = indices ? indices : Array.from(selectedIndices);
     this.initialAtoms = weas.avr.atoms.copy(); // Save the initial state for undo
     // Capture the state of the selected objects
     this.newObjects = [];

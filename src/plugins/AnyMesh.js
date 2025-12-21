@@ -23,6 +23,19 @@ export class AnyMesh {
     this.scene = this.viewer.tjs.scene;
     this.settings = [];
     this.meshes = [];
+
+    const pluginState = this.viewer.state.get("plugins.anyMesh");
+    if (pluginState && Array.isArray(pluginState.settings)) {
+      this.fromSettings(pluginState.settings);
+      this.drawMesh();
+    }
+    this.viewer.state.subscribe("plugins.anyMesh", (next) => {
+      if (!next || !Array.isArray(next.settings)) {
+        return;
+      }
+      this.fromSettings(next.settings);
+      this.drawMesh();
+    });
   }
 
   fromSettings(settings) {
@@ -89,6 +102,6 @@ export class AnyMesh {
         this.scene.add(edgeLines);
       }
     });
-    this.viewer.tjs.render();
+    this.viewer.requestRedraw?.("render");
   }
 }

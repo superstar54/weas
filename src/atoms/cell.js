@@ -23,6 +23,37 @@ export class CellManager {
 
     this._showCell = this.settings.showCell;
     this._showAxes = this.settings.showAxes;
+
+    const cellState = this.viewer.state.get("cell") || {};
+    Object.assign(this.settings, cellState);
+    if (cellState.showCell !== undefined) {
+      this._showCell = cellState.showCell;
+    }
+    if (cellState.showAxes !== undefined) {
+      this._showAxes = cellState.showAxes;
+    }
+    this.viewer.state.subscribe("cell", (next, prev) => {
+      if (!next) {
+        return;
+      }
+      const prevState = prev || {};
+      const { showCell: nextShowCell, showAxes: nextShowAxes, ...nextSettings } = next;
+      const prevSettings = { ...prevState };
+      delete prevSettings.showCell;
+      delete prevSettings.showAxes;
+      Object.assign(this.settings, nextSettings);
+      if (nextShowCell !== undefined) {
+        this.showCell = nextShowCell;
+      }
+      if (nextShowAxes !== undefined) {
+        this.showAxes = nextShowAxes;
+      }
+      const settingsChanged = JSON.stringify(nextSettings) !== JSON.stringify(prevSettings);
+      if (settingsChanged) {
+        this.draw();
+        this.viewer.requestRedraw?.("render");
+      }
+    });
   }
 
   get showCell() {
@@ -33,7 +64,7 @@ export class CellManager {
     this._showCell = newValue;
     if (this.cellMesh) this.cellMesh.visible = newValue;
     if (this.cellVectors) this.cellVectors.visible = newValue;
-    this.viewer.tjs.render();
+    this.viewer.requestRedraw?.("render");
   }
 
   get showAxes() {
@@ -43,7 +74,7 @@ export class CellManager {
   set showAxes(newValue) {
     this._showAxes = newValue;
     if (this.cellVectors) this.cellVectors.visible = newValue;
-    this.viewer.tjs.render();
+    this.viewer.requestRedraw?.("render");
   }
 
   clear() {

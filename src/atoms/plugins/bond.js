@@ -49,6 +49,37 @@ export class BondManager {
     this.showOutBoundaryBonds = settings.showOutBoundaryBonds ?? false;
     this.bondRadius = 0.1;
     this.init();
+
+    const bondState = this.viewer.state.get("bond") || {};
+    if (bondState.hideLongBonds !== undefined) this.hideLongBonds = bondState.hideLongBonds;
+    if (bondState.showHydrogenBonds !== undefined) this.showHydrogenBonds = bondState.showHydrogenBonds;
+    if (bondState.showOutBoundaryBonds !== undefined) this.showOutBoundaryBonds = bondState.showOutBoundaryBonds;
+    if (bondState.settings) {
+      this.fromSettings(bondState.settings);
+    }
+    this.viewer.state.subscribe("bond", (next) => {
+      if (!next) return;
+      let changed = false;
+      if (next.hideLongBonds !== undefined && next.hideLongBonds !== this.hideLongBonds) {
+        this.hideLongBonds = next.hideLongBonds;
+        changed = true;
+      }
+      if (next.showHydrogenBonds !== undefined && next.showHydrogenBonds !== this.showHydrogenBonds) {
+        this.showHydrogenBonds = next.showHydrogenBonds;
+        changed = true;
+      }
+      if (next.showOutBoundaryBonds !== undefined && next.showOutBoundaryBonds !== this.showOutBoundaryBonds) {
+        this.showOutBoundaryBonds = next.showOutBoundaryBonds;
+        changed = true;
+      }
+      if (next.settings) {
+        this.fromSettings(next.settings);
+        changed = true;
+      }
+      if (changed && !this.viewer._initializingState) {
+        this.viewer.requestRedraw?.("full");
+      }
+    });
   }
 
   init() {
@@ -106,6 +137,14 @@ export class BondManager {
     });
   }
 
+  toPlainSettings() {
+    const result = {};
+    Object.entries(this.settings).forEach(([key, setting]) => {
+      result[key] = setting && typeof setting.toDict === "function" ? setting.toDict() : setting;
+    });
+    return result;
+  }
+
   // Modify addSetting to accept a single object parameter
   addSetting({ specie1, specie2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1, type = 0 }) {
     /* Add a new setting to the bond */
@@ -155,9 +194,10 @@ export class BondManager {
     }
     // add boundary atoms to offsets
     // this.viewer.logger.debug("boundaryList: ", this.viewer.boundaryList);
-    if (this.viewer.boundaryList.length > 0) {
-      for (let i = 0; i < this.viewer.boundaryList.length; i++) {
-        offsets.push(this.viewer.boundaryList[i]);
+    const boundaryList = this.viewer.boundaryList || [];
+    if (boundaryList.length > 0) {
+      for (let i = 0; i < boundaryList.length; i++) {
+        offsets.push(boundaryList[i]);
       }
     }
     // I don't add bonded atoms to offsets, because the bondlist will add them through the bondedAtoms["bonds"]

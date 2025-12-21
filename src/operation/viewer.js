@@ -30,18 +30,21 @@ class SetViewerState extends BaseOperation {
     Object.keys(this.uiFields.fields).forEach((key) => {
       this[key] = cloneValue(this.patch[key]);
     });
-    this.previous = {};
-    Object.keys(this.patch).forEach((key) => {
-      this.previous[key] = cloneValue(this.weas.avr[key]);
-    });
   }
 
   execute() {
-    this.weas.avr.applyState(this.patch, { redraw: this.redraw });
+    this.ensureStateStore();
+    this.applyStatePatchWithHistory("viewer", this.patch, (key) => this.weas.avr[key]);
   }
 
   undo() {
-    this.weas.avr.applyState(this.previous, { redraw: this.redraw });
+    this.ensureStateStore();
+    this.undoStatePatch();
+  }
+
+  redo() {
+    this.ensureStateStore();
+    this.redoStatePatch();
   }
 
   applyParams(params) {
@@ -88,8 +91,13 @@ class SetViewerState extends BaseOperation {
   buildDefaultPatch() {
     const keys = ["modelStyle", "colorBy", "colorType", "radiusType", "materialType", "atomLabelType", "showBondedAtoms", "atomScale", "backgroundColor"];
     const patch = {};
+    const viewerState = this.stateGet("viewer", {});
     keys.forEach((key) => {
-      patch[key] = cloneValue(this.weas.avr[key]);
+      if (key in viewerState) {
+        patch[key] = cloneValue(viewerState[key]);
+      } else {
+        patch[key] = cloneValue(this.weas.avr[key]);
+      }
     });
     return patch;
   }

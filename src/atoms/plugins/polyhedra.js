@@ -34,6 +34,22 @@ export class PolyhedraManager {
     this.allNormals = [];
     this.allColors = [];
     this.init();
+
+    const pluginState = this.viewer.state.get("plugins.polyhedra");
+    if (pluginState && Array.isArray(pluginState.settings) && pluginState.settings.length > 0) {
+      this.fromSettings(pluginState.settings);
+    }
+    this.viewer.state.subscribe("plugins.polyhedra", (next) => {
+      if (!next) {
+        return;
+      }
+      if (this.viewer._initializingState) {
+        return;
+      }
+      const settings = Array.isArray(next.settings) ? next.settings : [];
+      this.fromSettings(settings);
+      this.refreshMesh();
+    });
   }
 
   init() {
@@ -64,6 +80,10 @@ export class PolyhedraManager {
     });
   }
 
+  toPlainSettings() {
+    return this.settings.map((setting) => (setting && typeof setting.toDict === "function" ? setting.toDict() : setting));
+  }
+
   // Modify addSetting to accept a single object parameter
   addSetting({ symbol, color = "#3d82ed", show_edge = false }) {
     /* Add a new setting to the polyhedra */
@@ -85,7 +105,11 @@ export class PolyhedraManager {
     this.allVertices = [];
     this.allNormals = [];
     this.allColors = [];
+    if (this.mesh && this.mesh.parent) {
+      this.mesh.parent.remove(this.mesh);
+    }
     clearObject(this.scene, this.mesh);
+    this.mesh = null;
   }
 
   drawPolyhedras() {
@@ -96,6 +120,18 @@ export class PolyhedraManager {
     const mesh = this.drawPolyhedraMesh(this.viewer.atoms, this.viewer._materialType);
     this.mesh = mesh;
     return mesh;
+  }
+
+  refreshMesh() {
+    const parent = this.viewer.atomManager.meshes["atom"];
+    if (!parent) {
+      return;
+    }
+    const mesh = this.drawPolyhedras();
+    if (mesh) {
+      parent.add(mesh);
+      this.viewer.requestRedraw?.("render");
+    }
   }
 
   buildPolyhedras(atoms, polyhedras, bondList, colorType = "CPK", materialType = "standard") {

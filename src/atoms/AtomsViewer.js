@@ -22,6 +22,7 @@ class AtomsViewer {
     this.uuid = THREE.MathUtils.generateUUID();
     this.weas = weas;
     this.tjs = weas.tjs;
+    this.state = weas.state;
     // Merge the user-provided settings overrides with the default settings
     const viewerSettings = { ...defaultViewerSettings, ...viewerConfig };
     // Apply merged settings
@@ -41,10 +42,15 @@ class AtomsViewer {
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.baseAtomLabelSettings = [];
     this.debug = viewerSettings.debug;
-    this.continuousUpdate = viewerSettings.continuousUpdate;
+    this._continuousUpdate = viewerSettings.continuousUpdate;
     this._currentFrame = 0;
     this._updateDepth = 0;
     this._pendingRedraw = null;
+    this._syncingState = false;
+    this._initializingState = false;
+    this._atomScales = [];
+    this._modelSticks = [];
+    this._modelPolyhedras = [];
     this.logger = new Logger(viewerSettings.logLevel || "warn"); // Default log level is "warn"
     this.trajectory = [new Atoms()];
     // animation settings
@@ -69,6 +75,50 @@ class AtomsViewer {
     this._cell = null;
     this._frameSignature = null;
     this.init(atoms);
+    this.initializeStateStore(viewerSettings);
+    this.setupStateSubscriptions();
+  }
+
+  initializeStateStore(viewerSettings) {
+    this.state.transaction(() => {
+      this.state.set({
+        viewer: {
+          ...viewerSettings,
+          atomScales: this._atomScales,
+          modelSticks: this._modelSticks,
+          modelPolyhedras: this._modelPolyhedras,
+          selectedAtomsIndices: [],
+        },
+      });
+      if (viewerSettings.cellSettings) {
+        this.state.set({ cell: { ...viewerSettings.cellSettings } });
+      }
+      if (viewerSettings.bondSettings) {
+        this.state.set({ bond: { ...viewerSettings.bondSettings } });
+      }
+    });
+  }
+
+  setupStateSubscriptions() {
+    this.state.subscribe("viewer", (next, prev) => {
+      if (!next) {
+        return;
+      }
+      if (this._syncingState || this._initializingState) {
+        return;
+      }
+      const prevState = prev || {};
+      const patch = {};
+      Object.keys(next).forEach((key) => {
+        if (JSON.stringify(next[key]) !== JSON.stringify(prevState[key])) {
+          patch[key] = next[key];
+        }
+      });
+      if (Object.keys(patch).length === 0) {
+        return;
+      }
+      this.applyState(patch, { redraw: "auto", skipStore: true });
+    });
   }
 
   init(atoms) {
@@ -80,6 +130,17 @@ class AtomsViewer {
     // only need to update the atoms, without reset the viewer
     this.updateAtoms(atoms);
     this.logger.debug("init AtomsViewer successfully");
+  }
+
+  setVolumetricData(data) {
+    this.volumetricData = data;
+    if (this.isosurfaceManager) {
+      this.isosurfaceManager.drawIsosurfaces();
+    }
+    if (this.volumeSliceManager) {
+      this.volumeSliceManager.drawSlices();
+    }
+    this.requestRedraw("render");
   }
 
   reset() {
@@ -96,7 +157,8 @@ class AtomsViewer {
       [0, 1],
       [0, 1],
     ];
-    this.boundaryList = null;
+    this.boundaryList = [];
+    this.boundaryMap = {};
     //
   }
 
@@ -178,7 +240,7 @@ class AtomsViewer {
     this.lastFrameTime = Date.now(); // Update the last frame time
 
     this.updateFrame(newValue);
-    this.tjs.render();
+    this.requestRedraw("render");
   }
 
   get originalCell() {
@@ -211,49 +273,132 @@ class AtomsViewer {
   }
 
   updateAtoms(atoms) {
-    // Update the trajectory, managers, and draw the models
-    // if atoms is a array, which means it is a trajectory data
-    // only the first frame is used to initialize the viewer
-    // but keep the trajectory data for the future use
-    if (Array.isArray(atoms) && atoms.length > 1) {
-      this.trajectory = atoms;
-    } else if (Array.isArray(atoms) && atoms.length === 1) {
-      this.trajectory = atoms;
-    } else {
-      this.trajectory = [atoms];
+    this._initializingState = true;
+    try {
+      // Update the trajectory, managers, and draw the models
+      // if atoms is a array, which means it is a trajectory data
+      // only the first frame is used to initialize the viewer
+      // but keep the trajectory data for the future use
+      if (Array.isArray(atoms) && atoms.length > 1) {
+        this.trajectory = atoms;
+      } else if (Array.isArray(atoms) && atoms.length === 1) {
+        this.trajectory = atoms;
+      } else {
+        this.trajectory = [atoms];
+      }
+      this._cell = null;
+      this._atoms = null;
+      this._currentFrame = 0;
+      this._frameSignature = this.getFrameSignature(this.atoms);
+      this.selectedAtomsIndices = [];
+      // set cell
+      this.cellManager.cell = this.atoms.cell;
+      // initialize the bond settings
+      // the following plugins read the atoms attribute, so they need to be updated
+      this.atomManager.init();
+      this.highlightManager.init();
+      this.bondManager.init();
+      this.state.transaction(() => {
+        const highlightState = this.state.get("plugins.highlight") || {};
+        if (!highlightState.settings || Object.keys(highlightState.settings).length === 0) {
+          this.state.set({ plugins: { highlight: { settings: this.highlightManager.toPlainSettings() } } });
+        } else {
+          this.highlightManager.fromSettings(highlightState.settings);
+        }
+        const speciesState = this.state.get("plugins.species") || {};
+        const defaultSpeciesSettings = this.atomManager.toPlainSettings();
+        if (speciesState.settings && Object.keys(speciesState.settings).length > 0) {
+          const mergedSpeciesSettings = { ...defaultSpeciesSettings, ...speciesState.settings };
+          this.atomManager.fromSettings(mergedSpeciesSettings);
+          this.state.set({ plugins: { species: { settings: mergedSpeciesSettings } } });
+        } else {
+          this.state.set({ plugins: { species: { settings: defaultSpeciesSettings } } });
+        }
+        const bondState = this.state.get("bond") || {};
+        const defaultBondSettings = this.bondManager.toPlainSettings();
+        if (bondState.settings && Object.keys(bondState.settings).length > 0) {
+          const mergedBondSettings = { ...defaultBondSettings, ...bondState.settings };
+          this.bondManager.fromSettings(mergedBondSettings);
+          this.state.set({ bond: { settings: mergedBondSettings } });
+        } else {
+          this.state.set({ bond: { settings: defaultBondSettings } });
+        }
+      });
+      this.polyhedraManager.init();
+      this.state.transaction(() => {
+        const polyhedraState = this.state.get("plugins.polyhedra") || {};
+        if (Array.isArray(polyhedraState.settings) && polyhedraState.settings.length > 0) {
+          this.polyhedraManager.fromSettings(polyhedraState.settings);
+        } else {
+          this.state.set({ plugins: { polyhedra: { settings: this.polyhedraManager.toPlainSettings() } } });
+        }
+      });
+      this.VFManager.init();
+      // for other plugins, they need to be reset
+      this.isosurfaceManager.reset();
+      this.volumeSliceManager.reset();
+      this.Measurement.reset();
+      this.state.set({ plugins: { measurement: { settings: null } } });
+      // if trajectory data is provided, add the trajectory controller
+      this.guiManager.update(this.trajectory);
+      this.guiManager.updateLegend();
+      if (this.weas.guiManager && this.weas.guiManager.setDownloadAnimationVisible) {
+        this.weas.guiManager.setDownloadAnimationVisible(this.trajectory.length > 1);
+      }
+      // this.atoms.uuid = this.uuid;
+      this._syncingState = true;
+      try {
+        const modelArrays = this.getStateModelArrays(this.atoms.getAtomsCount());
+        if (modelArrays) {
+          this.atomScales = modelArrays.atomScales;
+          this.modelSticks = modelArrays.modelSticks;
+          this.modelPolyhedras = modelArrays.modelPolyhedras;
+        } else {
+          this.updateModelStyles(this._modelStyle);
+        }
+        this.atomLabelType = this._atomLabelType;
+      } finally {
+        this._syncingState = false;
+      }
+      this._syncingState = true;
+      try {
+        this.state.set({
+          viewer: {
+            atomScales: this._atomScales,
+            modelSticks: this._modelSticks,
+            modelPolyhedras: this._modelPolyhedras,
+          },
+        });
+      } finally {
+        this._syncingState = false;
+      }
+      this.drawModels();
+      // udpate camera position and target position based on the atoms
+      this.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
+      this.logger.debug("Set atoms successfullly");
+    } finally {
+      this._initializingState = false;
     }
-    this._cell = null;
-    this._atoms = null;
-    this._currentFrame = 0;
-    this._frameSignature = this.getFrameSignature(this.atoms);
-    this.selectedAtomsIndices = [];
-    // set cell
-    this.cellManager.cell = this.atoms.cell;
-    // initialize the bond settings
-    // the following plugins read the atoms attribute, so they need to be updated
-    this.atomManager.init();
-    this.highlightManager.init();
-    this.bondManager.init();
-    this.polyhedraManager.init();
-    this.VFManager.init();
-    // for other plugins, they need to be reset
-    this.isosurfaceManager.reset();
-    this.volumeSliceManager.reset();
-    this.Measurement.reset();
-    // if trajectory data is provided, add the trajectory controller
-    this.guiManager.update(this.trajectory);
-    this.guiManager.updateLegend();
-    if (this.weas.guiManager && this.weas.guiManager.setDownloadAnimationVisible) {
-      this.weas.guiManager.setDownloadAnimationVisible(this.trajectory.length > 1);
+  }
+
+  getStateModelArrays(atomCount) {
+    const viewerState = this.state.get("viewer") || {};
+    const { atomScales, modelSticks, modelPolyhedras } = viewerState;
+    if (
+      Array.isArray(atomScales) &&
+      Array.isArray(modelSticks) &&
+      Array.isArray(modelPolyhedras) &&
+      atomScales.length === atomCount &&
+      modelSticks.length === atomCount &&
+      modelPolyhedras.length === atomCount
+    ) {
+      return {
+        atomScales: atomScales.slice(),
+        modelSticks: modelSticks.slice(),
+        modelPolyhedras: modelPolyhedras.slice(),
+      };
     }
-    // this.atoms.uuid = this.uuid;
-    this.modelStyle = this._modelStyle;
-    this.atomLabelType = this._atomLabelType;
-    this.drawModels();
-    this.selectedAtomsIndices = [];
-    // udpate camera position and target position based on the atoms
-    this.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
-    this.logger.debug("Set atoms successfullly");
+    return null;
   }
 
   // set atoms from phonon trajectory
@@ -286,10 +431,12 @@ class AtomsViewer {
   }
 
   set modelStyle(newValue) {
-    newValue = parseInt(newValue);
-    this.logger.debug("updateModelStyle: ", newValue);
-    this.updateModelStyles(newValue);
-    this.weas.eventHandlers.dispatchViewerUpdated({ modelStyle: newValue });
+    if (this._syncingState) {
+      this._modelStyle = parseInt(newValue);
+      this.weas.eventHandlers.dispatchViewerUpdated({ modelStyle: this._modelStyle });
+      return;
+    }
+    this.applyState({ modelStyle: newValue }, { redraw: "full" });
   }
 
   get radiusType() {
@@ -297,13 +444,12 @@ class AtomsViewer {
   }
 
   set radiusType(newValue) {
-    if (this._radiusType !== newValue) {
+    if (this._syncingState) {
       this._radiusType = newValue;
       this.weas.eventHandlers.dispatchViewerUpdated({ radiusType: newValue });
-      this.atomManager.init();
-      this.bondManager.init();
-      this.polyhedraManager.init();
+      return;
     }
+    this.applyState({ radiusType: newValue }, { redraw: "full" });
   }
 
   get colorBy() {
@@ -311,18 +457,12 @@ class AtomsViewer {
   }
 
   set colorBy(newValue) {
-    this._colorBy = newValue;
-    // avoid the recursive loop
-    if (this.guiManager.colorByController && this.guiManager.colorByController.getValue() !== newValue) {
-      this.guiManager.beginSync();
-      this.guiManager.colorByController.setValue(newValue); // Update the GUI
-      this.guiManager.endSync();
+    if (this._syncingState) {
+      this._colorBy = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ colorBy: newValue });
+      return;
     }
-    this.weas.eventHandlers.dispatchViewerUpdated({ colorBy: newValue });
-    // update the bondManager settings
-    this.atomManager.init();
-    this.bondManager.init();
-    this.polyhedraManager.init();
+    this.applyState({ colorBy: newValue }, { redraw: "full" });
   }
 
   get colorType() {
@@ -330,19 +470,12 @@ class AtomsViewer {
   }
 
   set colorType(newValue) {
-    this._colorType = newValue;
-    // avoid the recursive loop
-    if (this.guiManager.colorTypeController && this.guiManager.colorTypeController.getValue() !== newValue) {
-      this.guiManager.beginSync();
-      this.guiManager.colorTypeController.setValue(newValue); // Update the GUI
-      this.guiManager.endSync();
+    if (this._syncingState) {
+      this._colorType = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ colorType: newValue });
+      return;
     }
-    this.weas.eventHandlers.dispatchViewerUpdated({ colorType: newValue });
-    // update the bondManager settings
-    this.atomManager.init();
-    this.guiManager.updateLegend();
-    this.bondManager.init();
-    this.polyhedraManager.init();
+    this.applyState({ colorType: newValue }, { redraw: "full" });
   }
 
   get materialType() {
@@ -350,14 +483,12 @@ class AtomsViewer {
   }
 
   set materialType(newValue) {
-    this._materialType = newValue;
-    // avoid the recursive loop
-    if (this.guiManager.materialTypeController && this.guiManager.materialTypeController.getValue() !== newValue) {
-      this.guiManager.beginSync();
-      this.guiManager.materialTypeController.setValue(newValue); // Update the GUI
-      this.guiManager.endSync();
+    if (this._syncingState) {
+      this._materialType = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ materialType: newValue });
+      return;
     }
-    this.weas.eventHandlers.dispatchViewerUpdated({ materialType: newValue });
+    this.applyState({ materialType: newValue }, { redraw: "full" });
   }
 
   get colorRamp() {
@@ -365,8 +496,12 @@ class AtomsViewer {
   }
 
   set colorRamp(newValue) {
-    this._colorRamp = newValue;
-    this.weas.eventHandlers.dispatchViewerUpdated({ colorRamp: newValue });
+    if (this._syncingState) {
+      this._colorRamp = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ colorRamp: newValue });
+      return;
+    }
+    this.applyState({ colorRamp: newValue }, { redraw: "full" });
   }
 
   get backgroundColor() {
@@ -374,9 +509,12 @@ class AtomsViewer {
   }
 
   set backgroundColor(newValue) {
-    this._backgroundColor = newValue;
-    this.tjs.scene.background = new THREE.Color(newValue);
-    this.weas.eventHandlers.dispatchViewerUpdated({ backgroundColor: newValue });
+    if (this._syncingState) {
+      this._backgroundColor = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ backgroundColor: newValue });
+      return;
+    }
+    this.applyState({ backgroundColor: newValue }, { redraw: "render" });
   }
 
   get atomLabelType() {
@@ -384,17 +522,12 @@ class AtomsViewer {
   }
 
   set atomLabelType(newValue) {
-    this.logger.debug("updateAtomLabelType: ", newValue);
-    this._atomLabelType = newValue;
-    this.baseAtomLabelSettings = this.getAtomLabelSettingsFromType(newValue);
-    this.updateAtomLabels();
-    // avoid the recursive loop
-    if (this.guiManager.atomLabelTypeController && this.guiManager.atomLabelTypeController.getValue() !== newValue) {
-      this.guiManager.beginSync();
-      this.guiManager.atomLabelTypeController.setValue(newValue); // Update the GUI
-      this.guiManager.endSync();
+    if (this._syncingState) {
+      this._atomLabelType = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ atomLabelType: newValue });
+      return;
     }
-    this.weas.eventHandlers.dispatchViewerUpdated({ atomLabelType: newValue });
+    this.applyState({ atomLabelType: newValue }, { redraw: "labels" });
   }
 
   get boundary() {
@@ -402,23 +535,12 @@ class AtomsViewer {
   }
 
   set boundary(newValue) {
-    this._boundary = newValue;
-    // avoid the recursive loop
-    // this.guiManager.boundaryControllers is a 2x3 array
-    if (this.guiManager.boundaryControllers) {
-      this.guiManager.beginSync();
+    if (this._syncingState) {
+      this._boundary = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ boundary: newValue });
+      return;
     }
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 2; j++) {
-        if (this.guiManager.boundaryControllers && this.guiManager.boundaryControllers[i][j].getValue() !== newValue[i][j]) {
-          this.guiManager.boundaryControllers[i][j].setValue(newValue[i][j]); // Update the GUI
-        }
-      }
-    }
-    if (this.guiManager.boundaryControllers) {
-      this.guiManager.endSync();
-    }
-    this.weas.eventHandlers.dispatchViewerUpdated({ boundary: newValue });
+    this.applyState({ boundary: newValue }, { redraw: "full" });
   }
 
   get showBondedAtoms() {
@@ -426,14 +548,25 @@ class AtomsViewer {
   }
 
   set showBondedAtoms(newValue) {
-    this._showBondedAtoms = newValue;
-    // avoid the recursive loop
-    if (this.guiManager.showBondedAtomsController && this.guiManager.showBondedAtomsController.getValue() !== newValue) {
-      this.guiManager.beginSync();
-      this.guiManager.showBondedAtomsController.setValue(newValue); // Update the GUI
-      this.guiManager.endSync();
+    if (this._syncingState) {
+      this._showBondedAtoms = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ showBondedAtoms: newValue });
+      return;
     }
-    this.weas.eventHandlers.dispatchViewerUpdated({ showBondedAtoms: newValue });
+    this.applyState({ showBondedAtoms: newValue }, { redraw: "full" });
+  }
+
+  get continuousUpdate() {
+    return this._continuousUpdate;
+  }
+
+  set continuousUpdate(newValue) {
+    if (this._syncingState) {
+      this._continuousUpdate = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ continuousUpdate: newValue });
+      return;
+    }
+    this.applyState({ continuousUpdate: newValue }, { redraw: "render" });
   }
 
   get atomScale() {
@@ -441,11 +574,12 @@ class AtomsViewer {
   }
 
   set atomScale(newValue) {
-    if (this._atomScale !== newValue) {
+    if (this._syncingState) {
       this._atomScale = newValue;
       this.weas.eventHandlers.dispatchViewerUpdated({ atomScale: newValue });
-      this.atomManager.updateAtomScale(newValue);
+      return;
     }
+    this.applyState({ atomScale: newValue }, { redraw: "render" });
   }
 
   get atomScales() {
@@ -453,8 +587,12 @@ class AtomsViewer {
   }
 
   set atomScales(newValue) {
-    this._atomScales = newValue;
-    this.weas.eventHandlers.dispatchViewerUpdated({ atomScales: newValue });
+    if (this._syncingState) {
+      this._atomScales = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ atomScales: newValue });
+      return;
+    }
+    this.applyState({ atomScales: newValue }, { redraw: "full" });
   }
 
   get modelSticks() {
@@ -462,8 +600,12 @@ class AtomsViewer {
   }
 
   set modelSticks(newValue) {
-    this._modelSticks = newValue;
-    this.weas.eventHandlers.dispatchViewerUpdated({ modelSticks: newValue });
+    if (this._syncingState) {
+      this._modelSticks = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ modelSticks: newValue });
+      return;
+    }
+    this.applyState({ modelSticks: newValue }, { redraw: "full" });
   }
 
   get modelPolyhedras() {
@@ -471,8 +613,12 @@ class AtomsViewer {
   }
 
   set modelPolyhedras(newValue) {
-    this._modelPolyhedras = newValue;
-    this.weas.eventHandlers.dispatchViewerUpdated({ modelPolyhedras: newValue });
+    if (this._syncingState) {
+      this._modelPolyhedras = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ modelPolyhedras: newValue });
+      return;
+    }
+    this.applyState({ modelPolyhedras: newValue }, { redraw: "full" });
   }
 
   get selectedAtomsIndices() {
@@ -480,22 +626,12 @@ class AtomsViewer {
   }
 
   set selectedAtomsIndices(newValue) {
-    // if the same atoms are selected, do nothing
-    if (JSON.stringify(this._selectedAtomsIndices) === JSON.stringify(newValue)) {
+    if (this._syncingState) {
+      this._selectedAtomsIndices = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ selectedAtomsIndices: newValue });
       return;
     }
-    this.highlightManager.settings["selection"].indices = newValue;
-    // get new selected atoms from the difference between newValue and this._selectedAtomsIndices
-    const newSelectedAtoms = newValue.filter((value) => !this._selectedAtomsIndices.includes(value));
-    // get unselected atoms from the difference between this._selectedAtomsIndices and newValue
-    const unselectedAtoms = this._selectedAtomsIndices.filter((value) => !newValue.includes(value));
-    this._selectedAtomsIndices = newValue;
-    this.weas.eventHandlers.dispatchViewerUpdated({ selectedAtomsIndices: newValue });
-    // update the highlight and atom label
-    this.highlightManager.updateHighlightAtomsMesh({ indices: newSelectedAtoms, scale: 1.1, type: "sphere" });
-    this.highlightManager.updateHighlightAtomsMesh({ indices: unselectedAtoms, scale: 0, type: "sphere" });
-    this.baseAtomLabelSettings = [];
-    this.updateAtomLabels();
+    this.applyState({ selectedAtomsIndices: newValue }, { redraw: "render" });
   }
 
   beginUpdate() {
@@ -548,30 +684,103 @@ class AtomsViewer {
     }
   }
 
-  applyState(patch, { redraw = "auto" } = {}) {
+  applyState(patch, { redraw = "auto", skipStore = false } = {}) {
     if (!patch || Object.keys(patch).length === 0) {
       return;
     }
     const autoRedraw = redraw === "auto";
     const manualRedraw = redraw !== "auto" && redraw !== "none";
+    const needsModelArraySync = "modelStyle" in patch && !("atomScales" in patch || "modelSticks" in patch || "modelPolyhedras" in patch);
     this.beginUpdate();
-    Object.entries(patch).forEach(([key, value]) => {
-      if (!(key in this)) {
-        this.logger.warn(`Unknown viewer state key: ${key}`);
-        return;
+    this._syncingState = true;
+    try {
+      if (!skipStore) {
+        this.state.set({ viewer: patch });
       }
-      this[key] = value;
-      if (autoRedraw) {
-        const effect = this.getRedrawEffectForKey(key);
-        if (effect) {
-          this.requestRedraw(effect);
+      Object.entries(patch).forEach(([key, value]) => {
+        if (!(key in this)) {
+          this.logger.warn(`Unknown viewer state key: ${key}`);
+          return;
         }
+        if (key === "selectedAtomsIndices") {
+          const prevSelected = this._selectedAtomsIndices;
+          const nextSelected = Array.isArray(value) ? value : [];
+          const newSelectedAtoms = nextSelected.filter((atomIndex) => !prevSelected.includes(atomIndex));
+          const unselectedAtoms = prevSelected.filter((atomIndex) => !nextSelected.includes(atomIndex));
+          if (!this.highlightManager.settings || !this.highlightManager.settings["selection"]) {
+            this.highlightManager.init();
+          }
+          if (!this.highlightManager.meshes || !this.highlightManager.meshes["sphere"]) {
+            this.highlightManager.drawHighlightAtoms();
+          }
+          this.highlightManager.settings["selection"].indices = nextSelected;
+          this._selectedAtomsIndices = nextSelected;
+          this.weas.eventHandlers.dispatchViewerUpdated({ selectedAtomsIndices: nextSelected });
+          this.highlightManager.updateHighlightAtomsMesh({ indices: newSelectedAtoms, scale: 1.1, type: "sphere" });
+          this.highlightManager.updateHighlightAtomsMesh({ indices: unselectedAtoms, scale: 0, type: "sphere" });
+          this.baseAtomLabelSettings = [];
+          this.updateAtomLabels();
+          if (autoRedraw) {
+            const effect = this.getRedrawEffectForKey(key);
+            if (effect) {
+              this.requestRedraw(effect);
+            }
+          }
+          return;
+        }
+        this[key] = value;
+        if (key === "radiusType") {
+          this.atomManager.init();
+          this.bondManager.init();
+          this.polyhedraManager.init();
+        }
+        if (key === "colorBy") {
+          this.atomManager.init();
+          this.bondManager.init();
+          this.polyhedraManager.init();
+        }
+        if (key === "colorType") {
+          this.atomManager.init();
+          this.guiManager.updateLegend();
+          this.bondManager.init();
+          this.polyhedraManager.init();
+        }
+        if (key === "atomScale") {
+          this.atomManager.updateAtomScale(value);
+        }
+        if (key === "backgroundColor") {
+          this.tjs.scene.background = new THREE.Color(value);
+        }
+        if (key === "atomLabelType") {
+          this.baseAtomLabelSettings = this.getAtomLabelSettingsFromType(value);
+          this.updateAtomLabels();
+        }
+        if (key === "modelStyle" && needsModelArraySync) {
+          this.updateModelStyles(value);
+        }
+        if (autoRedraw) {
+          const effect = this.getRedrawEffectForKey(key);
+          if (effect) {
+            this.requestRedraw(effect);
+          }
+        }
+      });
+      if (manualRedraw) {
+        this.requestRedraw(redraw === true ? "full" : redraw);
       }
-    });
-    if (manualRedraw) {
-      this.requestRedraw(redraw === true ? "full" : redraw);
+      if (!skipStore && needsModelArraySync) {
+        this.state.set({
+          viewer: {
+            atomScales: this._atomScales,
+            modelSticks: this._modelSticks,
+            modelPolyhedras: this._modelPolyhedras,
+          },
+        });
+      }
+    } finally {
+      this._syncingState = false;
+      this.endUpdate({ redraw: true });
     }
-    this.endUpdate({ redraw: true });
   }
 
   setState(patch, { record = false, redraw = "auto" } = {}) {
@@ -623,12 +832,11 @@ class AtomsViewer {
     if (this._selectedAtomsIndices.length > 0) {
       settings.push({
         origins: "positions",
-        texts: this._selectedAtomsIndices,
+        texts: "index",
         selection: this._selectedAtomsIndices,
       });
     }
-    this.ALManager.settings = settings;
-    this.ALManager.drawAtomLabels();
+    this.state.set({ plugins: { atomLabel: { settings } } });
   }
 
   drawModels() {
@@ -641,7 +849,7 @@ class AtomsViewer {
     // search atoms bonded to atoms, which includes the boundary atoms and the orginal atoms
     const atomsList = this.atoms.positions.map((_, index) => [index, [0, 0, 0]]);
     // merge the atomsList and boundaryList
-    const offsets = atomsList.concat(this.boundaryList);
+    const offsets = atomsList.concat(this.boundaryList || []);
     // this.logger.debug("atoms with boundary: ", offsets)
     if (this._showBondedAtoms) {
       this.bondedAtoms = searchBondedAtoms(this.atoms.getSymbols(), offsets, this.neighbors, this.modelSticks);
@@ -662,7 +870,7 @@ class AtomsViewer {
     this.ALManager.drawAtomLabels();
     this.guiManager.updateLegend();
     this.ready = true;
-    this.weas.tjs.render();
+    this.requestRedraw("render");
   }
 
   dispose() {
@@ -877,60 +1085,91 @@ class AtomsViewer {
   }
 
   updateModelStyles(newValue) {
-    if (this.selectedAtomsIndices.length > 0) {
-      if (newValue === 0) {
-        this.selectedAtomsIndices.forEach((atomIndex) => {
-          this.atomScales[atomIndex] = 1;
-          this.modelSticks[atomIndex] = newValue;
-          this.modelPolyhedras[atomIndex] = 0;
-        });
-      } else if (newValue === 1) {
-        this.selectedAtomsIndices.forEach((atomIndex) => {
-          this.atomScales[atomIndex] = 0.4;
-          this.modelSticks[atomIndex] = newValue;
-          this.modelPolyhedras[atomIndex] = 0;
-        });
-      } else if (newValue === 2) {
-        this.selectedAtomsIndices.forEach((atomIndex) => {
-          this.atomScales[atomIndex] = 0.4;
-          this.modelSticks[atomIndex] = newValue;
-          this.modelPolyhedras[atomIndex] = 1;
-        });
-      } else if (newValue === 3) {
-        this.selectedAtomsIndices.forEach((atomIndex) => {
-          this.atomScales[atomIndex] = 0;
-          this.modelSticks[atomIndex] = newValue;
-          this.modelPolyhedras[atomIndex] = 0;
-        });
-      } else if (newValue === 4) {
-        this.selectedAtomsIndices.forEach((atomIndex) => {
-          this.atomScales[atomIndex] = 0;
-          this.modelSticks[atomIndex] = newValue;
-          this.modelPolyhedras[atomIndex] = 0;
-        });
-      }
-    } else {
-      // clear this.models
+    const { atomScales, modelSticks, modelPolyhedras, appliesToAll } = this.getModelArraysForStyle(newValue);
+    if (appliesToAll) {
       this._modelStyle = newValue;
-      this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(0);
-      this.modelPolyhedras = new Array(this.atoms.getAtomsCount()).fill(0);
-      if (newValue === 0) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(1);
-      } else if (newValue === 1) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0.4);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(1);
-      } else if (newValue === 2) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0.4);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(2);
-        this.modelPolyhedras = new Array(this.atoms.getAtomsCount()).fill(1);
-      } else if (newValue === 3) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(3);
-      } else if (newValue === 4) {
-        this.atomScales = new Array(this.atoms.getAtomsCount()).fill(0);
-        this.modelSticks = new Array(this.atoms.getAtomsCount()).fill(4);
-      }
     }
+    this.atomScales = atomScales;
+    this.modelSticks = modelSticks;
+    this.modelPolyhedras = modelPolyhedras;
+  }
+
+  getDefaultModelArrays(style, atomCount) {
+    const atomScales = new Array(atomCount).fill(0.4);
+    const modelSticks = new Array(atomCount).fill(0);
+    const modelPolyhedras = new Array(atomCount).fill(0);
+    if (style === 0) {
+      atomScales.fill(1);
+    } else if (style === 1) {
+      modelSticks.fill(1);
+    } else if (style === 2) {
+      modelSticks.fill(2);
+      modelPolyhedras.fill(1);
+    } else if (style === 3) {
+      atomScales.fill(0);
+      modelSticks.fill(3);
+    } else if (style === 4) {
+      atomScales.fill(0);
+      modelSticks.fill(4);
+    }
+    return { atomScales, modelSticks, modelPolyhedras };
+  }
+
+  applyModelStyleToArrays(style, atomScales, modelSticks, modelPolyhedras, indices) {
+    const applyToIndex = (atomIndex) => {
+      if (style === 0) {
+        atomScales[atomIndex] = 1;
+        modelSticks[atomIndex] = style;
+        modelPolyhedras[atomIndex] = 0;
+      } else if (style === 1) {
+        atomScales[atomIndex] = 0.4;
+        modelSticks[atomIndex] = style;
+        modelPolyhedras[atomIndex] = 0;
+      } else if (style === 2) {
+        atomScales[atomIndex] = 0.4;
+        modelSticks[atomIndex] = style;
+        modelPolyhedras[atomIndex] = 1;
+      } else if (style === 3) {
+        atomScales[atomIndex] = 0;
+        modelSticks[atomIndex] = style;
+        modelPolyhedras[atomIndex] = 0;
+      } else if (style === 4) {
+        atomScales[atomIndex] = 0;
+        modelSticks[atomIndex] = style;
+        modelPolyhedras[atomIndex] = 0;
+      }
+    };
+    indices.forEach((atomIndex) => applyToIndex(atomIndex));
+  }
+
+  getModelArraysForStyle(newValue) {
+    const atomCount = this.atoms.getAtomsCount();
+    const hasValidArrays =
+      Array.isArray(this._atomScales) &&
+      Array.isArray(this._modelSticks) &&
+      Array.isArray(this._modelPolyhedras) &&
+      this._atomScales.length === atomCount &&
+      this._modelSticks.length === atomCount &&
+      this._modelPolyhedras.length === atomCount;
+    let atomScales;
+    let modelSticks;
+    let modelPolyhedras;
+    if (hasValidArrays) {
+      atomScales = this._atomScales.slice();
+      modelSticks = this._modelSticks.slice();
+      modelPolyhedras = this._modelPolyhedras.slice();
+    } else {
+      const defaults = this.getDefaultModelArrays(this._modelStyle, atomCount);
+      atomScales = defaults.atomScales;
+      modelSticks = defaults.modelSticks;
+      modelPolyhedras = defaults.modelPolyhedras;
+    }
+    if (this.selectedAtomsIndices.length > 0) {
+      this.applyModelStyleToArrays(newValue, atomScales, modelSticks, modelPolyhedras, this.selectedAtomsIndices);
+      return { atomScales, modelSticks, modelPolyhedras, appliesToAll: false };
+    }
+    const defaults = this.getDefaultModelArrays(newValue, atomCount);
+    return { ...defaults, appliesToAll: true };
   }
 
   getFrameSignature(atoms) {

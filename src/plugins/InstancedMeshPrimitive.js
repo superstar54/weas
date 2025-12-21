@@ -20,6 +20,19 @@ export class InstancedMeshPrimitive {
     this.scene = this.viewer.tjs.scene;
     this.settings = [];
     this.meshes = [];
+
+    const pluginState = this.viewer.state.get("plugins.instancedMeshPrimitive");
+    if (pluginState && Array.isArray(pluginState.settings)) {
+      this.fromSettings(pluginState.settings);
+      this.drawMesh();
+    }
+    this.viewer.state.subscribe("plugins.instancedMeshPrimitive", (next) => {
+      if (!next || !Array.isArray(next.settings)) {
+        return;
+      }
+      this.fromSettings(next.settings);
+      this.drawMesh();
+    });
   }
 
   fromSettings(settings) {
@@ -79,7 +92,7 @@ export class InstancedMeshPrimitive {
       this.meshes.push(instancedMesh);
       this.scene.add(instancedMesh);
     });
-    this.viewer.tjs.render();
+    this.viewer.requestRedraw?.("render");
   }
 
   getGeometry(setting) {

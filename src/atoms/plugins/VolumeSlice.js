@@ -31,6 +31,24 @@ export class VolumeSlice {
     this.settings = {};
     this.guiFolder = null;
     this.slices = {};
+
+    const pluginState = this.viewer.state.get("plugins.volumeSlice");
+    if (pluginState && pluginState.settings) {
+      this.settings = {};
+      this.fromSettings(pluginState.settings);
+      if (this.viewer.volumetricData) {
+        this.drawSlices();
+      }
+    }
+    this.viewer.state.subscribe("plugins.volumeSlice", (next) => {
+      if (!next || !next.settings) {
+        return;
+      }
+      this.fromSettings(next.settings);
+      if (this.viewer.volumetricData) {
+        this.drawSlices();
+      }
+    });
   }
 
   createGui() {
@@ -173,7 +191,7 @@ export class VolumeSlice {
       this.slices[name] = planeMesh;
     });
     // Update the scene
-    this.viewer.tjs.render();
+    this.viewer.requestRedraw?.("render");
   }
 }
 

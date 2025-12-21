@@ -17,6 +17,14 @@ class Setting {
     this.color = color;
     this.fontSize = fontSize;
   }
+
+  toDict() {
+    return {
+      indices: this.indices,
+      color: this.color,
+      fontSize: this.fontSize,
+    };
+  }
 }
 
 export class Measurement {
@@ -25,34 +33,57 @@ export class Measurement {
     this.scene = this.viewer.tjs.scene;
     this.settings = {};
     this.meshes = {};
+
+    const pluginState = this.viewer.state.get("plugins.measurement");
+    if (pluginState && pluginState.settings) {
+      this.fromSettings(pluginState.settings);
+      this.drawMeasurements();
+    }
+    this.viewer.state.subscribe("plugins.measurement", (next) => {
+      if (!next) {
+        return;
+      }
+      if (this.viewer._initializingState) {
+        return;
+      }
+      if (!next.settings) {
+        this.reset();
+        return;
+      }
+      this.fromSettings(next.settings);
+      this.drawMeasurements();
+    });
   }
 
   reset() {
     /* Reset the measurements */
+    this.clearMeshes();
     this.settings = {};
-    Object.entries(this.meshes).forEach(([name, data]) => {
-      data.forEach((mesh) => {
-        this.scene.remove(mesh);
-      });
-    });
-    this.meshes = {};
-    this.viewer.tjs.render();
+    this.viewer.requestRedraw?.("render");
   }
 
   measure(indices = null) {
     /* Measures the distance, angle, or dihedral angle between atoms.*/
-
-    if (indices.length === 0) {
-      this.reset();
+    const selection = Array.isArray(indices) ? indices : [];
+    if (selection.length === 0) {
+      this.viewer.state.set({ plugins: { measurement: { settings: null } } });
     } else {
-      name = `measurement-${Object.keys(this.settings).length}`;
-      const setting = new Setting({ indices });
-      this.settings[name] = setting;
-      this.drawMeasurement(setting);
+      const settings = { ...(this.viewer.state.get("plugins.measurement")?.settings || {}) };
+      const name = `measurement-${Object.keys(settings).length}`;
+      const setting = new Setting({ indices: selection });
+      settings[name] = setting.toDict();
+      this.viewer.state.set({ plugins: { measurement: { settings } } });
     }
   }
 
-  drawMeasurement(setting) {
+  drawMeasurements() {
+    this.clearMeshes();
+    Object.entries(this.settings).forEach(([name, setting]) => {
+      this.drawMeasurement(name, setting);
+    });
+  }
+
+  drawMeasurement(name, setting) {
     /* Draw the measurements */
     const indices = setting.indices;
     if (indices.length === 1) {
@@ -66,7 +97,7 @@ export class Measurement {
     } else {
     }
     // call the render function to update the scene
-    this.viewer.tjs.render();
+    this.viewer.requestRedraw?.("render");
   }
 
   showPosition(name, indices) {
@@ -150,5 +181,33 @@ export class Measurement {
     const label = createLabel(position, angle.toFixed(3), "black", "18px");
     this.scene.add(label);
     this.meshes[name] = [mesh, label];
+  }
+
+  clearMeshes() {
+    Object.entries(this.meshes).forEach(([name, data]) => {
+      data.forEach((mesh) => {
+        this.scene.remove(mesh);
+      });
+    });
+    this.meshes = {};
+  }
+
+  fromSettings(settings) {
+    this.settings = {};
+    Object.entries(settings || {}).forEach(([name, setting]) => {
+      this.addSetting(name, setting);
+    });
+  }
+
+  addSetting(name, { indices = [], color = "black", fontSize = 16 }) {
+    this.settings[name] = new Setting({ indices, color, fontSize });
+  }
+
+  toPlainSettings() {
+    const result = {};
+    Object.entries(this.settings).forEach(([name, setting]) => {
+      result[name] = setting instanceof Setting ? { indices: setting.indices, color: setting.color, fontSize: setting.fontSize } : setting;
+    });
+    return result;
   }
 }

@@ -35,6 +35,24 @@ export class Isosurface {
     this.settings = {};
     this.guiFolder = null;
     this.meshes = {};
+
+    const pluginState = this.viewer.state.get("plugins.isosurface");
+    if (pluginState && pluginState.settings) {
+      this.settings = {};
+      this.fromSettings(pluginState.settings);
+      if (this.viewer.volumetricData) {
+        this.drawIsosurfaces();
+      }
+    }
+    this.viewer.state.subscribe("plugins.isosurface", (next) => {
+      if (!next || !next.settings) {
+        return;
+      }
+      this.fromSettings(next.settings);
+      if (this.viewer.volumetricData) {
+        this.drawIsosurfaces();
+      }
+    });
   }
 
   createGui() {
@@ -200,7 +218,7 @@ export class Isosurface {
       }
     });
     // call the render function to update the scene
-    this.viewer.tjs.render();
+    this.viewer.requestRedraw?.("render");
   }
 }
 

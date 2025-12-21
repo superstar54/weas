@@ -22,6 +22,26 @@ export class VectorField {
     this.scene = this.viewer.tjs.scene;
     this._show = true;
     this.init();
+
+    const pluginState = this.viewer.state.get("plugins.vectorField");
+    if (pluginState) {
+      if (pluginState.settings) {
+        this.fromSettings(pluginState.settings);
+      }
+      if (pluginState.show !== undefined) {
+        this.show = pluginState.show;
+      }
+    }
+    this.viewer.state.subscribe("plugins.vectorField", (next) => {
+      if (!next) return;
+      if (next.settings) {
+        this.fromSettings(next.settings);
+      }
+      if (next.show !== undefined) {
+        this.show = next.show;
+      }
+      this.drawVectorFields();
+    });
   }
 
   get show() {
@@ -35,6 +55,7 @@ export class VectorField {
         mesh.visible = value;
       });
     });
+    this.viewer.requestRedraw?.("render");
   }
 
   init() {
@@ -140,6 +161,7 @@ export class VectorField {
       this.meshes[name] = { shaft: shaftMesh, head: headMesh };
     });
     this.updateArrowMesh();
+    this.viewer.requestRedraw?.("render");
   }
 
   updateArrowMesh(atomIndex = null, atoms = null) {

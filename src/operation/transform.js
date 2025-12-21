@@ -18,7 +18,7 @@ class TranslateOperation extends BaseOperation {
     // currentFrame
     this.currentFrame = weas.avr.currentFrame;
     // store the selected atoms and the translate vector
-    this.selectedAtomsIndices = Array.from(weas.avr.selectedAtomsIndices);
+    this.selectedAtomsIndices = Array.from(this.stateGet("viewer.selectedAtomsIndices", []) || []);
     this.selectedObjects = weas.selectionManager.selectedObjects;
     // if vector is a normal array [x, y, z], convert it to a THREE.Vector3
     if (Array.isArray(vector)) {
@@ -44,12 +44,9 @@ class TranslateOperation extends BaseOperation {
   }
 
   adjust(params) {
-    if (!this.validateParams(params)) {
-      return;
-    }
-    this.undo();
-    this.applyParams(params);
-    this.execute();
+    this.adjustWithReset(params, () => {
+      this.undo();
+    });
   }
 }
 
@@ -69,7 +66,7 @@ class RotateOperation extends BaseOperation {
   constructor({ weas, axis, angle }) {
     super(weas);
     this.currentFrame = weas.avr.currentFrame;
-    this.selectedAtomsIndices = Array.from(weas.avr.selectedAtomsIndices);
+    this.selectedAtomsIndices = Array.from(this.stateGet("viewer.selectedAtomsIndices", []) || []);
     this.selectedObjects = weas.selectionManager.selectedObjects;
     if (Array.isArray(axis)) {
       axis = new THREE.Vector3(axis[0], axis[1], axis[2]);
@@ -97,12 +94,9 @@ class RotateOperation extends BaseOperation {
   }
 
   adjust(params) {
-    if (!this.validateParams(params)) {
-      return;
-    }
-    this.undo();
-    this.applyParams(params);
-    this.execute();
+    this.adjustWithReset(params, () => {
+      this.undo();
+    });
   }
 }
 
@@ -123,7 +117,7 @@ class ScaleOperation extends BaseOperation {
     // currentFrame
     this.currentFrame = weas.avr.currentFrame;
     // store the selected atoms and the scale vector
-    this.selectedAtomsIndices = Array.from(weas.avr.selectedAtomsIndices);
+    this.selectedAtomsIndices = Array.from(this.stateGet("viewer.selectedAtomsIndices", []) || []);
     this.selectedObjects = weas.selectionManager.selectedObjects;
     if (Array.isArray(scale)) {
       scale = new THREE.Vector3(scale[0], scale[1], scale[2]);
@@ -148,12 +142,9 @@ class ScaleOperation extends BaseOperation {
   }
 
   adjust(params) {
-    if (!this.validateParams(params)) {
-      return;
-    }
-    this.undo();
-    this.applyParams(params);
-    this.execute();
+    this.adjustWithReset(params, () => {
+      this.undo();
+    });
   }
 }
 

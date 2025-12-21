@@ -21,16 +21,16 @@ function cloneSettings(value) {
   return normalizeValue(value);
 }
 
-function bondSettingsToPlain(settings) {
-  const result = {};
-  Object.entries(settings).forEach(([key, setting]) => {
-    if (setting && typeof setting.toDict === "function") {
-      result[key] = setting.toDict();
-    } else {
-      result[key] = normalizeValue(setting);
-    }
-  });
-  return result;
+function addDefined(target, key, value) {
+  if (value !== undefined) {
+    target[key] = value;
+  }
+}
+
+function addSettings(target, key, value) {
+  if (value !== undefined && value !== null) {
+    target[key] = value;
+  }
 }
 
 class SetCellSettings extends BaseOperation {
@@ -48,33 +48,27 @@ class SetCellSettings extends BaseOperation {
     super(weas);
     this.affectsAtoms = false;
     this.settings = cloneSettings(settings);
-    this.showCell = showCell !== undefined ? showCell : this.weas.avr.cellManager.showCell;
-    this.showAxes = showAxes !== undefined ? showAxes : this.weas.avr.cellManager.showAxes;
-    this.previousSettings = cloneSettings(this.weas.avr.cellManager.settings);
-    this.previousShowCell = this.weas.avr.cellManager.showCell;
-    this.previousShowAxes = this.weas.avr.cellManager.showAxes;
+    const cellState = this.stateGet("cell", {});
+    this.showCell = showCell !== undefined ? showCell : (cellState.showCell ?? this.weas.avr.cellManager.showCell);
+    this.showAxes = showAxes !== undefined ? showAxes : (cellState.showAxes ?? this.weas.avr.cellManager.showAxes);
   }
 
   execute() {
-    if (this.settings && Object.keys(this.settings).length > 0) {
-      Object.assign(this.weas.avr.cellManager.settings, this.settings);
-    }
-    if (this.showCell !== undefined) {
-      this.weas.avr.cellManager.showCell = this.showCell;
-    }
-    if (this.showAxes !== undefined) {
-      this.weas.avr.cellManager.showAxes = this.showAxes;
-    }
-    this.weas.avr.cellManager.draw();
-    this.weas.tjs.render();
+    this.ensureStateStore();
+    const cellPatch = { ...this.settings };
+    addDefined(cellPatch, "showCell", this.showCell);
+    addDefined(cellPatch, "showAxes", this.showAxes);
+    this.applyStatePatchWithHistory("cell", cellPatch, (key) => this.weas.avr.cellManager[key]);
   }
 
   undo() {
-    Object.assign(this.weas.avr.cellManager.settings, this.previousSettings);
-    this.weas.avr.cellManager.showCell = this.previousShowCell;
-    this.weas.avr.cellManager.showAxes = this.previousShowAxes;
-    this.weas.avr.cellManager.draw();
-    this.weas.tjs.render();
+    this.ensureStateStore();
+    this.undoStatePatch();
+  }
+
+  redo() {
+    this.ensureStateStore();
+    this.redoStatePatch();
   }
 }
 
@@ -97,34 +91,26 @@ class SetBondSettings extends BaseOperation {
     this.hideLongBonds = hideLongBonds;
     this.showHydrogenBonds = showHydrogenBonds;
     this.showOutBoundaryBonds = showOutBoundaryBonds;
-    this.previousSettings = bondSettingsToPlain(this.weas.avr.bondManager.settings);
-    this.previousHideLongBonds = this.weas.avr.bondManager.hideLongBonds;
-    this.previousShowHydrogenBonds = this.weas.avr.bondManager.showHydrogenBonds;
-    this.previousShowOutBoundaryBonds = this.weas.avr.bondManager.showOutBoundaryBonds;
   }
 
   execute() {
-    if (this.settings) {
-      this.weas.avr.bondManager.fromSettings(this.settings);
-    }
-    if (this.hideLongBonds !== undefined) {
-      this.weas.avr.bondManager.hideLongBonds = this.hideLongBonds;
-    }
-    if (this.showHydrogenBonds !== undefined) {
-      this.weas.avr.bondManager.showHydrogenBonds = this.showHydrogenBonds;
-    }
-    if (this.showOutBoundaryBonds !== undefined) {
-      this.weas.avr.bondManager.showOutBoundaryBonds = this.showOutBoundaryBonds;
-    }
-    this.weas.avr.drawModels();
+    this.ensureStateStore();
+    const bondPatch = {};
+    addSettings(bondPatch, "settings", this.settings);
+    addDefined(bondPatch, "hideLongBonds", this.hideLongBonds);
+    addDefined(bondPatch, "showHydrogenBonds", this.showHydrogenBonds);
+    addDefined(bondPatch, "showOutBoundaryBonds", this.showOutBoundaryBonds);
+    this.applyStatePatchWithHistory("bond", bondPatch, (key) => this.weas.avr.bondManager[key]);
   }
 
   undo() {
-    this.weas.avr.bondManager.fromSettings(this.previousSettings);
-    this.weas.avr.bondManager.hideLongBonds = this.previousHideLongBonds;
-    this.weas.avr.bondManager.showHydrogenBonds = this.previousShowHydrogenBonds;
-    this.weas.avr.bondManager.showOutBoundaryBonds = this.previousShowOutBoundaryBonds;
-    this.weas.avr.drawModels();
+    this.ensureStateStore();
+    this.undoStatePatch();
+  }
+
+  redo() {
+    this.ensureStateStore();
+    this.redoStatePatch();
   }
 }
 
@@ -136,17 +122,21 @@ class SetIsosurfaceSettings extends BaseOperation {
     super(weas);
     this.affectsAtoms = false;
     this.settings = cloneSettings(settings);
-    this.previousSettings = cloneSettings(this.weas.avr.isosurfaceManager.settings);
   }
 
   execute() {
-    this.weas.avr.isosurfaceManager.fromSettings(this.settings);
-    this.weas.avr.isosurfaceManager.drawIsosurfaces();
+    this.ensureStateStore();
+    this.applyStatePatchWithHistory("plugins.isosurface", { settings: this.settings }, () => this.weas.avr.isosurfaceManager.settings);
   }
 
   undo() {
-    this.weas.avr.isosurfaceManager.fromSettings(this.previousSettings);
-    this.weas.avr.isosurfaceManager.drawIsosurfaces();
+    this.ensureStateStore();
+    this.undoStatePatch();
+  }
+
+  redo() {
+    this.ensureStateStore();
+    this.redoStatePatch();
   }
 }
 
@@ -158,19 +148,21 @@ class SetVolumeSliceSettings extends BaseOperation {
     super(weas);
     this.affectsAtoms = false;
     this.settings = cloneSettings(settings);
-    this.previousSettings = cloneSettings(this.weas.avr.volumeSliceManager.settings);
   }
 
   execute() {
-    this.weas.avr.volumeSliceManager.fromSettings(this.settings);
-    this.weas.avr.volumeSliceManager.drawSlices();
-    this.weas.tjs.render();
+    this.ensureStateStore();
+    this.applyStatePatchWithHistory("plugins.volumeSlice", { settings: this.settings }, () => this.weas.avr.volumeSliceManager.settings);
   }
 
   undo() {
-    this.weas.avr.volumeSliceManager.fromSettings(this.previousSettings);
-    this.weas.avr.volumeSliceManager.drawSlices();
-    this.weas.tjs.render();
+    this.ensureStateStore();
+    this.undoStatePatch();
+  }
+
+  redo() {
+    this.ensureStateStore();
+    this.redoStatePatch();
   }
 }
 
@@ -189,22 +181,24 @@ class SetVectorFieldSettings extends BaseOperation {
     this.affectsAtoms = false;
     this.settings = cloneSettings(settings);
     this.show = show;
-    this.previousSettings = cloneSettings(this.weas.avr.VFManager.settings);
-    this.previousShow = this.weas.avr.VFManager.show;
   }
 
   execute() {
-    this.weas.avr.VFManager.fromSettings(this.settings);
-    if (this.show !== undefined) {
-      this.weas.avr.VFManager.show = this.show;
-    }
-    this.weas.avr.VFManager.drawVectorFields();
+    this.ensureStateStore();
+    const vectorPatch = {};
+    addSettings(vectorPatch, "settings", this.settings);
+    addDefined(vectorPatch, "show", this.show);
+    this.applyStatePatchWithHistory("plugins.vectorField", vectorPatch, (key) => (key === "settings" ? this.weas.avr.VFManager.settings : this.weas.avr.VFManager.show));
   }
 
   undo() {
-    this.weas.avr.VFManager.fromSettings(this.previousSettings);
-    this.weas.avr.VFManager.show = this.previousShow;
-    this.weas.avr.VFManager.drawVectorFields();
+    this.ensureStateStore();
+    this.undoStatePatch();
+  }
+
+  redo() {
+    this.ensureStateStore();
+    this.redoStatePatch();
   }
 }
 
@@ -216,19 +210,21 @@ class SetHighlightSettings extends BaseOperation {
     super(weas);
     this.affectsAtoms = false;
     this.settings = cloneSettings(settings);
-    this.previousSettings = cloneSettings(this.weas.avr.highlightManager.settings);
   }
 
   execute() {
-    this.weas.avr.highlightManager.fromSettings(this.settings);
-    this.weas.avr.highlightManager.drawHighlightAtoms();
-    this.weas.tjs.render();
+    this.ensureStateStore();
+    this.applyStatePatchWithHistory("plugins.highlight", { settings: this.settings }, () => this.weas.avr.highlightManager.settings);
   }
 
   undo() {
-    this.weas.avr.highlightManager.fromSettings(this.previousSettings);
-    this.weas.avr.highlightManager.drawHighlightAtoms();
-    this.weas.tjs.render();
+    this.ensureStateStore();
+    this.undoStatePatch();
+  }
+
+  redo() {
+    this.ensureStateStore();
+    this.redoStatePatch();
   }
 }
 

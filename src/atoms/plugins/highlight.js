@@ -28,6 +28,22 @@ export class HighlightManager {
     this.settings = {};
     this.meshes = {};
     this.init();
+
+    const pluginState = this.viewer.state.get("plugins.highlight");
+    if (pluginState && pluginState.settings) {
+      this.fromSettings(pluginState.settings);
+      this.drawHighlightAtoms();
+    }
+    this.viewer.state.subscribe("plugins.highlight", (next) => {
+      if (!next || !next.settings) {
+        return;
+      }
+      this.fromSettings(next.settings);
+      if (this.viewer._initializingState) {
+        return;
+      }
+      this.drawHighlightAtoms();
+    });
   }
 
   init() {
@@ -54,6 +70,14 @@ export class HighlightManager {
     this.settings[name] = setting;
   }
 
+  toPlainSettings() {
+    const result = {};
+    Object.entries(this.settings).forEach(([name, setting]) => {
+      result[name] = setting && typeof setting.toDict === "function" ? setting.toDict() : setting;
+    });
+    return result;
+  }
+
   clearMeshes() {
     /* Remove highlight meshes from the scene */
     Object.values(this.meshes).forEach((mesh) => {
@@ -66,6 +90,10 @@ export class HighlightManager {
 
   drawHighlightAtoms() {
     this.clearMeshes();
+    const baseMesh = this.viewer.atomManager.meshes["atom"];
+    if (!baseMesh) {
+      return;
+    }
     const material = new THREE.MeshBasicMaterial({
       color: "yellow",
       opacity: 0.6,
@@ -85,11 +113,15 @@ export class HighlightManager {
     material2.opacity = 1.0;
     const crossGeometry = this.createCrossGeometry(1);
     this.drawHighlightMesh("cross", crossGeometry, material2);
+    this.viewer.requestRedraw?.("render");
   }
 
   drawHighlightMesh(name, geometry, material) {
     /* Draw the highlight mesh based on the setting type */
     const baseMesh = this.viewer.atomManager.meshes["atom"];
+    if (!baseMesh) {
+      return;
+    }
 
     const mesh = new THREE.InstancedMesh(geometry, material, baseMesh.count);
 
