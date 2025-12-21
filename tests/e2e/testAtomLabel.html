@@ -21,7 +21,7 @@
       let domElement = document.getElementById("viewer");
 
       const viewerConfig = {
-        atomLabelType: "index", // "element" | "index" | "none"
+        atomLabelType: "Index", // "element" | "index" | "none"
       };
       // read atoms from file
       const filename = "c2h6so.xyz";
@@ -30,6 +30,7 @@
         let editor = new weas.WEAS({ domElement, atoms, viewerConfig });
         editor.avr.drawModels();
         editor.render();
+        window.editor = editor; // for debugging
       });
     </script>
   </body>

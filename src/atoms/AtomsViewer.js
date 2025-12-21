@@ -372,6 +372,8 @@ class AtomsViewer {
       } finally {
         this._syncingState = false;
       }
+      this.baseAtomLabelSettings = this.getAtomLabelSettingsFromType(this._atomLabelType);
+      this.updateAtomLabels();
       this.drawModels();
       // udpate camera position and target position based on the atoms
       this.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
