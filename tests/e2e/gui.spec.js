@@ -108,6 +108,27 @@ test("Any Mesh", async ({ page }) => {
   await expect(page).toHaveScreenshot();
 });
 
+test("Viewer State Undo Redo", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testGui.html");
+  await page.evaluate(() => {
+    window.editor.avr.setState({ atomLabelType: "Symbol" }, { record: true, redraw: "labels" });
+  });
+  await expect(await page.evaluate(() => window.editor.ops.undoStack.length)).toBe(1);
+  await expect(await page.evaluate(() => window.editor.ops.redoStack.length)).toBe(0);
+
+  await page.evaluate(() => {
+    window.editor.ops.undo();
+  });
+  await expect(await page.evaluate(() => window.editor.ops.undoStack.length)).toBe(0);
+  await expect(await page.evaluate(() => window.editor.ops.redoStack.length)).toBe(1);
+
+  await page.evaluate(() => {
+    window.editor.ops.redo();
+  });
+  await expect(await page.evaluate(() => window.editor.ops.undoStack.length)).toBe(1);
+  await expect(await page.evaluate(() => window.editor.ops.redoStack.length)).toBe(0);
+});
+
 test.describe("Edit", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");

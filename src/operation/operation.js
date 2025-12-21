@@ -5,6 +5,7 @@ import * as object from "./object.js";
 import * as mesh from "./mesh.js";
 import * as atoms from "./atoms.js";
 import * as selection from "./selection.js";
+import * as viewer from "./viewer.js";
 
 // Organize them under namespaces
 export const ops = {
@@ -13,6 +14,7 @@ export const ops = {
   mesh: mesh,
   atoms: atoms,
   selection: selection,
+  viewer: viewer,
 };
 
 export class OperationManager {
@@ -21,6 +23,7 @@ export class OperationManager {
     this.operationSearchManager = new OperationSearchManager(weas, ops);
     this.undoStack = [];
     this.redoStack = [];
+    this.isRestoring = false;
     this.gui = new GUI();
     this.gui.closed = false; // Set the GUI to be closed by default
     this.createGUIContainer();
@@ -50,31 +53,44 @@ export class OperationManager {
     * If execute is false, the operation will not be executed, only added to the undo stack.
     This is useful for the operation that being executed by multiple steps, like the transform operation by mouse move.
     */
+    if (this.isRestoring) {
+      return;
+    }
     if (execute) {
       operation.execute();
     }
     this.undoStack.push(operation);
     this.redoStack = []; // Clear redo stack on new operation
     this.updateAdjustLastOperationGUI();
-    this.weas.eventHandlers.dispatchAtomsUpdated();
+    if (operation.affectsAtoms !== false) {
+      this.weas.eventHandlers.dispatchAtomsUpdated();
+    }
   }
 
   undo() {
     if (this.undoStack.length > 0) {
       const operation = this.undoStack.pop();
+      this.isRestoring = true;
       operation.undo();
+      this.isRestoring = false;
       this.redoStack.push(operation);
-      this.weas.eventHandlers.dispatchAtomsUpdated();
+      if (operation.affectsAtoms !== false) {
+        this.weas.eventHandlers.dispatchAtomsUpdated();
+      }
     }
   }
 
   redo() {
     if (this.redoStack.length > 0) {
       const operation = this.redoStack.pop();
+      this.isRestoring = true;
       operation.redo();
+      this.isRestoring = false;
       this.undoStack.push(operation);
       this.updateAdjustLastOperationGUI();
-      this.weas.eventHandlers.dispatchAtomsUpdated();
+      if (operation.affectsAtoms !== false) {
+        this.weas.eventHandlers.dispatchAtomsUpdated();
+      }
     }
   }
 
@@ -100,6 +116,15 @@ export class OperationManager {
     ["click", "keydown", "keyup", "keypress"].forEach((eventType) => {
       element.addEventListener(eventType, stopPropagation, false);
     });
+  }
+
+  onOperationAdjusted(operation) {
+    // If the last operation is adjusted, redo history is no longer valid.
+    const last = this.undoStack[this.undoStack.length - 1];
+    if (last === operation) {
+      this.redoStack = [];
+      this.updateAdjustLastOperationGUI();
+    }
   }
 
   hideGUI() {

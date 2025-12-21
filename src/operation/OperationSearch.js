@@ -84,12 +84,20 @@ export class OperationSearchManager {
     // Limit the number of operations to display to 10
     displayOperations = displayOperations.slice(0, 10);
 
+    const labelCounts = {};
+    displayOperations.forEach((op) => {
+      const base = `${op.category}: ${op.description}`;
+      labelCounts[base] = (labelCounts[base] || 0) + 1;
+    });
+
     // Make each list item focusable and display them
     displayOperations.forEach((op) => {
       if (!op.description) return;
       const listItem = document.createElement("li");
       listItem.tabIndex = 0; // Makes the element focusable
-      listItem.textContent = `${op.category}: ${op.description}`;
+      const baseLabel = `${op.category}: ${op.description}`;
+      const label = labelCounts[baseLabel] > 1 ? `${baseLabel} (${op.name})` : baseLabel;
+      listItem.textContent = label;
       listItem.onclick = () => this.execute(op);
       listItem.onkeydown = (e) => {
         if (e.key === "Enter") {
@@ -103,7 +111,7 @@ export class OperationSearchManager {
   execute(operation) {
     // Placeholder for operation execution logic
     // Add execution code
-    const op = new operation({ weas: this.weas });
+    const op = new operation.cls({ weas: this.weas });
     this.weas.ops.execute(op);
     // Hide the search overlay
     this.hide();
@@ -116,7 +124,14 @@ export class OperationSearchManager {
 function getAllOperations(ops) {
   let operations = [];
   Object.keys(ops).forEach((category) => {
-    operations = operations.concat(Object.values(ops[category]));
+    Object.values(ops[category]).forEach((opClass) => {
+      operations.push({
+        cls: opClass,
+        name: opClass.name || "Operation",
+        category: opClass.category || category,
+        description: opClass.description || opClass.name,
+      });
+    });
   });
   return operations;
 }
