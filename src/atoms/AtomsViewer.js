@@ -314,7 +314,9 @@ class AtomsViewer {
     this._colorBy = newValue;
     // avoid the recursive loop
     if (this.guiManager.colorByController && this.guiManager.colorByController.getValue() !== newValue) {
+      this.guiManager.beginSync();
       this.guiManager.colorByController.setValue(newValue); // Update the GUI
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ colorBy: newValue });
     // update the bondManager settings
@@ -331,7 +333,9 @@ class AtomsViewer {
     this._colorType = newValue;
     // avoid the recursive loop
     if (this.guiManager.colorTypeController && this.guiManager.colorTypeController.getValue() !== newValue) {
+      this.guiManager.beginSync();
       this.guiManager.colorTypeController.setValue(newValue); // Update the GUI
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ colorType: newValue });
     // update the bondManager settings
@@ -349,7 +353,9 @@ class AtomsViewer {
     this._materialType = newValue;
     // avoid the recursive loop
     if (this.guiManager.materialTypeController && this.guiManager.materialTypeController.getValue() !== newValue) {
+      this.guiManager.beginSync();
       this.guiManager.materialTypeController.setValue(newValue); // Update the GUI
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ materialType: newValue });
   }
@@ -384,7 +390,9 @@ class AtomsViewer {
     this.updateAtomLabels();
     // avoid the recursive loop
     if (this.guiManager.atomLabelTypeController && this.guiManager.atomLabelTypeController.getValue() !== newValue) {
+      this.guiManager.beginSync();
       this.guiManager.atomLabelTypeController.setValue(newValue); // Update the GUI
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ atomLabelType: newValue });
   }
@@ -397,12 +405,18 @@ class AtomsViewer {
     this._boundary = newValue;
     // avoid the recursive loop
     // this.guiManager.boundaryControllers is a 2x3 array
+    if (this.guiManager.boundaryControllers) {
+      this.guiManager.beginSync();
+    }
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 2; j++) {
         if (this.guiManager.boundaryControllers && this.guiManager.boundaryControllers[i][j].getValue() !== newValue[i][j]) {
           this.guiManager.boundaryControllers[i][j].setValue(newValue[i][j]); // Update the GUI
         }
       }
+    }
+    if (this.guiManager.boundaryControllers) {
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ boundary: newValue });
   }
@@ -415,7 +429,9 @@ class AtomsViewer {
     this._showBondedAtoms = newValue;
     // avoid the recursive loop
     if (this.guiManager.showBondedAtomsController && this.guiManager.showBondedAtomsController.getValue() !== newValue) {
+      this.guiManager.beginSync();
       this.guiManager.showBondedAtomsController.setValue(newValue); // Update the GUI
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ showBondedAtoms: newValue });
   }

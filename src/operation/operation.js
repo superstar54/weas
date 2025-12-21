@@ -72,7 +72,7 @@ export class OperationManager {
       const operation = this.undoStack.pop();
       this.isRestoring = true;
       operation.undo();
-      this.isRestoring = false;
+      this.endRestoreSoon();
       this.redoStack.push(operation);
       if (operation.affectsAtoms !== false) {
         this.weas.eventHandlers.dispatchAtomsUpdated();
@@ -85,12 +85,26 @@ export class OperationManager {
       const operation = this.redoStack.pop();
       this.isRestoring = true;
       operation.redo();
-      this.isRestoring = false;
+      this.endRestoreSoon();
       this.undoStack.push(operation);
       this.updateAdjustLastOperationGUI();
       if (operation.affectsAtoms !== false) {
         this.weas.eventHandlers.dispatchAtomsUpdated();
       }
+    }
+  }
+
+  endRestoreSoon() {
+    // Keep isRestoring true across queued UI callbacks triggered by undo/redo.
+    // This prevents those callbacks from recording new operations during restore.
+    if (typeof queueMicrotask === "function") {
+      queueMicrotask(() => {
+        this.isRestoring = false;
+      });
+    } else {
+      setTimeout(() => {
+        this.isRestoring = false;
+      }, 0);
     }
   }
 

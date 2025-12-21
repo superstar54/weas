@@ -23,7 +23,7 @@ Create a new HTML file and include the following code, and open the file in a we
       <body>
         <div id="viewer" style="position: relative; width: 600px; height: 600px"></div>
         <script type="module">
-          import { WEAS, Atoms } from 'https://unpkg.com/weas/dist/weas.mjs';
+          import { WEAS, Atoms } from 'https://unpkg.com/weas/dist/index.mjs';
           let domElement = document.getElementById("viewer");
           // create atoms object for H2O
           let atoms = new Atoms({
@@ -36,7 +36,7 @@ Create a new HTML file and include the following code, and open the file in a we
           let editor = new WEAS({ domElement });
           // load atoms to atoms viewer (avr)
           editor.avr.atoms = atoms;
-          editor.avr.modelStyle = 1; // 1: ball and stick, 0: ball only
+          editor.avr.applyState({ modelStyle: 1 }, { redraw: "full" }); // 1: ball and stick, 0: ball only
           editor.render();
         </script>
       </body>
@@ -53,7 +53,7 @@ Here is the result of the above code:
       <body>
         <div id="viewer" style="position: relative; width: 100%; height: 500px"></div>
         <script type="module">
-          import { WEAS, Atoms } from 'https://unpkg.com/weas/dist/weas.mjs';
+          import { WEAS, Atoms } from 'https://unpkg.com/weas/dist/index.mjs';
           let domElement = document.getElementById("viewer");
           // create atoms object for H2O
           let atoms = new Atoms({
@@ -66,7 +66,7 @@ Here is the result of the above code:
           let editor = new WEAS({ domElement });
           // load atoms to atoms viewer (avr)
           editor.avr.atoms = atoms;
-          editor.avr.modelStyle = 1; // 1: ball and stick, 0: ball only
+          editor.avr.applyState({ modelStyle: 1 }, { redraw: "full" }); // 1: ball and stick, 0: ball only
           editor.render();
         </script>
       </body>
@@ -84,3 +84,25 @@ Features
 - **Volumetric Data Visualization**: Supports the visualization of volumetric data (e.g., electron density) with isosurfaces.
 
 - **Measurement Tools**: Provides tools to measure distances, angles, and dihedrals within the structure.
+State updates and history
+-------------------------
+
+WEAS distinguishes between viewer state updates and operations that record history:
+
+.. code-block:: javascript
+
+    // Update state without history
+    editor.avr.applyState({ colorBy: "Element" }, { redraw: "full" });
+
+    // Update state with history (undo/redo)
+    editor.avr.setState({ atomLabelType: "Symbol" }, { record: true, redraw: "labels" });
+
+    // Batch multiple state changes into a single redraw
+    editor.avr.transaction(() => {
+      editor.avr.applyState({ colorType: "JMOL" });
+      editor.avr.applyState({ materialType: "Phong" });
+    });
+
+    // Undo and redo operations
+    editor.ops.undo();
+    editor.ops.redo();

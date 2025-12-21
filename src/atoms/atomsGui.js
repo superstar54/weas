@@ -33,6 +33,14 @@ class AtomsGUI {
     this.legend = new AtomsLegend(this.viewer, this.guiConfig);
   }
 
+  beginSync() {
+    this.isSyncing = true;
+  }
+
+  endSync() {
+    this.isSyncing = false;
+  }
+
   update(trajectory) {
     if (this.guiConfig.timeline.enabled && trajectory.length > 1) {
       this.addTimeline();
