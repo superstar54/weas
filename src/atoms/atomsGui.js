@@ -9,6 +9,7 @@ class AtomsGUI {
     this.viewer = viewer;
     this.gui = gui;
     this.guiConfig = guiConfig;
+    this.isSyncing = false;
     this.tempBoundary = [
       [0, 0],
       [0, 0],
@@ -32,6 +33,14 @@ class AtomsGUI {
     this.legend = new AtomsLegend(this.viewer, this.guiConfig);
   }
 
+  beginSync() {
+    this.isSyncing = true;
+  }
+
+  endSync() {
+    this.isSyncing = false;
+  }
+
   update(trajectory) {
     if (this.guiConfig.timeline.enabled && trajectory.length > 1) {
       this.addTimeline();
@@ -48,68 +57,78 @@ class AtomsGUI {
     this.modelStyleController = atomsFolder
       .add({ modelStyle: this.viewer.modelStyle }, "modelStyle", MODEL_STYLE_MAP)
       .onChange((value) => {
-        this.viewer.modelStyle = value;
-        this.viewer.drawModels();
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.setState({ modelStyle: value }, { record: true, redraw: "full" });
       })
       .name("Model Style");
 
     // Radius Type Control
+    const radiusTypeState = { radiusType: this.viewer.radiusType };
     this.radiusTypeController = atomsFolder
-      .add(this.viewer, "radiusType", radiusTypes)
+      .add(radiusTypeState, "radiusType", radiusTypes)
       .name("Radius Type")
       .onChange((value) => {
-        this.viewer.radiusType = value;
-        this.viewer.drawModels();
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.setState({ radiusType: value }, { record: true, redraw: "full" });
       });
 
     // Atom Label Control
+    const atomLabelState = { atomLabelType: this.viewer.atomLabelType };
     this.atomLabelTypeController = atomsFolder
-      .add(this.viewer, "atomLabelType", ["None", "Symbol", "Index"])
+      .add(atomLabelState, "atomLabelType", ["None", "Symbol", "Index"])
       .onChange((value) => {
-        this.viewer.atomLabelType = value;
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.setState({ atomLabelType: value }, { record: true, redraw: "labels" });
       })
       .name("Atom Label");
 
     // Material Type Control
+    const materialTypeState = { materialType: this.viewer.materialType };
     this.materialTypeController = atomsFolder
-      .add(this.viewer, "materialType", ["Standard", "Phong", "Basic"])
+      .add(materialTypeState, "materialType", ["Standard", "Phong", "Basic"])
       .onChange((value) => {
-        this.viewer.materialType = value;
-        this.viewer.drawModels();
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.setState({ materialType: value }, { record: true, redraw: "full" });
       })
       .name("Material Type");
 
     // Atom Scale Control
+    const atomScaleState = { atomScale: this.viewer.atomScale };
     this.atomScaleController = atomsFolder
-      .add(this.viewer, "atomScale", 0.1, 2.0)
+      .add(atomScaleState, "atomScale", 0.1, 2.0)
       .name("Atom Scale")
       .onChange((value) => {
-        this.viewer.atomScale = value; // Viewer setter handles the update
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.setState({ atomScale: value }, { record: true, redraw: "render" });
       });
 
     // Show Cell Control
+    const showCellState = { showCell: this.viewer.cellManager.showCell };
     this.showCellController = atomsFolder
-      .add(this.viewer.cellManager, "showCell")
+      .add(showCellState, "showCell")
       .name("Unit Cell")
       .onChange((value) => {
-        this.viewer.cellManager.showCell = value;
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.weas.ops.settings.SetCellSettings({ showCell: value });
       });
 
     // Show Cell Axes Control
+    const showAxesState = { showAxes: this.viewer.cellManager.showAxes };
     this.showCellAxesController = atomsFolder
-      .add(this.viewer.cellManager, "showAxes")
+      .add(showAxesState, "showAxes")
       .name("Crystal Axes")
       .onChange((value) => {
-        this.viewer.cellManager.showAxes = value;
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.weas.ops.settings.SetCellSettings({ showAxes: value });
       });
 
     // Show Bonded Atoms Control
     this.showBondedAtomsController = atomsFolder
-      .add(this.viewer, "showBondedAtoms")
+      .add({ showBondedAtoms: this.viewer.showBondedAtoms }, "showBondedAtoms")
       .name("Bonded Atoms")
       .onChange((value) => {
-        this.viewer.showBondedAtoms = value;
-        this.viewer.drawModels();
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.setState({ showBondedAtoms: value }, { record: true, redraw: "full" });
       });
 
     // Legend Toggle Control
@@ -203,6 +222,7 @@ class AtomsGUI {
     colorFolder
       .addColor(this.viewer, "backgroundColor")
       .onChange((color) => {
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
         this.viewer.tjs.scene.background = new THREE.Color(color);
       })
       .name("Background");
@@ -210,16 +230,16 @@ class AtomsGUI {
     this.colorByController = colorFolder
       .add({ colorBy: this.viewer.colorBy }, "colorBy", colorBys)
       .onChange((value) => {
-        this.viewer.colorBy = value;
-        this.viewer.drawModels();
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.setState({ colorBy: value }, { record: true, redraw: "full" });
       })
       .name("Color By");
     // Color Type Control
     this.colorTypeController = colorFolder
       .add({ colorType: this.viewer.colorType }, "colorType", colorTypes)
       .onChange((value) => {
-        this.viewer.colorType = value;
-        this.viewer.drawModels();
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.setState({ colorType: value }, { record: true, redraw: "full" });
       })
       .name("Color Type");
   }
@@ -291,8 +311,8 @@ class AtomsGUI {
   }
 
   applyBoundaryChanges() {
-    this.viewer.boundary = this.tempBoundary;
-    this.viewer.drawModels();
+    if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+    this.viewer.setState({ boundary: this.tempBoundary }, { record: true, redraw: "full" });
   }
 
   addLegend() {
@@ -366,6 +386,7 @@ class AtomsGUI {
   updateViewerControl(detail) {
     // detail is a object containing the updated viewer properties
     // Update the GUI controls with the new values
+    this.isSyncing = true;
     Object.entries(detail).forEach(([key, value]) => {
       switch (key) {
         case "modelStyle":
@@ -411,6 +432,7 @@ class AtomsGUI {
           break;
       }
     });
+    this.isSyncing = false;
   }
   updateAtomScale(newValue) {
     if (this.atomScaleController && this.atomScaleController.getValue() !== newValue) {
@@ -421,7 +443,6 @@ class AtomsGUI {
   updateModelStyle(newValue) {
     if (this.modelStyleController && this.modelStyleController.getValue() !== newValue) {
       this.modelStyleController.setValue(newValue);
-      this.viewer.drawModels();
     }
   }
 

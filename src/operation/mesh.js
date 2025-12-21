@@ -1,4 +1,4 @@
-import { BaseOperation, renameFolder } from "./baseOperation.js";
+import { BaseOperation } from "./baseOperation.js";
 import { drawCube, drawPlane, drawCylinder, drawIcosahedron, drawCone, drawSphere, drawTorus, drawArrow } from "../tools/primitives.js";
 import { clearObject } from "../utils.js";
 
@@ -8,6 +8,10 @@ class BaseMeshOperation extends BaseOperation {
     this.data = arrayToVector3(data);
     this.drawFunction = drawFunction;
     this.object = null;
+    this.uiFields = {
+      title: this.constructor.description,
+      fields: buildMeshFields(this.data),
+    };
   }
 
   execute() {
@@ -20,123 +24,13 @@ class BaseMeshOperation extends BaseOperation {
     clearObject(this.weas.tjs.scene, this.object);
   }
 
-  adjust() {
+  adjust(params) {
+    if (!this.validateParams(params)) {
+      return;
+    }
     this.undo();
+    this.applyParams(params);
     this.execute();
-  }
-
-  setupGUI(guiFolder) {
-    renameFolder(guiFolder, this.constructor.description);
-    guiFolder
-      .add(this.data.position, "x", -10, 10)
-      .name("X-axis")
-      .onChange(() => this.adjust());
-    guiFolder
-      .add(this.data.position, "y", -10, 10)
-      .name("Y-axis")
-      .onChange(() => this.adjust());
-    guiFolder
-      .add(this.data.position, "z", -10, 10)
-      .name("Z-axis")
-      .onChange(() => this.adjust());
-    if (this.data.size !== undefined) {
-      guiFolder
-        .add(this.data, "size", 0.1, 10)
-        .name("Size")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.radius !== undefined) {
-      guiFolder
-        .add(this.data, "radius", 0.1, 10)
-        .name("Radius")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.depth !== undefined) {
-      guiFolder
-        .add(this.data, "depth", 0.1, 10)
-        .name("Depth")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.segments !== undefined) {
-      guiFolder
-        .add(this.data, "segments", 3, 32)
-        .name("Segments")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.detail !== undefined) {
-      guiFolder
-        .add(this.data, "detail", 0, 5)
-        .name("Detail")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.direction !== undefined) {
-      guiFolder
-        .add(this.data.direction, "x", -1, 1)
-        .name("X-direction")
-        .onChange(() => this.adjust());
-      guiFolder
-        .add(this.data.direction, "y", -1, 1)
-        .name("Y-direction")
-        .onChange(() => this.adjust());
-      guiFolder
-        .add(this.data.direction, "z", -1, 1)
-        .name("Z-direction")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.length !== undefined) {
-      guiFolder
-        .add(this.data, "length", 0.1, 10)
-        .name("Length")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.tube !== undefined) {
-      guiFolder
-        .add(this.data, "tube", 0.1, 10)
-        .name("Tube")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.radialSegments !== undefined) {
-      guiFolder
-        .add(this.data, "radialSegments", 3, 32)
-        .name("Radial segments")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.tubularSegments !== undefined) {
-      guiFolder
-        .add(this.data, "tubularSegments", 3, 32)
-        .name("Tubular segments")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.widthSegments !== undefined) {
-      guiFolder
-        .add(this.data, "widthSegments", 3, 32)
-        .name("Width segments")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.heightSegments !== undefined) {
-      guiFolder
-        .add(this.data, "heightSegments", 3, 32)
-        .name("Height segments")
-        .onChange(() => this.adjust());
-    }
-    if (this.data.scale !== undefined) {
-      guiFolder
-        .add(this.data.scale, "x", 0.1, 10)
-        .name("X-scale")
-        .onChange(() => this.adjust());
-      guiFolder
-        .add(this.data.scale, "y", 0.1, 10)
-        .name("Y-scale")
-        .onChange(() => this.adjust());
-      guiFolder
-        .add(this.data.scale, "z", 0.1, 10)
-        .name("Z-scale")
-        .onChange(() => this.adjust());
-    }
-    guiFolder
-      .addColor(this.data, "color")
-      .name("Color")
-      .onChange(() => this.adjust());
   }
 }
 
@@ -298,6 +192,79 @@ function vector3ToArray(data) {
     newdata.direction = [data.direction.x, data.direction.y, data.direction.z];
   }
   return newdata;
+}
+
+function buildMeshFields(data) {
+  const fields = {
+    positionX: { type: "number", min: -10, max: 10, step: 0.1, path: "data.position.x" },
+    positionY: { type: "number", min: -10, max: 10, step: 0.1, path: "data.position.y" },
+    positionZ: { type: "number", min: -10, max: 10, step: 0.1, path: "data.position.z" },
+  };
+  if (data.size !== undefined) {
+    fields.size = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.size" };
+  }
+  if (data.radius !== undefined) {
+    fields.radius = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.radius" };
+  }
+  if (data.depth !== undefined) {
+    fields.depth = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.depth" };
+  }
+  if (data.height !== undefined) {
+    fields.height = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.height" };
+  }
+  if (data.segments !== undefined) {
+    fields.segments = { type: "number", min: 3, max: 32, step: 1, path: "data.segments" };
+  }
+  if (data.detail !== undefined) {
+    fields.detail = { type: "number", min: 0, max: 5, step: 1, path: "data.detail" };
+  }
+  if (data.direction !== undefined) {
+    fields.directionX = { type: "number", min: -1, max: 1, step: 0.01, path: "data.direction.x" };
+    fields.directionY = { type: "number", min: -1, max: 1, step: 0.01, path: "data.direction.y" };
+    fields.directionZ = { type: "number", min: -1, max: 1, step: 0.01, path: "data.direction.z" };
+  }
+  if (data.length !== undefined) {
+    fields.length = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.length" };
+  }
+  if (data.arrowLength !== undefined) {
+    fields.arrowLength = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.arrowLength" };
+  }
+  if (data.arrowRadius !== undefined) {
+    fields.arrowRadius = { type: "number", min: 0.01, max: 2, step: 0.01, path: "data.arrowRadius" };
+  }
+  if (data.coneHeight !== undefined) {
+    fields.coneHeight = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.coneHeight" };
+  }
+  if (data.coneRadius !== undefined) {
+    fields.coneRadius = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.coneRadius" };
+  }
+  if (data.tube !== undefined) {
+    fields.tube = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.tube" };
+  }
+  if (data.radialSegments !== undefined) {
+    fields.radialSegments = { type: "number", min: 3, max: 32, step: 1, path: "data.radialSegments" };
+  }
+  if (data.tubularSegments !== undefined) {
+    fields.tubularSegments = { type: "number", min: 3, max: 32, step: 1, path: "data.tubularSegments" };
+  }
+  if (data.widthSegments !== undefined) {
+    fields.widthSegments = { type: "number", min: 3, max: 32, step: 1, path: "data.widthSegments" };
+  }
+  if (data.heightSegments !== undefined) {
+    fields.heightSegments = { type: "number", min: 3, max: 32, step: 1, path: "data.heightSegments" };
+  }
+  if (data.scale !== undefined) {
+    fields.scaleX = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.scale.x" };
+    fields.scaleY = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.scale.y" };
+    fields.scaleZ = { type: "number", min: 0.1, max: 10, step: 0.1, path: "data.scale.z" };
+  }
+  if (data.color !== undefined) {
+    fields.color = { type: "color", path: "data.color" };
+  }
+  if (data.materialType !== undefined) {
+    fields.materialType = { type: "select", options: ["Standard", "Phong", "Basic"], path: "data.materialType" };
+  }
+  return fields;
 }
 
 export { AddCubeOperation, AddPlaneOperation, AddCylinderOperation, AddIcosahedronOperation, AddConeOperation, AddSphereOperation, AddTorusOperation, AddArrowOperation };

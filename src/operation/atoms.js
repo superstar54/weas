@@ -1,15 +1,25 @@
-import { BaseOperation, renameFolder } from "./baseOperation.js";
+import { BaseOperation } from "./baseOperation.js";
 import { elementAtomicNumbers } from "../atoms/atoms_data.js";
 import { colorBys } from "../config.js";
 
 class ReplaceOperation extends BaseOperation {
   static description = "Replace atoms";
   static category = "Edit";
+  static ui = {
+    title: "Replace",
+    fields: {
+      symbol: {
+        type: "select",
+        options: (op) => op.symbolOptions,
+      },
+    },
+  };
 
   constructor({ weas, symbol = "C", indices = null }) {
     super(weas);
     this.indices = indices ? indices : Array.from(this.weas.avr.selectedAtomsIndices);
     this.symbol = symbol;
+    this.symbolOptions = Object.keys(elementAtomicNumbers).concat(Object.keys(this.weas.avr.atoms.species || {}));
     // .copy() provides a fresh instance for restoration
     this.initialAtoms = weas.avr.atoms.copy();
   }
@@ -22,41 +32,44 @@ class ReplaceOperation extends BaseOperation {
     this.weas.avr.atoms = this.initialAtoms.copy();
   }
 
-  adjust(newSymbol) {
-    // if newSymbol not in elementAtomicNumbers, and newSymbol not in this.weas.avr.atoms.species, ship the adjustment
-    if (!(newSymbol in elementAtomicNumbers || newSymbol in this.weas.avr.atoms.species)) {
-      return;
+  validateParams(params) {
+    if (!(params.symbol in elementAtomicNumbers || params.symbol in this.weas.avr.atoms.species)) {
+      return false;
     }
-    this.symbol = newSymbol;
-    this.execute(); // Re-execute with the new symbol
-  }
-
-  setupGUI(guiFolder) {
-    //
-    renameFolder(guiFolder, "Replace");
-
-    guiFolder
-      .add(this, "symbol", "H")
-      .name("Symbol")
-      .onChange((value) => {
-        this.adjust(this.symbol);
-      });
+    return true;
   }
 }
 
 class AddAtomOperation extends BaseOperation {
   static description = "Add atom";
   static category = "Edit";
+  static ui = {
+    title: "Add",
+    fields: {
+      symbol: {
+        type: "select",
+        options: (op) => op.symbolOptions,
+      },
+      x: { type: "number", min: -10, max: 10, step: 0.1 },
+      y: { type: "number", min: -10, max: 10, step: 0.1 },
+      z: { type: "number", min: -10, max: 10, step: 0.1 },
+    },
+  };
 
   constructor({ weas, symbol = "C", position = { x: 0, y: 0, z: 0 } }) {
     super(weas);
     // this.weas.avr.selectedAtomsIndices is a set
     this.position = position;
     this.symbol = symbol;
+    this.x = position.x;
+    this.y = position.y;
+    this.z = position.z;
+    this.symbolOptions = Object.keys(elementAtomicNumbers).concat(Object.keys(this.weas.avr.atoms.species || {}));
     this.initialAtoms = weas.avr.atoms.copy();
   }
 
   execute() {
+    this.position = { x: this.x, y: this.y, z: this.z };
     this.weas.avr.addAtom({ element: this.symbol, position: this.position });
   }
 
@@ -64,109 +77,91 @@ class AddAtomOperation extends BaseOperation {
     this.weas.avr.atoms = this.initialAtoms.copy();
   }
 
-  adjust(newSymbol, newPosition) {
-    // if newSymbol not in elementAtomicNumbers, ship the adjustment
-    if (!(newSymbol in elementAtomicNumbers || newSymbol in this.weas.avr.atoms.species)) {
+  adjust(params) {
+    if (!this.validateParams(params)) {
       return;
     }
     this.weas.avr.atoms = this.initialAtoms.copy();
-    this.symbol = newSymbol;
-    this.position = newPosition;
-    this.execute(); // Re-execute with the new symbol
+    this.applyParams(params);
+    this.execute();
   }
 
-  setupGUI(guiFolder) {
-    //
-    renameFolder(guiFolder, "Add");
+  applyParams(params) {
+    if ("symbol" in params) {
+      this.symbol = params.symbol;
+    }
+    if ("x" in params || "y" in params || "z" in params) {
+      this.x = params.x ?? this.x;
+      this.y = params.y ?? this.y;
+      this.z = params.z ?? this.z;
+      this.position = { x: this.x, y: this.y, z: this.z };
+    }
+  }
 
-    guiFolder
-      .add(this, "symbol", "C")
-      .name("Symbol")
-      .onChange((value) => {
-        this.adjust(value, this.position);
-      });
-    guiFolder
-      .add(this.position, "x", -10, 10)
-      .name("X-axis")
-      .onChange((value) => {
-        this.adjust(this.symbol, { ...this.position, x: value });
-      });
-    guiFolder
-      .add(this.position, "y", -10, 10)
-      .name("Y-axis")
-      .onChange((value) => {
-        this.adjust(this.symbol, { ...this.position, y: value });
-      });
-    guiFolder
-      .add(this.position, "z", -10, 10)
-      .name("Z-axis")
-      .onChange((value) => {
-        this.adjust(this.symbol, { ...this.position, z: value });
-      });
+  validateParams(params) {
+    if (!(params.symbol in elementAtomicNumbers || params.symbol in this.weas.avr.atoms.species)) {
+      return false;
+    }
+    return true;
   }
 }
 
 class ColorByAttribute extends BaseOperation {
   static description = "Color by attribute";
   static category = "Color";
+  static ui = {
+    title: "Color by attribute",
+    fields: {
+      attribute: {
+        type: "select",
+        options: (op) => op.attributeKeys,
+      },
+      color1: { type: "color" },
+      color2: { type: "color" },
+    },
+  };
 
   constructor({ weas, attribute = "Element", color1 = "#ff0000", color2 = "#0000ff" }) {
     super(weas);
+    this.affectsAtoms = false;
     // weas.meshPrimitive.settings is a array of objects
     // deep copy it to avoid modifying the original settings
     this.attribute = attribute;
     this.color1 = color1;
     this.color2 = color2;
     // store previous colorBy attribute, and colorRamp
-    this.previousAttribute = weas.colorBy;
-    this.previousColorRamp = weas.colorRamp;
+    this.previousAttribute = weas.avr.colorBy;
+    this.previousColorRamp = weas.avr.colorRamp;
     // key of this.weas.avr.atoms.attributues['atom'] + colorBys
     this.attributeKeys = Object.keys(this.weas.avr.atoms.attributes["atom"]).concat(Object.keys(colorBys));
   }
 
   execute() {
-    // add cube to settings
-    this.weas.avr._colorRamp = [this.color1, this.color2];
-    this.weas.avr.colorBy = this.attribute;
-    this.weas.avr.drawModels();
+    this.weas.avr.applyState(
+      {
+        colorRamp: [this.color1, this.color2],
+        colorBy: this.attribute,
+      },
+      { redraw: "full" },
+    );
   }
 
   undo() {
-    this.weas.avr._colorRamp = this.previousColorRamp;
-    this.weas.avr.colorBy = this.previousAttribute;
-    this.weas.avr.drawModels();
+    this.weas.avr.applyState(
+      {
+        colorRamp: this.previousColorRamp,
+        colorBy: this.previousAttribute,
+      },
+      { redraw: "full" },
+    );
   }
 
-  adjust() {
+  validateParams(params) {
     // if colorBy not in colorBys, and colorBy not in the atoms.attributes["atom"], return
-    if (!(this.attribute in colorBys) && !(this.attribute in this.weas.avr.atoms.attributes["atom"])) {
-      return;
+    if (!(params.attribute in colorBys) && !(params.attribute in this.weas.avr.atoms.attributes["atom"])) {
+      return false;
     }
-    this.execute();
-  }
-
-  setupGUI(guiFolder) {
-    //
-    renameFolder(guiFolder, "Color by attribute");
-
-    guiFolder.add({ attribute: this.attribute }, "attribute", this.attributeKeys).onChange((value) => {
-      this.attribute = value;
-      this.adjust();
-    });
-    guiFolder
-      .addColor(this, "color1")
-      .name("Color1")
-      .onChange((value) => {
-        this.color1 = value;
-        this.adjust();
-      });
-    guiFolder
-      .addColor(this, "color2")
-      .name("Color2")
-      .onChange((value) => {
-        this.color2 = value;
-        this.adjust();
-      });
+    return true;
   }
 }
 

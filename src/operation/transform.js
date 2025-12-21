@@ -1,9 +1,17 @@
-import { BaseOperation, renameFolder } from "./baseOperation.js";
+import { BaseOperation } from "./baseOperation.js";
 import * as THREE from "three";
 
 class TranslateOperation extends BaseOperation {
   static description = "Translate";
   static category = "Edit";
+  static ui = {
+    title: "Translate",
+    fields: {
+      x: { type: "number", min: -10, max: 10, step: 0.1, path: "vector.x" },
+      y: { type: "number", min: -10, max: 10, step: 0.1, path: "vector.y" },
+      z: { type: "number", min: -10, max: 10, step: 0.1, path: "vector.z" },
+    },
+  };
 
   constructor({ weas, vector = new THREE.Vector3() }) {
     super(weas);
@@ -17,7 +25,6 @@ class TranslateOperation extends BaseOperation {
       vector = new THREE.Vector3(vector[0], vector[1], vector[2]);
     }
     this.vector = vector.clone();
-    this.vectorGui = { x: vector.x, y: vector.y, z: vector.z };
   }
 
   execute() {
@@ -36,40 +43,28 @@ class TranslateOperation extends BaseOperation {
     this.weas.objectManager.translateSelectedObjects({ translateVector: negativevector });
   }
 
-  adjust() {
+  adjust(params) {
+    if (!this.validateParams(params)) {
+      return;
+    }
     this.undo();
-    this.vector = new THREE.Vector3(this.vectorGui.x, this.vectorGui.y, this.vectorGui.z);
-    this.execute(); // Re-execute with the new translate vector
-  }
-
-  setupGUI(guiFolder) {
-    //
-    renameFolder(guiFolder, "Translate");
-
-    guiFolder
-      .add(this.vectorGui, "x", -10, 10)
-      .name("X-axis")
-      .onChange((value) => {
-        this.adjust();
-      });
-    guiFolder
-      .add(this.vectorGui, "y", -10, 10)
-      .name("Y-axis")
-      .onChange((value) => {
-        this.adjust();
-      });
-    guiFolder
-      .add(this.vectorGui, "z", -10, 10)
-      .name("Z-axis")
-      .onChange((value) => {
-        this.adjust();
-      });
+    this.applyParams(params);
+    this.execute();
   }
 }
 
 class RotateOperation extends BaseOperation {
   static description = "Rotate";
   static category = "Edit";
+  static ui = {
+    title: "Rotate",
+    fields: {
+      angle: { type: "number", min: -360, max: 360, step: 1, path: "angle" },
+      x: { type: "number", min: -1, max: 1, step: 0.01, path: "axis.x" },
+      y: { type: "number", min: -1, max: 1, step: 0.01, path: "axis.y" },
+      z: { type: "number", min: -1, max: 1, step: 0.01, path: "axis.z" },
+    },
+  };
 
   constructor({ weas, axis, angle }) {
     super(weas);
@@ -81,8 +76,6 @@ class RotateOperation extends BaseOperation {
     }
     this.axis = axis;
     this.angle = angle;
-    this.axisGui = { x: axis.x, y: axis.y, z: axis.z };
-    this.angleGui = angle;
   }
 
   execute() {
@@ -103,48 +96,27 @@ class RotateOperation extends BaseOperation {
     this.weas.objectManager.rotateSelectedObjects({ rotationAxis: this.axis, rotationAngle: -this.angle });
   }
 
-  adjust() {
-    // Adjust angle and update rotation
+  adjust(params) {
+    if (!this.validateParams(params)) {
+      return;
+    }
     this.undo();
-    this.axis = new THREE.Vector3(this.axisGui.x, this.axisGui.y, this.axisGui.z);
-    this.angle = this.angleGui;
+    this.applyParams(params);
     this.execute();
-  }
-
-  setupGUI(guiFolder) {
-    renameFolder(guiFolder, "Rotate");
-    // GUI for rotation angle
-    guiFolder
-      .add(this, "angleGui", -360, 360)
-      .name("Angle")
-      .onChange(() => {
-        this.adjust();
-      });
-    // GUI for rotation axis
-    guiFolder
-      .add(this.axisGui, "x", -1, 1)
-      .name("X-axis")
-      .onChange(() => {
-        this.adjust();
-      });
-    guiFolder
-      .add(this.axisGui, "y", -1, 1)
-      .name("Y-axis")
-      .onChange(() => {
-        this.adjust();
-      });
-    guiFolder
-      .add(this.axisGui, "z", -1, 1)
-      .name("Z-axis")
-      .onChange(() => {
-        this.adjust();
-      });
   }
 }
 
 class ScaleOperation extends BaseOperation {
   static description = "Scale";
   static category = "Edit";
+  static ui = {
+    title: "Scale",
+    fields: {
+      x: { type: "number", min: 0.001, max: 10, step: 0.01, path: "scale.x" },
+      y: { type: "number", min: 0.001, max: 10, step: 0.01, path: "scale.y" },
+      z: { type: "number", min: 0.001, max: 10, step: 0.01, path: "scale.z" },
+    },
+  };
 
   constructor({ weas, scale = new THREE.Vector3() }) {
     super(weas);
@@ -157,7 +129,6 @@ class ScaleOperation extends BaseOperation {
       scale = new THREE.Vector3(scale[0], scale[1], scale[2]);
     }
     this.scale = scale.clone();
-    this.scaleGui = { x: scale.x, y: scale.y, z: scale.z };
   }
 
   execute() {
@@ -176,34 +147,13 @@ class ScaleOperation extends BaseOperation {
     this.weas.objectManager.scaleSelectedObjects({ scale });
   }
 
-  adjust() {
+  adjust(params) {
+    if (!this.validateParams(params)) {
+      return;
+    }
     this.undo();
-    this.scale = new THREE.Vector3(this.scaleGui.x, this.scaleGui.y, this.scaleGui.z);
-    this.execute(); // Re-execute with the new scale vector
-  }
-
-  setupGUI(guiFolder) {
-    //
-    renameFolder(guiFolder, "Scale");
-
-    guiFolder
-      .add(this.scaleGui, "x", 0.001, 10)
-      .name("X-axis")
-      .onChange((value) => {
-        this.adjust();
-      });
-    guiFolder
-      .add(this.scaleGui, "y", 0.001, 10)
-      .name("Y-axis")
-      .onChange((value) => {
-        this.adjust();
-      });
-    guiFolder
-      .add(this.scaleGui, "z", 0.001, 10)
-      .name("Z-axis")
-      .onChange((value) => {
-        this.adjust();
-      });
+    this.applyParams(params);
+    this.execute();
   }
 }
 

@@ -36,13 +36,15 @@ class AtomsViewer {
     this._showBondedAtoms = viewerSettings.showBondedAtoms;
     this._boundary = viewerSettings.boundary;
     this._atomScale = viewerSettings.atomScale;
-    this.backgroundColor = viewerSettings.backgroundColor;
-    this.tjs.scene.background = new THREE.Color(this.backgroundColor);
+    this._backgroundColor = viewerSettings.backgroundColor;
+    this.tjs.scene.background = new THREE.Color(this._backgroundColor);
     this._selectedAtomsIndices = new Array(); // Store selected atoms
     this.baseAtomLabelSettings = [];
     this.debug = viewerSettings.debug;
     this.continuousUpdate = viewerSettings.continuousUpdate;
     this._currentFrame = 0;
+    this._updateDepth = 0;
+    this._pendingRedraw = null;
     this.logger = new Logger(viewerSettings.logLevel || "warn"); // Default log level is "warn"
     this.trajectory = [new Atoms()];
     // animation settings
@@ -312,7 +314,9 @@ class AtomsViewer {
     this._colorBy = newValue;
     // avoid the recursive loop
     if (this.guiManager.colorByController && this.guiManager.colorByController.getValue() !== newValue) {
+      this.guiManager.beginSync();
       this.guiManager.colorByController.setValue(newValue); // Update the GUI
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ colorBy: newValue });
     // update the bondManager settings
@@ -329,7 +333,9 @@ class AtomsViewer {
     this._colorType = newValue;
     // avoid the recursive loop
     if (this.guiManager.colorTypeController && this.guiManager.colorTypeController.getValue() !== newValue) {
+      this.guiManager.beginSync();
       this.guiManager.colorTypeController.setValue(newValue); // Update the GUI
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ colorType: newValue });
     // update the bondManager settings
@@ -347,9 +353,30 @@ class AtomsViewer {
     this._materialType = newValue;
     // avoid the recursive loop
     if (this.guiManager.materialTypeController && this.guiManager.materialTypeController.getValue() !== newValue) {
+      this.guiManager.beginSync();
       this.guiManager.materialTypeController.setValue(newValue); // Update the GUI
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ materialType: newValue });
+  }
+
+  get colorRamp() {
+    return this._colorRamp;
+  }
+
+  set colorRamp(newValue) {
+    this._colorRamp = newValue;
+    this.weas.eventHandlers.dispatchViewerUpdated({ colorRamp: newValue });
+  }
+
+  get backgroundColor() {
+    return this._backgroundColor;
+  }
+
+  set backgroundColor(newValue) {
+    this._backgroundColor = newValue;
+    this.tjs.scene.background = new THREE.Color(newValue);
+    this.weas.eventHandlers.dispatchViewerUpdated({ backgroundColor: newValue });
   }
 
   get atomLabelType() {
@@ -363,7 +390,9 @@ class AtomsViewer {
     this.updateAtomLabels();
     // avoid the recursive loop
     if (this.guiManager.atomLabelTypeController && this.guiManager.atomLabelTypeController.getValue() !== newValue) {
+      this.guiManager.beginSync();
       this.guiManager.atomLabelTypeController.setValue(newValue); // Update the GUI
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ atomLabelType: newValue });
   }
@@ -376,12 +405,18 @@ class AtomsViewer {
     this._boundary = newValue;
     // avoid the recursive loop
     // this.guiManager.boundaryControllers is a 2x3 array
+    if (this.guiManager.boundaryControllers) {
+      this.guiManager.beginSync();
+    }
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 2; j++) {
         if (this.guiManager.boundaryControllers && this.guiManager.boundaryControllers[i][j].getValue() !== newValue[i][j]) {
           this.guiManager.boundaryControllers[i][j].setValue(newValue[i][j]); // Update the GUI
         }
       }
+    }
+    if (this.guiManager.boundaryControllers) {
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ boundary: newValue });
   }
@@ -394,7 +429,9 @@ class AtomsViewer {
     this._showBondedAtoms = newValue;
     // avoid the recursive loop
     if (this.guiManager.showBondedAtomsController && this.guiManager.showBondedAtomsController.getValue() !== newValue) {
+      this.guiManager.beginSync();
       this.guiManager.showBondedAtomsController.setValue(newValue); // Update the GUI
+      this.guiManager.endSync();
     }
     this.weas.eventHandlers.dispatchViewerUpdated({ showBondedAtoms: newValue });
   }
@@ -459,6 +496,115 @@ class AtomsViewer {
     this.highlightManager.updateHighlightAtomsMesh({ indices: unselectedAtoms, scale: 0, type: "sphere" });
     this.baseAtomLabelSettings = [];
     this.updateAtomLabels();
+  }
+
+  beginUpdate() {
+    this._updateDepth += 1;
+  }
+
+  endUpdate({ redraw = true } = {}) {
+    if (this._updateDepth > 0) {
+      this._updateDepth -= 1;
+    }
+    if (this._updateDepth === 0 && redraw) {
+      this.flushRedraw();
+    }
+  }
+
+  transaction(callback, { redraw = true } = {}) {
+    this.beginUpdate();
+    try {
+      callback();
+    } finally {
+      this.endUpdate({ redraw });
+    }
+  }
+
+  requestRedraw(kind = "full") {
+    const priority = { render: 1, labels: 2, full: 3 };
+    if (!kind || !priority[kind]) {
+      return;
+    }
+    if (!this._pendingRedraw || priority[kind] > priority[this._pendingRedraw]) {
+      this._pendingRedraw = kind;
+    }
+    if (this._updateDepth === 0) {
+      this.flushRedraw();
+    }
+  }
+
+  flushRedraw() {
+    const kind = this._pendingRedraw;
+    this._pendingRedraw = null;
+    if (!kind) {
+      return;
+    }
+    if (kind === "full") {
+      this.drawModels();
+    } else if (kind === "labels") {
+      this.updateAtomLabels();
+    } else {
+      this.tjs.render();
+    }
+  }
+
+  applyState(patch, { redraw = "auto" } = {}) {
+    if (!patch || Object.keys(patch).length === 0) {
+      return;
+    }
+    const autoRedraw = redraw === "auto";
+    const manualRedraw = redraw !== "auto" && redraw !== "none";
+    this.beginUpdate();
+    Object.entries(patch).forEach(([key, value]) => {
+      if (!(key in this)) {
+        this.logger.warn(`Unknown viewer state key: ${key}`);
+        return;
+      }
+      this[key] = value;
+      if (autoRedraw) {
+        const effect = this.getRedrawEffectForKey(key);
+        if (effect) {
+          this.requestRedraw(effect);
+        }
+      }
+    });
+    if (manualRedraw) {
+      this.requestRedraw(redraw === true ? "full" : redraw);
+    }
+    this.endUpdate({ redraw: true });
+  }
+
+  setState(patch, { record = false, redraw = "auto" } = {}) {
+    if (record) {
+      if (this.weas.ops && this.weas.ops.isRestoring) {
+        this.applyState(patch, { redraw });
+        return;
+      }
+      this.weas.ops.viewer.SetViewerState({ patch, redraw });
+      return;
+    }
+    this.applyState(patch, { redraw });
+  }
+
+  getRedrawEffectForKey(key) {
+    const effectMap = {
+      modelStyle: "full",
+      radiusType: "full",
+      colorBy: "full",
+      colorType: "full",
+      colorRamp: "full",
+      materialType: "full",
+      boundary: "full",
+      showBondedAtoms: "full",
+      atomScales: "full",
+      modelSticks: "full",
+      modelPolyhedras: "full",
+      atomLabelType: "labels",
+      atomScale: "render",
+      selectedAtomsIndices: "render",
+      backgroundColor: "render",
+    };
+    return effectMap[key] || null;
   }
 
   getAtomLabelSettingsFromType(labelType) {

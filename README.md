@@ -27,6 +27,20 @@ Here are some demo pages:
 
 Please visit: [WEAS Documentation](https://weas.readthedocs.io/en/latest/index.html)
 
+### Viewer state and history
+
+WEAS separates viewer state changes from operations that record undo/redo.
+
+```js
+// Apply state changes without history, with deferred redraws.
+viewer.avr.transaction(() => {
+  viewer.avr.applyState({ modelStyle: 1, colorBy: "Element" });
+});
+
+// Apply state changes with history.
+viewer.avr.setState({ colorBy: "Index" }, { record: true, redraw: "full" });
+```
+
 ### Examples
 
 ### Molecule

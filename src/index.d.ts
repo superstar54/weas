@@ -61,6 +61,13 @@ export declare class WEAS {
   downloadAnimation(options?: { filename?: string; format?: string; fps?: number; startFrame?: number; endFrame?: number | null; mimeType?: string | null; resolution?: number }): Promise<void>;
 }
 
+export declare class SetCellSettings {}
+export declare class SetBondSettings {}
+export declare class SetIsosurfaceSettings {}
+export declare class SetVolumeSliceSettings {}
+export declare class SetVectorFieldSettings {}
+export declare class SetHighlightSettings {}
+
 /**
  * Options for constructing an AtomsViewer.
  */
@@ -155,6 +162,21 @@ export declare class AtomsViewer {
   selectedAtomsLabelElement: HTMLElement;
   /** Any loaded volumetric data */
   volumetricData: any;
+
+  /** Begin a batched update to defer redraws */
+  beginUpdate(): void;
+
+  /** End a batched update and optionally redraw */
+  endUpdate(options?: { redraw?: boolean }): void;
+
+  /** Run a batched update with automatic begin/end */
+  transaction(callback: () => void, options?: { redraw?: boolean }): void;
+
+  /** Apply a patch to viewer state without history */
+  applyState(patch: Record<string, any>, options?: { redraw?: "auto" | "full" | "labels" | "render" | "none" | boolean }): void;
+
+  /** Apply a patch to viewer state, optionally recording history */
+  setState(patch: Record<string, any>, options?: { record?: boolean; redraw?: "auto" | "full" | "labels" | "render" | "none" | boolean }): void;
 
   /**
    * Initialize the viewer with a set of Atoms.

@@ -4,6 +4,10 @@ import { clearObject } from "../utils.js";
 class DeleteOperation extends BaseOperation {
   static description = "Delete";
   static category = "Edit";
+  static ui = {
+    title: "Delete",
+    fields: {},
+  };
 
   constructor({ weas, indices = null }) {
     super(weas);
@@ -47,6 +51,10 @@ class DeleteOperation extends BaseOperation {
 class CopyOperation extends BaseOperation {
   static description = "Copy";
   static category = "Edit";
+  static ui = {
+    title: "Copy",
+    fields: {},
+  };
 
   constructor({ weas, indices = null }) {
     super(weas);

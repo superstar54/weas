@@ -5,6 +5,8 @@ import * as object from "./object.js";
 import * as mesh from "./mesh.js";
 import * as atoms from "./atoms.js";
 import * as selection from "./selection.js";
+import * as viewer from "./viewer.js";
+import * as settings from "./settings.js";
 
 // Organize them under namespaces
 export const ops = {
@@ -13,6 +15,8 @@ export const ops = {
   mesh: mesh,
   atoms: atoms,
   selection: selection,
+  viewer: viewer,
+  settings: settings,
 };
 
 export class OperationManager {
@@ -21,6 +25,7 @@ export class OperationManager {
     this.operationSearchManager = new OperationSearchManager(weas, ops);
     this.undoStack = [];
     this.redoStack = [];
+    this.isRestoring = false;
     this.gui = new GUI();
     this.gui.closed = false; // Set the GUI to be closed by default
     this.createGUIContainer();
@@ -50,31 +55,58 @@ export class OperationManager {
     * If execute is false, the operation will not be executed, only added to the undo stack.
     This is useful for the operation that being executed by multiple steps, like the transform operation by mouse move.
     */
+    if (this.isRestoring) {
+      return;
+    }
     if (execute) {
       operation.execute();
     }
     this.undoStack.push(operation);
     this.redoStack = []; // Clear redo stack on new operation
     this.updateAdjustLastOperationGUI();
-    this.weas.eventHandlers.dispatchAtomsUpdated();
+    if (operation.affectsAtoms !== false) {
+      this.weas.eventHandlers.dispatchAtomsUpdated();
+    }
   }
 
   undo() {
     if (this.undoStack.length > 0) {
       const operation = this.undoStack.pop();
+      this.isRestoring = true;
       operation.undo();
+      this.endRestoreSoon();
       this.redoStack.push(operation);
-      this.weas.eventHandlers.dispatchAtomsUpdated();
+      if (operation.affectsAtoms !== false) {
+        this.weas.eventHandlers.dispatchAtomsUpdated();
+      }
     }
   }
 
   redo() {
     if (this.redoStack.length > 0) {
       const operation = this.redoStack.pop();
+      this.isRestoring = true;
       operation.redo();
+      this.endRestoreSoon();
       this.undoStack.push(operation);
       this.updateAdjustLastOperationGUI();
-      this.weas.eventHandlers.dispatchAtomsUpdated();
+      if (operation.affectsAtoms !== false) {
+        this.weas.eventHandlers.dispatchAtomsUpdated();
+      }
+    }
+  }
+
+  endRestoreSoon() {
+    // Keep isRestoring true across queued UI callbacks triggered by undo/redo.
+    // This prevents those callbacks from recording new operations during restore.
+    if (typeof queueMicrotask === "function") {
+      queueMicrotask(() => {
+        this.isRestoring = false;
+      });
+    } else {
+      setTimeout(() => {
+        this.isRestoring = false;
+      }, 0);
     }
   }
 
@@ -102,6 +134,15 @@ export class OperationManager {
     });
   }
 
+  onOperationAdjusted(operation) {
+    // If the last operation is adjusted, redo history is no longer valid.
+    const last = this.undoStack[this.undoStack.length - 1];
+    if (last === operation) {
+      this.redoStack = [];
+      this.updateAdjustLastOperationGUI();
+    }
+  }
+
   hideGUI() {
     this.guiContainer.style.display = "none";
   }
@@ -112,10 +153,19 @@ export class OperationManager {
       this.guiContainer.style.display = "block";
       const lastOperation = this.undoStack[this.undoStack.length - 1];
 
-      // Clear the existing GUI controls
+      if (typeof lastOperation.supportsAdjustGUI === "function" && !lastOperation.supportsAdjustGUI()) {
+        this.guiContainer.style.display = "none";
+        return;
+      }
+
+      // Clear the existing GUI controls and folders
       while (this.adjustLastOpFolder.__controllers.length > 0) {
         this.adjustLastOpFolder.remove(this.adjustLastOpFolder.__controllers[0]);
       }
+      const folderKeys = Object.keys(this.adjustLastOpFolder.__folders);
+      folderKeys.forEach((key) => {
+        this.adjustLastOpFolder.removeFolder(this.adjustLastOpFolder.__folders[key]);
+      });
 
       // Call the operation's setupGUI method if it exists
       if (typeof lastOperation.setupGUI === "function") {

@@ -84,12 +84,12 @@ async function updateAtoms(filename, fileContent = null) {
       // atomsList[0].newAttribute("charge", [-1, 0.5, 1, 0.5, 0.3, 0.2, 2, 1, 0, -0.5], "atom");
       // atomsList[0].newAttribute("color", { C: "##eb4034", H: "#b434eb", O: "#34eb77", S: "#FFFF00" }, "specie");
       // atomsList[0].newAttribute("radii", { C: 1.5, H: 1.0, O: 1.5, S: 1.5 }, "specie");
-      editor.avr.atoms = atomsList;
       // editor.avr.bondManager.settings[1].color1 = "blue";
       // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
       // editor.avr.colorType = "CPK";
       editor.avr.modelStyle = 1;
       editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.avr.atoms = atomsList;
       break;
     case "urea.cif":
       editor.clear();

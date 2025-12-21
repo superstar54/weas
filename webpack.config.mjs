@@ -52,6 +52,21 @@ export default [
       outputModule: true,
     },
   },
+  // 1b) ESM legacy alias (backward compatibility)
+  {
+    ...common,
+    output: {
+      path: path.resolve(__dirname, "dist"),
+      filename: "weas.mjs",
+      library: {
+        type: "module",
+      },
+      globalObject: "this",
+    },
+    experiments: {
+      outputModule: true,
+    },
+  },
 
   // 2) CJS build
   {
