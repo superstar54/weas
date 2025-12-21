@@ -13,7 +13,7 @@ import { VectorField } from "./plugins/vectorField.js";
 import { Measurement } from "./plugins/measurement.js";
 import { HighlightManager } from "./plugins/highlight.js";
 import { AtomsGUI } from "./atomsGui.js";
-import { defaultViewerSettings } from "../config.js";
+import { defaultViewerSettings, MODEL_STYLE_MAP } from "../config.js";
 import { Phonon } from "./plugins/phonon.js";
 import { Logger } from "../logger.js";
 
@@ -433,12 +433,13 @@ class AtomsViewer {
   }
 
   set modelStyle(newValue) {
+    const normalized = normalizeModelStyle(newValue, this._modelStyle);
     if (this._syncingState) {
-      this._modelStyle = parseInt(newValue);
-      this.weas.eventHandlers.dispatchViewerUpdated({ modelStyle: this._modelStyle });
+      this._modelStyle = normalized;
+      this.weas.eventHandlers.dispatchViewerUpdated({ modelStyle: normalized });
       return;
     }
-    this.applyState({ modelStyle: newValue }, { redraw: "full" });
+    this.applyState({ modelStyle: normalized }, { redraw: "full" });
   }
 
   get radiusType() {
@@ -704,6 +705,7 @@ class AtomsViewer {
           this.logger.warn(`Unknown viewer state key: ${key}`);
           return;
         }
+        const normalizedValue = key === "modelStyle" ? normalizeModelStyle(value, this._modelStyle) : value;
         if (key === "selectedAtomsIndices") {
           const prevSelected = this._selectedAtomsIndices;
           const nextSelected = Array.isArray(value) ? value : [];
@@ -720,7 +722,7 @@ class AtomsViewer {
           this.weas.eventHandlers.dispatchViewerUpdated({ selectedAtomsIndices: nextSelected });
           this.highlightManager.updateHighlightAtomsMesh({ indices: newSelectedAtoms, scale: 1.1, type: "sphere" });
           this.highlightManager.updateHighlightAtomsMesh({ indices: unselectedAtoms, scale: 0, type: "sphere" });
-          this.baseAtomLabelSettings = [];
+          this.baseAtomLabelSettings = this.getAtomLabelSettingsFromType(this._atomLabelType);
           this.updateAtomLabels();
           if (autoRedraw) {
             const effect = this.getRedrawEffectForKey(key);
@@ -730,7 +732,7 @@ class AtomsViewer {
           }
           return;
         }
-        this[key] = value;
+        this[key] = normalizedValue;
         if (key === "radiusType") {
           this.atomManager.init();
           this.bondManager.init();
@@ -758,7 +760,7 @@ class AtomsViewer {
           this.updateAtomLabels();
         }
         if (key === "modelStyle" && needsModelArraySync) {
-          this.updateModelStyles(value);
+          this.updateModelStyles(normalizedValue);
         }
         if (autoRedraw) {
           const effect = this.getRedrawEffectForKey(key);
@@ -810,7 +812,7 @@ class AtomsViewer {
       atomScales: "full",
       modelSticks: "full",
       modelPolyhedras: "full",
-      atomLabelType: "labels",
+      atomLabelType: "render",
       atomScale: "render",
       selectedAtomsIndices: "render",
       backgroundColor: "render",
@@ -1208,6 +1210,22 @@ class AtomsViewer {
     this.updateModelStyles(this._modelStyle);
     this.drawModels();
   }
+}
+
+function normalizeModelStyle(value, fallback) {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string") {
+    if (Object.prototype.hasOwnProperty.call(MODEL_STYLE_MAP, value)) {
+      return MODEL_STYLE_MAP[value];
+    }
+    const parsed = parseInt(value, 10);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return fallback;
 }
 
 export { AtomsViewer };
