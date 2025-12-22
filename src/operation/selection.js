@@ -71,4 +71,40 @@ class InsideSelection extends BaseOperation {
   }
 }
 
-export { SelectAll, InvertSelection, InsideSelection };
+class SelectByGroup extends BaseOperation {
+  static description = "Select by group";
+  static category = "Select";
+  static ui = {
+    title: "Select by group",
+    fields: {
+      group: {
+        type: "select",
+        options: (op) => op.groupOptions,
+      },
+    },
+  };
+
+  constructor({ weas, group = "group" }) {
+    super(weas);
+    const options = this.weas.avr.atoms.listGroups();
+    this.groupOptions = options.length > 0 ? options : [group];
+    this.group = group === "group" && this.groupOptions.length > 0 ? this.groupOptions[0] : group;
+  }
+
+  execute() {
+    const indices = this.weas.avr.atoms.getGroupIndices(this.group);
+    this.ensureStateStore();
+    this.applyStatePatchWithHistory("viewer", { selectedAtomsIndices: indices }, (key) => this.weas.avr[key]);
+  }
+
+  undo() {
+    this.ensureStateStore();
+    this.undoStatePatch();
+  }
+
+  validateParams(params) {
+    return Boolean(params.group && String(params.group).trim());
+  }
+}
+
+export { SelectAll, InvertSelection, InsideSelection, SelectByGroup };

@@ -11,6 +11,7 @@ Features:
 - Model: space-filling, ball-stick, polyhedral.
 - Supported File types: cif, xyz, cube, xsf, POSCAR.
 - Edit structure: move, rotate, delete, and replace atoms.
+- Atom groups for tagging and selection by group.
 - Support periodic boundary conditions.
 - Animation (view and edit).
 - Volumetric data (isosurface).

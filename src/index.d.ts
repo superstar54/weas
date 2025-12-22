@@ -526,6 +526,17 @@ export declare class Atoms {
    * @param element The element (defaults to symbol)
    */
   addSpecie(symbol: string, element?: string): void;
+
+  /** List all group names used by atom-level groups */
+  listGroups(): string[];
+  /** Get atom indices that belong to a group */
+  getGroupIndices(group: string): number[];
+  /** Add atoms to a group */
+  addAtomsToGroup(indices: number[] | number, group: string): void;
+  /** Remove atoms from a group */
+  removeAtomsFromGroup(indices: number[] | number, group: string): void;
+  /** Remove a group from all atoms, returns removed count */
+  clearGroup(group: string): number;
 }
 
 /**

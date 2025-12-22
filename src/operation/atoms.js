@@ -159,4 +159,148 @@ class ColorByAttribute extends BaseOperation {
   }
 }
 
-export { ReplaceOperation, AddAtomOperation, ColorByAttribute };
+class AddAtomsToGroupOperation extends BaseOperation {
+  static description = "Add atoms to group";
+  static category = "Group";
+  static ui = {
+    title: "Add to group",
+    fields: {
+      group: { type: "text" },
+    },
+  };
+
+  constructor({ weas, group = "group", indices = null }) {
+    super(weas);
+    const selectedIndices = this.stateGet("viewer.selectedAtomsIndices", []) || [];
+    this.indices = indices ? indices : Array.from(selectedIndices);
+    this.group = group;
+    this.initialAtoms = weas.avr.atoms.copy();
+  }
+
+  execute() {
+    this.weas.avr.atoms.addAtomsToGroup(this.indices, this.group);
+  }
+
+  undo() {
+    this.weas.avr.atoms = this.initialAtoms.copy();
+  }
+
+  adjust(params) {
+    this.adjustWithReset(params, () => {
+      this.weas.avr.atoms = this.initialAtoms.copy();
+    });
+  }
+
+  applyParams(params) {
+    if ("group" in params) {
+      this.group = params.group;
+    }
+  }
+
+  validateParams(params) {
+    return Boolean(params.group && String(params.group).trim());
+  }
+}
+
+class RemoveAtomsFromGroupOperation extends BaseOperation {
+  static description = "Remove atoms from group";
+  static category = "Group";
+  static ui = {
+    title: "Remove from group",
+    fields: {
+      group: {
+        type: "select",
+        options: (op) => op.groupOptions,
+      },
+    },
+  };
+
+  constructor({ weas, group = "group", indices = null }) {
+    super(weas);
+    const selectedIndices = this.stateGet("viewer.selectedAtomsIndices", []) || [];
+    this.indices = indices ? indices : Array.from(selectedIndices);
+    const groupOptions = new Set();
+    const groups = this.weas.avr.atoms.attributes?.atom?.groups;
+    if (Array.isArray(groups)) {
+      this.indices.forEach((index) => {
+        const entry = groups[index];
+        if (Array.isArray(entry)) {
+          entry.forEach((name) => groupOptions.add(String(name)));
+        }
+      });
+    }
+    this.groupOptions = Array.from(groupOptions).sort();
+    if (this.groupOptions.length === 0) {
+      this.groupOptions = [group];
+    }
+    this.group = group === "group" && this.groupOptions.length > 0 ? this.groupOptions[0] : group;
+    this.initialAtoms = weas.avr.atoms.copy();
+  }
+
+  execute() {
+    this.weas.avr.atoms.removeAtomsFromGroup(this.indices, this.group);
+  }
+
+  undo() {
+    this.weas.avr.atoms = this.initialAtoms.copy();
+  }
+
+  adjust(params) {
+    this.adjustWithReset(params, () => {
+      this.weas.avr.atoms = this.initialAtoms.copy();
+    });
+  }
+
+  applyParams(params) {
+    if ("group" in params) {
+      this.group = params.group;
+    }
+  }
+
+  validateParams(params) {
+    return Boolean(params.group && String(params.group).trim());
+  }
+}
+
+class ClearGroupOperation extends BaseOperation {
+  static description = "Clear group";
+  static category = "Group";
+  static ui = {
+    title: "Clear group",
+    fields: {
+      group: { type: "text" },
+    },
+  };
+
+  constructor({ weas, group = "group" }) {
+    super(weas);
+    this.group = group;
+    this.initialAtoms = weas.avr.atoms.copy();
+  }
+
+  execute() {
+    this.weas.avr.atoms.clearGroup(this.group);
+  }
+
+  undo() {
+    this.weas.avr.atoms = this.initialAtoms.copy();
+  }
+
+  adjust(params) {
+    this.adjustWithReset(params, () => {
+      this.weas.avr.atoms = this.initialAtoms.copy();
+    });
+  }
+
+  applyParams(params) {
+    if ("group" in params) {
+      this.group = params.group;
+    }
+  }
+
+  validateParams(params) {
+    return Boolean(params.group && String(params.group).trim());
+  }
+}
+
+export { ReplaceOperation, AddAtomOperation, ColorByAttribute, AddAtomsToGroupOperation, RemoveAtomsFromGroupOperation, ClearGroupOperation };
