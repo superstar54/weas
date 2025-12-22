@@ -173,7 +173,8 @@ export class BlendJS {
     // this.controls.enablePan = true; // This line disables panning
     // this.controls.enableDamping = true; // Enable smooth camera movements
     // Add event listener for window resize
-    this.viewerRect = this.containerElement.getBoundingClientRect();
+    this.updateViewerRect();
+    this.observeContainerResize();
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
     // Add event listeners for mouse events
     this.containerElement.addEventListener("mousemove", this.render.bind(this));
@@ -184,6 +185,42 @@ export class BlendJS {
     this.containerElement.addEventListener("atomsUpdated", this.render.bind(this));
     this.createCoordScene();
     this.createLegendScene();
+  }
+
+  observeContainerResize() {
+    console.log("Observing container resize");
+    if (typeof ResizeObserver !== "function") {
+      return;
+    }
+    this._lastObservedSize = { width: 0, height: 0 };
+    this._resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) {
+        return;
+      }
+      const { width, height } = entry.contentRect || {};
+      if (!width || !height) {
+        return;
+      }
+      if (width === this._lastObservedSize.width && height === this._lastObservedSize.height) {
+        return;
+      }
+      this._lastObservedSize = { width, height };
+      console.log("Container resized:", width, height);
+      if (this._resizeRaf) {
+        return;
+      }
+      this._resizeRaf = requestAnimationFrame(() => {
+        this._resizeRaf = null;
+        this.onWindowResize();
+      });
+    });
+    this._resizeObserver.observe(this.containerElement);
+  }
+
+  updateViewerRect() {
+    this.viewerRect = this.containerElement.getBoundingClientRect();
+    return this.viewerRect;
   }
 
   addObject(name, geometry, material) {
@@ -252,7 +289,7 @@ export class BlendJS {
     Object.values(this.renderers).forEach((rndr) => {
       rndr.renderer.setSize(clientWidth, clientHeight);
     });
-    this.viewerRect = this.containerElement.getBoundingClientRect();
+    this.updateViewerRect();
     this.render();
   }
 
