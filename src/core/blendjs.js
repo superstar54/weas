@@ -116,7 +116,9 @@ export class BlendJS {
     // Create a renderer
     const renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.autoClear = false;
-    const { width: clientWidth, height: clientHeight } = getContainerDimensions(this.containerElement);
+    const rect = this.containerElement.getBoundingClientRect();
+    const clientWidth = this.containerElement.clientWidth || rect.width || 1;
+    const clientHeight = this.containerElement.clientHeight || rect.height || 1;
     renderer.setSize(clientWidth, clientHeight);
     // renderer.shadowMap.enabled = true;
     // renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
@@ -173,7 +175,8 @@ export class BlendJS {
     // this.controls.enablePan = true; // This line disables panning
     // this.controls.enableDamping = true; // Enable smooth camera movements
     // Add event listener for window resize
-    this.viewerRect = this.containerElement.getBoundingClientRect();
+    this.updateViewerRect();
+    this.observeContainerResize();
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
     // Add event listeners for mouse events
     this.containerElement.addEventListener("mousemove", this.render.bind(this));
@@ -184,6 +187,42 @@ export class BlendJS {
     this.containerElement.addEventListener("atomsUpdated", this.render.bind(this));
     this.createCoordScene();
     this.createLegendScene();
+  }
+
+  observeContainerResize() {
+    console.log("Observing container resize");
+    if (typeof ResizeObserver !== "function") {
+      return;
+    }
+    this._lastObservedSize = { width: 0, height: 0 };
+    this._resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) {
+        return;
+      }
+      const { width, height } = entry.contentRect || {};
+      if (!width || !height) {
+        return;
+      }
+      if (width === this._lastObservedSize.width && height === this._lastObservedSize.height) {
+        return;
+      }
+      this._lastObservedSize = { width, height };
+      console.log("Container resized:", width, height);
+      if (this._resizeRaf) {
+        return;
+      }
+      this._resizeRaf = requestAnimationFrame(() => {
+        this._resizeRaf = null;
+        this.onWindowResize();
+      });
+    });
+    this._resizeObserver.observe(this.containerElement);
+  }
+
+  updateViewerRect() {
+    this.viewerRect = this.containerElement.getBoundingClientRect();
+    return this.viewerRect;
   }
 
   addObject(name, geometry, material) {
@@ -222,7 +261,12 @@ export class BlendJS {
   }
 
   onWindowResize() {
-    const { width: clientWidth, height: clientHeight } = getContainerDimensions(this.containerElement);
+    const rect = this.containerElement.getBoundingClientRect();
+    const clientWidth = this.containerElement.clientWidth || rect.width;
+    const clientHeight = this.containerElement.clientHeight || rect.height;
+    if (!clientWidth || !clientHeight) {
+      return;
+    }
     // Update camera and renderer sizes based on the container element
     if (this.camera.isOrthographicCamera) {
       const aspect = clientWidth / clientHeight;
@@ -252,7 +296,7 @@ export class BlendJS {
     Object.values(this.renderers).forEach((rndr) => {
       rndr.renderer.setSize(clientWidth, clientHeight);
     });
-    this.viewerRect = this.containerElement.getBoundingClientRect();
+    this.updateViewerRect();
     this.render();
   }
 
@@ -263,7 +307,12 @@ export class BlendJS {
     The camera to look at the lookAt, and rotate around the lookAt of the atoms.
     Position of the camera is defined by the look_at, direction, and distance attributes.
     */
-    const { width: clientWidth, height: clientHeight } = getContainerDimensions(this.containerElement);
+    const rect = this.containerElement.getBoundingClientRect();
+    const containerWidth = this.containerElement.clientWidth || rect.width;
+    const containerHeight = this.containerElement.clientHeight || rect.height;
+    const rendererSize = this.renderers["MainRenderer"]?.renderer?.getSize(new THREE.Vector2()) || { x: 1, y: 1 };
+    const clientWidth = containerWidth || rendererSize.x || 1;
+    const clientHeight = containerHeight || rendererSize.y || 1;
     // normalize the camera direction
     direction = new THREE.Vector3(...direction).normalize();
     const sceneBoundingBox = this.getSceneBoundingBox();
@@ -673,12 +722,4 @@ function calculateBoundingBox(box, direction) {
   size.y = maxProjected.y - minProjected.y;
   size.z = maxProjected.z - minProjected.z;
   return size;
-}
-
-function getContainerDimensions(element, defaultWidth = 600, defaultHeight = 400) {
-  // Get the default width and height if the container is not yet rendered.
-  const computedStyle = getComputedStyle(element);
-  const width = element.clientWidth || parseInt(computedStyle.width, 10) || defaultWidth;
-  const height = element.clientHeight || parseInt(computedStyle.height, 10) || defaultHeight;
-  return { width, height };
 }

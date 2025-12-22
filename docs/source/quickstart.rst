@@ -21,7 +21,7 @@ Create a new HTML file and include the following code, and open the file in a we
         <title>WEAS Molecule</title>
       </head>
       <body>
-        <div id="viewer" style="position: relative; width: 600px; height: 600px"></div>
+    <div id="viewer" style="position: relative; width: 600px; height: 600px"></div>
         <script type="module">
           import { WEAS, Atoms } from 'https://unpkg.com/weas/dist/index.mjs';
           let domElement = document.getElementById("viewer");
@@ -41,6 +41,13 @@ Create a new HTML file and include the following code, and open the file in a we
         </script>
       </body>
     </html>
+
+
+.. note::
+   The viewer container must have an explicit size (width/height). If you use
+   percentage sizing, ensure the parent element has a fixed size so the viewer
+   can resolve its layout.
+
 
 In this example, we import the WEAS library from the url. We then create a `Atoms` object for a water molecule (H2O) and a `WEAS` object to visualize the molecule. Finally, we update the atoms viewer with the water molecule and render the visualization.
 

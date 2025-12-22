@@ -40,16 +40,18 @@ export class SelectionManager {
   }
 
   onMouseDown(event) {
-    let x = ((event.clientX - this.tjs.viewerRect.left) / this.tjs.viewerRect.width) * 2 - 1;
-    let y = -((event.clientY - this.tjs.viewerRect.top) / this.tjs.viewerRect.height) * 2 + 1;
+    const rect = this.tjs.updateViewerRect();
+    let x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    let y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     this.selectionBox.startPoint.set(x, y, 0.5);
     this.oldSelectedAtomsIndices = this.weas.avr.selectedAtomsIndices;
     this.oldSelectedObjects = this.selectedObjects;
   }
 
   pickSelection(event) {
-    this.mouse.x = ((event.clientX - this.tjs.viewerRect.left) / this.tjs.viewerRect.width) * 2 - 1;
-    this.mouse.y = -((event.clientY - this.tjs.viewerRect.top) / this.tjs.viewerRect.height) * 2 + 1;
+    const rect = this.tjs.updateViewerRect();
+    this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     // Update the picking ray
     this.raycaster.setFromCamera(this.mouse, this.tjs.camera);
 
@@ -130,8 +132,9 @@ export class SelectionManager {
   }
 
   dragSelection(event) {
-    let x = ((event.clientX - this.tjs.viewerRect.left) / this.tjs.viewerRect.width) * 2 - 1;
-    let y = -((event.clientY - this.tjs.viewerRect.top) / this.tjs.viewerRect.height) * 2 + 1;
+    const rect = this.tjs.updateViewerRect();
+    let x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    let y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     this.selectionBox.endPoint.set(x, y, 0.5);
 
     this.selectionBox.select();
