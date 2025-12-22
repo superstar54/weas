@@ -31,6 +31,19 @@ export class AtomManager {
     this.settings = {};
     this.meshes = {};
     this.init();
+    const pluginState = this.viewer.state.get("plugins.species");
+    if (pluginState && pluginState.settings) {
+      this.fromSettings(pluginState.settings);
+    }
+    this.viewer.state.subscribe("plugins.species", (next) => {
+      if (!next || !next.settings) {
+        return;
+      }
+      this.fromSettings(next.settings);
+      if (!this.viewer._initializingState) {
+        this.viewer.requestRedraw?.("full");
+      }
+    });
   }
 
   init() {
@@ -48,6 +61,9 @@ export class AtomManager {
   updateAtomColors() {
     const colors = [];
     this.viewer.atoms.symbols.forEach((symbol, globalIndex) => {
+      if (!this.settings[symbol]) {
+        this.settings[symbol] = this.getDefaultSetting(symbol, this.viewer.atoms.species[symbol]?.element || symbol);
+      }
       // if this.viewer.atoms has color attribute in the specie domain, use it
       const color = new THREE.Color(this.settings[symbol].color);
       colors.push(color);
@@ -94,6 +110,14 @@ export class AtomManager {
     this.settings[symbol] = setting;
   }
 
+  toPlainSettings() {
+    const result = {};
+    Object.entries(this.settings).forEach(([key, setting]) => {
+      result[key] = setting && typeof setting.toDict === "function" ? setting.toDict() : setting;
+    });
+    return result;
+  }
+
   getMaxRadius() {
     /* Get the maximum radius of the atoms */
     return Math.max(...Object.values(this.settings).map((setting) => setting.radius));
@@ -126,7 +150,8 @@ export class AtomManager {
     this.scene.add(atomsMesh);
     // atoms to be drawn, boundary atoms, and the bonded atoms
     // merge the boundaryList and the bondedAtoms
-    this.viewer.imageAtomsList = this.viewer.bondedAtoms["atoms"].concat(this.viewer.boundaryList);
+    const boundaryList = this.viewer.boundaryList || [];
+    this.viewer.imageAtomsList = this.viewer.bondedAtoms["atoms"].concat(boundaryList);
     this.imageAtomMap = createImageAtomsMapping(this.viewer.imageAtomsList);
     // if imageAtomsList length > 0, draw image atoms
     if (this.viewer.imageAtomsList.length > 0) {
@@ -139,6 +164,9 @@ export class AtomManager {
       }
       const atomColors = [];
       imageAtomsList.symbols.forEach((symbol, globalIndex) => {
+        if (!this.settings[symbol]) {
+          this.settings[symbol] = this.getDefaultSetting(symbol, imageAtomsList.species[symbol]?.element || symbol);
+        }
         // if this.viewer.atoms has color attribute in the specie domain, use it
         const color = new THREE.Color(this.settings[symbol].color);
         atomColors.push(color);
@@ -216,7 +244,7 @@ export class AtomManager {
       }
       this.updateMeshScale(mesh, imageAtomsIndices, symbols, value);
     }
-    this.viewer.tjs.render();
+    this.viewer.requestRedraw?.("render");
   }
 
   updateMeshScale(mesh, indices, symbols, atomScale) {

@@ -8,4 +8,5 @@ Development
    :caption: Contents:
 
    setup
+   architecture
    algorithm

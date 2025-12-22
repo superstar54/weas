@@ -28,6 +28,8 @@ export declare class WEAS {
   readonly eventHandlers: any;
   /** Core operation manager */
   readonly ops: any;
+  /** Global state store */
+  readonly state: any;
   /** Selection manager */
   readonly selectionManager: any;
   /** Object manager */
@@ -148,8 +150,16 @@ export declare class AtomsViewer {
   boundary: any;
   /** Atom scale factor */
   atomScale: number;
+  /** Per-atom scale overrides */
+  atomScales: number[];
+  /** Per-atom stick style overrides */
+  modelSticks: number[];
+  /** Per-atom polyhedra style overrides */
+  modelPolyhedras: number[];
   /** Background color */
   backgroundColor: string;
+  /** Whether to update continuously while dragging */
+  continuousUpdate: boolean;
   /** Indices of selected atoms */
   selectedAtomsIndices: number[];
   /** Trajectory frames */
@@ -162,6 +172,8 @@ export declare class AtomsViewer {
   selectedAtomsLabelElement: HTMLElement;
   /** Any loaded volumetric data */
   volumetricData: any;
+  /** Set volumetric data and redraw dependent plugins */
+  setVolumetricData(data: any): void;
 
   /** Begin a batched update to defer redraws */
   beginUpdate(): void;
@@ -197,6 +209,11 @@ export declare class AtomsViewer {
    * Perform a single render pass.
    */
   render(): void;
+
+  /**
+   * Request a redraw pass via the viewer scheduler.
+   */
+  requestRedraw(kind?: "full" | "labels" | "render"): void;
 
   /**
    * Remove all objects from the scene.

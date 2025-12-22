@@ -17,7 +17,8 @@ class ReplaceOperation extends BaseOperation {
 
   constructor({ weas, symbol = "C", indices = null }) {
     super(weas);
-    this.indices = indices ? indices : Array.from(this.weas.avr.selectedAtomsIndices);
+    const selectedIndices = this.stateGet("viewer.selectedAtomsIndices", []) || [];
+    this.indices = indices ? indices : Array.from(selectedIndices);
     this.symbol = symbol;
     this.symbolOptions = Object.keys(elementAtomicNumbers).concat(Object.keys(this.weas.avr.atoms.species || {}));
     // .copy() provides a fresh instance for restoration
@@ -78,12 +79,9 @@ class AddAtomOperation extends BaseOperation {
   }
 
   adjust(params) {
-    if (!this.validateParams(params)) {
-      return;
-    }
-    this.weas.avr.atoms = this.initialAtoms.copy();
-    this.applyParams(params);
-    this.execute();
+    this.adjustWithReset(params, () => {
+      this.weas.avr.atoms = this.initialAtoms.copy();
+    });
   }
 
   applyParams(params) {
@@ -129,31 +127,27 @@ class ColorByAttribute extends BaseOperation {
     this.attribute = attribute;
     this.color1 = color1;
     this.color2 = color2;
-    // store previous colorBy attribute, and colorRamp
-    this.previousAttribute = weas.avr.colorBy;
-    this.previousColorRamp = weas.avr.colorRamp;
     // key of this.weas.avr.atoms.attributues['atom'] + colorBys
     this.attributeKeys = Object.keys(this.weas.avr.atoms.attributes["atom"]).concat(Object.keys(colorBys));
   }
 
   execute() {
-    this.weas.avr.applyState(
-      {
-        colorRamp: [this.color1, this.color2],
-        colorBy: this.attribute,
-      },
-      { redraw: "full" },
-    );
+    this.ensureStateStore();
+    const patch = {
+      colorRamp: [this.color1, this.color2],
+      colorBy: this.attribute,
+    };
+    this.applyStatePatchWithHistory("viewer", patch, (key) => this.weas.avr[key]);
   }
 
   undo() {
-    this.weas.avr.applyState(
-      {
-        colorRamp: this.previousColorRamp,
-        colorBy: this.previousAttribute,
-      },
-      { redraw: "full" },
-    );
+    this.ensureStateStore();
+    this.undoStatePatch();
+  }
+
+  redo() {
+    this.ensureStateStore();
+    this.redoStatePatch();
   }
 
   validateParams(params) {

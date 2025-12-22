@@ -25,12 +25,9 @@ class BaseMeshOperation extends BaseOperation {
   }
 
   adjust(params) {
-    if (!this.validateParams(params)) {
-      return;
-    }
-    this.undo();
-    this.applyParams(params);
-    this.execute();
+    this.adjustWithReset(params, () => {
+      this.undo();
+    });
   }
 }
 

@@ -13,6 +13,9 @@ export class BaseOperation {
   }
 
   redo() {
+    if (this.redoStatePatch()) {
+      return;
+    }
     this.execute();
   }
 
@@ -115,6 +118,68 @@ export class BaseOperation {
     const { fields } = normalizeUISchema(schema);
     return fields && Object.keys(fields).length > 0;
   }
+
+  ensureStateStore() {
+    if (!this.weas || !this.weas.state) {
+      throw new Error("State store is required for this operation.");
+    }
+  }
+
+  stateGet(path, fallback = undefined) {
+    this.ensureStateStore();
+    const value = this.weas.state.get(path);
+    return value === undefined ? fallback : value;
+  }
+
+  stateSet(path, patch) {
+    this.ensureStateStore();
+    const payload = buildStatePatch(path, patch);
+    this.weas.state.set(payload);
+    return true;
+  }
+
+  captureStatePatch(path, patch, fallback) {
+    const current = this.stateGet(path, {});
+    const previous = {};
+    Object.keys(patch || {}).forEach((key) => {
+      if (current && Object.prototype.hasOwnProperty.call(current, key)) {
+        previous[key] = cloneValue(current[key]);
+      } else if (fallback) {
+        previous[key] = cloneValue(fallback(key));
+      }
+    });
+    return previous;
+  }
+
+  applyStatePatch(path, patch) {
+    return this.stateSet(path, patch);
+  }
+
+  applyStatePatchWithHistory(path, patch, fallback) {
+    this.ensureStateStore();
+    const previous = this.captureStatePatch(path, patch, fallback);
+    this._stateHistory = { path, previous, next: cloneValue(patch) };
+    this.stateSet(path, patch);
+    return true;
+  }
+
+  undoStatePatch() {
+    if (!this._stateHistory) {
+      return false;
+    }
+    this.ensureStateStore();
+    this.stateSet(this._stateHistory.path, this._stateHistory.previous);
+    return true;
+  }
+
+  redoStatePatch() {
+    if (!this._stateHistory) {
+      return false;
+    }
+    this.ensureStateStore();
+    this.stateSet(this._stateHistory.path, this._stateHistory.next);
+    return true;
+  }
 }
 
 export function renameFolder(folder, newName) {
@@ -184,4 +249,26 @@ function setByPath(target, path, value) {
     current = current[part];
   }
   current[parts[parts.length - 1]] = value;
+}
+
+function cloneValue(value) {
+  if (value === undefined) {
+    return value;
+  }
+  return JSON.parse(JSON.stringify(value));
+}
+
+function buildStatePatch(path, patch) {
+  if (!path) {
+    return patch;
+  }
+  const parts = path.split(".");
+  const root = {};
+  let current = root;
+  for (let i = 0; i < parts.length - 1; i++) {
+    current[parts[i]] = {};
+    current = current[parts[i]];
+  }
+  current[parts[parts.length - 1]] = patch;
+  return root;
 }

@@ -2,11 +2,12 @@ import * as THREE from "three";
 import { createLabel } from "../../utils.js";
 
 class Setting {
-  constructor({ origins = [], texts = [], color = "#3d82ed", fontSize = 0.05, shift = false }) {
+  constructor({ origins = [], texts = [], selection = null, color = "#3d82ed", fontSize = 0.05, shift = false }) {
     /* A class to store label settings */
 
     this.origins = origins;
     this.texts = texts;
+    this.selection = selection;
     this.color = color;
     this.fontSize = fontSize;
     this.shift = shift;
@@ -19,6 +20,23 @@ export class AtomLabelManager {
     this.scene = this.viewer.tjs.scene;
     this.settings = [];
     this.labels = [];
+
+    const pluginState = this.viewer.state.get("plugins.atomLabel");
+    if (pluginState && Array.isArray(pluginState.settings)) {
+      this.fromSettings(pluginState.settings);
+      this.drawAtomLabels();
+    }
+    this.viewer.state.subscribe("plugins.atomLabel", (next) => {
+      if (!next) {
+        return;
+      }
+      const settings = Array.isArray(next.settings) ? next.settings : [];
+      this.fromSettings(settings);
+      if (this.viewer._initializingState) {
+        return;
+      }
+      this.drawAtomLabels();
+    });
   }
 
   fromSettings(settings) {
@@ -32,14 +50,14 @@ export class AtomLabelManager {
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting({ origins, texts, color = "#3d82ed", fontSize = 0.05, shift = [0, 0, 0] }) {
+  addSetting({ origins, texts, selection = null, color = "#3d82ed", fontSize = 0.05, shift = [0, 0, 0] }) {
     /* Add a new setting to the label */
     if (typeof origins === "string") {
       if (!this.viewer.atoms.getAttribute(origins)) {
         throw new Error(`Attribute '${origins}' is not defined. The available attributes are: ${Object.keys(this.viewer.atoms.attributes["atom"])}`);
       }
     }
-    const setting = new Setting({ origins, texts, color, fontSize, shift });
+    const setting = new Setting({ origins, texts, selection, color, fontSize, shift });
     this.settings.push(setting);
   }
 
@@ -82,7 +100,7 @@ export class AtomLabelManager {
       }
     });
     // call the render function to update the scene
-    this.viewer.tjs.render();
+    this.viewer.requestRedraw?.("render");
   }
 
   updateLabel(atomIndex = null, atoms = null) {

@@ -10,17 +10,26 @@ class AtomsGUI {
     this.gui = gui;
     this.guiConfig = guiConfig;
     this.isSyncing = false;
-    this.tempBoundary = [
-      [0, 0],
-      [0, 0],
-      [0, 0],
-    ];
+    this.tempBoundary = this.viewer.boundary.map((row) => row.slice());
     this.div = document.createElement("div");
     this.viewer.tjs.containerElement.appendChild(this.div);
 
     // Listen to viewer events
     this.viewer.tjs.containerElement.addEventListener("viewerUpdated", (event) => {
       this.updateViewerControl(event.detail);
+    });
+    this.viewer.state.subscribe("cell", (next) => {
+      if (!next) {
+        return;
+      }
+      this.beginSync();
+      if (next.showCell !== undefined) {
+        this.updateShowCell(next.showCell);
+      }
+      if (next.showAxes !== undefined) {
+        this.updateShowAxes(next.showAxes);
+      }
+      this.endSync();
     });
 
     if (this.guiConfig.controls.atomsControl) {
@@ -219,13 +228,13 @@ class AtomsGUI {
   addColorControl() {
     const colorFolder = this.gui.addFolder("Color");
     // Background Color Control
-    colorFolder
+    this.backgroundColorController = colorFolder
       .addColor(this.viewer, "backgroundColor")
+      .name("Background")
       .onChange((color) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.tjs.scene.background = new THREE.Color(color);
-      })
-      .name("Background");
+        this.viewer.setState({ backgroundColor: color }, { record: true, redraw: "render" });
+      });
     // Color By Control
     this.colorByController = colorFolder
       .add({ colorBy: this.viewer.colorBy }, "colorBy", colorBys)
@@ -396,28 +405,28 @@ class AtomsGUI {
           this.updateRadiusType(value);
           break;
         case "atomLabelType":
-          // this.updateAtomLabelType(value);
+          this.updateAtomLabelType(value);
           break;
         case "materialType":
-          // this.updateMaterialType(value);
+          this.updateMaterialType(value);
           break;
         case "atomScale":
           this.updateAtomScale(value);
           break;
         case "showCell":
-          // this.updateShowCell(value);
+          this.updateShowCell(value);
           break;
         case "showBondedAtoms":
-          // this.updateShowBondedAtoms(value);
+          this.updateShowBondedAtoms(value);
           break;
         case "colorBy":
-          // this.updateColorBy(value);
+          this.updateColorBy(value);
           break;
         case "colorType":
-          // this.updateColorType(value);
+          this.updateColorType(value);
           break;
         case "backgroundColor":
-          // this.updateBackgroundColor(value);
+          this.updateBackgroundColor(value);
           break;
         case "isPlaying":
           // this.updateIsPlaying(value);
@@ -426,7 +435,7 @@ class AtomsGUI {
           // this.updateCurrentFrame(value);
           break;
         case "boundary":
-          // this.updateBoundary(value);
+          this.updateBoundary(value);
           break;
         default:
           break;
@@ -440,6 +449,18 @@ class AtomsGUI {
     }
   }
 
+  updateAtomLabelType(newValue) {
+    if (this.atomLabelTypeController && this.atomLabelTypeController.getValue() !== newValue) {
+      this.atomLabelTypeController.setValue(newValue);
+    }
+  }
+
+  updateMaterialType(newValue) {
+    if (this.materialTypeController && this.materialTypeController.getValue() !== newValue) {
+      this.materialTypeController.setValue(newValue);
+    }
+  }
+
   updateModelStyle(newValue) {
     if (this.modelStyleController && this.modelStyleController.getValue() !== newValue) {
       this.modelStyleController.setValue(newValue);
@@ -449,6 +470,57 @@ class AtomsGUI {
   updateRadiusType(newValue) {
     if (this.radiusTypeController && this.radiusTypeController.getValue() !== newValue) {
       this.radiusTypeController.setValue(newValue);
+    }
+  }
+
+  updateShowBondedAtoms(newValue) {
+    if (this.showBondedAtomsController && this.showBondedAtomsController.getValue() !== newValue) {
+      this.showBondedAtomsController.setValue(newValue);
+    }
+  }
+
+  updateShowCell(newValue) {
+    if (this.showCellController && this.showCellController.getValue() !== newValue) {
+      this.showCellController.setValue(newValue);
+    }
+  }
+
+  updateShowAxes(newValue) {
+    if (this.showCellAxesController && this.showCellAxesController.getValue() !== newValue) {
+      this.showCellAxesController.setValue(newValue);
+    }
+  }
+
+  updateColorBy(newValue) {
+    if (this.colorByController && this.colorByController.getValue() !== newValue) {
+      this.colorByController.setValue(newValue);
+    }
+  }
+
+  updateColorType(newValue) {
+    if (this.colorTypeController && this.colorTypeController.getValue() !== newValue) {
+      this.colorTypeController.setValue(newValue);
+    }
+  }
+
+  updateBackgroundColor(newValue) {
+    if (this.backgroundColorController && this.backgroundColorController.getValue() !== newValue) {
+      this.backgroundColorController.setValue(newValue);
+    }
+  }
+
+  updateBoundary(newValue) {
+    if (!this.boundaryControllers || !Array.isArray(newValue)) {
+      return;
+    }
+    this.tempBoundary = newValue.map((row) => row.slice());
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 2; j++) {
+        const controller = this.boundaryControllers[i][j];
+        if (controller && controller.getValue() !== newValue[i][j]) {
+          controller.setValue(newValue[i][j]);
+        }
+      }
     }
   }
 }

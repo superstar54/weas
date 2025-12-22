@@ -7,16 +7,18 @@ class SelectAll extends BaseOperation {
 
   constructor({ weas }) {
     super(weas);
-    this.previousSelectedAtomsIndices = [...weas.avr.selectedAtomsIndices];
   }
 
   execute() {
     // add cube to settings
-    this.weas.avr.selectedAtomsIndices = [...Array(this.weas.avr.atoms.getAtomsCount()).keys()];
+    const indices = [...Array(this.weas.avr.atoms.getAtomsCount()).keys()];
+    this.ensureStateStore();
+    this.applyStatePatchWithHistory("viewer", { selectedAtomsIndices: indices }, (key) => this.weas.avr[key]);
   }
 
   undo() {
-    this.weas.avr.selectedAtomsIndices = this.previousSelectedAtomsIndices;
+    this.ensureStateStore();
+    this.undoStatePatch();
   }
 }
 
@@ -26,16 +28,19 @@ class InvertSelection extends BaseOperation {
 
   constructor({ weas }) {
     super(weas);
-    this.previousSelectedAtomsIndices = [...weas.avr.selectedAtomsIndices];
   }
 
   execute() {
     // add cube to settings
-    this.weas.avr.selectedAtomsIndices = [...Array(this.weas.avr.atoms.getAtomsCount()).keys()].filter((i) => !this.previousSelectedAtomsIndices.includes(i));
+    this.ensureStateStore();
+    const previousSelectedAtomsIndices = this.stateGet("viewer.selectedAtomsIndices", []) || [];
+    const indices = [...Array(this.weas.avr.atoms.getAtomsCount()).keys()].filter((i) => !previousSelectedAtomsIndices.includes(i));
+    this.applyStatePatchWithHistory("viewer", { selectedAtomsIndices: indices }, (key) => this.weas.avr[key]);
   }
 
   undo() {
-    this.weas.avr.selectedAtomsIndices = this.previousSelectedAtomsIndices;
+    this.ensureStateStore();
+    this.undoStatePatch();
   }
 }
 
@@ -45,7 +50,6 @@ class InsideSelection extends BaseOperation {
 
   constructor({ weas }) {
     super(weas);
-    this.previousSelectedAtomsIndices = [...weas.avr.selectedAtomsIndices];
   }
 
   execute() {
@@ -57,11 +61,13 @@ class InsideSelection extends BaseOperation {
       const indices1 = pointsInsideMesh(this.weas.avr.atoms.positions, mesh);
       indices.push(...indices1);
     }
-    this.weas.avr.selectedAtomsIndices = indices;
+    this.ensureStateStore();
+    this.applyStatePatchWithHistory("viewer", { selectedAtomsIndices: indices }, (key) => this.weas.avr[key]);
   }
 
   undo() {
-    this.weas.avr.selectedAtomsIndices = this.previousSelectedAtomsIndices;
+    this.ensureStateStore();
+    this.undoStatePatch();
   }
 }
 
