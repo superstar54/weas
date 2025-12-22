@@ -164,6 +164,7 @@ class AtomsViewer {
 
   play() {
     this.isPlaying = true;
+    this._syncAnimationState();
     this.animate();
     if (this.guiManager.timeline) {
       this.guiManager.playPauseBtn.textContent = "Pause";
@@ -172,6 +173,7 @@ class AtomsViewer {
 
   pause() {
     this.isPlaying = false;
+    this._syncAnimationState();
     if (this.guiManager.timeline) {
       this.guiManager.playPauseBtn.textContent = "Play";
     }
@@ -238,9 +240,23 @@ class AtomsViewer {
     }
     this._currentFrame = newValue;
     this.lastFrameTime = Date.now(); // Update the last frame time
+    this._syncAnimationState();
 
     this.updateFrame(newValue);
     this.requestRedraw("render");
+  }
+
+  _syncAnimationState() {
+    if (!this.state) {
+      return;
+    }
+    this.state.set({
+      animation: {
+        currentFrame: this._currentFrame,
+        isPlaying: this.isPlaying,
+        frameDuration: this.frameDuration,
+      },
+    });
   }
 
   get originalCell() {

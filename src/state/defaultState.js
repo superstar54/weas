@@ -45,6 +45,20 @@ function createDefaultState() {
       anyMesh: { settings: [] },
       instancedMeshPrimitive: { settings: [] },
     },
+    camera: {
+      type: "Orthographic",
+      position: null,
+      target: null,
+      direction: null,
+      distance: null,
+      zoom: 1,
+      fov: 50,
+    },
+    animation: {
+      currentFrame: 0,
+      isPlaying: false,
+      frameDuration: 100,
+    },
   };
 }
 

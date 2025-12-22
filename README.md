@@ -16,6 +16,7 @@ Features:
 - Animation (view and edit).
 - Volumetric data (isosurface).
 - Vector fields, e.g., magnetic moment.
+- Import/export structures (JSON/XYZ/CIF) from the GUI.
 
 ### Demo
 
@@ -40,6 +41,34 @@ viewer.avr.transaction(() => {
 
 // Apply state changes with history.
 viewer.avr.setState({ colorBy: "Index" }, { record: true, redraw: "full" });
+```
+
+### Save and restore state
+
+You can export the full viewer state (atoms, plugins, viewer settings, camera) to JSON
+and import it later.
+
+```js
+const snapshot = viewer.exportState();
+// persist snapshot as JSON
+const payload = JSON.stringify(snapshot);
+// restore later
+viewer.importState(JSON.parse(payload));
+```
+
+### Import/export structures
+
+The GUI includes import/export buttons for JSON/XYZ/CIF. You can also use the
+helpers programmatically:
+
+```js
+import { parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "weas";
+
+const parsed = parseStructureText(text, ".cif");
+applyStructurePayload(viewer, parsed.data);
+
+const payload = buildExportPayload(viewer, "xyz");
+downloadText(payload.text, payload.filename, payload.mimeType);
 ```
 
 ### Examples

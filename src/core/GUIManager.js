@@ -2,6 +2,7 @@ import { GUI } from "dat.gui";
 import { setupCameraGUI } from "../tools/camera.js";
 import { createViewpointButtons } from "../tools/viewpoint.js";
 import { defaultGuiConfig } from "../config.js";
+import { parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "../io/structure.js";
 
 class GUIManager {
   constructor(weas, guiConfig) {
@@ -128,6 +129,65 @@ class GUIManager {
       buttonContainer.appendChild(downloadButton);
       downloadButton.addEventListener("click", () => {
         this.weas.tjs.downloadImage();
+      });
+    }
+    if (this.guiConfig.buttons.importStructure) {
+      const importSVG = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512">
+            <path d="M256 496c-17.7 0-32-14.3-32-32V271.3l-73.4 73.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l128-128c12.5-12.5 32.8-12.5 45.3 0l128 128c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L288 271.3V464c0 17.7-14.3 32-32 32zM64 96C28.7 96 0 124.7 0 160v32c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H64z"/>
+          </svg>
+      `;
+      const importButton = this.createButton(importSVG, "importStructure");
+      buttonContainer.appendChild(importButton);
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = ".json,.xyz,.cif";
+      fileInput.style.display = "none";
+      buttonContainer.appendChild(fileInput);
+      importButton.addEventListener("click", () => {
+        fileInput.value = "";
+        fileInput.click();
+      });
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+          return;
+        }
+        try {
+          const text = await file.text();
+          const extension = file.name.slice(file.name.lastIndexOf("."));
+          const parsed = parseStructureText(text, extension);
+          if (parsed.kind === "json") {
+            applyStructurePayload(this.weas, parsed.data);
+          } else {
+            applyStructurePayload(this.weas, parsed.data);
+          }
+        } catch (error) {
+          console.error("Failed to import structure:", error);
+          alert(`Import failed: ${error.message || error}`);
+        }
+      });
+    }
+    if (this.guiConfig.buttons.exportStructure) {
+      const exportSVG = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512">
+            <path d="M256 16c17.7 0 32 14.3 32 32v192.7l73.4-73.4c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3l-128 128c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L224 240.7V48c0-17.7 14.3-32 32-32zM64 352c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V416c0-35.3-28.7-64-64-64H64z"/>
+          </svg>
+      `;
+      const exportButton = this.createButton(exportSVG, "exportStructure");
+      buttonContainer.appendChild(exportButton);
+      exportButton.addEventListener("click", () => {
+        const format = window.prompt("Export format (json/xyz/cif)", "json");
+        if (!format) {
+          return;
+        }
+        try {
+          const payload = buildExportPayload(this.weas, format);
+          downloadText(payload.text, payload.filename, payload.mimeType);
+        } catch (error) {
+          console.error("Failed to export structure:", error);
+          alert(`Export failed: ${error.message || error}`);
+        }
       });
     }
     if (this.guiConfig.buttons.downloadAnimation) {

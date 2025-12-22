@@ -55,6 +55,8 @@ const defaultGuiConfig = {
     undo: true,
     redo: true,
     download: true,
+    importStructure: false,
+    exportStructure: false,
     downloadAnimation: true,
     measurement: true,
   },

@@ -29,6 +29,8 @@ The default configuration is:
       undo: true,
       redo: true,
       download: true,
+      importStructure: true,
+      exportStructure: true,
       downloadAnimation: false,
       measurement: true,
    }
@@ -36,3 +38,4 @@ The default configuration is:
 
 Notes:
 - The downloadAnimation button is only shown when a trajectory has more than one frame.
+ - Import/export buttons support JSON, XYZ, and CIF files.

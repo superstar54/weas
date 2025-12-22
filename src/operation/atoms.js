@@ -1,6 +1,7 @@
 import { BaseOperation } from "./baseOperation.js";
 import { elementAtomicNumbers } from "../atoms/atoms_data.js";
 import { colorBys } from "../config.js";
+import { parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "../io/structure.js";
 
 class ReplaceOperation extends BaseOperation {
   static description = "Replace atoms";
@@ -303,4 +304,87 @@ class ClearGroupOperation extends BaseOperation {
   }
 }
 
-export { ReplaceOperation, AddAtomOperation, ColorByAttribute, AddAtomsToGroupOperation, RemoveAtomsFromGroupOperation, ClearGroupOperation };
+class ImportStructureOperation extends BaseOperation {
+  static description = "Import structure file";
+  static category = "IO";
+
+  constructor({ weas }) {
+    super(weas);
+    this.previousState = weas.exportState();
+    this.nextState = null;
+    this.affectsAtoms = true;
+  }
+
+  execute() {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".json,.xyz,.cif";
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+    fileInput.addEventListener(
+      "change",
+      async () => {
+        const file = fileInput.files && fileInput.files[0];
+        document.body.removeChild(fileInput);
+        if (!file) {
+          return;
+        }
+        try {
+          const text = await file.text();
+          const extension = file.name.slice(file.name.lastIndexOf("."));
+          const parsed = parseStructureText(text, extension);
+          applyStructurePayload(this.weas, parsed.data);
+          this.nextState = this.weas.exportState();
+        } catch (error) {
+          console.error("Failed to import structure:", error);
+          alert(`Import failed: ${error.message || error}`);
+        }
+      },
+      { once: true },
+    );
+    fileInput.click();
+  }
+
+  undo() {
+    if (this.previousState) {
+      this.weas.importState(this.previousState);
+    }
+  }
+
+  redo() {
+    if (this.nextState) {
+      this.weas.importState(this.nextState);
+      return;
+    }
+    this.execute();
+  }
+}
+
+class ExportStructureOperation extends BaseOperation {
+  static description = "Export structure file";
+  static category = "IO";
+  static ui = {
+    title: "Export",
+    fields: {
+      format: { type: "select", options: ["json", "xyz", "cif"] },
+      filename: { type: "text" },
+    },
+  };
+
+  constructor({ weas, format = "json", filename = "" }) {
+    super(weas);
+    this.affectsAtoms = false;
+    this.format = format;
+    this.filename = filename;
+  }
+
+  execute() {
+    const payload = buildExportPayload(this.weas, this.format);
+    const filename = this.filename && this.filename.trim().length > 0 ? this.filename.trim() : payload.filename;
+    downloadText(payload.text, filename, payload.mimeType);
+  }
+
+  undo() {}
+}
+
+export { ReplaceOperation, AddAtomOperation, ColorByAttribute, AddAtomsToGroupOperation, RemoveAtomsFromGroupOperation, ClearGroupOperation, ImportStructureOperation, ExportStructureOperation };
