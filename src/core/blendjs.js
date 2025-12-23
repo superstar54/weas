@@ -43,8 +43,9 @@ class BlendJSRenderer {
 }
 
 export class BlendJS {
-  constructor(containerElement) {
+  constructor(containerElement, weas) {
     this.containerElement = containerElement;
+    this.weas = weas;
     this.scene = new WeasScene(this);
     this.objects = {};
     this.materials = {};
@@ -364,6 +365,9 @@ export class BlendJS {
     // Set the camera target to the lookAt of the atoms
     this.controls.target.set(lookAt.x, lookAt.y, lookAt.z);
     this.render();
+    if (this.weas.state && typeof this.weas.state.set === "function") {
+      this.weas.state.set({ camera: this.weas._exportCameraState() });
+    }
   }
 
   getSceneBoundingBox() {
