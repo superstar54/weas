@@ -16,7 +16,7 @@ Features:
 - Animation (view and edit).
 - Volumetric data (isosurface).
 - Vector fields, e.g., magnetic moment.
-- Import/export structures (JSON/XYZ/CIF) from the GUI.
+- Import structures and export image/JSON/XYZ/CIF (and animation when available) from the GUI.
 
 ### Demo
 

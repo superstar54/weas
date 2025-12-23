@@ -7,11 +7,22 @@ import { parseStructureText, applyStructurePayload, buildExportPayload, download
 class GUIManager {
   constructor(weas, guiConfig) {
     this.weas = weas;
-    this.guiConfig = { ...defaultGuiConfig, ...guiConfig };
+    const mergedButtons = { ...defaultGuiConfig.buttons, ...(guiConfig?.buttons || {}) };
+    const mergedControls = { ...defaultGuiConfig.controls, ...(guiConfig?.controls || {}) };
+    const mergedTimeline = { ...defaultGuiConfig.timeline, ...(guiConfig?.timeline || {}) };
+    const mergedLegend = { ...defaultGuiConfig.legend, ...(guiConfig?.legend || {}) };
+    const mergedButtonStyle = { ...defaultGuiConfig.buttonStyle, ...(guiConfig?.buttonStyle || {}) };
+    this.guiConfig = {
+      ...defaultGuiConfig,
+      ...guiConfig,
+      buttons: mergedButtons,
+      controls: mergedControls,
+      timeline: mergedTimeline,
+      legend: mergedLegend,
+      buttonStyle: mergedButtonStyle,
+    };
     this.gui = new GUI();
     this.gui.closed = true;
-    this.downloadAnimationButton = null;
-
     if (!this.guiConfig.controls.enabled) {
       this.gui.hide();
     } else {
@@ -51,12 +62,17 @@ class GUIManager {
   }
 
   addButtons() {
+    this.ensureToolbarStyles();
     const buttonContainer = document.createElement("div");
+    buttonContainer.className = "weas-toolbar";
     buttonContainer.style.display = "flex";
     buttonContainer.style.position = "absolute";
-    buttonContainer.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
-    buttonContainer.style.padding = "10px";
-    buttonContainer.style.borderRadius = "5px";
+    buttonContainer.style.background = "transparent";
+    buttonContainer.style.padding = "0";
+    buttonContainer.style.borderRadius = "0";
+    buttonContainer.style.border = "none";
+    buttonContainer.style.boxShadow = "none";
+    buttonContainer.style.backdropFilter = "none";
     buttonContainer.style.right = "5px";
     buttonContainer.style.top = "5px";
     buttonContainer.style.gap = "5px";
@@ -119,28 +135,88 @@ class GUIManager {
         this.weas.ops.redo();
       });
     }
-    if (this.guiConfig.buttons.download) {
-      const downloadSVG = `
+    if (this.guiConfig.buttons.export) {
+      const exportSVG = `
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512">
             <path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32V274.7l-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7V32zM64 352c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V416c0-35.3-28.7-64-64-64H346.5l-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352H64zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/>
           </svg>
       `;
-      const downloadButton = this.createButton(downloadSVG, "download");
-      buttonContainer.appendChild(downloadButton);
-      downloadButton.addEventListener("click", () => {
-        this.weas.tjs.downloadImage();
+      const exportButton = this.createButton(exportSVG, "export");
+      buttonContainer.appendChild(exportButton);
+      const exportPopup = document.createElement("div");
+      exportPopup.className = "weas-toolbar-popup";
+      exportPopup.style.position = "absolute";
+      exportPopup.style.top = "38px";
+      exportPopup.style.right = "5px";
+      exportPopup.style.background = "linear-gradient(180deg, #ffffff 0%, #f8f9fb 100%)";
+      exportPopup.style.borderRadius = "10px";
+      exportPopup.style.border = "1px solid rgba(20, 23, 28, 0.12)";
+      exportPopup.style.padding = "6px";
+      exportPopup.style.display = "none";
+      exportPopup.style.flexDirection = "column";
+      exportPopup.style.gap = "4px";
+      exportPopup.style.boxShadow = "0 10px 24px rgba(15, 23, 42, 0.18)";
+      buttonContainer.appendChild(exportPopup);
+
+      const addDownloadOption = (label, format) => {
+        const optionButton = document.createElement("button");
+        optionButton.textContent = label;
+        optionButton.className = "weas-toolbar-option";
+        this.setStyle(optionButton);
+        optionButton.style.textAlign = "left";
+        optionButton.style.padding = "4px 8px";
+        optionButton.addEventListener("click", () => {
+          exportPopup.style.display = "none";
+          if (format === "image") {
+            this.weas.tjs.downloadImage();
+            return;
+          }
+          if (format === "animation") {
+            this.weas.downloadAnimation();
+            return;
+          }
+          try {
+            const payload = buildExportPayload(this.weas, format);
+            downloadText(payload.text, payload.filename, payload.mimeType);
+          } catch (error) {
+            console.error("Failed to export structure:", error);
+            alert(`Export failed: ${error.message || error}`);
+          }
+        });
+        exportPopup.appendChild(optionButton);
+        return optionButton;
+      };
+
+      addDownloadOption("Image", "image");
+      addDownloadOption("State (JSON)", "json");
+      addDownloadOption("Structure (XYZ)", "xyz");
+      addDownloadOption("Structure (CIF)", "cif");
+      const animationOption = addDownloadOption("Animation (WebM)", "animation");
+
+      exportButton.addEventListener("click", () => {
+        if (animationOption) {
+          const hasTrajectory = Array.isArray(this.weas.avr?.trajectory) && this.weas.avr.trajectory.length > 1;
+          animationOption.style.display = hasTrajectory ? "" : "none";
+        }
+        exportPopup.style.display = exportPopup.style.display === "none" ? "flex" : "none";
+      });
+      document.addEventListener("click", (event) => {
+        if (!exportPopup.contains(event.target) && event.target !== exportButton) {
+          exportPopup.style.display = "none";
+        }
       });
     }
-    if (this.guiConfig.buttons.importStructure) {
+    if (this.guiConfig.buttons.import) {
       const importSVG = `
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512">
             <path d="M256 496c-17.7 0-32-14.3-32-32V271.3l-73.4 73.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l128-128c12.5-12.5 32.8-12.5 45.3 0l128 128c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L288 271.3V464c0 17.7-14.3 32-32 32zM64 96C28.7 96 0 124.7 0 160v32c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H64z"/>
           </svg>
       `;
-      const importButton = this.createButton(importSVG, "importStructure");
+      const importButton = this.createButton(importSVG, "import");
       buttonContainer.appendChild(importButton);
       const fileInput = document.createElement("input");
       fileInput.type = "file";
+      fileInput.id = "importInput";
       fileInput.accept = ".json,.xyz,.cif";
       fileInput.style.display = "none";
       buttonContainer.appendChild(fileInput);
@@ -168,44 +244,6 @@ class GUIManager {
         }
       });
     }
-    if (this.guiConfig.buttons.exportStructure) {
-      const exportSVG = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512">
-            <path d="M256 16c17.7 0 32 14.3 32 32v192.7l73.4-73.4c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3l-128 128c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L224 240.7V48c0-17.7 14.3-32 32-32zM64 352c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V416c0-35.3-28.7-64-64-64H64z"/>
-          </svg>
-      `;
-      const exportButton = this.createButton(exportSVG, "exportStructure");
-      buttonContainer.appendChild(exportButton);
-      exportButton.addEventListener("click", () => {
-        const format = window.prompt("Export format (json/xyz/cif)", "json");
-        if (!format) {
-          return;
-        }
-        try {
-          const payload = buildExportPayload(this.weas, format);
-          downloadText(payload.text, payload.filename, payload.mimeType);
-        } catch (error) {
-          console.error("Failed to export structure:", error);
-          alert(`Export failed: ${error.message || error}`);
-        }
-      });
-    }
-    if (this.guiConfig.buttons.downloadAnimation) {
-      const filmSVG = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="14" height="14" rx="2"/>
-            <path d="M17 7l4-2v14l-4-2z"/>
-            <circle cx="10" cy="11" r="3" fill="currentColor" stroke="none"/>
-          </svg>
-      `;
-      const downloadAnimationButton = this.createButton(filmSVG, "downloadAnimation");
-      buttonContainer.appendChild(downloadAnimationButton);
-      downloadAnimationButton.addEventListener("click", () => {
-        this.weas.downloadAnimation();
-      });
-      downloadAnimationButton.style.display = "none";
-      this.downloadAnimationButton = downloadAnimationButton;
-    }
     if (this.guiConfig.buttons.measurement) {
       const measurementSVG = `
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512">
@@ -224,6 +262,7 @@ class GUIManager {
     const button = document.createElement("button");
     button.id = id;
     button.innerHTML = html;
+    button.className = "weas-toolbar-button";
     this.setStyle(button);
     return button;
   }
@@ -233,13 +272,66 @@ class GUIManager {
     for (const [key, value] of Object.entries(styleConfig)) {
       button.style[key] = value;
     }
+    const isIconButton = (button.textContent || "").trim().length === 0;
+    if (isIconButton) {
+      if (!styleConfig.width) {
+        button.style.width = "28px";
+      }
+      if (!styleConfig.height) {
+        button.style.height = "28px";
+      }
+      if (!styleConfig.display) {
+        button.style.display = "inline-flex";
+      }
+      if (!styleConfig.alignItems) {
+        button.style.alignItems = "center";
+      }
+      if (!styleConfig.justifyContent) {
+        button.style.justifyContent = "center";
+      }
+      if (!styleConfig.lineHeight) {
+        button.style.lineHeight = "0";
+      }
+    }
   }
 
-  setDownloadAnimationVisible(isVisible) {
-    if (!this.downloadAnimationButton) {
+  ensureToolbarStyles() {
+    if (document.getElementById("weas-toolbar-styles")) {
       return;
     }
-    this.downloadAnimationButton.style.display = isVisible ? "" : "none";
+    const style = document.createElement("style");
+    style.id = "weas-toolbar-styles";
+    style.textContent = `
+      .weas-toolbar button.weas-toolbar-button {
+        background: #ffffff;
+        border: 1px solid #dfe3eb;
+        border-radius: 6px;
+        color: #39424e;
+        transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+      }
+      .weas-toolbar button.weas-toolbar-button:hover {
+        background: #eef3ff;
+        border-color: #5b7cfa;
+        box-shadow: 0 4px 10px rgba(60, 90, 255, 0.28);
+      }
+      .weas-toolbar button.weas-toolbar-button:active {
+        background: #e2e9ff;
+        border-color: #4a6df5;
+      }
+      .weas-toolbar .weas-toolbar-option {
+        background: #ffffff;
+        border: 1px solid #e1e6f0;
+        border-radius: 6px;
+        color: #39424e;
+        transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+      }
+      .weas-toolbar .weas-toolbar-option:hover {
+        background: #f0f4ff;
+        border-color: #5b7cfa;
+        box-shadow: 0 3px 8px rgba(60, 90, 255, 0.2);
+      }
+    `;
+    document.head.appendChild(style);
   }
 }
 

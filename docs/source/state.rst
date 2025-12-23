@@ -46,8 +46,8 @@ Simple GUI helpers
 GUI buttons (built-in)
 ----------------------
 
-The default GUI now includes import/export buttons that support JSON, XYZ, and
-CIF files.
+The default GUI includes import and export buttons that support JSON, XYZ, and
+CIF files. Export also supports image and animation (WebM) when available.
 
 - Import: JSON (state snapshot), XYZ, CIF
 - Export: JSON (full state), XYZ, CIF

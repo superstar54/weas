@@ -28,14 +28,12 @@ The default configuration is:
       fullscreen: true,
       undo: true,
       redo: true,
-      download: true,
-      importStructure: true,
-      exportStructure: true,
-      downloadAnimation: false,
+      export: true,
+      import: true,
       measurement: true,
    }
    };
 
 Notes:
-- The downloadAnimation button is only shown when a trajectory has more than one frame.
- - Import/export buttons support JSON, XYZ, and CIF files.
+- The export button supports image/JSON/XYZ/CIF and animation (WebM) when a trajectory is available.
+- Import buttons support JSON, XYZ, and CIF files.

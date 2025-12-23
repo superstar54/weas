@@ -1,4 +1,9 @@
 import { test, expect } from "@playwright/test";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 test("Gui config", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testGui.html");
@@ -529,6 +534,40 @@ test("Ops", async ({ page }) => {
     window.editor.ops.atoms.ColorByAttribute({ attribute: "Index", color1: "#00ff00", color2: "#0000ff" });
   });
   await expect.soft(page).toHaveScreenshot("Ops-color-by-index.png");
+});
+
+test("Groups", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testOps.html");
+  await page.waitForFunction(() => window.editor);
+  const result = await page.evaluate(() => {
+    window.editor.ops.atoms.AddAtomsToGroupOperation({ group: "mol", indices: [0, 1, 2] });
+    window.editor.ops.selection.SelectByGroup({ group: "mol" });
+    const selected = window.editor.state.get("viewer.selectedAtomsIndices") || [];
+    return {
+      selected: selected.slice().sort((a, b) => a - b),
+      groups: window.editor.avr.atoms.listGroups(),
+    };
+  });
+  expect(result.groups).toContain("mol");
+  expect(result.selected).toEqual([0, 1, 2]);
+});
+
+test("Download and import", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testIO.html");
+  await page.waitForFunction(() => window.editor);
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.click("#export");
+  await page.getByRole("button", { name: "State (JSON)" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("weas-state.json");
+
+  const filePath = path.resolve(__dirname, "../../demo/datas/c2h6so.xyz");
+  const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.click("#import")]);
+  await chooser.setFiles(filePath);
+  await page.waitForFunction(() => window.editor.avr?.atoms?.symbols?.length > 0);
+  const atomCount = await page.evaluate(() => window.editor.avr.atoms.symbols.length);
+  expect(atomCount).toBeGreaterThan(0);
 });
 
 test("Species", async ({ page }) => {

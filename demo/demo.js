@@ -18,7 +18,7 @@ const domElement = document.getElementById("weas");
 const viewerConfig = {
   _modelStyle: 1,
   logLevel: "warn",
-  backgroundColor: "#d3d3d3",
+  // backgroundColor: "#d3d3d3",
   // atomLabelType: "index", // "element" | "index" | "none"
 }; // debug, warn
 const guiConfig = {
@@ -41,8 +41,8 @@ const guiConfig = {
     fullscreen: true,
     undo: true,
     redo: true,
-    download: true,
-    downloadAnimation: true,
+    export: true,
+    import: true,
     measurement: true,
   },
 };
