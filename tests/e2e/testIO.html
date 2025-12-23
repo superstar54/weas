@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>WEAS Test</title>
+    <title>WEAS IO Test</title>
   </head>
   <body>
     <div id="viewer" style="position: relative; width: 600px; height: 400px"></div>
@@ -18,35 +18,23 @@
         return await response.text();
       }
 
-      let domElement = document.getElementById("viewer");
-      const viewerConfig = {
-        backgroundColor: "#d3d3d3",
-        // atomLabelType: "index", // "element" | "index" | "none"
-      }; // debug, warn
-
+      const domElement = document.getElementById("viewer");
       const guiConfig = {
-        controls: {
-          enabled: false,
-          atomsControl: true,
-          colorControl: true, // Disable color control
-          cameraControls: true,
-          buttons: true,
-        },
+        controls: { enabled: false },
         buttons: {
-          enabled: false,
-          // New section for button visibility
-          fullscreen: true,
-          undo: true,
-          redo: true,
+          enabled: true,
           export: true,
-          measurement: true,
+          import: true,
+          fullscreen: false,
+          undo: false,
+          redo: false,
+          measurement: false,
         },
       };
-      // read atoms from file
-      const filename = "c2h6so.xyz";
-      fetchFile(filename).then((fileContent) => {
+
+      fetchFile("c2h6so.xyz").then((fileContent) => {
         const atoms = weas.parseXYZ(fileContent);
-        let editor = new weas.WEAS({ domElement, viewerConfig, guiConfig });
+        const editor = new weas.WEAS({ domElement, guiConfig });
         editor.avr.atoms = atoms;
         editor.avr.drawModels();
         editor.render();

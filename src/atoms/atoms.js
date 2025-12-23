@@ -102,6 +102,118 @@ class Atoms {
     }
   }
 
+  _ensureAtomGroups() {
+    const atomAttributes = this.attributes["atom"];
+    let groups = atomAttributes.groups;
+    if (!Array.isArray(groups)) {
+      groups = [];
+    }
+    if (groups.length !== this.positions.length) {
+      if (groups.length < this.positions.length) {
+        while (groups.length < this.positions.length) {
+          groups.push([]);
+        }
+      } else {
+        groups.length = this.positions.length;
+      }
+    }
+    for (let i = 0; i < groups.length; i++) {
+      if (!Array.isArray(groups[i])) {
+        groups[i] = [];
+      }
+    }
+    atomAttributes.groups = groups;
+    return groups;
+  }
+
+  listGroups() {
+    const groups = this.attributes["atom"].groups;
+    if (!Array.isArray(groups)) {
+      return [];
+    }
+    const out = new Set();
+    groups.forEach((entry) => {
+      if (!Array.isArray(entry)) {
+        return;
+      }
+      entry.forEach((name) => out.add(String(name)));
+    });
+    return Array.from(out).sort();
+  }
+
+  getGroupIndices(group) {
+    const name = String(group);
+    const groups = this.attributes["atom"].groups;
+    if (!Array.isArray(groups)) {
+      return [];
+    }
+    const indices = [];
+    for (let i = 0; i < groups.length; i++) {
+      const entry = groups[i];
+      if (Array.isArray(entry) && entry.includes(name)) {
+        indices.push(i);
+      }
+    }
+    return indices;
+  }
+
+  addAtomsToGroup(indicesOrOptions, group) {
+    let indices = indicesOrOptions;
+    if (indicesOrOptions && typeof indicesOrOptions === "object" && Object.prototype.hasOwnProperty.call(indicesOrOptions, "indices")) {
+      ({ indices, group } = indicesOrOptions);
+    }
+    if (!Array.isArray(indices)) {
+      indices = [indices];
+    }
+    const name = String(group);
+    const groups = this._ensureAtomGroups();
+    indices.forEach((index) => {
+      if (index < 0 || index >= groups.length) {
+        throw new Error("Index out of bounds.");
+      }
+      if (!groups[index].includes(name)) {
+        groups[index].push(name);
+      }
+    });
+  }
+
+  removeAtomsFromGroup(indicesOrOptions, group) {
+    let indices = indicesOrOptions;
+    if (indicesOrOptions && typeof indicesOrOptions === "object" && Object.prototype.hasOwnProperty.call(indicesOrOptions, "indices")) {
+      ({ indices, group } = indicesOrOptions);
+    }
+    if (!Array.isArray(indices)) {
+      indices = [indices];
+    }
+    const name = String(group);
+    const groups = this._ensureAtomGroups();
+    indices.forEach((index) => {
+      if (index < 0 || index >= groups.length) {
+        throw new Error("Index out of bounds.");
+      }
+      groups[index] = groups[index].filter((entry) => entry !== name);
+    });
+  }
+
+  clearGroup(group) {
+    const name = String(group);
+    const groups = this.attributes["atom"].groups;
+    if (!Array.isArray(groups)) {
+      return 0;
+    }
+    let removed = 0;
+    for (let i = 0; i < groups.length; i++) {
+      const entry = groups[i];
+      if (!Array.isArray(entry)) {
+        continue;
+      }
+      const next = entry.filter((item) => item !== name);
+      removed += entry.length - next.length;
+      groups[i] = next;
+    }
+    return removed;
+  }
+
   newAttribute(nameOrOptions, values, domain = "atom") {
     let name = nameOrOptions;
     if (nameOrOptions && typeof nameOrOptions === "object" && !Array.isArray(nameOrOptions)) {
@@ -245,6 +357,10 @@ class Atoms {
     }
     this.positions.push(atom.position);
     this.symbols.push(atom.symbol);
+    if (this.attributes["atom"].groups) {
+      this._ensureAtomGroups();
+      this.attributes["atom"].groups.push([]);
+    }
   }
 
   removeAtom(indexOrOptions) {
@@ -255,10 +371,8 @@ class Atoms {
     this.positions.splice(index, 1);
     this.symbols.splice(index, 1);
     // Remove attributes in atom domain
-    for (const domain in this.attributes) {
-      for (const name in this.attributes["atom"]) {
-        this.attributes[domain][name].splice(index, 1);
-      }
+    for (const name in this.attributes["atom"]) {
+      this.attributes["atom"][name].splice(index, 1);
     }
   }
 
@@ -279,6 +393,15 @@ class Atoms {
     for (const symbol in otherAtoms.species) {
       if (this.species[symbol] && this.species[symbol].element !== otherAtoms.species[symbol].element) {
         throw new Error(`Specie '${symbol}' is defined in both Atoms objects with different elements.`);
+      }
+    }
+    const hasGroups = Boolean(this.attributes["atom"].groups) || Boolean(otherAtoms.attributes && otherAtoms.attributes["atom"] && otherAtoms.attributes["atom"].groups);
+    if (hasGroups) {
+      if (!this.attributes["atom"].groups) {
+        this.attributes["atom"].groups = Array.from({ length: this.positions.length }, () => []);
+      }
+      if (typeof otherAtoms._ensureAtomGroups === "function") {
+        otherAtoms._ensureAtomGroups();
       }
     }
     this.species = { ...this.species, ...otherAtoms.species };
@@ -464,10 +587,8 @@ class Atoms {
     this.positions = this.positions.filter((_, i) => !indexSet.has(i));
     this.symbols = this.symbols.filter((_, i) => !indexSet.has(i));
     // Remove attributes in atom domain
-    for (const domain in this.attributes) {
-      for (const name in this.attributes["atom"]) {
-        this.attributes[domain][name] = this.attributes[domain][name].filter((_, i) => !indexSet.has(i));
-      }
+    for (const name in this.attributes["atom"]) {
+      this.attributes["atom"][name] = this.attributes["atom"][name].filter((_, i) => !indexSet.has(i));
     }
     // Remove specie symbols that are not used anymore and their attributes
     const usedSymbols = new Set(this.symbols);
@@ -506,6 +627,7 @@ class Atoms {
       cell: Array.from(this.cell || []),
       pbc: Array.from(this.pbc),
       symbols: [],
+      attributes: JSON.parse(JSON.stringify(this.attributes)),
     };
 
     for (const [symbol, specie] of Object.entries(this.species)) {

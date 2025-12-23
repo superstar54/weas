@@ -54,19 +54,19 @@ const defaultGuiConfig = {
     fullscreen: true,
     undo: true,
     redo: true,
-    download: true,
-    downloadAnimation: true,
+    export: true,
+    import: true,
     measurement: true,
   },
   buttonStyle: {
     // Added this object to allow button style customization
     fontSize: "12px",
-    color: "black",
-    backgroundColor: "transparent",
-    border: "none",
-    padding: "1px",
+    color: "#39424e",
+    backgroundColor: "#ffffff",
+    border: "1px solid #dfe3eb",
+    padding: "2px 6px",
     cursor: "pointer",
-    borderRadius: "1px",
+    borderRadius: "6px",
   },
 };
 

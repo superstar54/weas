@@ -61,7 +61,15 @@ export declare class WEAS {
    * Export and download a trajectory animation.
    */
   downloadAnimation(options?: { filename?: string; format?: string; fps?: number; startFrame?: number; endFrame?: number | null; mimeType?: string | null; resolution?: number }): Promise<void>;
+
+  /** Export the current viewer + atoms + plugins state as JSON */
+  exportState(): Record<string, any>;
+  /** Import a previously exported state snapshot */
+  importState(snapshot: Record<string, any>): void;
 }
+
+/** Convert a weas-widget snapshot to a WEAS state payload */
+export declare function fromWidgetSnapshot(snapshot: Record<string, any>): Record<string, any>;
 
 export declare class SetCellSettings {}
 export declare class SetBondSettings {}
@@ -526,6 +534,17 @@ export declare class Atoms {
    * @param element The element (defaults to symbol)
    */
   addSpecie(symbol: string, element?: string): void;
+
+  /** List all group names used by atom-level groups */
+  listGroups(): string[];
+  /** Get atom indices that belong to a group */
+  getGroupIndices(group: string): number[];
+  /** Add atoms to a group */
+  addAtomsToGroup(indices: number[] | number, group: string): void;
+  /** Remove atoms from a group */
+  removeAtomsFromGroup(indices: number[] | number, group: string): void;
+  /** Remove a group from all atoms, returns removed count */
+  clearGroup(group: string): number;
 }
 
 /**
@@ -552,3 +571,21 @@ export declare function parseXSF(text: string): Atoms;
  * Lookup table: element symbol → atomic number.
  */
 export declare const elementAtomicNumbers: Record<string, number>;
+
+/** Serialize atoms (or trajectory) to XYZ text */
+export declare function atomsToXYZ(atoms: Atoms | Atoms[]): string;
+
+/** Serialize atoms to CIF text */
+export declare function atomsToCIF(atoms: Atoms): string;
+
+/** Parse text into a structure payload based on extension */
+export declare function parseStructureText(text: string, extension: string): { kind: string; data: any };
+
+/** Apply a structure payload to a WEAS instance */
+export declare function applyStructurePayload(weas: WEAS, payload: any): void;
+
+/** Build a downloadable structure export payload */
+export declare function buildExportPayload(weas: WEAS, format: string): { text: string; filename: string; mimeType: string };
+
+/** Download a text blob */
+export declare function downloadText(text: string, filename: string, mimeType?: string): void;

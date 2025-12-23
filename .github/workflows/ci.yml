@@ -60,7 +60,7 @@ jobs:
       # Commit the changes to the pull request branch
       - name: Run Playwright tests with snapshot update
         if: failure()
-        run: npx playwright test --update-snapshots
+        run: npx playwright test --update-snapshots --max-failures=0 --retries=0
       - uses: stefanzweifel/git-auto-commit-action@v4
         if: failure()
         with:

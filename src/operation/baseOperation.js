@@ -46,7 +46,8 @@ export class BaseOperation {
       if (field.step !== undefined && controller.step) {
         controller.step(field.step);
       }
-      controller.onChange(() => {
+      const onChange = field.type === "text" && typeof controller.onFinishChange === "function" ? controller.onFinishChange : controller.onChange;
+      onChange.call(controller, () => {
         this.adjust({ ...state });
       });
     });

@@ -1,6 +1,7 @@
 import { BaseOperation } from "./baseOperation.js";
 import { elementAtomicNumbers } from "../atoms/atoms_data.js";
 import { colorBys } from "../config.js";
+import { parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "../io/structure.js";
 
 class ReplaceOperation extends BaseOperation {
   static description = "Replace atoms";
@@ -159,4 +160,231 @@ class ColorByAttribute extends BaseOperation {
   }
 }
 
-export { ReplaceOperation, AddAtomOperation, ColorByAttribute };
+class AddAtomsToGroupOperation extends BaseOperation {
+  static description = "Add atoms to group";
+  static category = "Group";
+  static ui = {
+    title: "Add to group",
+    fields: {
+      group: { type: "text" },
+    },
+  };
+
+  constructor({ weas, group = "group", indices = null }) {
+    super(weas);
+    const selectedIndices = this.stateGet("viewer.selectedAtomsIndices", []) || [];
+    this.indices = indices ? indices : Array.from(selectedIndices);
+    this.group = group;
+    this.initialAtoms = weas.avr.atoms.copy();
+  }
+
+  execute() {
+    this.weas.avr.atoms.addAtomsToGroup(this.indices, this.group);
+  }
+
+  undo() {
+    this.weas.avr.atoms = this.initialAtoms.copy();
+  }
+
+  adjust(params) {
+    this.adjustWithReset(params, () => {
+      this.weas.avr.atoms = this.initialAtoms.copy();
+    });
+  }
+
+  applyParams(params) {
+    if ("group" in params) {
+      this.group = params.group;
+    }
+  }
+
+  validateParams(params) {
+    return Boolean(params.group && String(params.group).trim());
+  }
+}
+
+class RemoveAtomsFromGroupOperation extends BaseOperation {
+  static description = "Remove atoms from group";
+  static category = "Group";
+  static ui = {
+    title: "Remove from group",
+    fields: {
+      group: {
+        type: "select",
+        options: (op) => op.groupOptions,
+      },
+    },
+  };
+
+  constructor({ weas, group = "group", indices = null }) {
+    super(weas);
+    const selectedIndices = this.stateGet("viewer.selectedAtomsIndices", []) || [];
+    this.indices = indices ? indices : Array.from(selectedIndices);
+    const groupOptions = new Set();
+    const groups = this.weas.avr.atoms.attributes?.atom?.groups;
+    if (Array.isArray(groups)) {
+      this.indices.forEach((index) => {
+        const entry = groups[index];
+        if (Array.isArray(entry)) {
+          entry.forEach((name) => groupOptions.add(String(name)));
+        }
+      });
+    }
+    this.groupOptions = Array.from(groupOptions).sort();
+    if (this.groupOptions.length === 0) {
+      this.groupOptions = [group];
+    }
+    this.group = group === "group" && this.groupOptions.length > 0 ? this.groupOptions[0] : group;
+    this.initialAtoms = weas.avr.atoms.copy();
+  }
+
+  execute() {
+    this.weas.avr.atoms.removeAtomsFromGroup(this.indices, this.group);
+  }
+
+  undo() {
+    this.weas.avr.atoms = this.initialAtoms.copy();
+  }
+
+  adjust(params) {
+    this.adjustWithReset(params, () => {
+      this.weas.avr.atoms = this.initialAtoms.copy();
+    });
+  }
+
+  applyParams(params) {
+    if ("group" in params) {
+      this.group = params.group;
+    }
+  }
+
+  validateParams(params) {
+    return Boolean(params.group && String(params.group).trim());
+  }
+}
+
+class ClearGroupOperation extends BaseOperation {
+  static description = "Clear group";
+  static category = "Group";
+  static ui = {
+    title: "Clear group",
+    fields: {
+      group: { type: "text" },
+    },
+  };
+
+  constructor({ weas, group = "group" }) {
+    super(weas);
+    this.group = group;
+    this.initialAtoms = weas.avr.atoms.copy();
+  }
+
+  execute() {
+    this.weas.avr.atoms.clearGroup(this.group);
+  }
+
+  undo() {
+    this.weas.avr.atoms = this.initialAtoms.copy();
+  }
+
+  adjust(params) {
+    this.adjustWithReset(params, () => {
+      this.weas.avr.atoms = this.initialAtoms.copy();
+    });
+  }
+
+  applyParams(params) {
+    if ("group" in params) {
+      this.group = params.group;
+    }
+  }
+
+  validateParams(params) {
+    return Boolean(params.group && String(params.group).trim());
+  }
+}
+
+class ImportStructureOperation extends BaseOperation {
+  static description = "Import structure file";
+  static category = "IO";
+
+  constructor({ weas }) {
+    super(weas);
+    this.previousState = weas.exportState();
+    this.nextState = null;
+    this.affectsAtoms = true;
+  }
+
+  execute() {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".json,.xyz,.cif";
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+    fileInput.addEventListener(
+      "change",
+      async () => {
+        const file = fileInput.files && fileInput.files[0];
+        document.body.removeChild(fileInput);
+        if (!file) {
+          return;
+        }
+        try {
+          const text = await file.text();
+          const extension = file.name.slice(file.name.lastIndexOf("."));
+          const parsed = parseStructureText(text, extension);
+          applyStructurePayload(this.weas, parsed.data);
+          this.nextState = this.weas.exportState();
+        } catch (error) {
+          console.error("Failed to import structure:", error);
+          alert(`Import failed: ${error.message || error}`);
+        }
+      },
+      { once: true },
+    );
+    fileInput.click();
+  }
+
+  undo() {
+    if (this.previousState) {
+      this.weas.importState(this.previousState);
+    }
+  }
+
+  redo() {
+    if (this.nextState) {
+      this.weas.importState(this.nextState);
+      return;
+    }
+    this.execute();
+  }
+}
+
+class ExportStructureOperation extends BaseOperation {
+  static description = "Export structure file";
+  static category = "IO";
+  static ui = {
+    title: "Export",
+    fields: {
+      format: { type: "select", options: ["json", "xyz", "cif"] },
+      filename: { type: "text" },
+    },
+  };
+
+  constructor({ weas, format = "json", filename = "" }) {
+    super(weas);
+    this.affectsAtoms = false;
+    this.format = format;
+    this.filename = filename;
+  }
+
+  execute() {
+    const payload = buildExportPayload(this.weas, this.format);
+    const filename = this.filename && this.filename.trim().length > 0 ? this.filename.trim() : payload.filename;
+    downloadText(payload.text, filename, payload.mimeType);
+  }
+
+  undo() {}
+}
+
+export { ReplaceOperation, AddAtomOperation, ColorByAttribute, AddAtomsToGroupOperation, RemoveAtomsFromGroupOperation, ClearGroupOperation, ImportStructureOperation, ExportStructureOperation };
