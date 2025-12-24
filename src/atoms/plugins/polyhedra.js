@@ -4,6 +4,7 @@ import { elementColors, elementsWithPolyhedra } from "../atoms_data.js";
 import { clearObject, calculateCartesianCoordinates } from "../../utils.js";
 import { materials } from "../../tools/materials.js";
 import { convertColor } from "../utils.js";
+import { cloneValue } from "../../state/store.js";
 
 const defaultColor = 0xffffff;
 
@@ -37,7 +38,7 @@ export class PolyhedraManager {
 
     const pluginState = this.viewer.state.get("plugins.polyhedra");
     if (pluginState && Array.isArray(pluginState.settings) && pluginState.settings.length > 0) {
-      this.fromSettings(pluginState.settings);
+      this.applySettings(pluginState.settings);
     }
     this.viewer.state.subscribe("plugins.polyhedra", (next) => {
       if (!next) {
@@ -47,7 +48,7 @@ export class PolyhedraManager {
         return;
       }
       const settings = Array.isArray(next.settings) ? next.settings : [];
-      this.fromSettings(settings);
+      this.applySettings(settings);
       this.refreshMesh();
     });
   }
@@ -70,7 +71,11 @@ export class PolyhedraManager {
     });
   }
 
-  fromSettings(settings) {
+  setSettings(settings) {
+    this.viewer.state.set({ plugins: { polyhedra: { settings: cloneValue(settings) } } });
+  }
+
+  applySettings(settings) {
     /* Set the polyhedra settings */
     this.settings = [];
     this.clearMeshes();

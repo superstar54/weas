@@ -319,13 +319,13 @@ class AtomsViewer {
         if (!highlightState.settings || Object.keys(highlightState.settings).length === 0) {
           this.state.set({ plugins: { highlight: { settings: this.highlightManager.toPlainSettings() } } });
         } else {
-          this.highlightManager.fromSettings(highlightState.settings);
+          this.highlightManager.applySettings(highlightState.settings);
         }
         const speciesState = this.state.get("plugins.species") || {};
         const defaultSpeciesSettings = this.atomManager.toPlainSettings();
         if (speciesState.settings && Object.keys(speciesState.settings).length > 0) {
           const mergedSpeciesSettings = { ...defaultSpeciesSettings, ...speciesState.settings };
-          this.atomManager.fromSettings(mergedSpeciesSettings);
+          this.atomManager.applySettings(mergedSpeciesSettings);
           this.state.set({ plugins: { species: { settings: mergedSpeciesSettings } } });
         } else {
           this.state.set({ plugins: { species: { settings: defaultSpeciesSettings } } });
@@ -334,7 +334,7 @@ class AtomsViewer {
         const defaultBondSettings = this.bondManager.toPlainSettings();
         if (bondState.settings && Object.keys(bondState.settings).length > 0) {
           const mergedBondSettings = { ...defaultBondSettings, ...bondState.settings };
-          this.bondManager.fromSettings(mergedBondSettings);
+          this.bondManager.applySettings(mergedBondSettings);
           this.state.set({ bond: { settings: mergedBondSettings } });
         } else {
           this.state.set({ bond: { settings: defaultBondSettings } });
@@ -344,7 +344,7 @@ class AtomsViewer {
       this.state.transaction(() => {
         const polyhedraState = this.state.get("plugins.polyhedra") || {};
         if (Array.isArray(polyhedraState.settings) && polyhedraState.settings.length > 0) {
-          this.polyhedraManager.fromSettings(polyhedraState.settings);
+          this.polyhedraManager.applySettings(polyhedraState.settings);
         } else {
           this.state.set({ plugins: { polyhedra: { settings: this.polyhedraManager.toPlainSettings() } } });
         }

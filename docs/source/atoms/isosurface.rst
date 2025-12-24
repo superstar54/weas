@@ -16,7 +16,7 @@ Usage Example
       const editor = new weas.WEAS({ domElement });
       editor.avr.atoms = cubeData.atoms;
       editor.avr.volumetricData = cubeData.volumetricData;
-      editor.avr.isosurfaceManager.fromSettings([
+      editor.avr.isosurfaceManager.setSettings([
          { isovalue: 0.0002, mode: 1, step_size: 1 },
          { isovalue: -0.0002, color: "#ff0000", mode: 1 },
       ]);

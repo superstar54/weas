@@ -366,7 +366,7 @@ class ExportStructureOperation extends BaseOperation {
   static ui = {
     title: "Export",
     fields: {
-      format: { type: "select", options: ["json", "xyz", "cif"] },
+      format: { type: "select", options: ["json", "html", "xyz", "cif"] },
       filename: { type: "text" },
     },
   };

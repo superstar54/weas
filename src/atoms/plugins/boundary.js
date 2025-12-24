@@ -47,16 +47,6 @@ export class BoundaryManager {
     return setting;
   }
 
-  fromSettings(settings) {
-    /* Set the bond settings */
-    this.settings = {};
-    this.clearMeshes();
-    // loop over settings to add each setting
-    Object.values(settings).forEach((setting) => {
-      this.addSetting(setting);
-    });
-  }
-
   addSetting({ specie1, specie2, radius, min = 0.0, max = 3.0, color1 = "#3d82ed", color2 = "#3d82ed", order = 1 }) {
     /* Add a new setting to the bond */
     const setting = new Setting({ specie1, specie2, radius, min, max, color1, color2, order });

@@ -88,7 +88,7 @@ async function updateAtoms(filename, fileContent = null) {
       // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
       // editor.avr.colorType = "CPK";
       editor.avr.modelStyle = 1;
-      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
       editor.avr.atoms = atomsList;
       break;
     case "urea.cif":
@@ -104,7 +104,7 @@ async function updateAtoms(filename, fileContent = null) {
         [-0.01, 1.01],
       ];
       editor.avr.bondManager.showHydrogenBonds = true;
-      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
       editor.avr.drawModels();
       break;
     case "au.cif":
@@ -134,7 +134,7 @@ async function updateAtoms(filename, fileContent = null) {
         [-0.01, 1.01],
         [-0.01, 1.01],
       ];
-      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
       editor.avr.modelStyle = 2;
       break;
     case "GaAs.xsf":
@@ -143,7 +143,7 @@ async function updateAtoms(filename, fileContent = null) {
       let xsfData = parseXSF(structureData);
       editor.avr.atoms = xsfData.atoms;
       editor.avr.volumetricData = xsfData.volumetricData;
-      editor.avr.isosurfaceManager.fromSettings({
+      editor.avr.isosurfaceManager.setSettings({
         positive: { isovalue: 0.15, mode: 1, step_size: 1 },
         negative: { isovalue: -0.15, color: "#ff0000", mode: 1 },
       });
@@ -163,12 +163,12 @@ async function updateAtoms(filename, fileContent = null) {
       let cubeData = parseCube(structureData);
       editor.avr.atoms = cubeData.atoms;
       editor.avr.volumetricData = cubeData.volumetricData;
-      editor.avr.isosurfaceManager.fromSettings({
+      editor.avr.isosurfaceManager.setSettings({
         positive: { isovalue: 0.00002, mode: 1, step_size: 1 },
         negative: { isovalue: -0.00002, color: "#ff0000", mode: 1 },
       });
       editor.avr.isosurfaceManager.drawIsosurfaces();
-      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
       break;
     case "2d-slice":
       editor.clear();
@@ -182,7 +182,7 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.volumeSliceManager.addSetting("Slice 2", { method: "bestFit", selectedAtomIndices: [0, 1, 2], colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
       editor.avr.volumeSliceManager.drawSlices();
       editor.avr.tjs.updateCameraAndControls({ direction: [0.5, 1, 2] });
-      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
       break;
     case "deca_ala_md.xyz":
       editor.clear();
@@ -194,7 +194,7 @@ async function updateAtoms(filename, fileContent = null) {
       // editor.avr.bondManager.settings[1].color1 = "blue";
       // editor.avr.VFManager.addSetting({ origins: "positions", vectors: "movement", color: "#ff0000", radius: 0.1 });
       editor.avr.modelStyle = 1;
-      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+      editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
       break;
     case "phonon":
       editor.clear();
@@ -250,8 +250,7 @@ async function updateAtoms(filename, fileContent = null) {
       // draw mesh primitives
       editor.clear();
       editor.avr.guiManager.removeTimeline();
-      editor.instancedMeshPrimitive.fromSettings(data);
-      editor.instancedMeshPrimitive.drawMesh();
+      editor.instancedMeshPrimitive.setSettings(data);
       break;
     case "any_mesh_settings.json":
       structureData = fileContent || (await fetchFile(filename));
@@ -259,8 +258,7 @@ async function updateAtoms(filename, fileContent = null) {
       // draw mesh primitives
       editor.clear();
       editor.avr.guiManager.removeTimeline();
-      editor.anyMesh.fromSettings(data);
-      editor.anyMesh.drawMesh();
+      editor.anyMesh.setSettings(data);
       break;
     case "species":
       editor.clear();
@@ -278,7 +276,6 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.atomManager.settings["C1"].radius = 1.5;
       editor.avr.guiManager.updateLegend();
       editor.avr.bondManager.init();
-      editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
       editor.avr.drawModels();
       break;
   }
@@ -300,7 +297,7 @@ async function drawAtoms(filename, fileContent) {
       [-0.01, 1.01],
       [-0.01, 1.01],
     ];
-    editor.instancedMeshPrimitive.fromSettings([]); // Clear mesh primitives
+    editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
     editor.avr.modelStyle = 2;
     editor.avr.atoms = atoms;
   } else if (filename.endsWith(".cube")) {
@@ -308,8 +305,7 @@ async function drawAtoms(filename, fileContent) {
     const cubeData = parseCube(fileContent);
     editor.avr.atoms = cubeData.atoms;
     editor.avr.isosurfaceManager.volumetricData = cubeData.volumetricData;
-    editor.avr.isosurfaceManager.fromSettings([{ isovalue: 0.0002, mode: 1, step_size: 1 }]);
-    editor.avr.isosurfaceManager.drawIsosurfaces();
+    editor.avr.isosurfaceManager.setSettings([{ isovalue: 0.0002, mode: 1, step_size: 1 }]);
   }
 }
 

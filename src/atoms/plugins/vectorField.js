@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { clearObject, calculateQuaternion } from "../../utils.js";
 import { materials } from "../../tools/materials.js";
 import { convertColor } from "../utils.js";
+import { cloneValue } from "../../state/store.js";
 
 class Setting {
   constructor({ origins = [], vectors = [], factor = 1, color = "#3d82ed", radius = 0.05, centerOnAtoms = false }) {
@@ -26,7 +27,7 @@ export class VectorField {
     const pluginState = this.viewer.state.get("plugins.vectorField");
     if (pluginState) {
       if (pluginState.settings) {
-        this.fromSettings(pluginState.settings);
+        this.applySettings(pluginState.settings);
       }
       if (pluginState.show !== undefined) {
         this.show = pluginState.show;
@@ -35,7 +36,7 @@ export class VectorField {
     this.viewer.state.subscribe("plugins.vectorField", (next) => {
       if (!next) return;
       if (next.settings) {
-        this.fromSettings(next.settings);
+        this.applySettings(next.settings);
       }
       if (next.show !== undefined) {
         this.show = next.show;
@@ -91,7 +92,11 @@ export class VectorField {
     this.addSetting("down", { origins: origins2, vectors: vectors2, color: "#ff0000" });
   }
 
-  fromSettings(settings) {
+  setSettings(settings) {
+    this.viewer.state.set({ plugins: { vectorField: { settings: cloneValue(settings) } } });
+  }
+
+  applySettings(settings) {
     /* Set the vectorfield settings */
     this.settings = [];
     this.clearMeshes();

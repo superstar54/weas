@@ -24,8 +24,7 @@
       fetchFile(filename).then((fileContent) => {
         const data = JSON.parse(fileContent);
         let editor = new weas.WEAS({ domElement });
-        editor.anyMesh.fromSettings(data);
-        editor.anyMesh.drawMesh();
+        editor.anyMesh.setSettings(data);
         editor.selectionManager.selectedObjects = [editor.anyMesh.meshes[0]];
         editor.render();
       });

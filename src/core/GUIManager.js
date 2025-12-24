@@ -189,6 +189,7 @@ class GUIManager {
 
       addDownloadOption("Image", "image");
       addDownloadOption("State (JSON)", "json");
+      addDownloadOption("Standalone HTML", "html");
       addDownloadOption("Structure (XYZ)", "xyz");
       addDownloadOption("Structure (CIF)", "cif");
       const animationOption = addDownloadOption("Animation (WebM)", "animation");

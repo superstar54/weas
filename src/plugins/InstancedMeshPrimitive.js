@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { clearObject } from "../utils.js";
+import { cloneValue } from "../state/store.js";
 import { materials } from "../tools/materials.js";
 
 class Setting {
@@ -23,19 +24,23 @@ export class InstancedMeshPrimitive {
 
     const pluginState = this.viewer.state.get("plugins.instancedMeshPrimitive");
     if (pluginState && Array.isArray(pluginState.settings)) {
-      this.fromSettings(pluginState.settings);
+      this.applySettings(pluginState.settings);
       this.drawMesh();
     }
     this.viewer.state.subscribe("plugins.instancedMeshPrimitive", (next) => {
       if (!next || !Array.isArray(next.settings)) {
         return;
       }
-      this.fromSettings(next.settings);
+      this.applySettings(next.settings);
       this.drawMesh();
     });
   }
 
-  fromSettings(settings) {
+  setSettings(settings) {
+    this.viewer.state.set({ plugins: { instancedMeshPrimitive: { settings: cloneValue(settings) } } });
+  }
+
+  applySettings(settings) {
     /* Set the settings */
     this.settings = [];
     this.clearMeshes();

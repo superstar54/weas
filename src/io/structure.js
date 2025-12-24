@@ -122,6 +122,35 @@ function applyStructurePayload(weas, payload) {
 
 function buildExportPayload(weas, format) {
   const normalized = String(format || "").toLowerCase();
+  if (normalized === "html") {
+    const snapshot = weas.exportState();
+    const json = JSON.stringify(snapshot, null, 2);
+    const safeJson = json.replace(/<\/(script)/gi, "<\\/$1");
+    const html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS Viewer</title>
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 100%; height: 800px"></div>
+    <script type="module">
+      import { WEAS } from "https://unpkg.com/weas@0.2.1/dist/index.mjs";
+      const domElement = document.getElementById("viewer");
+      const editor = new WEAS({ domElement });
+      const snapshot = ${safeJson};
+      editor.importState(snapshot);
+      editor.render();
+    </script>
+  </body>
+</html>
+`;
+    return {
+      text: html,
+      filename: "weas-viewer.html",
+      mimeType: "text/html",
+    };
+  }
   if (normalized === "json") {
     return {
       text: JSON.stringify(weas.exportState(), null, 2),

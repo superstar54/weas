@@ -52,6 +52,9 @@ export declare class WEAS {
   /** Clear all objects from the scene */
   clear(): void;
 
+  /** Reset viewer state, plugins, and atoms to defaults */
+  reset(): void;
+
   /**
    * Export a trajectory animation to a video Blob.
    */

@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { marchingCubes } from "../../geometry/marchingCubes.js";
 import { clearObject } from "../../utils.js";
+import { cloneValue } from "../../state/store.js";
 
 function normalizeHexColor(color) {
   const threeColor = color instanceof THREE.Color ? color : new THREE.Color(color);
@@ -39,7 +40,7 @@ export class Isosurface {
     const pluginState = this.viewer.state.get("plugins.isosurface");
     if (pluginState && pluginState.settings) {
       this.settings = {};
-      this.fromSettings(pluginState.settings);
+      this.applySettings(pluginState.settings);
       if (this.viewer.volumetricData) {
         this.drawIsosurfaces();
       }
@@ -48,7 +49,7 @@ export class Isosurface {
       if (!next || !next.settings) {
         return;
       }
-      this.fromSettings(next.settings);
+      this.applySettings(next.settings);
       if (this.viewer.volumetricData) {
         this.drawIsosurfaces();
       }
@@ -75,7 +76,11 @@ export class Isosurface {
     this.clearIossurfaces();
     this.settings = {};
   }
-  fromSettings(settings) {
+  setSettings(settings) {
+    this.viewer.state.set({ plugins: { isosurface: { settings: cloneValue(settings) } } });
+  }
+
+  applySettings(settings) {
     /* Set the isosurface settings */
     // clear
     this.settings = {};
