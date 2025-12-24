@@ -47,10 +47,10 @@ GUI buttons (built-in)
 ----------------------
 
 The default GUI includes import and export buttons that support JSON, XYZ, and
-CIF files. Export also supports image and animation (WebM) when available.
+CIF files. Export also supports HTML, image, and animation (WebM) when available.
 
 - Import: JSON (state snapshot), XYZ, CIF
-- Export: JSON (full state), XYZ, CIF
+- Export: JSON (full state), HTML (standalone viewer), XYZ, CIF
 
 Operation helper
 ----------------
@@ -76,5 +76,5 @@ For apps that need custom file inputs or downloads, use the IO helpers:
    applyStructurePayload(viewer, parsed.data);
 
    // export
-   const payload = buildExportPayload(viewer, "json");
+   const payload = buildExportPayload(viewer, "html");
    downloadText(payload.text, payload.filename, payload.mimeType);
