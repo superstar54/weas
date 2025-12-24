@@ -12,35 +12,8 @@ Getting Started
 
 Create a new HTML file and include the following code, and open the file in a web browser:
 
-.. code-block:: html
-
-    <!doctype html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <title>WEAS Molecule</title>
-      </head>
-      <body>
-    <div id="viewer" style="position: relative; width: 600px; height: 600px"></div>
-        <script type="module">
-          import { WEAS, Atoms } from 'https://unpkg.com/weas@0.2.1/dist/index.mjs';
-          let domElement = document.getElementById("viewer");
-          // create atoms object for H2O
-          let atoms = new Atoms({
-                                "symbols": ["O", "H", "H"],
-                                "positions": [[2.00, 2.76, 2.50],
-                                              [2.00, 3.53, 2.00],
-                                              [2.00, 2.00, 2.00]],
-                                "cell": [5, 5, 5],
-          });
-          let editor = new WEAS({ domElement });
-          // load atoms to atoms viewer (avr)
-          editor.avr.atoms = atoms;
-          editor.avr.applyState({ modelStyle: 1 }, { redraw: "full" }); // 1: ball and stick, 0: ball only
-          editor.render();
-        </script>
-      </body>
-    </html>
+.. literalinclude:: _examples/quickstart.html
+   :language: html
 
 
 .. note::
@@ -54,30 +27,7 @@ In this example, we import the WEAS library from the url. We then create a `Atom
 Here is the result of the above code:
 
 .. raw:: html
-
-    <!doctype html>
-    <html lang="en">
-      <body>
-        <div id="viewer" style="position: relative; width: 100%; height: 500px"></div>
-        <script type="module">
-          import { WEAS, Atoms } from 'https://unpkg.com/weas@0.2.1/dist/index.mjs';
-          let domElement = document.getElementById("viewer");
-          // create atoms object for H2O
-          let atoms = new Atoms({
-                                "symbols": ["O", "H", "H"],
-                                "positions": [[2.00, 2.76, 2.50],
-                                              [2.00, 3.53, 2.00],
-                                              [2.00, 2.00, 2.00]],
-                                "cell": [5, 5, 5],
-          });
-          let editor = new WEAS({ domElement });
-          // load atoms to atoms viewer (avr)
-          editor.avr.atoms = atoms;
-          editor.avr.applyState({ modelStyle: 1 }, { redraw: "full" }); // 1: ball and stick, 0: ball only
-          editor.render();
-        </script>
-      </body>
-    </html>
+   :file: _examples/quickstart.html
 
 
 

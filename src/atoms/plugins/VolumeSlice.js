@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { clearObject } from "../../utils.js";
 import { convertColor } from "../utils.js";
+import { cloneValue } from "../../state/store.js";
 
 class SliceSetting {
   constructor({ method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtomIndices = [], colorMap = "viridis", opacity = 1.0, samplingDistance = 0.2 }) {
@@ -35,7 +36,7 @@ export class VolumeSlice {
     const pluginState = this.viewer.state.get("plugins.volumeSlice");
     if (pluginState && pluginState.settings) {
       this.settings = {};
-      this.fromSettings(pluginState.settings);
+      this.applySettings(pluginState.settings);
       if (this.viewer.volumetricData) {
         this.drawSlices();
       }
@@ -44,7 +45,7 @@ export class VolumeSlice {
       if (!next || !next.settings) {
         return;
       }
-      this.fromSettings(next.settings);
+      this.applySettings(next.settings);
       if (this.viewer.volumetricData) {
         this.drawSlices();
       }
@@ -71,7 +72,11 @@ export class VolumeSlice {
     this.settings = {};
   }
 
-  fromSettings(settings) {
+  setSettings(settings) {
+    this.viewer.state.set({ plugins: { volumeSlice: { settings: cloneValue(settings) } } });
+  }
+
+  applySettings(settings) {
     /* Set the slice settings */
     // Clear existing settings
     this.settings = {};

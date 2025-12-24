@@ -71,7 +71,16 @@ class WEAS {
   }
 
   clear() {
+    this.reset();
+  }
+
+  reset() {
     this.tjs.scene.clear();
+    this.state.reset(createDefaultState());
+    if (this.avr) {
+      this.avr.atoms = new Atoms();
+    }
+    this._applyCameraState(this.state.get("camera"));
   }
 
   async exportAnimation({ format = "webm", fps = 12, startFrame = 0, endFrame = null, mimeType = null } = {}) {
@@ -197,10 +206,30 @@ class WEAS {
 
   exportState() {
     const atoms = Array.isArray(this.avr.trajectory) && this.avr.trajectory.length > 1 ? this.avr.trajectory.map((item) => item.toDict()) : this.avr.atoms.toDict();
+    const state = cloneValue(this.state.get());
+    const cameraState = this._exportCameraState();
+    state.camera = cameraState;
+    if (this.avr?.bondManager) {
+      state.bond = {
+        ...(state.bond || {}),
+        hideLongBonds: this.avr.bondManager.hideLongBonds,
+        showHydrogenBonds: this.avr.bondManager.showHydrogenBonds,
+        showOutBoundaryBonds: this.avr.bondManager.showOutBoundaryBonds,
+        settings: this.avr.bondManager.toPlainSettings(),
+      };
+    }
+    if (state.plugins) {
+      if (this.anyMesh) {
+        state.plugins.anyMesh = { settings: cloneValue(this.anyMesh.settings || []) };
+      }
+      if (this.instancedMeshPrimitive) {
+        state.plugins.instancedMeshPrimitive = { settings: cloneValue(this.instancedMeshPrimitive.settings || []) };
+      }
+    }
     return {
       version: "weas_state_v1",
       atoms,
-      state: cloneValue(this.state.get()),
+      state,
       currentFrame: this.avr.currentFrame,
     };
   }

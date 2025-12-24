@@ -99,8 +99,7 @@ The following example shows how to draw two cubes and a cylinder.
             },
             ]
           let editor = new WEAS({ domElement });
-          editor.instancedMeshPrimitive.fromSettings(data);
-          editor.instancedMeshPrimitive.drawMesh();
+          editor.instancedMeshPrimitive.setSettings(data);
           editor.render();
         </script>
       </body>
@@ -169,8 +168,7 @@ Here is the result of the above code:
             },
             ]
           let editor = new WEAS({ domElement });
-          editor.instancedMeshPrimitive.fromSettings(data);
-          editor.instancedMeshPrimitive.drawMesh();
+          editor.instancedMeshPrimitive.setSettings(data);
           editor.render();
         </script>
       </body>

@@ -82,8 +82,8 @@ Methods
    - **name**: Name for the slice (e.g., `"Slice 1"`).
    - **settings**: Configuration object for the slice (see `Setting` for details).
 
-**`fromSettings(settings)`**
-   Clears existing slices and applies a new set of settings.
+**`setSettings(settings)`**
+   Replaces existing slices with a new set of settings.
 
    - **settings**: Object containing multiple slice settings keyed by their names.
 

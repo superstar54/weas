@@ -6,6 +6,7 @@ import { convertColor } from "../utils.js";
 import { kdTree } from "../../geometry/kdTree.js";
 import { searchBoundary } from "./boundary.js";
 import { clearObject } from "../../utils.js";
+import { cloneValue } from "../../state/store.js";
 
 // default bond radius
 export const defaultBondRadius = 0.1;
@@ -55,7 +56,7 @@ export class BondManager {
     if (bondState.showHydrogenBonds !== undefined) this.showHydrogenBonds = bondState.showHydrogenBonds;
     if (bondState.showOutBoundaryBonds !== undefined) this.showOutBoundaryBonds = bondState.showOutBoundaryBonds;
     if (bondState.settings) {
-      this.fromSettings(bondState.settings);
+      this.applySettings(bondState.settings);
     }
     this.viewer.state.subscribe("bond", (next) => {
       if (!next) return;
@@ -73,7 +74,7 @@ export class BondManager {
         changed = true;
       }
       if (next.settings) {
-        this.fromSettings(next.settings);
+        this.applySettings(next.settings);
         changed = true;
       }
       if (changed && !this.viewer._initializingState) {
@@ -127,7 +128,11 @@ export class BondManager {
     return setting;
   }
 
-  fromSettings(settings) {
+  setSettings(settings) {
+    this.viewer.state.set({ bond: { settings: cloneValue(settings) } });
+  }
+
+  applySettings(settings) {
     /* Set the bond settings */
     this.settings = {};
     this.clearMeshes();

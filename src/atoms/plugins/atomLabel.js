@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { createLabel } from "../../utils.js";
+import { cloneValue } from "../../state/store.js";
 
 class Setting {
   constructor({ origins = [], texts = [], selection = null, color = "#3d82ed", fontSize = 0.05, shift = false }) {
@@ -23,7 +24,7 @@ export class AtomLabelManager {
 
     const pluginState = this.viewer.state.get("plugins.atomLabel");
     if (pluginState && Array.isArray(pluginState.settings)) {
-      this.fromSettings(pluginState.settings);
+      this.applySettings(pluginState.settings);
       this.drawAtomLabels();
     }
     this.viewer.state.subscribe("plugins.atomLabel", (next) => {
@@ -31,7 +32,7 @@ export class AtomLabelManager {
         return;
       }
       const settings = Array.isArray(next.settings) ? next.settings : [];
-      this.fromSettings(settings);
+      this.applySettings(settings);
       if (this.viewer._initializingState) {
         return;
       }
@@ -39,7 +40,11 @@ export class AtomLabelManager {
     });
   }
 
-  fromSettings(settings) {
+  setSettings(settings) {
+    this.viewer.state.set({ plugins: { atomLabel: { settings: cloneValue(settings) } } });
+  }
+
+  applySettings(settings) {
     /* Set the label settings */
     this.settings = [];
     clearLabels(this.scene, this.labels);

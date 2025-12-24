@@ -5,6 +5,7 @@ import { getAtomColors } from "../color.js";
 import { getImageAtoms } from "./boundary.js";
 import { convertColor, drawAtoms } from "../utils.js";
 import { clearObject } from "../../utils.js";
+import { cloneValue } from "../../state/store.js";
 
 class Setting {
   constructor({ element, symbol, radius = 2.0, color = "#3d82ed" }) {
@@ -33,13 +34,13 @@ export class AtomManager {
     this.init();
     const pluginState = this.viewer.state.get("plugins.species");
     if (pluginState && pluginState.settings) {
-      this.fromSettings(pluginState.settings);
+      this.applySettings(pluginState.settings);
     }
     this.viewer.state.subscribe("plugins.species", (next) => {
       if (!next || !next.settings) {
         return;
       }
-      this.fromSettings(next.settings);
+      this.applySettings(next.settings);
       if (!this.viewer._initializingState) {
         this.viewer.requestRedraw?.("full");
       }
@@ -94,7 +95,11 @@ export class AtomManager {
     return setting;
   }
 
-  fromSettings(settings) {
+  setSettings(settings) {
+    this.viewer.state.set({ plugins: { species: { settings: cloneValue(settings) } } });
+  }
+
+  applySettings(settings) {
     /* Set the bond settings */
     this.settings = {};
     this.clearMeshes();

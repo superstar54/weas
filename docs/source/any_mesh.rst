@@ -37,8 +37,7 @@ The following example shows how to draw mesh using vertices and faces.
           ]
 
           let editor = new WEAS({ domElement });
-          editor.anyMesh.fromSettings(data);
-          editor.anyMesh.drawMesh();
+          editor.anyMesh.setSettings(data);
           editor.render();
         </script>
       </body>
@@ -80,8 +79,7 @@ Here is the result of the above code:
           ]
 
           let editor = new WEAS({ domElement });
-          editor.anyMesh.fromSettings(data);
-          editor.anyMesh.drawMesh();
+          editor.anyMesh.setSettings(data);
           editor.render();
         </script>
       </body>

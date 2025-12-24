@@ -52,6 +52,15 @@ class StateStore {
     this.emit();
   }
 
+  reset(nextState = {}) {
+    this.state = cloneValue(nextState);
+    if (this.depth > 0) {
+      this.pending = true;
+      return;
+    }
+    this.emit();
+  }
+
   transaction(callback) {
     this.depth += 1;
     try {

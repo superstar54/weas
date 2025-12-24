@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { clearObject } from "../../utils.js";
-import { createLabel } from "../../utils.js";
+import { clearObject, createLabel } from "../../utils.js";
+import { cloneValue } from "../../state/store.js";
 
 class Setting {
   constructor({ indices = [], color = "black", fontSize = 16 }) {
@@ -36,7 +36,7 @@ export class Measurement {
 
     const pluginState = this.viewer.state.get("plugins.measurement");
     if (pluginState && pluginState.settings) {
-      this.fromSettings(pluginState.settings);
+      this.applySettings(pluginState.settings);
       this.drawMeasurements();
     }
     this.viewer.state.subscribe("plugins.measurement", (next) => {
@@ -50,7 +50,7 @@ export class Measurement {
         this.reset();
         return;
       }
-      this.fromSettings(next.settings);
+      this.applySettings(next.settings);
       this.drawMeasurements();
     });
   }
@@ -74,6 +74,19 @@ export class Measurement {
       settings[name] = setting.toDict();
       this.viewer.state.set({ plugins: { measurement: { settings } } });
     }
+  }
+
+  setSettings(settings) {
+    this.viewer.state.set({ plugins: { measurement: { settings: cloneValue(settings) } } });
+  }
+
+  applySettings(settings) {
+    /* Set measurement settings */
+    this.settings = {};
+    this.clearMeshes();
+    Object.entries(settings).forEach(([name, setting]) => {
+      this.addSetting(name, setting);
+    });
   }
 
   drawMeasurements() {
@@ -190,13 +203,6 @@ export class Measurement {
       });
     });
     this.meshes = {};
-  }
-
-  fromSettings(settings) {
-    this.settings = {};
-    Object.entries(settings || {}).forEach(([name, setting]) => {
-      this.addSetting(name, setting);
-    });
   }
 
   addSetting(name, { indices = [], color = "black", fontSize = 16 }) {

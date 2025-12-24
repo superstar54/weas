@@ -27,11 +27,10 @@
         editor.avr.atoms = cubeData.atoms;
         editor.avr.volumetricData = cubeData.volumetricData;
         // editor.avr.isosurfaceManager.addSetting(0.0002);
-        editor.avr.isosurfaceManager.fromSettings({
+        editor.avr.isosurfaceManager.setSettings({
           positive: { isovalue: 0.0002, step_size: 1 },
           negative: { isovalue: -0.0002, color: "#ff0000" },
         });
-        editor.avr.drawModels();
         editor.render();
         window.editor = editor;
       });

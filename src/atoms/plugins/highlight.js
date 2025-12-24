@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { convertColor, drawAtoms } from "../utils.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js"; // Import BufferGeometryUtils
+import { cloneValue } from "../../state/store.js";
 
 class Setting {
   constructor({ indices, scale = 1.1, type = "sphere", color = "yellow" }) {
@@ -31,14 +32,14 @@ export class HighlightManager {
 
     const pluginState = this.viewer.state.get("plugins.highlight");
     if (pluginState && pluginState.settings) {
-      this.fromSettings(pluginState.settings);
+      this.applySettings(pluginState.settings);
       this.drawHighlightAtoms();
     }
     this.viewer.state.subscribe("plugins.highlight", (next) => {
       if (!next || !next.settings) {
         return;
       }
-      this.fromSettings(next.settings);
+      this.applySettings(next.settings);
       if (this.viewer._initializingState) {
         return;
       }
@@ -54,7 +55,11 @@ export class HighlightManager {
     };
   }
 
-  fromSettings(settings) {
+  setSettings(settings) {
+    this.viewer.state.set({ plugins: { highlight: { settings: cloneValue(settings) } } });
+  }
+
+  applySettings(settings) {
     /* Set the highlight settings */
     this.settings = {};
     this.clearMeshes();
