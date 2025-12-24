@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS</title>
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 100%; height: 600px"></div>
+    <script type="module">
+      import { WEAS, Atoms } from "https://unpkg.com/weas@0.2.1/dist/index.mjs";
+      let domElement = document.getElementById("viewer");
+      let data = [
+        {
+          type: "cube",
+          materialType: "Standard",
+          shape: {
+            width: 1,
+            height: 1,
+            depth: 1,
+          },
+          instances: [
+            {
+              position: [-5, 0, 0],
+              size: 2,
+              scale: [1, 0.5, 1],
+              rotation: [0, 0, 0],
+            },
+            {
+              position: [5, 0, 1],
+              size: 1,
+              scale: [1, 0.5, 1],
+              rotation: [1, 1, 0],
+              color: "#bd0d87",
+            },
+          ],
+        },
+        {
+          type: "cylinder",
+          shape: {
+            radiusTop: 1,
+            radiusBottom: 1,
+            height: 1,
+            radialSegments: 12,
+            heightSegments: 1,
+          },
+          instances: [
+            {
+              position: [0, 0, 0],
+              segments: 12,
+              radius: 1,
+              scale: [1, 5, 1],
+              rotation: [0, 0, 0],
+              color: "#0d87bd",
+            },
+          ],
+        },
+      ];
+      let editor = new WEAS({ domElement });
+      editor.instancedMeshPrimitive.setSettings(data);
+    </script>
+  </body>
+</html>

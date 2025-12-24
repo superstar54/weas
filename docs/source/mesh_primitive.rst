@@ -39,140 +39,15 @@ The following example shows how to use the mesh primitive to draw two cubes and 
 
 The following example shows how to draw two cubes and a cylinder.
 
-.. code-block:: html
-
-    <!doctype html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <title>WEAS Molecule</title>
-      </head>
-      <body>
-        <div id="viewer" style="position: relative; width: 600px; height: 600px"></div>
-        <script type="module">
-          import { WEAS, Atoms } from 'https://unpkg.com/weas/dist/weas.mjs';
-          let domElement = document.getElementById("viewer");
-          let data = [
-            {
-                "type": "cube",
-                "materialType": "Standard",
-                "shape": {
-                "width": 1,
-                "height": 1,
-                "depth": 1
-                },
-                "instances": [
-                {
-                            "position": [-5, 0, 0],
-                            "size": 2,
-                            "scale": [1, 0.5, 1],
-                            "rotation": [0, 0, 0]
-                        },
-                        {
-                            "position": [5, 0, 1],
-                            "size": 1,
-                            "scale": [1, 0.5, 1],
-                            "rotation": [1, 1, 0],
-                            "color": "#bd0d87"
-                        }
-                ]
-            },
-            {
-                "type": "cylinder",
-                "shape": {
-                "radiusTop": 1,
-                "radiusBottom": 1,
-                "height": 1,
-                "radialSegments": 12,
-                "heightSegments": 1
-                },
-                "instances": [
-                {
-                            "position": [0, 0, 0],
-                            "segments": 12,
-                            "radius": 1,
-                            "scale": [1, 5, 1],
-                            "rotation": [0, 0, 0],
-                            "color": "#0d87bd"
-                        }
-                ]
-            },
-            ]
-          let editor = new WEAS({ domElement });
-          editor.instancedMeshPrimitive.setSettings(data);
-          editor.render();
-        </script>
-      </body>
-    </html>
+.. literalinclude:: _examples/mesh_primitive.html
+   :language: html
 
 
 Here is the result of the above code:
 
 .. raw:: html
+  :file: _examples/mesh_primitive.html
 
-    <!doctype html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <title>WEAS Molecule</title>
-      </head>
-      <body>
-        <div id="viewer" style="position: relative; width: 600px; height: 600px"></div>
-        <script type="module">
-          import { WEAS, Atoms } from 'https://unpkg.com/weas/dist/weas.mjs';
-          let domElement = document.getElementById("viewer");
-          let data = [
-            {
-                "type": "cube",
-                "materialType": "Standard",
-                "shape": {
-                "width": 1,
-                "height": 1,
-                "depth": 1
-                },
-                "instances": [
-                {
-                            "position": [-5, 0, 0],
-                            "size": 2,
-                            "scale": [1, 0.5, 1],
-                            "rotation": [0, 0, 0]
-                        },
-                        {
-                            "position": [5, 0, 1],
-                            "size": 1,
-                            "scale": [1, 0.5, 1],
-                            "rotation": [1, 1, 0],
-                            "color": "#bd0d87"
-                        }
-                ]
-            },
-            {
-                "type": "cylinder",
-                "shape": {
-                "radiusTop": 1,
-                "radiusBottom": 1,
-                "height": 1,
-                "radialSegments": 12,
-                "heightSegments": 1
-                },
-                "instances": [
-                {
-                            "position": [0, 0, 0],
-                            "segments": 12,
-                            "radius": 1,
-                            "scale": [1, 5, 1],
-                            "rotation": [0, 0, 0],
-                            "color": "#0d87bd"
-                        }
-                ]
-            },
-            ]
-          let editor = new WEAS({ domElement });
-          editor.instancedMeshPrimitive.setSettings(data);
-          editor.render();
-        </script>
-      </body>
-    </html>
 
 
 Primitive Parameters
