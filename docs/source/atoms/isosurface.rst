@@ -17,8 +17,8 @@ Usage Example
       editor.avr.atoms = cubeData.atoms;
       editor.avr.volumetricData = cubeData.volumetricData;
       editor.avr.isosurfaceManager.setSettings([
-         { isovalue: 0.0002, mode: 1, step_size: 1 },
-         { isovalue: -0.0002, color: "#ff0000", mode: 1 },
+         { isovalue: 0.0002, opacity: 0.5 },
+         { isovalue: -0.0002, color: "#ff0000", opacity: 0.5 },
       ]);
       editor.avr.drawModels();
       editor.render();
@@ -40,7 +40,9 @@ Holds configuration for isosurface generation, including isovalue, color, and mo
 
 - **isovalue**: The value used to generate the isosurface. If null, it will be computed as the average of the data range.
 - **color**: The color of the isosurface.
+- **opacity**: The opacity of the isosurface.
 - **mode**: The mode of isosurface generation. mode=0: Positive and negative isosurfaces are drawn. In this case, the color of the positive is the given color, and the color of the negative is the complementary color of the given color- mode=other: Only the given isosurface is drawn.
+- **step_size**: The step size for the marching cubes algorithm.
 
 Features
 --------
