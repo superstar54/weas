@@ -4,17 +4,38 @@ import { cloneValue } from "../state/store.js";
 import { materials } from "../tools/materials.js";
 
 class Setting {
-  constructor({ name, vertices, faces, color = [1, 0, 0, 1], position = [0, 0, 0], materialType = "Standard", showEdges = false, edgeColor = [0, 0, 0, 1] }) {
+  constructor({
+    name,
+    vertices,
+    faces,
+    color = [1, 0, 0],
+    opacity = 1.0,
+    position = [0, 0, 0],
+    materialType = "Standard",
+    showEdges = false,
+    edgeColor = [0, 0, 0, 1],
+    depthWrite = true,
+    depthTest = true,
+    side = "DoubleSide",
+    clearDepth = false,
+    renderOrder = 0,
+  }) {
     /* A class to store settings */
 
     this.name = name;
     this.vertices = vertices;
     this.faces = faces;
     this.color = color;
+    this.opacity = opacity;
     this.position = position;
     this.materialType = materialType;
     this.showEdges = showEdges;
     this.edgeColor = edgeColor;
+    this.depthWrite = depthWrite;
+    this.depthTest = depthTest;
+    this.side = side;
+    this.clearDepth = clearDepth;
+    this.renderOrder = renderOrder;
   }
 }
 
@@ -54,9 +75,24 @@ export class AnyMesh {
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting({ name, vertices, faces, color, position, materialType, showEdges, edgeColor }) {
+  addSetting({ name, vertices, faces, color, opacity, position, materialType, showEdges, edgeColor, depthWrite, depthTest, side, clearDepth, renderOrder }) {
     /* Add a new setting */
-    const setting = new Setting({ name, vertices, faces, color, position, materialType, showEdges, edgeColor });
+    const setting = new Setting({
+      name,
+      vertices,
+      faces,
+      color,
+      opacity,
+      position,
+      materialType,
+      showEdges,
+      edgeColor,
+      depthWrite,
+      depthTest,
+      side,
+      clearDepth,
+      renderOrder,
+    });
     this.settings.push(setting);
   }
 
@@ -72,13 +108,27 @@ export class AnyMesh {
     /* Draw Mesh*/
     this.clearMeshes();
     this.settings.forEach((setting) => {
+      if (setting.clearDepth && this.viewer?.tjs?.renderer?.clearDepth) {
+        this.viewer.tjs.renderer.clearDepth();
+      }
       const materialType = setting.materialType || "Standard";
       const material = materials[materialType].clone();
-      // color is a 1x4 array with RGBA values
-      material.color.setRGB(setting.color[0], setting.color[1], setting.color[2]);
-      material.transparent = true; // Enable transparency
-      material.opacity = setting.color[3];
-      material.side = THREE.DoubleSide;
+      if (Array.isArray(setting.color)) {
+        material.color.setRGB(setting.color[0], setting.color[1], setting.color[2]);
+      } else {
+        material.color = new THREE.Color(setting.color);
+      }
+      const opacity = setting.opacity ?? 1;
+      material.transparent = true;
+      material.opacity = opacity;
+      const sideMap = {
+        FrontSide: THREE.FrontSide,
+        BackSide: THREE.BackSide,
+        DoubleSide: THREE.DoubleSide,
+      };
+      material.side = sideMap[setting.side] ?? THREE.DoubleSide;
+      material.depthWrite = setting.depthWrite ?? true;
+      material.depthTest = setting.depthTest ?? true;
       const geometry = new THREE.BufferGeometry();
       const vertices = new Float32Array(setting.vertices);
       geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
@@ -88,6 +138,9 @@ export class AnyMesh {
       const object = new THREE.Mesh(geometry, material);
       // set position
       object.position.set(setting.position[0], setting.position[1], setting.position[2]);
+      if (typeof setting.renderOrder === "number") {
+        object.renderOrder = setting.renderOrder;
+      }
       this.meshes.push(object);
       this.scene.add(object);
 
@@ -102,7 +155,7 @@ export class AnyMesh {
         const edgeGeometry = new THREE.EdgesGeometry(geometry);
         const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
         edgeLines.position.copy(object.position);
-        edgeLines.renderOrder = 3;
+        edgeLines.renderOrder = (object.renderOrder ?? 0) + 0.1;
         this.meshes.push(edgeLines);
         this.scene.add(edgeLines);
       }
