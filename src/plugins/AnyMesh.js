@@ -8,7 +8,8 @@ class Setting {
     name,
     vertices,
     faces,
-    color = [1, 0, 0, 1],
+    color = [1, 0, 0],
+    opacity = 1.0,
     position = [0, 0, 0],
     materialType = "Standard",
     showEdges = false,
@@ -25,6 +26,7 @@ class Setting {
     this.vertices = vertices;
     this.faces = faces;
     this.color = color;
+    this.opacity = opacity;
     this.position = position;
     this.materialType = materialType;
     this.showEdges = showEdges;
@@ -73,13 +75,14 @@ export class AnyMesh {
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting({ name, vertices, faces, color, position, materialType, showEdges, edgeColor, depthWrite, depthTest, side, clearDepth, renderOrder }) {
+  addSetting({ name, vertices, faces, color, opacity, position, materialType, showEdges, edgeColor, depthWrite, depthTest, side, clearDepth, renderOrder }) {
     /* Add a new setting */
     const setting = new Setting({
       name,
       vertices,
       faces,
       color,
+      opacity,
       position,
       materialType,
       showEdges,
@@ -110,10 +113,14 @@ export class AnyMesh {
       }
       const materialType = setting.materialType || "Standard";
       const material = materials[materialType].clone();
-      // color is a 1x4 array with RGBA values
-      material.color.setRGB(setting.color[0], setting.color[1], setting.color[2]);
-      material.transparent = true; // Enable transparency
-      material.opacity = setting.color[3];
+      if (Array.isArray(setting.color)) {
+        material.color.setRGB(setting.color[0], setting.color[1], setting.color[2]);
+      } else {
+        material.color = new THREE.Color(setting.color);
+      }
+      const opacity = setting.opacity ?? 1;
+      material.transparent = true;
+      material.opacity = opacity;
       const sideMap = {
         FrontSide: THREE.FrontSide,
         BackSide: THREE.BackSide,
