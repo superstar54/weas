@@ -10,7 +10,7 @@ function normalizeHexColor(color) {
 }
 
 class Setting {
-  constructor({ isovalue = null, color = "#3d82ed", mode = 1, step_size = 1 }) {
+  constructor({ isovalue = null, color = "#3d82ed", mode = 1, step_size = 1, opacity = 0.8 }) {
     /* The setting of isosurface
     isovalue: The value to search for the isosurface. If isovalue is not set,
               the average value of the min and max values is used.
@@ -21,11 +21,13 @@ class Setting {
           mode=other: Only the given isosurface is drawn.
     step_size: The step size of the isosurface generation. Must be a positive integer.
                 Larger steps yield faster but coarser results.
+    opacity: Material opacity applied to generated meshes.
     */
     this.isovalue = isovalue;
     this.color = normalizeHexColor(color);
     this.mode = mode;
     this.step_size = step_size;
+    this.opacity = Math.min(1, Math.max(0, opacity ?? 0.8));
   }
 }
 
@@ -54,6 +56,23 @@ export class Isosurface {
         this.drawIsosurfaces();
       }
     });
+  }
+
+  getIsovalueRange() {
+    const values = this.viewer?.volumetricData?.values;
+    if (!values || values.length === 0) {
+      return { minValue: -1, maxValue: 1 };
+    }
+    const minValue = values.reduce((acc, val) => Math.min(acc, val), Infinity);
+    const maxValue = values.reduce((acc, val) => Math.max(acc, val), -Infinity);
+    if (!isFinite(minValue) || !isFinite(maxValue)) {
+      return { minValue: -1, maxValue: 1 };
+    }
+    if (Math.abs(maxValue - minValue) < 1e-9) {
+      const epsilon = Math.max(Math.abs(minValue), 1) * 1e-3;
+      return { minValue: minValue - epsilon, maxValue: maxValue + epsilon };
+    }
+    return { minValue, maxValue };
   }
 
   createGui() {
@@ -94,20 +113,14 @@ export class Isosurface {
     });
   }
 
-  addSetting(name, { isovalue = null, color = "#3d82ed", mode = 1, step_size = 1 }) {
+  addSetting(name, { isovalue = null, color = "#3d82ed", mode = 1, step_size = 1, opacity = 0.8 }) {
     /* Add a new setting to the isosurface */
+    const { minValue, maxValue } = this.getIsovalueRange();
     // if isoValue is not set, use the average value if the volumetric data is set
     if (isovalue === null) {
-      if (this.viewer.volumetricData === null) {
-        isovalue = 0;
-      } else {
-        const max = this.viewer.volumetricData.values.reduce((acc, val) => Math.max(acc, val), -Infinity);
-        const min = this.viewer.volumetricData.values.reduce((acc, val) => Math.min(acc, val), Infinity);
-        const average = (max + min) / 2;
-        isovalue = average;
-      }
+      isovalue = (minValue + maxValue) / 2;
     }
-    const setting = new Setting({ isovalue, color, mode, step_size });
+    const setting = new Setting({ isovalue, color, mode, step_size, opacity });
     // if name is not set, use the length of the settings
     if (name === undefined) {
       name = "iso-" + Object.keys(this.settings).length;
@@ -116,8 +129,9 @@ export class Isosurface {
     // create the gui if it is not exist
     this.createGui();
     const isoFolder = this.guiFolder.addFolder(name);
-    isoFolder.add(setting, "isovalue", -1, 1).name("Level").onFinishChange(this.drawIsosurfaces.bind(this));
+    isoFolder.add(setting, "isovalue", minValue, maxValue).name("Level").onFinishChange(this.drawIsosurfaces.bind(this));
     isoFolder.addColor(setting, "color").name("Color").onFinishChange(this.drawIsosurfaces.bind(this));
+    isoFolder.add(setting, "opacity", 0, 1, 0.01).name("Opacity").onFinishChange(this.drawIsosurfaces.bind(this));
   }
 
   clearIossurfaces() {
@@ -181,13 +195,14 @@ export class Isosurface {
         geometry = mergeVertices(geometry, 1e-5);
         geometry.computeVertexNormals();
         // Create materials
+        const opacity = setting.opacity ?? 0.8;
         const materials = [
           new THREE.MeshStandardMaterial({
             color: colors[i],
             metalness: 0.1,
             roughness: 0.01,
             transparent: true, // Make it transparent
-            opacity: 0.8,
+            opacity,
             side: THREE.DoubleSide, // Render both sides
           }),
           new THREE.MeshStandardMaterial({
@@ -195,7 +210,7 @@ export class Isosurface {
             metalness: 0.1,
             roughness: 0.01,
             transparent: true, // Make it transparent
-            opacity: 1,
+            opacity,
             side: THREE.DoubleSide, // Render both sides
           }),
         ];
