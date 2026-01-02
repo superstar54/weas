@@ -133,6 +133,8 @@ export declare class AtomsViewer {
   readonly volumeSliceManager: any;
   /** Manager for atom labels */
   readonly ALManager: any;
+  /** Manager for screen-aligned site labels */
+  readonly siteLabelManager: any;
   /** Measurement helper */
   readonly Measurement: any;
   /** Vector-field helper */
@@ -171,6 +173,8 @@ export declare class AtomsViewer {
   backgroundColor: string;
   /** Whether to update continuously while dragging */
   continuousUpdate: boolean;
+  /** Whether to auto-reset camera on atoms updates */
+  autoResetCameraOnAtomsUpdate: boolean;
   /** Indices of selected atoms */
   selectedAtomsIndices: number[];
   /** Trajectory frames */

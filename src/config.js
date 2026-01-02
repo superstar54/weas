@@ -33,6 +33,7 @@ const defaultViewerSettings = {
   backgroundColor: "#ffffff", // Default background color (white)
   logLevel: "warn", // Default log level
   continuousUpdate: true, // Default continuous update
+  autoResetCameraOnAtomsUpdate: false, // Default to preserving view on atoms updates
 };
 
 const defaultGuiConfig = {

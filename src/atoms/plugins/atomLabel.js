@@ -73,6 +73,7 @@ export class AtomLabelManager {
   drawAtomLabels() {
     /* Draw labels */
     this.clearLabels();
+    this.labels = [];
     this.settings.forEach((setting) => {
       // if too many labels, skip
       if (setting.origins.length > 1000) {
@@ -98,12 +99,15 @@ export class AtomLabelManager {
       } else {
         texts = setting.texts;
       }
-      this.labels = drawAtomLabels(origins, texts, setting.fontSize, setting.color, "Standard");
+      const indices = typeof setting.origins === "string" ? selection : null;
+      const labels = drawAtomLabels(origins, texts, setting.fontSize, setting.color, indices);
       // Add mesh to the scene
-      for (let i = 0; i < this.labels.length; i++) {
-        this.scene.add(this.labels[i]);
+      for (let i = 0; i < labels.length; i++) {
+        this.scene.add(labels[i]);
       }
+      this.labels.push(...labels);
     });
+    this.updateLabelSizes();
     // call the render function to update the scene
     this.viewer.requestRedraw?.("render");
   }
@@ -113,6 +117,51 @@ export class AtomLabelManager {
     if atomIndex is null, update all bonds
     if atoms is null, use this.viewer.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
     */
+  }
+
+  updateLabelSizes(camera = null) {
+    const activeCamera = camera || this.viewer?.tjs?.camera;
+    if (!activeCamera || !this.labels || this.labels.length === 0) {
+      return;
+    }
+    this.scene.updateMatrixWorld(true);
+    const worldPosition = new THREE.Vector3();
+    this.labels.forEach((label) => {
+      const element = label.element;
+      if (!element) {
+        return;
+      }
+      let baseFontPx = label.userData?.baseFontPx;
+      let baseDistance = label.userData?.baseDistance;
+      let baseZoom = label.userData?.baseZoom;
+      if (!label.element || !baseFontPx || !baseDistance) {
+        label.getWorldPosition(worldPosition);
+        baseDistance = activeCamera.position.distanceTo(worldPosition);
+        if (!baseFontPx) {
+          const parsed = parseFloat(element.style.fontSize || window.getComputedStyle(element).fontSize || "14px");
+          baseFontPx = Number.isFinite(parsed) && parsed > 0 ? parsed : 14;
+        }
+        label.userData.baseFontPx = baseFontPx;
+        label.userData.baseDistance = baseDistance;
+        label.userData.baseZoom = activeCamera.zoom || 1;
+      }
+      label.getWorldPosition(worldPosition);
+      let fontSizePx = baseFontPx;
+      if (activeCamera.isOrthographicCamera) {
+        baseZoom = baseZoom || activeCamera.zoom || 1;
+        const currentZoom = activeCamera.zoom || 1;
+        const scale = currentZoom / baseZoom;
+        fontSizePx = Math.max(6, Math.min(96, baseFontPx * scale * 0.85));
+      } else {
+        const currentDistance = activeCamera.position.distanceTo(worldPosition);
+        if (!currentDistance) {
+          return;
+        }
+        const scale = baseDistance / currentDistance;
+        fontSizePx = Math.max(6, Math.min(96, baseFontPx * scale * 0.85));
+      }
+      label.element.style.fontSize = `${fontSizePx}px`;
+    });
   }
 }
 
@@ -125,14 +174,39 @@ function clearLabels(scene, labels) {
   });
 }
 
-export function drawAtomLabels(origins, texts, fontSize, color) {
+export function drawAtomLabels(origins, texts, fontSize, color, indices = []) {
   const labels = [];
+  const normalizedFontSize = normalizeFontSize(fontSize);
+  const baseFontPx = getBaseFontPx(normalizedFontSize);
   // Iterate over positions and create labels
   for (let i = 0; i < origins.length; i++) {
     // Create or update the label for each atom
     const position = new THREE.Vector3(...origins[i]);
-    const label = createLabel(position, texts[i], "black");
+    const label = createLabel(position, texts[i], color, normalizedFontSize, "atom-label");
+    label.userData.baseFontPx = baseFontPx;
+    label.userData.atomIndex = Array.isArray(indices) ? indices[i] : null;
     labels.push(label); // Store the label for future reference
   }
   return labels;
+}
+
+function normalizeFontSize(fontSize) {
+  if (typeof fontSize === "number") {
+    if (fontSize <= 1) {
+      return "14px";
+    }
+    return `${fontSize}px`;
+  }
+  if (typeof fontSize === "string" && fontSize.trim() !== "") {
+    return fontSize;
+  }
+  return "14px";
+}
+
+function getBaseFontPx(fontSize) {
+  const parsed = parseFloat(fontSize);
+  if (Number.isFinite(parsed) && parsed >= 1) {
+    return parsed;
+  }
+  return 14;
 }

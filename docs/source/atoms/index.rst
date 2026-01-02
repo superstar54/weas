@@ -18,3 +18,4 @@ Atoms
     boundary
     highlight
     animation
+    site_labels
