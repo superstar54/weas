@@ -40,6 +40,8 @@ export declare class WEAS {
   readonly instancedMeshPrimitive: InstancedMeshPrimitive;
   /** AnyMesh plugin */
   readonly anyMesh: AnyMesh;
+  /** Manager for screen-aligned text labels */
+  readonly textManager: any;
 
   constructor(options: WEASOptions);
 
@@ -133,8 +135,6 @@ export declare class AtomsViewer {
   readonly volumeSliceManager: any;
   /** Manager for atom labels */
   readonly ALManager: any;
-  /** Manager for screen-aligned site labels */
-  readonly siteLabelManager: any;
   /** Measurement helper */
   readonly Measurement: any;
   /** Vector-field helper */

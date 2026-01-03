@@ -423,8 +423,9 @@ export class BlendJS {
 
   render() {
     this.renderers["MainRenderer"].renderer.clear();
-    this.weas?.avr?.siteLabelManager?.updateLabelSizes?.(this.camera, this.renderers["MainRenderer"].renderer);
-    this.weas?.avr?.ALManager?.updateLabelSizes?.(this.camera);
+    this.weas?.textManager?.updateLabelSizes?.(this.camera, this.renderers["MainRenderer"].renderer);
+    this.weas?.avr?.ALManager?.updateLabelSizes?.(this.camera, this.renderers["MainRenderer"].renderer);
+    this.weas?.avr?.highlightManager?.updateLabelSizes?.(this.camera, this.renderers["MainRenderer"].renderer);
     // loop through renderers to render the scene
     this.renderers["LabelRenderer"].renderer.render(this.scene, this.camera);
     this.renderSceneInfo(this.scene, this.camera, this.sceneView.left, this.sceneView.bottom, this.sceneView.width, this.sceneView.height, this.renderers["MainRenderer"].renderer);

@@ -103,6 +103,16 @@ test("Highlight Atoms", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("Highlight-cross.png");
 });
 
+test("Highlight Cross2D", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightCross2d.html");
+  await expect.soft(page).toHaveScreenshot("Highlight-cross2d.png");
+});
+
+test("Text Manager", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testTextManager.html");
+  await expect.soft(page).toHaveScreenshot("TextManager.png");
+});
+
 test("Instanced Primitive", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testInstancedPrimitive.html");
   await expect.soft(page).toHaveScreenshot();

@@ -12,6 +12,7 @@ import { ObjectManager } from "./core/ObjectManager.js";
 import { OperationManager } from "./operation/operation.js";
 import { InstancedMeshPrimitive } from "./plugins/InstancedMeshPrimitive.js";
 import { AnyMesh } from "./plugins/AnyMesh.js";
+import { TextManager } from "./plugins/TextManager.js";
 import { AtomsViewer } from "./atoms/AtomsViewer.js";
 import { Atoms } from "./atoms/atoms.js";
 import { StateStore, cloneValue } from "./state/store.js";
@@ -33,6 +34,7 @@ class WEAS {
     this.state = new StateStore(createDefaultState());
     // Initialize AtomsViewer
     this.avr = new AtomsViewer({ weas: this, atoms: atoms, viewerConfig: viewerConfig });
+    this.textManager = new TextManager(this.avr);
     // Initialize other plugins
     this.instancedMeshPrimitive = new InstancedMeshPrimitive(this);
     this.anyMesh = new AnyMesh(this);

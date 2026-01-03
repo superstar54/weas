@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS</title>
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 100%; height: 600px"></div>
+    <script type="module">
+      import { WEAS, Atoms } from "https://unpkg.com/weas@0.2.4/dist/index.mjs";
+      const domElement = document.getElementById("viewer");
+      // create atoms object for H2O
+      let atoms = new Atoms({
+        symbols: ["Au"],
+        positions: [[0, 0, 0]],
+        cell: [
+          [2.885, 2.885, 0.0],
+          [0.0, 2.885, 2.885],
+          [2.885, 0.0, 2.885],
+        ],
+      });
+      atoms = atoms.multiply(2, 2, 2);
+      const editor = new WEAS({ domElement, atoms });
+      const highlightSettings = editor.avr.state.get("plugins.highlight")?.settings || {};
+      highlightSettings.cross2d = { indices: [0], type: "cross2d", color: "#111111", scale: 1.0 };
+      highlightSettings.cross = { indices: [3], type: "cross", color: "#111111", scale: 1.0 };
+      highlightSettings.box = { indices: [6], type: "box", color: "#111111", scale: 1.0, opacity: 0.3 };
+      editor.avr.highlightManager.setSettings(highlightSettings);
+      editor.textManager.setSettings([
+        {
+          positions: [ontop, bridge, hollow],
+          texts: "+",
+          color: "#111111",
+          fontSize: "18px",
+          className: "text-label text-label-cross",
+          renderMode: "shape",
+        },
+      ]);
+      editor.avr.applyState({ modelStyle: 1 }, { redraw: "full" }); // 1: ball and stick, 0: ball only
+    </script>
+  </body>
+</html>

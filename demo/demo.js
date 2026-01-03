@@ -121,7 +121,7 @@ async function updateAtoms(filename, fileContent = null) {
       // editor.ops.selection.InsideSelection();
       editor.ops.hideGUI();
       break;
-    case "site-labels":
+    case "highlight":
       editor.clear();
       filename = "au.cif";
       structureData = fileContent || (await fetchFile(filename));
@@ -136,23 +136,53 @@ async function updateAtoms(filename, fileContent = null) {
         const ontop = [p0[0], p0[1], p0[2] + 1.8];
         const bridge = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2 + 1.8];
         const hollow = [(p0[0] + p1[0] + p2[0]) / 3, (p0[1] + p1[1] + p2[1]) / 3, (p0[2] + p1[2] + p2[2]) / 3 + 1.8];
-        editor.avr.siteLabelManager.setSettings([
-          {
-            indices: [0, 1],
-            texts: "here!",
-            color: "#111111",
-            fontSize: "18px",
-            className: "site-label site-label-cross",
-            sizeMode: "atom",
-            shift: [0, 0, 0],
-          },
+        const highlightSettings = editor.avr.state.get("plugins.highlight")?.settings || {};
+        highlightSettings.cross2d = { indices: [0, 1], type: "cross2d", color: "#111111", scale: 1.0 };
+        highlightSettings.cross = { indices: [2, 3], type: "cross", color: "#111111", scale: 1.0 };
+        highlightSettings.box = { indices: [4, 5], type: "box", color: "#111111", scale: 1.0, opacity: 0.3 };
+        editor.avr.highlightManager.setSettings(highlightSettings);
+        editor.textManager.setSettings([
           {
             positions: [ontop, bridge, hollow],
             texts: "+",
             color: "#111111",
             fontSize: "18px",
-            className: "site-label site-label-cross",
-            sizeMode: "screen",
+            className: "text-label text-label-cross",
+            renderMode: "shape",
+          },
+        ]);
+      }
+      editor.avr.tjs.updateCameraAndControls({ direction: [0, 0, 30] });
+      break;
+    case "text-labels":
+      editor.clear();
+      filename = "au.cif";
+      structureData = fileContent || (await fetchFile(filename));
+      atoms = parseCIF(structureData);
+      atoms = atoms.multiply(2, 2, 2);
+      editor.avr.atoms = atoms;
+      editor.avr.modelStyle = 1;
+      if (atoms.positions.length >= 3) {
+        const p0 = atoms.positions[0];
+        const p1 = atoms.positions[1];
+        const p2 = atoms.positions[2];
+        const ontop = [p0[0], p0[1], p0[2] + 1.8];
+        const bridge = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2 + 1.8];
+        const hollow = [(p0[0] + p1[0] + p2[0]) / 3, (p0[1] + p1[1] + p2[1]) / 3, (p0[2] + p1[2] + p2[2]) / 3 + 1.8];
+        editor.textManager.setSettings([
+          {
+            positions: [ontop],
+            texts: "here!",
+            color: "#ff0000",
+            fontSize: "24px",
+            className: "text-label text-label-dot",
+          },
+          {
+            positions: [bridge, hollow],
+            texts: "+",
+            color: "#111111",
+            fontSize: "18px",
+            className: "text-label text-label-cross",
           },
         ]);
       }

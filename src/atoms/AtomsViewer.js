@@ -12,7 +12,6 @@ import { VolumeSlice } from "./plugins/VolumeSlice.js";
 import { VectorField } from "./plugins/vectorField.js";
 import { Measurement } from "./plugins/measurement.js";
 import { HighlightManager } from "./plugins/highlight.js";
-import { SiteLabelManager } from "./plugins/siteLabel.js";
 import { AtomsGUI } from "./atomsGui.js";
 import { defaultViewerSettings, MODEL_STYLE_MAP } from "../config.js";
 import { Phonon } from "./plugins/phonon.js";
@@ -45,6 +44,7 @@ class AtomsViewer {
     this.debug = viewerSettings.debug;
     this._continuousUpdate = viewerSettings.continuousUpdate;
     this._autoResetCameraOnAtomsUpdate = viewerSettings.autoResetCameraOnAtomsUpdate;
+    this._hasInitializedCamera = false;
     this._currentFrame = 0;
     this._updateDepth = 0;
     this._pendingRedraw = null;
@@ -72,7 +72,6 @@ class AtomsViewer {
     this.ALManager = new AtomLabelManager(this);
     this.Measurement = new Measurement(this);
     this.VFManager = new VectorField(this);
-    this.siteLabelManager = new SiteLabelManager(this);
     this.animate = this.animate.bind(this); // Bind once in the constructor
     this._atoms = null;
     this._cell = null;
@@ -162,6 +161,7 @@ class AtomsViewer {
     ];
     this.boundaryList = [];
     this.boundaryMap = {};
+    this._hasInitializedCamera = false;
     //
   }
 
@@ -211,6 +211,7 @@ class AtomsViewer {
     }
     // update the atoms
     this.atomManager.updateAtomMesh(null, atoms);
+    this.ALManager.updateLabelPositions(atoms);
     // if in playing mode, we only update the mesh to avoid performance issue
     if (this.isPlaying) {
       // update the bonds
@@ -390,11 +391,12 @@ class AtomsViewer {
       }
       this.baseAtomLabelSettings = this.getAtomLabelSettingsFromType(this._atomLabelType);
       this.updateAtomLabels();
-      this.siteLabelManager.redraw();
+      this.weas.textManager?.redraw?.();
       this.drawModels();
-      if (this._autoResetCameraOnAtomsUpdate) {
-        // udpate camera position and target position based on the atoms
+      if (this._autoResetCameraOnAtomsUpdate || !this._hasInitializedCamera) {
+        // update camera position and target position based on the atoms
         this.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
+        this._hasInitializedCamera = true;
       }
       this.logger.debug("Set atoms successfullly");
     } finally {
@@ -783,6 +785,9 @@ class AtomsViewer {
         }
         if (key === "atomScale") {
           this.atomManager.updateAtomScale(value);
+          Object.values(this.highlightManager.settings || {}).forEach((setting) => {
+            this.highlightManager.updateHighlightAtomsMesh(setting);
+          });
         }
         if (key === "backgroundColor") {
           this.tjs.scene.background = new THREE.Color(value);
@@ -872,7 +877,8 @@ class AtomsViewer {
         selection: this._selectedAtomsIndices,
       });
     }
-    this.state.set({ plugins: { atomLabel: { settings } } });
+    const overlaySettings = this.state.get("plugins.atomLabel")?.overlaySettings || [];
+    this.state.set({ plugins: { atomLabel: { settings, overlaySettings } } });
   }
 
   drawModels() {

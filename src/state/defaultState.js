@@ -39,6 +39,7 @@ function createDefaultState() {
         },
       },
       atomLabel: { settings: [] },
+      text: { settings: [] },
       polyhedra: { settings: [] },
       measurement: { settings: {} },
       species: { settings: {} },

@@ -4,12 +4,13 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { cloneValue } from "../../state/store.js";
 
 class Setting {
-  constructor({ indices, scale = 1.1, type = "sphere", color = "yellow" }) {
+  constructor({ indices, scale = 1.1, type = "sphere", color = "yellow", opacity = 0.6 }) {
     // type: sphere, box, cross
     this.indices = indices;
     this.color = convertColor(color);
     this.scale = scale;
     this.type = type;
+    this.opacity = opacity;
   }
 
   toDict() {
@@ -18,6 +19,7 @@ class Setting {
       color: this.color,
       scale: this.scale,
       type: this.type,
+      opacity: this.opacity,
     };
   }
 }
@@ -28,6 +30,7 @@ export class HighlightManager {
     this.scene = this.viewer.tjs.scene;
     this.settings = {};
     this.meshes = {};
+    this.labels = {};
     this.init();
 
     const pluginState = this.viewer.state.get("plugins.highlight");
@@ -63,15 +66,16 @@ export class HighlightManager {
     /* Set the highlight settings */
     this.settings = {};
     this.clearMeshes();
+    this.clearLabels();
     // Loop over settings to add each setting
     Object.entries(settings).forEach(([name, setting]) => {
       this.addSetting(name, setting);
     });
   }
 
-  addSetting(name, { indices, scale = 1.1, type = "sphere", color = "#3d82ed" }) {
+  addSetting(name, { indices, scale = 1.1, type = "sphere", color = "#3d82ed", opacity = 0.6 }) {
     /* Add a new setting to the highlights */
-    const setting = new Setting({ indices, scale, type, color });
+    const setting = new Setting({ indices, scale, type, color, opacity });
     this.settings[name] = setting;
   }
 
@@ -93,8 +97,21 @@ export class HighlightManager {
     this.meshes = {};
   }
 
+  clearLabels() {
+    Object.values(this.labels).forEach((labels) => {
+      labels.forEach((label) => {
+        if (label.parent) {
+          label.parent.remove(label);
+        }
+        label.remove();
+      });
+    });
+    this.labels = {};
+  }
+
   drawHighlightAtoms() {
     this.clearMeshes();
+    this.clearLabels();
     const baseMesh = this.viewer.atomManager.meshes["atom"];
     if (!baseMesh) {
       return;
@@ -118,6 +135,11 @@ export class HighlightManager {
     material2.opacity = 1.0;
     const crossGeometry = this.createCrossGeometry(1);
     this.drawHighlightMesh("cross", crossGeometry, material2);
+    Object.entries(this.settings).forEach(([name, setting]) => {
+      if (setting.type === "cross2d") {
+        this.updateHighlightAtomsMesh(setting, name);
+      }
+    });
     this.viewer.requestRedraw?.("render");
   }
 
@@ -167,10 +189,22 @@ export class HighlightManager {
     return crossGeometry;
   }
 
-  updateHighlightAtomsMesh({ indices = [], scale = 1.1, color = "yellow", type = "sphere" }) {
+  updateHighlightAtomsMesh({ indices = [], scale = 1.1, color = "yellow", type = "sphere", opacity = null }, name = null) {
     /* When the atom is moved, the boundary atoms should be moved as well.
      */
+    if (type === "cross2d") {
+      this.updateCross2DLabels(indices, color, name);
+      return;
+    }
     if (this.viewer.atoms.symbols.length > 0 && this.meshes[type]) {
+      if (opacity !== null && opacity !== undefined) {
+        const material = this.meshes[type].material;
+        if (material) {
+          material.transparent = true;
+          material.opacity = opacity;
+          material.needsUpdate = true;
+        }
+      }
       const position = new THREE.Vector3();
       const rotation = new THREE.Quaternion();
       const scaleVector = new THREE.Vector3();
@@ -188,5 +222,90 @@ export class HighlightManager {
       });
       this.meshes[type].instanceMatrix.needsUpdate = true;
     }
+  }
+
+  updateCross2DLabels(indices = [], color = "black", name = null) {
+    const key = name || "cross2d";
+    const existing = this.labels[key] || [];
+    existing.forEach((label) => {
+      if (label.parent) {
+        label.parent.remove(label);
+      }
+      label.remove();
+    });
+    this.labels[key] = [];
+    if (!indices || indices.length === 0) {
+      return;
+    }
+    const createLabel = this.viewer.weas?.textManager?.createTextLabel?.bind(this.viewer.weas.textManager);
+    if (!createLabel) {
+      return;
+    }
+    indices.forEach((index) => {
+      const position = this.viewer.atoms.positions[index];
+      if (!position) {
+        return;
+      }
+      const labelData = createLabel(new THREE.Vector3(...position), "+", color, "14px", "text-label text-label-cross", "shape");
+      const label = labelData && labelData.label ? labelData.label : labelData;
+      label.userData.atomIndex = index;
+      this.scene.add(label);
+      this.labels[key].push(label);
+    });
+  }
+
+  updateLabelSizes(camera = null, renderer = null) {
+    const activeCamera = camera || this.viewer?.tjs?.camera;
+    const activeRenderer = renderer || this.viewer?.tjs?.renderers?.MainRenderer?.renderer;
+    if (!activeCamera || !activeRenderer) {
+      return;
+    }
+    const size = activeRenderer.getSize(new THREE.Vector2());
+    const right = new THREE.Vector3();
+    const up = new THREE.Vector3();
+    const forward = new THREE.Vector3();
+    activeCamera.matrixWorld.extractBasis(right, up, forward);
+    Object.values(this.labels).forEach((labels) => {
+      labels.forEach((label) => {
+        const atomIndex = label.userData?.atomIndex;
+        if (atomIndex === null || atomIndex === undefined) {
+          return;
+        }
+        const radius = this.getAtomRadius(atomIndex);
+        if (!radius || radius <= 0) {
+          return;
+        }
+        const position = this.viewer.atoms.positions[atomIndex];
+        if (!position) {
+          return;
+        }
+        const center = new THREE.Vector3(...position);
+        const edge = center.clone().add(right.clone().multiplyScalar(radius));
+        const centerNdc = center.project(activeCamera);
+        const edgeNdc = edge.project(activeCamera);
+        const dx = (edgeNdc.x - centerNdc.x) * size.x * 0.5;
+        const dy = (edgeNdc.y - centerNdc.y) * size.y * 0.5;
+        const pixelRadius = Math.sqrt(dx * dx + dy * dy);
+        const diameterPx = Math.max(1, Math.round(pixelRadius * 2));
+        if (label.element) {
+          label.element.style.setProperty("--cross-size", `${diameterPx}px`);
+          label.element.style.fontSize = `${diameterPx}px`;
+        }
+      });
+    });
+  }
+
+  getAtomRadius(atomIndex) {
+    const mesh = this.viewer.atomManager?.meshes?.["atom"];
+    if (!mesh || typeof mesh.getMatrixAt !== "function") {
+      return null;
+    }
+    const matrix = new THREE.Matrix4();
+    const position = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    mesh.getMatrixAt(atomIndex, matrix);
+    matrix.decompose(position, rotation, scale);
+    return scale.x || scale.y || scale.z || null;
   }
 }
