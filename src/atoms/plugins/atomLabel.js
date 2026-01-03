@@ -219,14 +219,14 @@ export class AtomLabelManager {
         baseZoom = baseZoom || 1;
         const currentZoom = activeCamera.zoom || 1;
         const scale = currentZoom / baseZoom;
-        fontSizePx = Math.max(6, Math.min(96, baseFontPx * scale * 0.65));
+        fontSizePx = Math.max(6, Math.min(96, baseFontPx * scale * 0.85));
       } else {
         const currentDistance = activeCamera.position.distanceTo(worldPosition);
         if (!currentDistance) {
           return;
         }
         const scale = baseDistance / currentDistance;
-        fontSizePx = Math.max(6, Math.min(96, baseFontPx * scale * 0.65));
+        fontSizePx = Math.max(6, Math.min(96, baseFontPx * scale * 0.85));
       }
       label.element.style.fontSize = `${fontSizePx}px`;
     });

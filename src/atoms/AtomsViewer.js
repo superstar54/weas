@@ -860,10 +860,10 @@ class AtomsViewer {
   getAtomLabelSettingsFromType(labelType) {
     const normalized = String(labelType || "None").toUpperCase();
     if (normalized === "SYMBOL") {
-      return [{ origins: "positions", texts: "symbols" }];
+      return [{ origins: "positions", texts: "symbols", fontSize: "24px" }];
     }
     if (normalized === "INDEX") {
-      return [{ origins: "positions", texts: "index" }];
+      return [{ origins: "positions", texts: "index", fontSize: "24px" }];
     }
     return [];
   }
@@ -875,6 +875,7 @@ class AtomsViewer {
         origins: "positions",
         texts: "index",
         selection: this._selectedAtomsIndices,
+        fontSize: "24px",
       });
     }
     const overlaySettings = this.state.get("plugins.atomLabel")?.overlaySettings || [];
