@@ -83,7 +83,7 @@ export class TextManager {
       origins.forEach((origin, index) => {
         const position = new THREE.Vector3(...origin).add(shift);
         const text = texts ? (texts[index] ?? "") : setting.texts;
-        const { label, isCross } = this.createTextLabel(position, text, setting.color, fontSize, className, renderMode);
+        const { label } = this.createTextLabel(position, text, setting.color, fontSize, className, renderMode);
         this.scene.add(label);
         this.labels.push(label);
       });

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { convertColor, drawAtoms } from "../utils.js";
+import { convertColor } from "../utils.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js"; // Import BufferGeometryUtils
 import { cloneValue } from "../../state/store.js";
 
@@ -27,10 +27,23 @@ class Setting {
 export class HighlightManager {
   constructor(viewer) {
     this.viewer = viewer;
-    this.scene = this.viewer.tjs.scene;
     this.settings = {};
     this.meshes = {};
-    this.labels = {};
+    this._tmpCenter = new THREE.Vector3();
+    this._tmpBillboardScale = new THREE.Vector3();
+    this._tmpBillboardMatrix = new THREE.Matrix4();
+    this._tmpBillboardQuat = new THREE.Quaternion();
+    this._tmpBillboardZero = new THREE.Vector3(0, 0, 0);
+    this._tmpBillboardAtomMatrix = new THREE.Matrix4();
+    this._tmpDecomposeQuat = new THREE.Quaternion();
+    this._tmpCameraDir = new THREE.Vector3();
+    this._tmpCameraPos = new THREE.Vector3();
+    this._tmpToCameraDir = new THREE.Vector3();
+    this._crossViewSettings = {};
+    this._crossViewIndices = new Set();
+    this._crossViewNeedsUpdate = false;
+    this._cameraSignature = new Float32Array(32);
+    this._hasCameraSignature = false;
     this.init();
 
     const pluginState = this.viewer.state.get("plugins.highlight");
@@ -66,7 +79,9 @@ export class HighlightManager {
     /* Set the highlight settings */
     this.settings = {};
     this.clearMeshes();
-    this.clearLabels();
+    this._crossViewSettings = {};
+    this._crossViewIndices = new Set();
+    this._crossViewNeedsUpdate = false;
     // Loop over settings to add each setting
     Object.entries(settings).forEach(([name, setting]) => {
       this.addSetting(name, setting);
@@ -97,21 +112,8 @@ export class HighlightManager {
     this.meshes = {};
   }
 
-  clearLabels() {
-    Object.values(this.labels).forEach((labels) => {
-      labels.forEach((label) => {
-        if (label.parent) {
-          label.parent.remove(label);
-        }
-        label.remove();
-      });
-    });
-    this.labels = {};
-  }
-
   drawHighlightAtoms() {
     this.clearMeshes();
-    this.clearLabels();
     const baseMesh = this.viewer.atomManager.meshes["atom"];
     if (!baseMesh) {
       return;
@@ -135,11 +137,11 @@ export class HighlightManager {
     material2.opacity = 1.0;
     const crossGeometry = this.createCrossGeometry(1);
     this.drawHighlightMesh("cross", crossGeometry, material2);
-    Object.entries(this.settings).forEach(([name, setting]) => {
-      if (setting.type === "cross2d") {
-        this.updateHighlightAtomsMesh(setting, name);
-      }
-    });
+    const material3 = material2.clone();
+    material3.side = THREE.DoubleSide;
+    material3.depthWrite = false;
+    const crossViewGeometry = this.createCrossBillboardGeometry(1, 0.2);
+    this.drawHighlightMesh("crossView", crossViewGeometry, material3);
     this.viewer.requestRedraw?.("render");
   }
 
@@ -189,11 +191,21 @@ export class HighlightManager {
     return crossGeometry;
   }
 
-  updateHighlightAtomsMesh({ indices = [], scale = 1.1, color = "yellow", type = "sphere", opacity = null }, name = null) {
+  createCrossBillboardGeometry(size = 1, thickness = 0.2) {
+    const bar1 = new THREE.PlaneGeometry(size * 2, thickness);
+    const bar2 = new THREE.PlaneGeometry(size * 2, thickness);
+    bar2.rotateZ(Math.PI / 2);
+    return mergeGeometries([bar1, bar2]);
+  }
+
+  updateHighlightAtomsMesh({ indices = [], scale = 1.1, color = "yellow", type = "sphere", opacity = null, occlude = true, offset = 1.0005 }, name = null) {
     /* When the atom is moved, the boundary atoms should be moved as well.
      */
-    if (type === "cross2d") {
-      this.updateCross2DLabels(indices, color, name);
+    if (type === "crossView") {
+      const key = name || "crossView";
+      this._crossViewSettings[key] = { indices, scale, color, occlude, offset };
+      this.updateCrossViewMaterialOcclusion();
+      this._crossViewNeedsUpdate = true;
       return;
     }
     if (this.viewer.atoms.symbols.length > 0 && this.meshes[type]) {
@@ -224,88 +236,98 @@ export class HighlightManager {
     }
   }
 
-  updateCross2DLabels(indices = [], color = "black", name = null) {
-    const key = name || "cross2d";
-    const existing = this.labels[key] || [];
-    existing.forEach((label) => {
-      if (label.parent) {
-        label.parent.remove(label);
-      }
-      label.remove();
-    });
-    this.labels[key] = [];
-    if (!indices || indices.length === 0) {
-      return;
-    }
-    const createLabel = this.viewer.weas?.textManager?.createTextLabel?.bind(this.viewer.weas.textManager);
-    if (!createLabel) {
-      return;
-    }
-    indices.forEach((index) => {
-      const position = this.viewer.atoms.positions[index];
-      if (!position) {
-        return;
-      }
-      const labelData = createLabel(new THREE.Vector3(...position), "+", color, "14px", "text-label text-label-cross", "shape");
-      const label = labelData && labelData.label ? labelData.label : labelData;
-      label.userData.atomIndex = index;
-      this.scene.add(label);
-      this.labels[key].push(label);
-    });
-  }
-
   updateLabelSizes(camera = null, renderer = null) {
     const activeCamera = camera || this.viewer?.tjs?.camera;
     const activeRenderer = renderer || this.viewer?.tjs?.renderers?.MainRenderer?.renderer;
     if (!activeCamera || !activeRenderer) {
       return;
     }
-    const size = activeRenderer.getSize(new THREE.Vector2());
-    const right = new THREE.Vector3();
-    const up = new THREE.Vector3();
-    const forward = new THREE.Vector3();
-    activeCamera.matrixWorld.extractBasis(right, up, forward);
-    Object.values(this.labels).forEach((labels) => {
-      labels.forEach((label) => {
-        const atomIndex = label.userData?.atomIndex;
-        if (atomIndex === null || atomIndex === undefined) {
-          return;
-        }
-        const radius = this.getAtomRadius(atomIndex);
-        if (!radius || radius <= 0) {
-          return;
-        }
-        const position = this.viewer.atoms.positions[atomIndex];
-        if (!position) {
-          return;
-        }
-        const center = new THREE.Vector3(...position);
-        const edge = center.clone().add(right.clone().multiplyScalar(radius));
-        const centerNdc = center.project(activeCamera);
-        const edgeNdc = edge.project(activeCamera);
-        const dx = (edgeNdc.x - centerNdc.x) * size.x * 0.5;
-        const dy = (edgeNdc.y - centerNdc.y) * size.y * 0.5;
-        const pixelRadius = Math.sqrt(dx * dx + dy * dy);
-        const diameterPx = Math.max(1, Math.round(pixelRadius * 2));
-        if (label.element) {
-          label.element.style.setProperty("--cross-size", `${diameterPx}px`);
-          label.element.style.fontSize = `${diameterPx}px`;
-        }
-      });
-    });
+    activeCamera.updateMatrixWorld(true);
+    const atomMesh = this.viewer.atomManager?.meshes?.["atom"];
+    if (atomMesh && typeof atomMesh.updateMatrixWorld === "function") {
+      atomMesh.updateMatrixWorld(true);
+    }
+    const cameraChanged = this._cameraChanged(activeCamera);
+    if (this._crossViewNeedsUpdate || cameraChanged) {
+      this.updateCrossViewInstances(activeCamera);
+      this._crossViewNeedsUpdate = false;
+    }
   }
 
-  getAtomRadius(atomIndex) {
-    const mesh = this.viewer.atomManager?.meshes?.["atom"];
-    if (!mesh || typeof mesh.getMatrixAt !== "function") {
-      return null;
+  updateCrossViewInstances(camera) {
+    const mesh = this.meshes["crossView"];
+    const atomMesh = this.viewer.atomManager?.meshes?.["atom"];
+    if (!mesh || !atomMesh || !camera) {
+      return;
     }
-    const matrix = new THREE.Matrix4();
-    const position = new THREE.Vector3();
-    const rotation = new THREE.Quaternion();
-    const scale = new THREE.Vector3();
-    mesh.getMatrixAt(atomIndex, matrix);
-    matrix.decompose(position, rotation, scale);
-    return scale.x || scale.y || scale.z || null;
+    camera.getWorldQuaternion(this._tmpBillboardQuat);
+    camera.getWorldDirection(this._tmpCameraDir);
+    camera.getWorldPosition(this._tmpCameraPos);
+    const nextIndices = new Set();
+    Object.values(this._crossViewSettings).forEach((setting) => {
+      const { indices = [], scale = 1.1, color = "yellow", offset = 1.0005 } = setting || {};
+      indices.forEach((index) => {
+        nextIndices.add(index);
+        atomMesh.getMatrixAt(index, this._tmpBillboardAtomMatrix);
+        this._tmpBillboardAtomMatrix.decompose(this._tmpCenter, this._tmpDecomposeQuat, this._tmpBillboardScale);
+        const radius = this._tmpBillboardScale.x || this._tmpBillboardScale.y || this._tmpBillboardScale.z || 1;
+        this._tmpBillboardScale.setScalar(radius * scale);
+        if (camera.isOrthographicCamera) {
+          this._tmpCenter.addScaledVector(this._tmpCameraDir, -radius * offset);
+        } else {
+          this._tmpToCameraDir.copy(this._tmpCenter).sub(this._tmpCameraPos).normalize();
+          this._tmpCenter.addScaledVector(this._tmpToCameraDir, -radius * offset);
+        }
+        this._tmpBillboardMatrix.compose(this._tmpCenter, this._tmpBillboardQuat, this._tmpBillboardScale);
+        mesh.setMatrixAt(index, this._tmpBillboardMatrix);
+        mesh.setColorAt(index, convertColor(color));
+      });
+    });
+    this._crossViewIndices.forEach((index) => {
+      if (!nextIndices.has(index)) {
+        atomMesh.getMatrixAt(index, this._tmpBillboardAtomMatrix);
+        this._tmpBillboardAtomMatrix.decompose(this._tmpCenter, this._tmpDecomposeQuat, this._tmpBillboardScale);
+        this._tmpBillboardMatrix.compose(this._tmpCenter, this._tmpBillboardQuat, this._tmpBillboardZero);
+        mesh.setMatrixAt(index, this._tmpBillboardMatrix);
+      }
+    });
+    this._crossViewIndices = nextIndices;
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) {
+      mesh.instanceColor.needsUpdate = true;
+    }
+  }
+
+  updateCrossViewMaterialOcclusion() {
+    const mesh = this.meshes["crossView"];
+    if (!mesh || !mesh.material) {
+      return;
+    }
+    const anyOcclude = Object.values(this._crossViewSettings).some((setting) => setting?.occlude !== false);
+    mesh.material.depthTest = anyOcclude;
+    mesh.material.needsUpdate = true;
+  }
+
+  _cameraChanged(camera) {
+    const elements = camera.matrixWorld.elements;
+    const proj = camera.projectionMatrix.elements;
+    let changed = false;
+    for (let i = 0; i < 16; i++) {
+      const value = elements[i];
+      if (!this._hasCameraSignature || Math.abs(this._cameraSignature[i] - value) > 1e-6) {
+        changed = true;
+      }
+      this._cameraSignature[i] = value;
+    }
+    for (let i = 0; i < 16; i++) {
+      const value = proj[i];
+      const idx = 16 + i;
+      if (!this._hasCameraSignature || Math.abs(this._cameraSignature[idx] - value) > 1e-6) {
+        changed = true;
+      }
+      this._cameraSignature[idx] = value;
+    }
+    this._hasCameraSignature = true;
+    return changed;
   }
 }

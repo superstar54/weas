@@ -22,7 +22,7 @@
       atoms = atoms.multiply(2, 2, 2);
       const editor = new WEAS({ domElement, atoms });
       const highlightSettings = editor.avr.state.get("plugins.highlight")?.settings || {};
-      highlightSettings.cross2d = { indices: [0], type: "cross2d", color: "#111111", scale: 1.0 };
+      highlightSettings.crossView = { indices: [0], type: "crossView", color: "#111111", scale: 1.0 };
       highlightSettings.cross = { indices: [3], type: "cross", color: "#111111", scale: 1.0 };
       highlightSettings.box = { indices: [6], type: "box", color: "#111111", scale: 1.0, opacity: 0.3 };
       editor.avr.highlightManager.setSettings(highlightSettings);
