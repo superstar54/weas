@@ -31,6 +31,7 @@ export class HighlightManager {
     this.meshes = {};
     this._tmpCenter = new THREE.Vector3();
     this._tmpBillboardScale = new THREE.Vector3();
+    this._tmpBillboardScale2 = new THREE.Vector3();
     this._tmpBillboardMatrix = new THREE.Matrix4();
     this._tmpBillboardQuat = new THREE.Quaternion();
     this._tmpBillboardZero = new THREE.Vector3(0, 0, 0);
@@ -39,6 +40,7 @@ export class HighlightManager {
     this._tmpCameraDir = new THREE.Vector3();
     this._tmpCameraPos = new THREE.Vector3();
     this._tmpToCameraDir = new THREE.Vector3();
+    this._crossViewThicknessDefault = 0.05;
     this._crossViewSettings = {};
     this._crossViewIndices = new Set();
     this._crossViewNeedsUpdate = false;
@@ -140,8 +142,11 @@ export class HighlightManager {
     const material3 = material2.clone();
     material3.side = THREE.DoubleSide;
     material3.depthWrite = false;
-    const crossViewGeometry = this.createCrossBillboardGeometry(1, 0.2);
-    this.drawHighlightMesh("crossView", crossViewGeometry, material3);
+    const crossViewGeometryX = this.createCrossBillboardBarGeometry();
+    const crossViewGeometryY = crossViewGeometryX.clone();
+    crossViewGeometryY.rotateZ(Math.PI / 2);
+    this.drawHighlightMesh("crossViewX", crossViewGeometryX, material3);
+    this.drawHighlightMesh("crossViewY", crossViewGeometryY, material3);
     this.viewer.requestRedraw?.("render");
   }
 
@@ -191,19 +196,16 @@ export class HighlightManager {
     return crossGeometry;
   }
 
-  createCrossBillboardGeometry(size = 1, thickness = 0.2) {
-    const bar1 = new THREE.PlaneGeometry(size * 2, thickness);
-    const bar2 = new THREE.PlaneGeometry(size * 2, thickness);
-    bar2.rotateZ(Math.PI / 2);
-    return mergeGeometries([bar1, bar2]);
+  createCrossBillboardBarGeometry() {
+    return new THREE.PlaneGeometry(2, 1);
   }
 
-  updateHighlightAtomsMesh({ indices = [], scale = 1.1, color = "yellow", type = "sphere", opacity = null, occlude = true, offset = 1.0005 }, name = null) {
+  updateHighlightAtomsMesh({ indices = [], scale = 1.1, color = "yellow", type = "sphere", opacity = null, occlude = true, offset = 1.0005, thickness = null }, name = null) {
     /* When the atom is moved, the boundary atoms should be moved as well.
      */
     if (type === "crossView") {
       const key = name || "crossView";
-      this._crossViewSettings[key] = { indices, scale, color, occlude, offset };
+      this._crossViewSettings[key] = { indices, scale, color, occlude, offset, thickness };
       this.updateCrossViewMaterialOcclusion();
       this._crossViewNeedsUpdate = true;
       return;
@@ -255,9 +257,10 @@ export class HighlightManager {
   }
 
   updateCrossViewInstances(camera) {
-    const mesh = this.meshes["crossView"];
+    const meshX = this.meshes["crossViewX"];
+    const meshY = this.meshes["crossViewY"];
     const atomMesh = this.viewer.atomManager?.meshes?.["atom"];
-    if (!mesh || !atomMesh || !camera) {
+    if (!meshX || !meshY || !atomMesh || !camera) {
       return;
     }
     camera.getWorldQuaternion(this._tmpBillboardQuat);
@@ -265,13 +268,15 @@ export class HighlightManager {
     camera.getWorldPosition(this._tmpCameraPos);
     const nextIndices = new Set();
     Object.values(this._crossViewSettings).forEach((setting) => {
-      const { indices = [], scale = 1.1, color = "yellow", offset = 1.0005 } = setting || {};
+      const { indices = [], scale = 1.1, color = "yellow", offset = 1.0005, thickness = null } = setting || {};
+      const thicknessWorld = Number.isFinite(thickness) ? thickness : this._crossViewThicknessDefault;
       indices.forEach((index) => {
         nextIndices.add(index);
         atomMesh.getMatrixAt(index, this._tmpBillboardAtomMatrix);
         this._tmpBillboardAtomMatrix.decompose(this._tmpCenter, this._tmpDecomposeQuat, this._tmpBillboardScale);
         const radius = this._tmpBillboardScale.x || this._tmpBillboardScale.y || this._tmpBillboardScale.z || 1;
-        this._tmpBillboardScale.setScalar(radius * scale);
+        this._tmpBillboardScale.set(radius * scale, thicknessWorld, 1);
+        this._tmpBillboardScale2.set(thicknessWorld, radius * scale, 1);
         if (camera.isOrthographicCamera) {
           this._tmpCenter.addScaledVector(this._tmpCameraDir, -radius * offset);
         } else {
@@ -279,8 +284,11 @@ export class HighlightManager {
           this._tmpCenter.addScaledVector(this._tmpToCameraDir, -radius * offset);
         }
         this._tmpBillboardMatrix.compose(this._tmpCenter, this._tmpBillboardQuat, this._tmpBillboardScale);
-        mesh.setMatrixAt(index, this._tmpBillboardMatrix);
-        mesh.setColorAt(index, convertColor(color));
+        meshX.setMatrixAt(index, this._tmpBillboardMatrix);
+        meshX.setColorAt(index, convertColor(color));
+        this._tmpBillboardMatrix.compose(this._tmpCenter, this._tmpBillboardQuat, this._tmpBillboardScale2);
+        meshY.setMatrixAt(index, this._tmpBillboardMatrix);
+        meshY.setColorAt(index, convertColor(color));
       });
     });
     this._crossViewIndices.forEach((index) => {
@@ -288,24 +296,32 @@ export class HighlightManager {
         atomMesh.getMatrixAt(index, this._tmpBillboardAtomMatrix);
         this._tmpBillboardAtomMatrix.decompose(this._tmpCenter, this._tmpDecomposeQuat, this._tmpBillboardScale);
         this._tmpBillboardMatrix.compose(this._tmpCenter, this._tmpBillboardQuat, this._tmpBillboardZero);
-        mesh.setMatrixAt(index, this._tmpBillboardMatrix);
+        meshX.setMatrixAt(index, this._tmpBillboardMatrix);
+        meshY.setMatrixAt(index, this._tmpBillboardMatrix);
       }
     });
     this._crossViewIndices = nextIndices;
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) {
-      mesh.instanceColor.needsUpdate = true;
+    meshX.instanceMatrix.needsUpdate = true;
+    meshY.instanceMatrix.needsUpdate = true;
+    if (meshX.instanceColor) {
+      meshX.instanceColor.needsUpdate = true;
+    }
+    if (meshY.instanceColor) {
+      meshY.instanceColor.needsUpdate = true;
     }
   }
 
   updateCrossViewMaterialOcclusion() {
-    const mesh = this.meshes["crossView"];
-    if (!mesh || !mesh.material) {
+    const meshX = this.meshes["crossViewX"];
+    const meshY = this.meshes["crossViewY"];
+    if (!meshX || !meshX.material || !meshY || !meshY.material) {
       return;
     }
     const anyOcclude = Object.values(this._crossViewSettings).some((setting) => setting?.occlude !== false);
-    mesh.material.depthTest = anyOcclude;
-    mesh.material.needsUpdate = true;
+    meshX.material.depthTest = anyOcclude;
+    meshY.material.depthTest = anyOcclude;
+    meshX.material.needsUpdate = true;
+    meshY.material.needsUpdate = true;
   }
 
   _cameraChanged(camera) {
