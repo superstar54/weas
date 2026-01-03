@@ -40,6 +40,8 @@ export declare class WEAS {
   readonly instancedMeshPrimitive: InstancedMeshPrimitive;
   /** AnyMesh plugin */
   readonly anyMesh: AnyMesh;
+  /** Manager for screen-aligned text labels */
+  readonly textManager: any;
 
   constructor(options: WEASOptions);
 
@@ -171,6 +173,8 @@ export declare class AtomsViewer {
   backgroundColor: string;
   /** Whether to update continuously while dragging */
   continuousUpdate: boolean;
+  /** Whether to auto-reset camera on atoms updates */
+  autoResetCameraOnAtomsUpdate: boolean;
   /** Indices of selected atoms */
   selectedAtomsIndices: number[];
   /** Trajectory frames */

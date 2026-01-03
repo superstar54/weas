@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS Test</title>
+    <link rel="stylesheet" href="../../src/style.css" />
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 600px; height: 400px"></div>
+
+    <script type="module">
+      import * as weas from "../../dist/index.mjs";
+
+      async function fetchFile(filename) {
+        const response = await fetch(`../../demo/datas/${filename}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load file for structure: ${filename}`);
+        }
+        return await response.text();
+      }
+
+      const domElement = document.getElementById("viewer");
+      const filename = "c2h6so.xyz";
+      fetchFile(filename).then((fileContent) => {
+        const atoms = weas.parseXYZ(fileContent);
+        const editor = new weas.WEAS({ domElement });
+        editor.avr.atoms = atoms;
+        const highlightSettings = editor.avr.state.get("plugins.highlight")?.settings || {};
+        highlightSettings.cross2d = { indices: [0, 1], type: "cross2d", color: "#111111", scale: 1.0 };
+        editor.avr.highlightManager.setSettings(highlightSettings);
+        editor.avr.drawModels();
+        editor.render();
+        window.editor = editor;
+      });
+    </script>
+  </body>
+</html>

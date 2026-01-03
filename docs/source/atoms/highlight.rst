@@ -6,6 +6,7 @@ One can highlight the atoms using the following shapes:
 - sphere
 - box
 - cross
+- cross2d (2D cross overlay)
 
 One can see the highlight setting:
 
@@ -25,5 +26,26 @@ One can add one highlight item:
     editor.avr.highlightManager.settings['fixed'] = {indices: [0, 1], type: 'cross'};
     editor.avr.highlightManager.drawHighlightAtoms()
 
-.. image:: ../_static/images/example-highlight.png
-   :width: 4cm
+2D cross overlay
+----------------
+
+Use ``cross2d`` to draw a screen-aligned cross that scales to the atom radius.
+
+.. code-block:: javascript
+
+    const highlightSettings = editor.avr.state.get("plugins.highlight")?.settings || {};
+    highlightSettings.cross2d = { indices: [0, 1], type: "cross2d", color: "#111111", scale: 1.0 };
+    editor.avr.highlightManager.setSettings(highlightSettings);
+
+
+
+Full HTML example
+-----------------
+
+.. literalinclude:: ../_examples/highlight.html
+   :language: html
+
+Here is the result of the above code:
+
+.. raw:: html
+   :file: ../_examples/highlight.html

@@ -43,6 +43,8 @@ class AtomsViewer {
     this.baseAtomLabelSettings = [];
     this.debug = viewerSettings.debug;
     this._continuousUpdate = viewerSettings.continuousUpdate;
+    this._autoResetCameraOnAtomsUpdate = viewerSettings.autoResetCameraOnAtomsUpdate;
+    this._hasInitializedCamera = false;
     this._currentFrame = 0;
     this._updateDepth = 0;
     this._pendingRedraw = null;
@@ -159,6 +161,7 @@ class AtomsViewer {
     ];
     this.boundaryList = [];
     this.boundaryMap = {};
+    this._hasInitializedCamera = false;
     //
   }
 
@@ -208,6 +211,7 @@ class AtomsViewer {
     }
     // update the atoms
     this.atomManager.updateAtomMesh(null, atoms);
+    this.ALManager.updateLabelPositions(atoms);
     // if in playing mode, we only update the mesh to avoid performance issue
     if (this.isPlaying) {
       // update the bonds
@@ -387,9 +391,13 @@ class AtomsViewer {
       }
       this.baseAtomLabelSettings = this.getAtomLabelSettingsFromType(this._atomLabelType);
       this.updateAtomLabels();
+      this.weas.textManager?.redraw?.();
       this.drawModels();
-      // udpate camera position and target position based on the atoms
-      this.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
+      if (this._autoResetCameraOnAtomsUpdate || !this._hasInitializedCamera) {
+        // update camera position and target position based on the atoms
+        this.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
+        this._hasInitializedCamera = true;
+      }
       this.logger.debug("Set atoms successfullly");
     } finally {
       this._initializingState = false;
@@ -585,6 +593,19 @@ class AtomsViewer {
     this.applyState({ continuousUpdate: newValue }, { redraw: "render" });
   }
 
+  get autoResetCameraOnAtomsUpdate() {
+    return this._autoResetCameraOnAtomsUpdate;
+  }
+
+  set autoResetCameraOnAtomsUpdate(newValue) {
+    if (this._syncingState) {
+      this._autoResetCameraOnAtomsUpdate = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ autoResetCameraOnAtomsUpdate: newValue });
+      return;
+    }
+    this.applyState({ autoResetCameraOnAtomsUpdate: newValue }, { redraw: "render" });
+  }
+
   get atomScale() {
     return this._atomScale;
   }
@@ -764,6 +785,9 @@ class AtomsViewer {
         }
         if (key === "atomScale") {
           this.atomManager.updateAtomScale(value);
+          Object.values(this.highlightManager.settings || {}).forEach((setting) => {
+            this.highlightManager.updateHighlightAtomsMesh(setting);
+          });
         }
         if (key === "backgroundColor") {
           this.tjs.scene.background = new THREE.Color(value);
@@ -836,10 +860,10 @@ class AtomsViewer {
   getAtomLabelSettingsFromType(labelType) {
     const normalized = String(labelType || "None").toUpperCase();
     if (normalized === "SYMBOL") {
-      return [{ origins: "positions", texts: "symbols" }];
+      return [{ origins: "positions", texts: "symbols", fontSize: "24px" }];
     }
     if (normalized === "INDEX") {
-      return [{ origins: "positions", texts: "index" }];
+      return [{ origins: "positions", texts: "index", fontSize: "24px" }];
     }
     return [];
   }
@@ -851,9 +875,11 @@ class AtomsViewer {
         origins: "positions",
         texts: "index",
         selection: this._selectedAtomsIndices,
+        fontSize: "24px",
       });
     }
-    this.state.set({ plugins: { atomLabel: { settings } } });
+    const overlaySettings = this.state.get("plugins.atomLabel")?.overlaySettings || [];
+    this.state.set({ plugins: { atomLabel: { settings, overlaySettings } } });
   }
 
   drawModels() {

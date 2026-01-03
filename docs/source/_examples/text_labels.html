@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS Text Labels</title>
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 100%; height: 600px"></div>
+    <script type="module">
+      import { WEAS, Atoms } from "https://unpkg.com/weas@0.2.4/dist/index.mjs";
+
+      const domElement = document.getElementById("viewer");
+      const atoms = new Atoms({
+        symbols: ["C", "C", "C", "C"],
+        positions: [
+          [0.0, 0.0, 0.0],
+          [1.42, 0.0, 0.0],
+          [0.71, 1.23, 0.0],
+          [2.13, 1.23, 0.0],
+        ],
+        cell: [6, 6, 6],
+      });
+
+      const editor = new WEAS({ domElement, atoms });
+      editor.avr.applyState({ modelStyle: 1 }, { redraw: "full" });
+
+      const p0 = atoms.positions[0];
+      const p1 = atoms.positions[1];
+      const p2 = atoms.positions[2];
+      const ontop = [p0[0], p0[1], p0[2] + 1.6];
+      const bridge = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2 + 1.6];
+      const hollow = [(p0[0] + p1[0] + p2[0]) / 3, (p0[1] + p1[1] + p2[1]) / 3, (p0[2] + p1[2] + p2[2]) / 3 + 1.6];
+
+      const highlightSettings = editor.avr.state.get("plugins.highlight")?.settings || {};
+      highlightSettings.cross2d = { indices: [0, 1], type: "cross2d", color: "#111111", scale: 1.0 };
+      editor.avr.highlightManager.setSettings(highlightSettings);
+
+      editor.textManager.setSettings([
+        {
+          positions: [ontop, bridge, hollow],
+          texts: "+",
+          color: "#111111",
+          fontSize: "18px",
+          className: "text-label text-label-cross",
+          renderMode: "shape",
+        },
+      ]);
+    </script>
+  </body>
+</html>

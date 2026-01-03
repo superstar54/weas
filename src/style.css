@@ -81,3 +81,37 @@
   overflow-y: auto; /* Allow vertical scrolling */
   max-height: 150px; /* Adjust based on the overlay height and search box */
 }
+
+.text-label {
+  user-select: none;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.text-label-cross {
+  position: relative;
+  width: var(--cross-size, 1em);
+  height: var(--cross-size, 1em);
+}
+
+.text-label-cross[data-cross="true"]::before,
+.text-label-cross[data-cross="true"]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.text-label-cross[data-cross="true"]::before {
+  width: 100%;
+  height: calc(var(--cross-size, 1em) * 0.04);
+  min-height: 1px;
+}
+
+.text-label-cross[data-cross="true"]::after {
+  width: calc(var(--cross-size, 1em) * 0.04);
+  min-width: 1px;
+  height: 100%;
+}

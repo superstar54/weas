@@ -208,9 +208,9 @@ export function calculateQuaternion(position1, position2) {
   return quaternion;
 }
 
-export function createLabel(position, text, color = "black", fontSize = "14px") {
+export function createLabel(position, text, color = "black", fontSize = "14px", className = "axis-label") {
   const labelDiv = document.createElement("div");
-  labelDiv.className = "axis-label";
+  labelDiv.className = className;
   labelDiv.textContent = text;
   labelDiv.style.color = color;
   labelDiv.style.fontSize = fontSize;

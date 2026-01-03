@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS Test</title>
+  </head>
+  <body>
+    <div id="viewer" style="position: relative; width: 600px; height: 400px"></div>
+
+    <script type="module">
+      import * as weas from "../../dist/index.mjs";
+
+      async function fetchFile(filename) {
+        const response = await fetch(`../../demo/datas/${filename}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load file for structure: ${filename}`);
+        }
+        return await response.text();
+      }
+
+      const domElement = document.getElementById("viewer");
+      const filename = "c2h6so.xyz";
+      fetchFile(filename).then((fileContent) => {
+        const atoms = weas.parseXYZ(fileContent);
+        const editor = new weas.WEAS({ domElement });
+        editor.avr.atoms = atoms;
+        console.log(atoms);
+        const p0 = atoms[0].positions[0];
+        const p1 = atoms[0].positions[1];
+        const p2 = atoms[0].positions[2];
+        editor.textManager.setSettings([
+          {
+            positions: [p0],
+            texts: "here!",
+            color: "#ff0000",
+            fontSize: "24px",
+            className: "text-label text-label-dot",
+          },
+          {
+            positions: [p1, p2],
+            texts: "+",
+            color: "#111111",
+            fontSize: "24px",
+            className: "text-label",
+          },
+        ]);
+        editor.avr.drawModels();
+        editor.render();
+        window.editor = editor;
+      });
+    </script>
+  </body>
+</html>

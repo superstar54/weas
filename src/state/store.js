@@ -1,5 +1,9 @@
 function cloneValue(value) {
-  return JSON.parse(JSON.stringify(value));
+  const json = JSON.stringify(value);
+  if (json === undefined) {
+    return undefined;
+  }
+  return JSON.parse(json);
 }
 
 function getByPath(target, path) {
