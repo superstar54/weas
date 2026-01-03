@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { clearObject } from "../utils.js";
 import { cloneValue } from "../state/store.js";
 import { materials } from "../tools/materials.js";
@@ -19,6 +20,8 @@ class Setting {
     side = "DoubleSide",
     clearDepth = false,
     renderOrder = 0,
+    mergeVerticesTolerance = null,
+    smoothNormals = true,
   }) {
     /* A class to store settings */
 
@@ -36,6 +39,8 @@ class Setting {
     this.side = side;
     this.clearDepth = clearDepth;
     this.renderOrder = renderOrder;
+    this.mergeVerticesTolerance = mergeVerticesTolerance;
+    this.smoothNormals = smoothNormals;
   }
 }
 
@@ -75,7 +80,7 @@ export class AnyMesh {
   }
 
   // Modify addSetting to accept a single object parameter
-  addSetting({ name, vertices, faces, color, opacity, position, materialType, showEdges, edgeColor, depthWrite, depthTest, side, clearDepth, renderOrder }) {
+  addSetting({ name, vertices, faces, color, opacity, position, materialType, showEdges, edgeColor, depthWrite, depthTest, side, clearDepth, renderOrder, mergeVerticesTolerance, smoothNormals }) {
     /* Add a new setting */
     const setting = new Setting({
       name,
@@ -92,6 +97,8 @@ export class AnyMesh {
       side,
       clearDepth,
       renderOrder,
+      mergeVerticesTolerance,
+      smoothNormals,
     });
     this.settings.push(setting);
   }
@@ -134,8 +141,14 @@ export class AnyMesh {
       geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
       const faces = new Uint32Array(setting.faces);
       geometry.setIndex(new THREE.BufferAttribute(faces, 1));
-      geometry.computeVertexNormals();
-      const object = new THREE.Mesh(geometry, material);
+      let finalGeometry = geometry;
+      finalGeometry = mergeVertices(geometry, setting.mergeVerticesTolerance);
+      if (typeof setting.mergeVerticesTolerance === "number") {
+      }
+      if (setting.smoothNormals ?? true) {
+        finalGeometry.computeVertexNormals();
+      }
+      const object = new THREE.Mesh(finalGeometry, material);
       // set position
       object.position.set(setting.position[0], setting.position[1], setting.position[2]);
       if (typeof setting.renderOrder === "number") {
@@ -152,7 +165,7 @@ export class AnyMesh {
           transparent: edgeOpacity < 1,
           opacity: edgeOpacity,
         });
-        const edgeGeometry = new THREE.EdgesGeometry(geometry);
+        const edgeGeometry = new THREE.EdgesGeometry(finalGeometry);
         const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
         edgeLines.position.copy(object.position);
         edgeLines.renderOrder = (object.renderOrder ?? 0) + 0.1;
