@@ -62,9 +62,16 @@ export class SelectionManager {
       return;
     }
 
-    const object = intersects[0].object;
+    let object = intersects[0].object;
     const face = intersects[0].face;
     const point = intersects[0].point;
+    const parentMesh = object.parent?.isMesh ? object.parent : null;
+    if (object.isLineSegments && object.userData?.type === "anyMesh" && parentMesh) {
+      if (parentMesh.userData?.objectMode === "edit") {
+        return;
+      }
+      object = parentMesh;
+    }
     this.weas.activeObject = object;
     // object.userData.notSelectable is a flag to prevent selection of certain objects
     if (object.userData.notSelectable) {
