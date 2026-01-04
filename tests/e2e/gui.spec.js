@@ -103,9 +103,9 @@ test("Highlight Atoms", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("Highlight-cross.png");
 });
 
-test("Highlight Cross2D", async ({ page }) => {
+test("Highlight CrossView", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightCross2d.html");
-  await expect.soft(page).toHaveScreenshot("Highlight-cross2d.png");
+  await expect.soft(page).toHaveScreenshot("Highlight-crossView.png");
 });
 
 test("Text Manager", async ({ page }) => {
