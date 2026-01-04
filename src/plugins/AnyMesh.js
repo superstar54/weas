@@ -227,10 +227,10 @@ export class AnyMesh {
         }
         edgeLines.layers.set(layer);
         edgeLines.visible = setting.visible ?? true;
-        edgeLines.position.copy(object.position);
+        edgeLines.position.set(0, 0, 0);
         edgeLines.renderOrder = (object.renderOrder ?? 0) + 0.1;
         this.meshes.push(edgeLines);
-        this.scene.add(edgeLines);
+        object.add(edgeLines);
       }
     });
     this.updateLegend();
