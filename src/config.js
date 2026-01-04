@@ -42,13 +42,18 @@ const defaultGuiConfig = {
     atomsControl: true,
     colorControl: true,
     cameraControls: true,
+    meshControls: false,
   },
   timeline: {
     enabled: true, // Added this line to control timeline visibility
   },
-  legend: {
+  atomLegend: {
     enabled: false,
     position: "bottom-right", // Options: 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+  },
+  meshLegend: {
+    enabled: true,
+    position: "bottom-left", // Options: 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   },
   buttons: {
     enabled: true,
