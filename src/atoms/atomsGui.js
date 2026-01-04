@@ -9,6 +9,7 @@ class AtomsGUI {
     this.viewer = viewer;
     this.gui = gui;
     this.guiConfig = guiConfig;
+    this.atomLegendConfig = this.getAtomLegendConfig();
     this.isSyncing = false;
     this.tempBoundary = this.viewer.boundary.map((row) => row.slice());
     this.div = document.createElement("div");
@@ -142,10 +143,10 @@ class AtomsGUI {
 
     // Legend Toggle Control
     this.legendToggleController = atomsFolder
-      .add(this.guiConfig.legend, "enabled")
+      .add(this.atomLegendConfig, "enabled")
       .name("Show Legend")
       .onChange((value) => {
-        this.guiConfig.legend.enabled = value;
+        this.atomLegendConfig.enabled = value;
         this.updateLegend(); // Toggle legend visibility
       });
 
@@ -384,8 +385,18 @@ class AtomsGUI {
     this.legend.updateLegend();
   }
 
+  getAtomLegendConfig() {
+    if (!this.guiConfig.atomLegend && this.guiConfig.legend) {
+      this.guiConfig.atomLegend = this.guiConfig.legend;
+    }
+    if (!this.guiConfig.atomLegend) {
+      this.guiConfig.atomLegend = { enabled: false, position: "bottom-right" };
+    }
+    return this.guiConfig.atomLegend;
+  }
+
   setLegendPosition(legendContainer) {
-    const position = this.guiConfig.legend.position || "top-right";
+    const position = this.getAtomLegendConfig().position || "top-right";
     legendContainer.style.top = position.includes("top") ? "10px" : "";
     legendContainer.style.bottom = position.includes("bottom") ? "10px" : "";
     legendContainer.style.left = position.includes("left") ? "10px" : "";

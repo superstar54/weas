@@ -6,7 +6,7 @@ export default class AtomsLegend {
     this.guiConfig = guiConfig;
     this.legendSprites = [];
 
-    if (this.guiConfig.legend && this.guiConfig.legend.enabled) {
+    if (this.getLegendConfig().enabled) {
       this.addLegend();
     }
   }
@@ -21,7 +21,8 @@ export default class AtomsLegend {
     const yOffset = -2; // Adjust spacing
 
     // Determine position based on configuration
-    const position = this.guiConfig.legend.position || "top-right";
+    const legendConfig = this.getLegendConfig();
+    const position = legendConfig.position || "top-right";
     switch (position) {
       case "top-left":
         xStart = -0.9;
@@ -97,11 +98,15 @@ export default class AtomsLegend {
   }
 
   updateLegend() {
-    if (this.guiConfig.legend && this.guiConfig.legend.enabled) {
+    if (this.getLegendConfig().enabled) {
       this.addLegend();
     } else {
       this.removeLegend();
     }
+  }
+
+  getLegendConfig() {
+    return this.guiConfig.atomLegend || this.guiConfig.legend || { enabled: false, position: "top-right" };
   }
 }
 
