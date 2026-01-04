@@ -11,6 +11,7 @@ const targets = [
   path.join(rootDir, "docs", "source", "_examples", "anymesh.html"),
   path.join(rootDir, "docs", "source", "_examples", "mesh_primitive.html"),
   path.join(rootDir, "docs", "source", "_examples", "quickstart.html"),
+  path.join(rootDir, "docs", "source", "_examples", "text_labels.html"),
 ];
 
 const pattern = /https:\/\/unpkg\.com\/weas@[^/]+\/dist\/index\.mjs/g;
