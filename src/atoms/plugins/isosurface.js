@@ -1,7 +1,5 @@
 import * as THREE from "three";
-import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { marchingCubes } from "../../geometry/marchingCubes.js";
-import { clearObject } from "../../utils.js";
 import { cloneValue } from "../../state/store.js";
 
 function normalizeHexColor(color) {
@@ -92,7 +90,7 @@ export class Isosurface {
   reset() {
     /* Reset the isosurface */
     this.removeGui();
-    this.clearIossurfaces();
+    this.meshes = {};
     this.settings = {};
   }
   setSettings(settings) {
@@ -135,10 +133,9 @@ export class Isosurface {
   }
 
   clearIossurfaces() {
-    /* Remove highlighted atom meshes from the selectedAtomsMesh group */
-    Object.values(this.meshes).forEach((mesh) => {
-      clearObject(this.scene, mesh);
-    });
+    /* Remove isosurface entries from AnyMesh settings */
+    this.meshes = {};
+    this.updateAnyMeshSettings([]);
   }
 
   drawIsosurfaces() {
@@ -160,6 +157,7 @@ export class Isosurface {
       [cell[2][0] / dims[2], cell[2][1] / dims[2], cell[2][2] / dims[2]],
     ];
 
+    const nextAnyMeshSettings = [];
     Object.entries(this.settings).forEach(([name, setting]) => {
       // Generate isosurface geometry
       this.viewer.logger.debug("setting: ", setting);
@@ -191,90 +189,89 @@ export class Isosurface {
           return [x, y, z];
         });
 
-        let geometry = createGeometryFromMarchingCubesOutput(isoData.positions, isoData.cells, isoData.faceMaterials);
-        geometry = mergeVertices(geometry, 1e-5);
-        geometry.computeVertexNormals();
-        // Create materials
+        const vertices = isoData.positions.reduce((acc, pos) => {
+          acc.push(pos[0], pos[1], pos[2]);
+          return acc;
+        }, []);
+        const faces = Array.isArray(isoData.cells) ? isoData.cells : Array.from(isoData.cells || []);
+        const faceMaterials = Array.isArray(isoData.faceMaterials) ? isoData.faceMaterials : [];
+        const facesByMaterial = splitFacesByMaterial(faces, faceMaterials);
+        const meshName = `${name}-${i}`;
         const opacity = setting.opacity ?? 0.8;
-        const materials = [
-          new THREE.MeshStandardMaterial({
-            color: colors[i],
-            metalness: 0.1,
-            roughness: 0.01,
-            transparent: true, // Make it transparent
-            opacity,
-            side: THREE.DoubleSide, // Render both sides
-          }),
-          new THREE.MeshStandardMaterial({
+        const primaryFaces = facesByMaterial[0].length ? facesByMaterial[0] : faces;
+        nextAnyMeshSettings.push({
+          name: `${meshName}`,
+          vertices,
+          faces: primaryFaces,
+          color: colors[i],
+          opacity,
+          materialType: "Standard",
+          side: "DoubleSide",
+          depthWrite: true,
+          depthTest: true,
+          mergeVerticesTolerance: 1e-5,
+          smoothNormals: true,
+          selectable: false,
+          layer: 1,
+          userData: {
+            source: "isosurface",
+            isosurface: name,
+            modeIndex: i,
+            materialIndex: 0,
+          },
+        });
+        if (facesByMaterial[1].length) {
+          nextAnyMeshSettings.push({
+            name: `${meshName}-cap`,
+            vertices,
+            faces: facesByMaterial[1],
             color: "#c2f542",
-            metalness: 0.1,
-            roughness: 0.01,
-            transparent: true, // Make it transparent
             opacity,
-            side: THREE.DoubleSide, // Render both sides
-          }),
-        ];
-
-        // Create mesh
-        var mesh = new THREE.Mesh(geometry, materials);
-        if (Array.isArray(mesh.material)) {
-          mesh.material.forEach((material) => {
-            material.flatShading = false;
-            material.needsUpdate = true;
+            materialType: "Standard",
+            side: "DoubleSide",
+            depthWrite: true,
+            depthTest: true,
+            mergeVerticesTolerance: 1e-5,
+            smoothNormals: true,
+            selectable: false,
+            layer: 1,
+            userData: {
+              source: "isosurface",
+              isosurface: name,
+              modeIndex: i,
+              materialIndex: 1,
+            },
           });
-        } else {
-          mesh.material.flatShading = false;
-          mesh.material.needsUpdate = true;
         }
-        // mesh.position.copy(setting.center);
-        mesh.userData.type = "isosurface";
-        mesh.userData.uuid = this.viewer.uuid;
-        mesh.userData.notSelectable = true;
-        mesh.layers.set(1);
-
-        // Add mesh to the scene
-        this.scene.add(mesh);
-        this.meshes[name] = mesh;
+        this.meshes[meshName] = meshName;
       }
     });
-    // call the render function to update the scene
-    this.viewer.requestRedraw?.("render");
+    this.updateAnyMeshSettings(nextAnyMeshSettings);
+  }
+
+  updateAnyMeshSettings(nextIsosurfaceSettings) {
+    const anyMesh = this.viewer?.weas?.anyMesh;
+    if (!anyMesh || typeof anyMesh.setSettings !== "function") {
+      return;
+    }
+    const currentSettings = Array.isArray(anyMesh.settings) ? anyMesh.settings : [];
+    const preserved = currentSettings.filter((setting) => setting?.userData?.source !== "isosurface");
+    anyMesh.setSettings([...preserved, ...nextIsosurfaceSettings]);
   }
 }
 
-function createGeometryFromMarchingCubesOutput(positions, cells, faceMaterials) {
-  /* Create a geometry from the output of the marching cubes algorithm */
-  var geometry = new THREE.BufferGeometry();
-  var vertices = [];
-  var indices = [];
-  var indicesByMaterial = [[], []]; // Two materials: internal (0) and boundary (1)
-
-  // Convert positions to vertices array
-  positions.forEach(function (pos) {
-    vertices.push(pos[0], pos[1], pos[2]);
-  });
-
-  // Add vertices to the geometry
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-
-  // Process cells and faceMaterials to create index arrays per material
+function splitFacesByMaterial(cells, faceMaterials) {
+  const facesByMaterial = [[], []];
+  if (!Array.isArray(cells) || cells.length === 0) {
+    return facesByMaterial;
+  }
+  if (!Array.isArray(faceMaterials) || faceMaterials.length === 0) {
+    facesByMaterial[0] = cells.slice();
+    return facesByMaterial;
+  }
   for (let i = 0; i < cells.length; i += 3) {
-    const materialIndex = faceMaterials[i / 3];
-    indicesByMaterial[materialIndex].push(cells[i], cells[i + 1], cells[i + 2]);
+    const materialIndex = faceMaterials[i / 3] === 1 ? 1 : 0;
+    facesByMaterial[materialIndex].push(cells[i], cells[i + 1], cells[i + 2]);
   }
-
-  // Concatenate indices and set up groups
-  var allIndices = [];
-  var groupStart = 0;
-  for (let materialIndex = 0; materialIndex <= 1; materialIndex++) {
-    const indicesForMaterial = indicesByMaterial[materialIndex];
-    const count = indicesForMaterial.length;
-    geometry.addGroup(groupStart, count, materialIndex);
-    allIndices = allIndices.concat(indicesForMaterial);
-    groupStart += count;
-  }
-
-  geometry.setIndex(allIndices);
-
-  return geometry;
+  return facesByMaterial;
 }

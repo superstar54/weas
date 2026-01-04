@@ -10,7 +10,9 @@ class GUIManager {
     const mergedButtons = { ...defaultGuiConfig.buttons, ...(guiConfig?.buttons || {}) };
     const mergedControls = { ...defaultGuiConfig.controls, ...(guiConfig?.controls || {}) };
     const mergedTimeline = { ...defaultGuiConfig.timeline, ...(guiConfig?.timeline || {}) };
-    const mergedLegend = { ...defaultGuiConfig.legend, ...(guiConfig?.legend || {}) };
+    const legendOverride = guiConfig?.atomLegend || guiConfig?.legend || {};
+    const mergedLegend = { ...defaultGuiConfig.atomLegend, ...legendOverride };
+    const mergedMeshLegend = { ...defaultGuiConfig.meshLegend, ...(guiConfig?.meshLegend || {}) };
     const mergedButtonStyle = { ...defaultGuiConfig.buttonStyle, ...(guiConfig?.buttonStyle || {}) };
     this.guiConfig = {
       ...defaultGuiConfig,
@@ -18,7 +20,9 @@ class GUIManager {
       buttons: mergedButtons,
       controls: mergedControls,
       timeline: mergedTimeline,
+      atomLegend: mergedLegend,
       legend: mergedLegend,
+      meshLegend: mergedMeshLegend,
       buttonStyle: mergedButtonStyle,
     };
     this.gui = new GUI();

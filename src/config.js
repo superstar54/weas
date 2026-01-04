@@ -48,7 +48,7 @@ const defaultGuiConfig = {
     enabled: true, // Added this line to control timeline visibility
   },
   atomLegend: {
-    enabled: true,
+    enabled: false,
     position: "bottom-right", // Options: 'top-right', 'top-left', 'bottom-right', 'bottom-left'
   },
   meshLegend: {
