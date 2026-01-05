@@ -22,6 +22,8 @@ export class TransformControls {
   init() {
     this.translatePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     this.translateVector = new THREE.Vector3();
+    this.translateAxisLock = null;
+    this.translateAxis = new THREE.Vector3();
     this.rotationMatrix = new THREE.Matrix4();
     this.centroid = new THREE.Vector3();
     this.centroidNDC = new THREE.Vector2();
@@ -43,17 +45,33 @@ export class TransformControls {
 
   enterMode(mode, mousePosition) {
     this.mode = mode;
+    if (this.weas.avr.selectedAtomsIndices.length === 0 && this.weas.selectionManager.selectedObjects.length === 0) {
+      this.mode = null;
+      this.weas.selectionManager.hideAxisVisuals();
+      this.weas.selectionManager.setModeHint("Select atoms (or objects) first");
+      return;
+    }
     this.cameraDirection = new THREE.Vector3(0, 0, -1);
     this.cameraDirection.applyQuaternion(this.tjs.camera.quaternion);
     if (this.mode === "translate") {
       // Get the camera's forward direction (negative z-axis in world space)
       // Update the plane's normal
       this.translatePlane.normal.copy(this.cameraDirection);
+      this.translateAxisLock = null;
+      this.weas.selectionManager.hideTranslateAxisLine();
+      this.weas.selectionManager.setModeHint("Translate mode: move mouse to translate, press X/Y/Z to lock");
     } else if (this.mode === "rotate") {
       this.weas.selectionManager.showAxisVisuals();
       this.refreshRotationPivot();
+      if (!this.mode) {
+        this.weas.selectionManager.hideAxisVisuals();
+        this.weas.selectionManager.setModeHint("");
+        return;
+      }
+      this.weas.selectionManager.setModeHint("Rotate mode: move mouse to rotate, press A to set axis");
     } else if (this.mode === "scale") {
       this.getCentroidNDC();
+      this.weas.selectionManager.setModeHint("Scale mode: move mouse to scale, click to confirm");
     }
     this.initialMousePosition = mousePosition.clone();
     this.storeInitialObjectState();
@@ -91,7 +109,13 @@ export class TransformControls {
     this.mode = null;
     if (mode === "rotate") {
       this.weas.selectionManager.hideAxisVisuals();
+      this.weas.selectionManager.stopAxisPicking();
     }
+    if (mode === "translate") {
+      this.weas.selectionManager.hideTranslateAxisLine();
+      this.translateAxisLock = null;
+    }
+    this.weas.selectionManager.setModeHint("");
     this.initialAtomPositions.clear();
     // TODO: This is a temporary solution to fix the issue of intersection not working after moving atoms
     // after moving the atoms, the intersection does not work anymore
@@ -115,7 +139,13 @@ export class TransformControls {
     this.weas.ops.hideGUI();
     if (mode === "rotate") {
       this.weas.selectionManager.hideAxisVisuals();
+      this.weas.selectionManager.stopAxisPicking();
     }
+    if (mode === "translate") {
+      this.weas.selectionManager.hideTranslateAxisLine();
+      this.translateAxisLock = null;
+    }
+    this.weas.selectionManager.setModeHint("");
     // reset the selected objects positions, scales, and rotations
     this.weas.selectionManager.selectedObjects.forEach((object) => {
       const initialObjectState = this.initialObjectState.get(object.uuid);
@@ -165,16 +195,18 @@ export class TransformControls {
     this.rotationCentroid.set(0, 0, 0);
     const axisAtoms = this.weas.selectionManager.axisAtomIndices || [];
     const selectedAtoms = this.weas.avr.selectedAtomsIndices;
-    const axisIndices = axisAtoms.length === 2 ? axisAtoms : selectedAtoms.length === 2 ? selectedAtoms : null;
-    if (axisIndices) {
-      const first = new THREE.Vector3(...this.weas.avr.atoms.positions[axisIndices[0]]);
-      const second = new THREE.Vector3(...this.weas.avr.atoms.positions[axisIndices[1]]);
+    if (axisAtoms.length === 2) {
+      const first = new THREE.Vector3(...this.weas.avr.atoms.positions[axisAtoms[0]]);
+      const second = new THREE.Vector3(...this.weas.avr.atoms.positions[axisAtoms[1]]);
       const axis = second.clone().sub(first);
       if (axis.lengthSq() > 0) {
         this.rotationAxis.copy(axis.normalize());
         this.rotationCentroid.copy(first.clone().add(second).multiplyScalar(0.5));
         return;
       }
+    } else if (axisAtoms.length === 1) {
+      this.rotationCentroid.copy(new THREE.Vector3(...this.weas.avr.atoms.positions[axisAtoms[0]]));
+      return;
     }
     if (selectedAtoms.length > 0) {
       selectedAtoms.forEach((atomIndex) => {
@@ -226,7 +258,12 @@ export class TransformControls {
     const currentWorldPosition = getWorldPositionFromScreen(this.tjs.camera, newNDC, this.translatePlane);
     const initialNDC = this.getNDC(previousMousePosition);
     const previousWorldPosition = getWorldPositionFromScreen(this.tjs.camera, initialNDC, this.translatePlane);
-    return currentWorldPosition.sub(previousWorldPosition);
+    const delta = currentWorldPosition.sub(previousWorldPosition);
+    if (!this.translateAxisLock) {
+      return delta;
+    }
+    const projected = this.translateAxis.clone().multiplyScalar(delta.dot(this.translateAxis));
+    return projected;
   }
 
   rotateSelectedObjects(event) {
@@ -247,6 +284,44 @@ export class TransformControls {
       this.weas.objectManager.scaleSelectedObjects({ scale: scaleVector });
       this.weas.selectionManager.refreshAxisLine();
     }
+  }
+
+  setTranslateAxisLock(axisKey) {
+    if (!axisKey) {
+      this.translateAxisLock = null;
+      this.weas.selectionManager.hideTranslateAxisLine();
+      this.weas.selectionManager.setModeHint("Translate mode: move mouse to translate, press X/Y/Z to lock");
+      return;
+    }
+    this.translateAxisLock = axisKey;
+    if (axisKey === "x") {
+      this.translateAxis.set(1, 0, 0);
+    } else if (axisKey === "y") {
+      this.translateAxis.set(0, 1, 0);
+    } else {
+      this.translateAxis.set(0, 0, 1);
+    }
+    const centroid = this.getSelectionCentroid();
+    this.weas.selectionManager.showTranslateAxisLine(centroid, this.translateAxis);
+    this.weas.selectionManager.setModeHint(`Translate mode: locked to ${axisKey.toUpperCase()} axis`);
+  }
+
+  getSelectionCentroid() {
+    const centroid = new THREE.Vector3(0, 0, 0);
+    if (this.weas.avr.selectedAtomsIndices.length > 0) {
+      this.weas.avr.selectedAtomsIndices.forEach((atomIndex) => {
+        centroid.add(new THREE.Vector3(...this.weas.avr.atoms.positions[atomIndex]));
+      });
+      centroid.divideScalar(this.weas.avr.selectedAtomsIndices.length);
+      return centroid;
+    }
+    if (this.weas.selectionManager.selectedObjects.length > 0) {
+      this.weas.selectionManager.selectedObjects.forEach((object) => {
+        centroid.add(object.position);
+      });
+      centroid.divideScalar(this.weas.selectionManager.selectedObjects.length);
+    }
+    return centroid;
   }
 
   getScaleVector(currentMousePosition, previousMousePosition) {

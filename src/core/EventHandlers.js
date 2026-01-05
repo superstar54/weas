@@ -86,8 +86,23 @@ class EventHandlers {
 
   onKeyDown(event) {
     // Implement the logic for key down events
+    if (this.transformControls.mode === "translate" && (event.key === "x" || event.key === "y" || event.key === "z")) {
+      const key = event.key.toLowerCase();
+      if (this.transformControls.translateAxisLock === key) {
+        this.transformControls.setTranslateAxisLock(null);
+      } else {
+        this.transformControls.setTranslateAxisLock(key);
+      }
+      return;
+    }
     if (this.transformControls.mode === "rotate" && event.key === "a") {
-      this.weas.selectionManager.startAxisPicking();
+      if (this.weas.selectionManager.isAxisPicking) {
+        this.weas.selectionManager.stopAxisPicking();
+        this.transformControls.refreshRotationPivot();
+        this.transformControls.initialMousePosition = this.currentMousePosition.clone();
+      } else {
+        this.weas.selectionManager.startAxisPicking();
+      }
       return;
     }
     if (event.ctrlKey || event.metaKey) {
@@ -167,11 +182,9 @@ class EventHandlers {
   onMouseClick(event) {
     // Handle mouse click to confirm the operation and exit the current transform mode.
     if (this.transformControls.mode === "rotate" && this.weas.selectionManager.isAxisPicking) {
-      const picked = this.weas.selectionManager.pickAxisAtom(event);
-      if (picked && this.weas.selectionManager.axisAtomIndices.length === 2) {
-        this.transformControls.refreshRotationPivot();
-        this.transformControls.initialMousePosition = this.currentMousePosition.clone();
-      }
+      this.weas.selectionManager.pickAxisAtom(event);
+      this.transformControls.refreshRotationPivot();
+      this.transformControls.initialMousePosition = this.currentMousePosition.clone();
       return;
     }
     if (this.transformControls.mode) {

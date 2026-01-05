@@ -22,6 +22,9 @@ export class SelectionManager {
     this.axisLine = null;
     this.isAxisPicking = false;
     this.axisVisible = false;
+    this.modeHint = null;
+    this.translateAxisLine = null;
+    this.translateAxisLength = 20;
 
     this.raycaster = new THREE.Raycaster();
     // only interact with layer 0
@@ -34,6 +37,7 @@ export class SelectionManager {
     this.selectionBox = new SelectionBox(this.tjs.camera, this.tjs.scene);
     this.helper = new SelectionHelper(this.tjs.renderers["MainRenderer"].renderer, "selectBox");
     this.lassoHelper = new LassoHelper(this.tjs.renderers["MainRenderer"].renderer, "lassoSelect");
+    this.initModeHint();
     window.addEventListener("pointerdown", this.onMouseDown.bind(this), false);
   }
 
@@ -48,6 +52,9 @@ export class SelectionManager {
     });
     this._selectedObjects = objects;
     this.highlightSelectedObjects();
+    if (objects.length > 0 && !this.weas.eventHandlers?.transformControls?.mode) {
+      this.setModeHint("");
+    }
   }
 
   onMouseDown(event) {
@@ -208,13 +215,14 @@ export class SelectionManager {
   startAxisPicking() {
     this.isAxisPicking = true;
     this.axisVisible = true;
-    this.axisAtomIndices = [];
     this.updateAxisHighlight();
     this.updateAxisLine();
+    this.setModeHint("Axis pick: click 1 or 2 atoms, press A to exit");
   }
 
   stopAxisPicking() {
     this.isAxisPicking = false;
+    this.setModeHint("Rotate mode: move mouse to rotate, click to confirm");
   }
 
   clearAxis() {
@@ -328,8 +336,20 @@ export class SelectionManager {
       });
       highlightManager.drawHighlightAtoms();
     }
+    if (!highlightManager.settings["axisCenter"]) {
+      highlightManager.addSetting("axisCenter", {
+        indices: [],
+        scale: 0.8,
+        type: "cross",
+        color: "#ff8800",
+        opacity: 0.9,
+      });
+      highlightManager.drawHighlightAtoms();
+    }
     const indices = this.axisVisible ? this.axisAtomIndices : [];
     highlightManager.settings["axis"].indices = [...indices];
+    const centerIndices = this.axisVisible && this.axisAtomIndices.length === 1 ? [...this.axisAtomIndices] : [];
+    highlightManager.settings["axisCenter"].indices = [...centerIndices];
     highlightManager.updateHighlightAtomsMesh(
       {
         indices,
@@ -342,6 +362,16 @@ export class SelectionManager {
         thickness: 0.08,
       },
       "axis",
+    );
+    highlightManager.updateHighlightAtomsMesh(
+      {
+        indices: centerIndices,
+        scale: 0.8,
+        type: "cross",
+        color: "#ff8800",
+        opacity: 0.9,
+      },
+      "axisCenter",
     );
     highlightManager.updateLabelSizes?.(this.tjs.camera, this.tjs.renderers?.MainRenderer?.renderer);
     this.weas?.avr?.requestRedraw?.("render");
@@ -411,6 +441,76 @@ export class SelectionManager {
     this.updateAxisHighlight();
     this.updateAxisLine();
     this.weas?.avr?.requestRedraw?.("render");
+  }
+
+  showTranslateAxisLine(center, axis) {
+    if (!center || !axis) {
+      return;
+    }
+    const direction = axis.clone().normalize();
+    const start = center.clone().addScaledVector(direction, -this.translateAxisLength);
+    const end = center.clone().addScaledVector(direction, this.translateAxisLength);
+    if (!this.translateAxisLine) {
+      const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+      const material = new THREE.LineDashedMaterial({
+        color: 0x55aaff,
+        dashSize: 0.6,
+        gapSize: 0.4,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+      });
+      this.translateAxisLine = new THREE.Line(geometry, material);
+      this.translateAxisLine.computeLineDistances();
+      this.translateAxisLine.userData.notSelectable = true;
+      this.translateAxisLine.layers.set(1);
+      this.translateAxisLine.renderOrder = 999;
+      this.tjs.scene.add(this.translateAxisLine);
+    } else {
+      this.translateAxisLine.geometry.setFromPoints([start, end]);
+      this.translateAxisLine.geometry.attributes.position.needsUpdate = true;
+      this.translateAxisLine.geometry.computeBoundingSphere();
+      this.translateAxisLine.computeLineDistances();
+    }
+    this.weas?.avr?.requestRedraw?.("render");
+  }
+
+  hideTranslateAxisLine() {
+    if (!this.translateAxisLine) {
+      return;
+    }
+    this.tjs.scene.remove(this.translateAxisLine);
+    this.translateAxisLine.geometry.dispose();
+    this.translateAxisLine.material.dispose();
+    this.translateAxisLine = null;
+    this.weas?.avr?.requestRedraw?.("render");
+  }
+
+  initModeHint() {
+    const parent = this.tjs.renderers?.MainRenderer?.renderer?.domElement?.parentElement;
+    if (!parent || this.modeHint) {
+      return;
+    }
+    this.modeHint = document.createElement("div");
+    this.modeHint.className = "weas-mode-hint";
+    this.modeHint.style.display = "none";
+    parent.appendChild(this.modeHint);
+  }
+
+  setModeHint(text) {
+    if (!this.modeHint) {
+      this.initModeHint();
+    }
+    if (!this.modeHint) {
+      return;
+    }
+    if (!text) {
+      this.modeHint.style.display = "none";
+      this.modeHint.textContent = "";
+      return;
+    }
+    this.modeHint.textContent = text;
+    this.modeHint.style.display = "block";
   }
 
   getViewerPoint(event) {
