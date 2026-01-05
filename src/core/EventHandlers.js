@@ -95,6 +95,15 @@ class EventHandlers {
       }
       return;
     }
+    if (this.transformControls.mode === "rotate" && (event.key === "x" || event.key === "y" || event.key === "z")) {
+      const key = event.key.toLowerCase();
+      if (this.transformControls.rotationAxisLockKey === key) {
+        this.transformControls.setRotateAxisLock(null);
+      } else {
+        this.transformControls.setRotateAxisLock(key);
+      }
+      return;
+    }
     if (this.transformControls.mode === "rotate" && event.key === "a") {
       if (this.weas.selectionManager.isAxisPicking) {
         this.weas.selectionManager.stopAxisPicking();

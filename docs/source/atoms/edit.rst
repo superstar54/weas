@@ -55,6 +55,7 @@ To rotate around a custom axis, press ``r`` to enter rotate mode, then press ``a
 One atom sets the rotation center (camera axis), two atoms define the bond axis.
 The axis is shown with orange crosses and a long orange line (for two atoms), and stays active until you redefine it.
 Press ``a`` again to exit axis picking and rotate; click an axis atom again to deselect it.
+Press ``r`` then ``x``, ``y``, or ``z`` to lock rotation to a world axis (press the same key again to unlock).
 
 Translate Axis Lock
 =======================

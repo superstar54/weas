@@ -24,6 +24,9 @@ export class TransformControls {
     this.translateVector = new THREE.Vector3();
     this.translateAxisLock = null;
     this.translateAxis = new THREE.Vector3();
+    this.rotationAxisLock = null;
+    this.rotationAxis = new THREE.Vector3();
+    this.rotationAxisLockKey = null;
     this.rotationMatrix = new THREE.Matrix4();
     this.centroid = new THREE.Vector3();
     this.centroidNDC = new THREE.Vector2();
@@ -62,13 +65,16 @@ export class TransformControls {
       this.weas.selectionManager.setModeHint("Translate mode: move mouse to translate, press X/Y/Z to lock");
     } else if (this.mode === "rotate") {
       this.weas.selectionManager.showAxisVisuals();
+      this.rotationAxisLock = null;
+      this.rotationAxisLockKey = null;
+      this.weas.selectionManager.hideRotateAxisLine();
       this.refreshRotationPivot();
       if (!this.mode) {
         this.weas.selectionManager.hideAxisVisuals();
         this.weas.selectionManager.setModeHint("");
         return;
       }
-      this.weas.selectionManager.setModeHint("Rotate mode: move mouse to rotate, press A to set axis");
+      this.weas.selectionManager.setModeHint("Rotate mode: move mouse to rotate, press A to set axis, X/Y/Z to lock");
     } else if (this.mode === "scale") {
       this.getCentroidNDC();
       this.weas.selectionManager.setModeHint("Scale mode: move mouse to scale, click to confirm");
@@ -110,6 +116,9 @@ export class TransformControls {
     if (mode === "rotate") {
       this.weas.selectionManager.hideAxisVisuals();
       this.weas.selectionManager.stopAxisPicking();
+      this.weas.selectionManager.hideRotateAxisLine();
+      this.rotationAxisLock = null;
+      this.rotationAxisLockKey = null;
     }
     if (mode === "translate") {
       this.weas.selectionManager.hideTranslateAxisLine();
@@ -140,6 +149,9 @@ export class TransformControls {
     if (mode === "rotate") {
       this.weas.selectionManager.hideAxisVisuals();
       this.weas.selectionManager.stopAxisPicking();
+      this.weas.selectionManager.hideRotateAxisLine();
+      this.rotationAxisLock = null;
+      this.rotationAxisLockKey = null;
     }
     if (mode === "translate") {
       this.weas.selectionManager.hideTranslateAxisLine();
@@ -193,6 +205,12 @@ export class TransformControls {
   updateRotationReference() {
     this.rotationAxis.copy(this.cameraDirection);
     this.rotationCentroid.set(0, 0, 0);
+    if (this.rotationAxisLock) {
+      this.rotationAxis.copy(this.rotationAxisLock);
+      const pivot = this.getSelectionCentroid();
+      this.rotationCentroid.copy(pivot);
+      return;
+    }
     const axisAtoms = this.weas.selectionManager.axisAtomIndices || [];
     const selectedAtoms = this.weas.avr.selectedAtomsIndices;
     if (axisAtoms.length === 2) {
@@ -304,6 +322,35 @@ export class TransformControls {
     const centroid = this.getSelectionCentroid();
     this.weas.selectionManager.showTranslateAxisLine(centroid, this.translateAxis);
     this.weas.selectionManager.setModeHint(`Translate mode: locked to ${axisKey.toUpperCase()} axis`);
+  }
+
+  setRotateAxisLock(axisKey) {
+    if (!axisKey) {
+      this.rotationAxisLock = null;
+      this.rotationAxisLockKey = null;
+      this.weas.selectionManager.hideRotateAxisLine();
+      this.weas.selectionManager.setModeHint("Rotate mode: move mouse to rotate, press A to set axis, X/Y/Z to lock");
+      this.refreshRotationPivot();
+      if (this.eventHandler?.currentMousePosition) {
+        this.initialMousePosition = this.eventHandler.currentMousePosition.clone();
+      }
+      return;
+    }
+    this.rotationAxisLockKey = axisKey;
+    if (axisKey === "x") {
+      this.rotationAxisLock = new THREE.Vector3(1, 0, 0);
+    } else if (axisKey === "y") {
+      this.rotationAxisLock = new THREE.Vector3(0, 1, 0);
+    } else {
+      this.rotationAxisLock = new THREE.Vector3(0, 0, 1);
+    }
+    const centroid = this.getSelectionCentroid();
+    this.weas.selectionManager.showRotateAxisLine(centroid, this.rotationAxisLock);
+    this.weas.selectionManager.setModeHint(`Rotate mode: locked to ${axisKey.toUpperCase()} axis`);
+    this.refreshRotationPivot();
+    if (this.eventHandler?.currentMousePosition) {
+      this.initialMousePosition = this.eventHandler.currentMousePosition.clone();
+    }
   }
 
   getSelectionCentroid() {

@@ -25,6 +25,8 @@ export class SelectionManager {
     this.modeHint = null;
     this.translateAxisLine = null;
     this.translateAxisLength = 20;
+    this.rotateAxisLine = null;
+    this.rotateAxisLength = 20;
 
     this.raycaster = new THREE.Raycaster();
     // only interact with layer 0
@@ -483,6 +485,49 @@ export class SelectionManager {
     this.translateAxisLine.geometry.dispose();
     this.translateAxisLine.material.dispose();
     this.translateAxisLine = null;
+    this.weas?.avr?.requestRedraw?.("render");
+  }
+
+  showRotateAxisLine(center, axis) {
+    if (!center || !axis) {
+      return;
+    }
+    const direction = axis.clone().normalize();
+    const start = center.clone().addScaledVector(direction, -this.rotateAxisLength);
+    const end = center.clone().addScaledVector(direction, this.rotateAxisLength);
+    if (!this.rotateAxisLine) {
+      const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+      const material = new THREE.LineDashedMaterial({
+        color: 0xffaa55,
+        dashSize: 0.6,
+        gapSize: 0.4,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+      });
+      this.rotateAxisLine = new THREE.Line(geometry, material);
+      this.rotateAxisLine.computeLineDistances();
+      this.rotateAxisLine.userData.notSelectable = true;
+      this.rotateAxisLine.layers.set(1);
+      this.rotateAxisLine.renderOrder = 999;
+      this.tjs.scene.add(this.rotateAxisLine);
+    } else {
+      this.rotateAxisLine.geometry.setFromPoints([start, end]);
+      this.rotateAxisLine.geometry.attributes.position.needsUpdate = true;
+      this.rotateAxisLine.geometry.computeBoundingSphere();
+      this.rotateAxisLine.computeLineDistances();
+    }
+    this.weas?.avr?.requestRedraw?.("render");
+  }
+
+  hideRotateAxisLine() {
+    if (!this.rotateAxisLine) {
+      return;
+    }
+    this.tjs.scene.remove(this.rotateAxisLine);
+    this.rotateAxisLine.geometry.dispose();
+    this.rotateAxisLine.material.dispose();
+    this.rotateAxisLine = null;
     this.weas?.avr?.requestRedraw?.("render");
   }
 
