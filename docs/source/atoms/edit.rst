@@ -8,7 +8,8 @@ Selection
 =======================
 
 - `Click` the atom to select it. Click again to deselect.
-- `Shift + drag` to select multiple atoms. Support accumulation of selection.
+- `Shift + drag` to select multiple atoms with a box. Support accumulation of selection.
+- `Shift + Alt + drag` to select multiple atoms with a lasso. Support accumulation of selection.
 
 
 Advanced Selection
