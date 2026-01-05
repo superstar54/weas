@@ -4,6 +4,12 @@
   position: fixed;
 }
 
+.lassoSelect {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
 #animation-controls {
   position: absolute;
   bottom: 0;

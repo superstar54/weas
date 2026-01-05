@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { createOutline, removeOutline } from "./ObjectManager.js";
 import { SelectionBox } from "three/examples/jsm/interactive/SelectionBox.js";
 import { SelectionHelper } from "../three/SelectionHelper.js";
+import { LassoHelper } from "../three/LassoHelper.js";
 
 export class SelectionManager {
   constructor(weas) {
@@ -12,6 +13,10 @@ export class SelectionManager {
     this.tjs = weas.tjs;
     this._selectedObjects = [];
     this.selectedInstances = {}; // {object.uuid: [vertexId1, vertexId2, ...]}
+    this.lassoPoints = [];
+    this.isLassoing = false;
+    this.oldSelectedAtomsIndices = [];
+    this.oldSelectedObjects = [];
 
     this.raycaster = new THREE.Raycaster();
     // only interact with layer 0
@@ -23,6 +28,7 @@ export class SelectionManager {
   init() {
     this.selectionBox = new SelectionBox(this.tjs.camera, this.tjs.scene);
     this.helper = new SelectionHelper(this.tjs.renderers["MainRenderer"].renderer, "selectBox");
+    this.lassoHelper = new LassoHelper(this.tjs.renderers["MainRenderer"].renderer, "lassoSelect");
     window.addEventListener("pointerdown", this.onMouseDown.bind(this), false);
   }
 
@@ -157,6 +163,43 @@ export class SelectionManager {
     this.selectedObjects = [...new Set([...this.oldSelectedObjects, ...this.selectionBox.collection])];
   }
 
+  startLasso(event) {
+    const { point, rect } = this.getViewerPoint(event);
+    this.lassoPoints = [point];
+    this.isLassoing = true;
+    this.lassoHelper.start(this.lassoPoints, rect);
+  }
+
+  dragLasso(event) {
+    if (!this.isLassoing) {
+      return;
+    }
+    const { point, rect } = this.getViewerPoint(event);
+    const lastPoint = this.lassoPoints[this.lassoPoints.length - 1];
+    const dx = point.x - lastPoint.x;
+    const dy = point.y - lastPoint.y;
+    if (dx * dx + dy * dy < 4) {
+      return;
+    }
+    this.lassoPoints.push(point);
+    this.lassoHelper.update(this.lassoPoints, rect);
+  }
+
+  finishLasso() {
+    if (!this.isLassoing) {
+      return;
+    }
+    this.isLassoing = false;
+    this.lassoHelper.finish();
+    const points = this.lassoPoints;
+    this.lassoPoints = [];
+    if (points.length < 3) {
+      return;
+    }
+    const selectedIndices = this.getAtomsInsideLasso(points);
+    this.weas.avr.selectedAtomsIndices = [...new Set([...this.oldSelectedAtomsIndices, ...selectedIndices])];
+  }
+
   clearSelection() {
     // remove outlines
     this.selectedObjects.forEach((object) => {
@@ -205,6 +248,37 @@ export class SelectionManager {
       createOutline(object, 1.1);
     });
   }
+
+  getViewerPoint(event) {
+    const rect = this.tjs.updateViewerRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    return { point: { x, y }, rect };
+  }
+
+  getAtomsInsideLasso(points) {
+    const atoms = this.weas.avr.atoms;
+    if (!atoms || !Array.isArray(atoms.positions)) {
+      return [];
+    }
+    const rect = this.tjs.updateViewerRect();
+    const camera = this.tjs.camera;
+    const selected = [];
+    const projected = new THREE.Vector3();
+
+    for (let i = 0; i < atoms.positions.length; i++) {
+      projected.set(...atoms.positions[i]).project(camera);
+      if (projected.z < -1 || projected.z > 1) {
+        continue;
+      }
+      const screenX = (projected.x + 1) * 0.5 * rect.width;
+      const screenY = (-projected.y + 1) * 0.5 * rect.height;
+      if (pointInPolygon(screenX, screenY, points)) {
+        selected.push(i);
+      }
+    }
+    return selected;
+  }
 }
 
 function getClosestVertex(object, face, point) {
@@ -227,4 +301,19 @@ function getClosestVertex(object, face, point) {
   });
 
   return closestVertex;
+}
+
+function pointInPolygon(x, y, polygon) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+    const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersect) {
+      inside = !inside;
+    }
+  }
+  return inside;
 }

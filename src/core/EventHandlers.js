@@ -43,6 +43,9 @@ class EventHandlers {
     // Implement the logic for mouse down events
     this.isMouseDown = true;
     this.mouseDownPosition.set(event.clientX, event.clientY);
+    if (event.shiftKey && event.altKey && this.transformControls.mode === null) {
+      this.weas.selectionManager.startLasso(event);
+    }
   }
 
   onMouseUp(event) {
@@ -50,6 +53,7 @@ class EventHandlers {
     this.isMouseDown = false;
     this.isDragging = false;
     this.mouseUpPosition.set(event.clientX, event.clientY);
+    this.weas.selectionManager.finishLasso();
   }
 
   onMouseMove(event) {
@@ -70,6 +74,8 @@ class EventHandlers {
 
     if (this.transformControls.mode !== null) {
       this.transformControls.onMouseMove(event);
+    } else if (this.isMouseDown && event.shiftKey && event.altKey) {
+      this.weas.selectionManager.dragLasso(event);
     } else if (this.isMouseDown && event.shiftKey) {
       this.weas.selectionManager.dragSelection(event);
     }
