@@ -24,8 +24,8 @@ class SelectionHelper {
     }.bind(this);
 
     this.onPointerMove = function (event) {
-      // if shift key is not pressed, return
-      if (!event.shiftKey) {
+      // if shift key is not pressed or lasso mode is active, return
+      if (!event.shiftKey || event.altKey) {
         return;
       }
 
