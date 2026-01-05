@@ -46,6 +46,9 @@ Move, Rotate
 =======================
 
 Select the atoms, and press the transform Shortcut, and move your mouse
+If exactly two atoms are selected, rotation uses the bond axis between them.
+To rotate around a custom bond axis, press ``r`` to enter rotate mode, then press ``a`` and click two atoms to define the axis.
+The axis is shown with orange crosses and a long orange line, and stays active until you redefine it.
 
 - ``g``, move
 - ``r``, rotate

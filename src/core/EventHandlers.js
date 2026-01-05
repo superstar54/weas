@@ -73,6 +73,9 @@ class EventHandlers {
     }
 
     if (this.transformControls.mode !== null) {
+      if (this.transformControls.mode === "rotate" && this.weas.selectionManager.isAxisPicking) {
+        return;
+      }
       this.transformControls.onMouseMove(event);
     } else if (this.isMouseDown && event.shiftKey && event.altKey) {
       this.weas.selectionManager.dragLasso(event);
@@ -83,6 +86,10 @@ class EventHandlers {
 
   onKeyDown(event) {
     // Implement the logic for key down events
+    if (this.transformControls.mode === "rotate" && event.key === "a") {
+      this.weas.selectionManager.startAxisPicking();
+      return;
+    }
     if (event.ctrlKey || event.metaKey) {
       // metaKey is for MacOS
       switch (event.key) {
@@ -159,6 +166,14 @@ class EventHandlers {
 
   onMouseClick(event) {
     // Handle mouse click to confirm the operation and exit the current transform mode.
+    if (this.transformControls.mode === "rotate" && this.weas.selectionManager.isAxisPicking) {
+      const picked = this.weas.selectionManager.pickAxisAtom(event);
+      if (picked && this.weas.selectionManager.axisAtomIndices.length === 2) {
+        this.transformControls.refreshRotationPivot();
+        this.transformControls.initialMousePosition = this.currentMousePosition.clone();
+      }
+      return;
+    }
     if (this.transformControls.mode) {
       this.transformControls.confirmOperation();
       return;

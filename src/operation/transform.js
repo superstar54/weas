@@ -32,6 +32,7 @@ class TranslateOperation extends BaseOperation {
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
     this.weas.avr.translateSelectedAtoms({ translateVector: this.vector, indices: this.selectedAtomsIndices });
     this.weas.objectManager.translateSelectedObjects({ translateVector: this.vector });
+    this.weas.selectionManager.refreshAxisLine();
   }
 
   undo() {
@@ -41,6 +42,7 @@ class TranslateOperation extends BaseOperation {
     this.weas.avr.translateSelectedAtoms({ translateVector: negativevector, indices: this.selectedAtomsIndices });
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
     this.weas.objectManager.translateSelectedObjects({ translateVector: negativevector });
+    this.weas.selectionManager.refreshAxisLine();
   }
 
   adjust(params) {
@@ -63,7 +65,7 @@ class RotateOperation extends BaseOperation {
     },
   };
 
-  constructor({ weas, axis, angle }) {
+  constructor({ weas, axis, angle, centroid = null }) {
     super(weas);
     this.currentFrame = weas.avr.currentFrame;
     this.selectedAtomsIndices = Array.from(this.stateGet("viewer.selectedAtomsIndices", []) || []);
@@ -73,14 +75,16 @@ class RotateOperation extends BaseOperation {
     }
     this.axis = axis;
     this.angle = angle;
+    this.centroid = centroid;
   }
 
   execute() {
     // Implementation for rotating selected atoms
     this.weas.avr.currentFrame = this.currentFrame;
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
-    this.weas.avr.rotateSelectedAtoms({ cameraDirection: this.axis, rotationAngle: this.angle, indices: this.selectedAtomsIndices });
+    this.weas.avr.rotateSelectedAtoms({ cameraDirection: this.axis, rotationAngle: this.angle, indices: this.selectedAtomsIndices, centroid: this.centroid });
     this.weas.objectManager.rotateSelectedObjects({ rotationAxis: this.axis, rotationAngle: this.angle });
+    this.weas.selectionManager.refreshAxisLine();
   }
 
   undo() {
@@ -88,9 +92,10 @@ class RotateOperation extends BaseOperation {
     this.weas.avr.currentFrame = this.currentFrame;
     this.weas.selectionManager.selectedObjects = this.selectedObjects;
     // rotate the atoms back
-    this.weas.avr.rotateSelectedAtoms({ cameraDirection: this.axis, rotationAngle: -this.angle, indices: this.selectedAtomsIndices });
+    this.weas.avr.rotateSelectedAtoms({ cameraDirection: this.axis, rotationAngle: -this.angle, indices: this.selectedAtomsIndices, centroid: this.centroid });
     // rotate the objects back
     this.weas.objectManager.rotateSelectedObjects({ rotationAxis: this.axis, rotationAngle: -this.angle });
+    this.weas.selectionManager.refreshAxisLine();
   }
 
   adjust(params) {

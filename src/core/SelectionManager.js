@@ -17,6 +17,11 @@ export class SelectionManager {
     this.isLassoing = false;
     this.oldSelectedAtomsIndices = [];
     this.oldSelectedObjects = [];
+    this.axisAtomIndices = [];
+    this.axisLineExtendFactor = 3;
+    this.axisLine = null;
+    this.isAxisPicking = false;
+    this.axisVisible = false;
 
     this.raycaster = new THREE.Raycaster();
     // only interact with layer 0
@@ -200,6 +205,45 @@ export class SelectionManager {
     this.weas.avr.selectedAtomsIndices = [...new Set([...this.oldSelectedAtomsIndices, ...selectedIndices])];
   }
 
+  startAxisPicking() {
+    this.isAxisPicking = true;
+    this.axisVisible = true;
+    this.axisAtomIndices = [];
+    this.updateAxisHighlight();
+    this.updateAxisLine();
+  }
+
+  stopAxisPicking() {
+    this.isAxisPicking = false;
+  }
+
+  clearAxis() {
+    this.axisAtomIndices = [];
+    this.axisVisible = false;
+    this.updateAxisHighlight();
+    this.updateAxisLine();
+  }
+
+  pickAxisAtom(event) {
+    const atomIndex = this.getAtomIndexFromEvent(event);
+    if (atomIndex === null || atomIndex === undefined) {
+      return false;
+    }
+    if (this.axisAtomIndices.includes(atomIndex)) {
+      this.axisAtomIndices = this.axisAtomIndices.filter((index) => index !== atomIndex);
+    } else if (this.axisAtomIndices.length >= 2) {
+      this.axisAtomIndices = [atomIndex];
+    } else {
+      this.axisAtomIndices.push(atomIndex);
+    }
+    this.updateAxisHighlight();
+    this.updateAxisLine();
+    if (this.axisAtomIndices.length === 2) {
+      this.isAxisPicking = false;
+    }
+    return true;
+  }
+
   clearSelection() {
     // remove outlines
     this.selectedObjects.forEach((object) => {
@@ -247,6 +291,126 @@ export class SelectionManager {
       removeOutline(object);
       createOutline(object, 1.1);
     });
+  }
+
+  getAtomIndexFromEvent(event) {
+    const rect = this.tjs.updateViewerRect();
+    this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    this.raycaster.setFromCamera(this.mouse, this.tjs.camera);
+    const atomMesh = this.weas.avr?.atomManager?.meshes?.["atom"];
+    if (!atomMesh) {
+      return null;
+    }
+    const intersects = this.raycaster.intersectObject(atomMesh, true);
+    if (intersects.length === 0) {
+      return null;
+    }
+    const hit = intersects.find((intersection) => Number.isInteger(intersection.instanceId));
+    return hit ? hit.instanceId : null;
+  }
+
+  updateAxisHighlight() {
+    const highlightManager = this.weas?.avr?.highlightManager;
+    if (!highlightManager) {
+      return;
+    }
+    if (!highlightManager.settings || !highlightManager.settings["axis"]) {
+      highlightManager.addSetting("axis", {
+        indices: [],
+        scale: 1.0,
+        type: "crossView",
+        color: "#ff8800",
+        opacity: 1.0,
+        occlude: false,
+        offset: 1.0,
+        thickness: 0.08,
+      });
+      highlightManager.drawHighlightAtoms();
+    }
+    const indices = this.axisVisible ? this.axisAtomIndices : [];
+    highlightManager.settings["axis"].indices = [...indices];
+    highlightManager.updateHighlightAtomsMesh(
+      {
+        indices,
+        scale: 1.0,
+        type: "crossView",
+        color: "#ff8800",
+        opacity: 1.0,
+        occlude: false,
+        offset: 1.0,
+        thickness: 0.08,
+      },
+      "axis",
+    );
+    highlightManager.updateLabelSizes?.(this.tjs.camera, this.tjs.renderers?.MainRenderer?.renderer);
+    this.weas?.avr?.requestRedraw?.("render");
+  }
+
+  updateAxisLine() {
+    if (!this.axisVisible || this.axisAtomIndices.length !== 2) {
+      if (this.axisLine) {
+        this.tjs.scene.remove(this.axisLine);
+        this.axisLine.geometry.dispose();
+        this.axisLine.material.dispose();
+        this.axisLine = null;
+      }
+      return;
+    }
+    const positions = this.weas?.avr?.atoms?.positions;
+    if (!positions) {
+      return;
+    }
+    const firstIndex = this.axisAtomIndices[0];
+    const secondIndex = this.axisAtomIndices[1];
+    if (!positions[firstIndex] || !positions[secondIndex]) {
+      return;
+    }
+    const start = new THREE.Vector3(...positions[firstIndex]);
+    const end = new THREE.Vector3(...positions[secondIndex]);
+    const axis = end.clone().sub(start);
+    const axisLength = axis.length();
+    if (axisLength === 0) {
+      return;
+    }
+    const direction = axis.normalize();
+    const midpoint = start.clone().add(end).multiplyScalar(0.5);
+    const extend = axisLength * this.axisLineExtendFactor;
+    const longStart = midpoint.clone().addScaledVector(direction, -extend);
+    const longEnd = midpoint.clone().addScaledVector(direction, extend);
+    if (!this.axisLine) {
+      const geometry = new THREE.BufferGeometry().setFromPoints([longStart, longEnd]);
+      const material = new THREE.LineBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0.9, depthTest: false });
+      this.axisLine = new THREE.Line(geometry, material);
+      this.axisLine.userData.notSelectable = true;
+      this.axisLine.layers.set(1);
+      this.axisLine.renderOrder = 999;
+      this.tjs.scene.add(this.axisLine);
+    } else {
+      this.axisLine.geometry.setFromPoints([longStart, longEnd]);
+      this.axisLine.geometry.attributes.position.needsUpdate = true;
+      this.axisLine.geometry.computeBoundingSphere();
+    }
+  }
+
+  refreshAxisLine() {
+    if (this.axisAtomIndices.length === 2) {
+      this.updateAxisLine();
+    }
+  }
+
+  showAxisVisuals() {
+    this.axisVisible = true;
+    this.updateAxisHighlight();
+    this.updateAxisLine();
+    this.weas?.avr?.requestRedraw?.("render");
+  }
+
+  hideAxisVisuals() {
+    this.axisVisible = false;
+    this.updateAxisHighlight();
+    this.updateAxisLine();
+    this.weas?.avr?.requestRedraw?.("render");
   }
 
   getViewerPoint(event) {
