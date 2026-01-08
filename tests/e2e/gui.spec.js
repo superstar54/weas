@@ -157,8 +157,8 @@ test("Transform Axis", async ({ page }) => {
   });
   await expect.soft(page).toHaveScreenshot("Transform-translate-axis-lock.png");
   // mouse move to the center of the canvas element
-  await page.mouse.move(page.centerX + 100, page.centerY);
-  await page.mouse.click(page.centerX + 100, page.centerY);
+  await page.mouse.move(page.centerX + 200, page.centerY);
+  await page.mouse.click(page.centerX + 200, page.centerY);
   await expect.soft(page).toHaveScreenshot("Transform-translate-axis-lock-move.png");
 });
 
