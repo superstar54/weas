@@ -7,19 +7,18 @@ Edit
 Selection
 =======================
 
-- `Click` the atom to select it. Click again to deselect.
-- `Shift + drag` to select multiple atoms with a box. Support accumulation of selection.
-- `Shift + Alt + drag` to select multiple atoms with a lasso. Support accumulation of selection.
-
+- `Click` an atom to select it. Click again to deselect.
+- `Shift + drag` to box-select multiple atoms (selection accumulates).
+- `Shift + Alt + drag` to lasso-select multiple atoms (selection accumulates).
 
 Advanced Selection
 -------------------
-Draw a mesh primitive to select atoms inside the mesh.
+Draw a mesh primitive and select atoms inside it.
 
 Group-based Selection
 ----------------------
-You can tag atoms into named groups and select them later by group name. Each atom
-can belong to multiple groups.
+Tag atoms into named groups and select them later by group name. Each atom can
+belong to multiple groups.
 
 Example (JS):
 
@@ -41,11 +40,26 @@ You can also manage groups directly on the Atoms object:
    atoms.addAtomsToGroup([0, 1, 2], "surface");
    const indices = atoms.getGroupIndices("surface");
 
-
-Move, Rotate
+Move, Rotate, Scale
 =======================
 
-Select the atoms, and press the transform Shortcut, and move your mouse
+Select atoms and use keyboard shortcuts to transform them, then move the mouse
+to apply the transform and click to confirm.
+
+- ``g`` translate
+- ``r`` rotate
+- ``s`` scale
+
+Rotation defaults to the camera axis through the selection center.
+To rotate around a custom axis, press ``r`` to enter rotate mode, then press ``a`` and click one or two atoms.
+One atom sets the rotation center (camera axis), two atoms define the bond axis.
+The axis is shown with orange crosses and a long orange line (for two atoms), and stays active until you redefine it.
+Press ``a`` again to exit axis picking and rotate; click an axis atom again to deselect it.
+Press ``r`` then ``x``, ``y``, or ``z`` to lock rotation to a world axis (press the same key again to unlock).
+
+Translate Axis Lock
+=======================
+Press ``g`` to translate, then press ``x``, ``y``, or ``z`` to lock movement to that axis.
 
 - ``g``, move
 - ``r``, rotate

@@ -4,6 +4,22 @@
   position: fixed;
 }
 
+.weas-mode-hint {
+  position: absolute;
+  left: 50%;
+  top: 56px;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.3;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 20;
+  user-select: none;
+}
+
 .lassoSelect {
   position: absolute;
   left: 0;

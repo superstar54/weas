@@ -745,6 +745,9 @@ class AtomsViewer {
           const nextSelected = Array.isArray(value) ? value : [];
           const newSelectedAtoms = nextSelected.filter((atomIndex) => !prevSelected.includes(atomIndex));
           const unselectedAtoms = prevSelected.filter((atomIndex) => !nextSelected.includes(atomIndex));
+          if (nextSelected.length > 0 && !this.weas.eventHandlers?.transformControls?.mode) {
+            this.weas.selectionManager.setModeHint("");
+          }
           if (!this.highlightManager.settings || !this.highlightManager.settings["selection"]) {
             this.highlightManager.init();
           }

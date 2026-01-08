@@ -134,14 +134,22 @@ export class HighlightManager {
     const boxGeometry = new THREE.BoxGeometry(2, 2, 2);
     this.drawHighlightMesh("box", boxGeometry, material1);
     // cross
-    const material2 = material.clone();
-    material2.color = "black";
-    material2.opacity = 1.0;
+    const material2 = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      opacity: 1.0,
+      transparent: true,
+      vertexColors: true,
+    });
     const crossGeometry = this.createCrossGeometry(1);
     this.drawHighlightMesh("cross", crossGeometry, material2);
-    const material3 = material2.clone();
-    material3.side = THREE.DoubleSide;
-    material3.depthWrite = false;
+    const material3 = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      opacity: 1.0,
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      vertexColors: true,
+    });
     const crossViewGeometryX = this.createCrossBillboardBarGeometry();
     const crossViewGeometryY = crossViewGeometryX.clone();
     crossViewGeometryY.rotateZ(Math.PI / 2);

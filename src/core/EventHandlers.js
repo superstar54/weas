@@ -73,6 +73,9 @@ class EventHandlers {
     }
 
     if (this.transformControls.mode !== null) {
+      if (this.transformControls.mode === "rotate" && this.weas.selectionManager.isAxisPicking) {
+        return;
+      }
       this.transformControls.onMouseMove(event);
     } else if (this.isMouseDown && event.shiftKey && event.altKey) {
       this.weas.selectionManager.dragLasso(event);
@@ -83,6 +86,34 @@ class EventHandlers {
 
   onKeyDown(event) {
     // Implement the logic for key down events
+    if (this.transformControls.mode === "translate" && (event.key === "x" || event.key === "y" || event.key === "z")) {
+      const key = event.key.toLowerCase();
+      if (this.transformControls.translateAxisLock === key) {
+        this.transformControls.setTranslateAxisLock(null);
+      } else {
+        this.transformControls.setTranslateAxisLock(key);
+      }
+      return;
+    }
+    if (this.transformControls.mode === "rotate" && (event.key === "x" || event.key === "y" || event.key === "z")) {
+      const key = event.key.toLowerCase();
+      if (this.transformControls.rotationAxisLockKey === key) {
+        this.transformControls.setRotateAxisLock(null);
+      } else {
+        this.transformControls.setRotateAxisLock(key);
+      }
+      return;
+    }
+    if (this.transformControls.mode === "rotate" && event.key === "a") {
+      if (this.weas.selectionManager.isAxisPicking) {
+        this.weas.selectionManager.stopAxisPicking();
+        this.transformControls.refreshRotationPivot();
+        this.transformControls.initialMousePosition = this.currentMousePosition.clone();
+      } else {
+        this.weas.selectionManager.startAxisPicking();
+      }
+      return;
+    }
     if (event.ctrlKey || event.metaKey) {
       // metaKey is for MacOS
       switch (event.key) {
@@ -159,6 +190,12 @@ class EventHandlers {
 
   onMouseClick(event) {
     // Handle mouse click to confirm the operation and exit the current transform mode.
+    if (this.transformControls.mode === "rotate" && this.weas.selectionManager.isAxisPicking) {
+      this.weas.selectionManager.pickAxisAtom(event);
+      this.transformControls.refreshRotationPivot();
+      this.transformControls.initialMousePosition = this.currentMousePosition.clone();
+      return;
+    }
     if (this.transformControls.mode) {
       this.transformControls.confirmOperation();
       return;
