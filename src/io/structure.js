@@ -135,7 +135,7 @@ function buildExportPayload(weas, format) {
   <body>
     <div id="viewer" style="position: relative; width: 100%; height: 800px"></div>
     <script type="module">
-      import { WEAS } from "https://unpkg.com/weas@0.2.5/dist/index.mjs";
+      import { WEAS } from "https://unpkg.com/weas@0.2.6/dist/index.mjs";
       const domElement = document.getElementById("viewer");
       const editor = new WEAS({ domElement });
       const snapshot = ${safeJson};
