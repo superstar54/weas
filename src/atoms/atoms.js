@@ -359,7 +359,6 @@ class Atoms {
     this.symbols.push(atom.symbol);
     if (this.attributes["atom"].groups) {
       this._ensureAtomGroups();
-      this.attributes["atom"].groups.push([]);
     }
   }
 
