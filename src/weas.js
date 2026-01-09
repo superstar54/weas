@@ -32,9 +32,9 @@ class WEAS {
     this.selectionManager = new SelectionManager(this);
     this.objectManager = new ObjectManager(this);
     this.state = new StateStore(createDefaultState());
+    this.textManager = new TextManager(this);
     // Initialize AtomsViewer
     this.avr = new AtomsViewer({ weas: this, atoms: atoms, viewerConfig: viewerConfig });
-    this.textManager = new TextManager(this.avr);
     // Initialize other plugins
     this.instancedMeshPrimitive = new InstancedMeshPrimitive(this);
     this.anyMesh = new AnyMesh(this);

@@ -161,7 +161,9 @@ class AtomsViewer {
     ];
     this.boundaryList = [];
     this.boundaryMap = {};
-    this._hasInitializedCamera = false;
+    if (this._autoResetCameraOnAtomsUpdate) {
+      this._hasInitializedCamera = false;
+    }
     //
   }
 
@@ -396,7 +398,10 @@ class AtomsViewer {
       if (this._autoResetCameraOnAtomsUpdate || !this._hasInitializedCamera) {
         // update camera position and target position based on the atoms
         this.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
-        this._hasInitializedCamera = true;
+        // only set to true if the atoms is not an empty Atoms object
+        if (this.atoms && this.atoms.getAtomsCount() > 0) {
+          this._hasInitializedCamera = true;
+        }
       }
       this.logger.debug("Set atoms successfullly");
     } finally {
