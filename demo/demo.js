@@ -160,6 +160,7 @@ async function updateAtoms(filename, fileContent = null) {
       atoms = atoms.multiply(2, 2, 2);
       editor.avr.atoms = atoms;
       editor.avr.modelStyle = 1;
+      editor.avr.atomLabelType = "index";
       if (atoms.positions.length >= 3) {
         const p0 = atoms.positions[0];
         const p1 = atoms.positions[1];

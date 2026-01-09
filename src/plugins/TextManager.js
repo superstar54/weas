@@ -15,24 +15,27 @@ class Setting {
 }
 
 export class TextManager {
-  constructor(viewer) {
-    this.viewer = viewer;
-    this.scene = this.viewer.tjs.scene;
+  constructor(target) {
+    this.weas = target?.weas ? target.weas : target;
+    this.viewer = target?.weas ? target : null;
+    this.scene = this.weas?.tjs?.scene;
+    this.state = this.weas?.state;
     this.settings = [];
     this.labels = [];
 
-    const pluginState = this.viewer.state.get("plugins.text");
+    const pluginState = this.state?.get("plugins.text");
     if (pluginState && Array.isArray(pluginState.settings)) {
       this.applySettings(pluginState.settings);
       this.drawTextLabels();
     }
-    this.viewer.state.subscribe("plugins.text", (next) => {
+    this.state?.subscribe("plugins.text", (next) => {
       if (!next) {
         return;
       }
       const settings = Array.isArray(next.settings) ? next.settings : [];
       this.applySettings(settings);
-      if (this.viewer._initializingState) {
+      const viewer = this.getViewer();
+      if (viewer?._initializingState) {
         return;
       }
       this.drawTextLabels();
@@ -40,7 +43,7 @@ export class TextManager {
   }
 
   setSettings(settings) {
-    this.viewer.state.set({ plugins: { text: { settings: cloneValue(settings) } } });
+    this.state.set({ plugins: { text: { settings: cloneValue(settings) } } });
   }
 
   applySettings(settings) {
@@ -71,7 +74,7 @@ export class TextManager {
   drawTextLabels() {
     this.clearLabels();
     this.settings.forEach((setting) => {
-      const origins = resolveOrigins(this.viewer.atoms, setting);
+      const origins = resolveOrigins(this.getAtoms(), setting);
       if (!origins.length) {
         return;
       }
@@ -88,7 +91,7 @@ export class TextManager {
         this.labels.push(label);
       });
     });
-    this.viewer.requestRedraw?.("render");
+    this.weas?.requestRedraw?.("render");
   }
 
   createTextLabel(position, text, color, fontSize, className, renderMode = "glyph") {
@@ -105,6 +108,18 @@ export class TextManager {
   }
 
   updateLabelSizes() {}
+
+  getAtoms() {
+    const viewer = this.getViewer();
+    if (viewer?.atoms) {
+      return viewer.atoms;
+    }
+    return null;
+  }
+
+  getViewer() {
+    return this.viewer || this.weas?.avr || null;
+  }
 }
 
 function resolveOrigins(atoms, setting) {

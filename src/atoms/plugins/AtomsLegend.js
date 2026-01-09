@@ -112,6 +112,8 @@ export default class AtomsLegend {
 
 function createCircleSprite(color, parameters = {}) {
   const radius = parameters.radius || 32;
+  const outlineWidth = parameters.outlineWidth ?? 3;
+  const outlineColor = parameters.outlineColor || getContrastColor(color);
 
   const canvas = document.createElement("canvas");
   const size = radius * 2;
@@ -123,6 +125,11 @@ function createCircleSprite(color, parameters = {}) {
   context.arc(radius, radius, radius - 2, 0, 2 * Math.PI, false);
   context.fillStyle = `#${color.getHexString()}`;
   context.fill();
+  if (outlineWidth > 0) {
+    context.lineWidth = outlineWidth;
+    context.strokeStyle = outlineColor;
+    context.stroke();
+  }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
@@ -136,6 +143,14 @@ function createCircleSprite(color, parameters = {}) {
   sprite.scale.set(scaleFactor, scaleFactor, 1);
 
   return sprite;
+}
+
+function getContrastColor(color) {
+  const r = color.r;
+  const g = color.g;
+  const b = color.b;
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance > 0.7 ? "rgba(34,34,34,0.9)" : "rgba(245,245,245,0.9)";
 }
 
 function createTextSprite(message, parameters = {}) {

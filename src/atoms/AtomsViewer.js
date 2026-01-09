@@ -161,7 +161,9 @@ class AtomsViewer {
     ];
     this.boundaryList = [];
     this.boundaryMap = {};
-    this._hasInitializedCamera = false;
+    if (this._autoResetCameraOnAtomsUpdate) {
+      this._hasInitializedCamera = false;
+    }
     //
   }
 
