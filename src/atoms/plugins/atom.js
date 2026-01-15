@@ -167,14 +167,17 @@ export class AtomManager {
       for (let i = 0; i < imageAtomsList.getAtomsCount(); i++) {
         atomScales[i] = this.viewer.atomScales[this.viewer.imageAtomsList[i][0]];
       }
-      const atomColors = [];
-      imageAtomsList.symbols.forEach((symbol, globalIndex) => {
+      // Map image atoms back to their original atom color (e.g. color-by attributes).
+      const atomColors = this.viewer.imageAtomsList.map(([atomIndex]) => {
+        const baseColor = this.viewer.atomColors?.[atomIndex];
+        if (baseColor) {
+          return typeof baseColor.clone === "function" ? baseColor.clone() : new THREE.Color(baseColor);
+        }
+        const symbol = this.viewer.atoms.symbols[atomIndex];
         if (!this.settings[symbol]) {
           this.settings[symbol] = this.getDefaultSetting(symbol, imageAtomsList.species[symbol]?.element || symbol);
         }
-        // if this.viewer.atoms has color attribute in the specie domain, use it
-        const color = new THREE.Color(this.settings[symbol].color);
-        atomColors.push(color);
+        return new THREE.Color(this.settings[symbol].color);
       });
       const imageAtomsMesh = drawAtoms({
         scene: this.scene,
