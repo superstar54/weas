@@ -12,6 +12,7 @@ Atoms
     bond
     edit
     isosurface
+    fermi_surface
     volume_slice
     vector_field
     measurement
