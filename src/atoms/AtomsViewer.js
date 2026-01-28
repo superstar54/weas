@@ -8,6 +8,7 @@ import { BoundaryManager } from "./plugins/boundary.js";
 import { AtomLabelManager } from "./plugins/atomLabel.js";
 import { Atom, Atoms } from "./atoms.js";
 import { Isosurface } from "./plugins/isosurface.js";
+import { FermiSurface } from "./plugins/fermiSurface.js";
 import { VolumeSlice } from "./plugins/VolumeSlice.js";
 import { VectorField } from "./plugins/vectorField.js";
 import { Measurement } from "./plugins/measurement.js";
@@ -68,6 +69,7 @@ class AtomsViewer {
     this.boundaryManager = new BoundaryManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
     this.isosurfaceManager = new Isosurface(this);
+    this.fermiSurfaceManager = new FermiSurface(this);
     this.volumeSliceManager = new VolumeSlice(this);
     this.ALManager = new AtomLabelManager(this);
     this.Measurement = new Measurement(this);
@@ -125,6 +127,7 @@ class AtomsViewer {
 
   init(atoms) {
     this.volumetricData = null;
+    this.fermiSurfaceData = null;
     this.lastFrameTime = Date.now();
     this.selectedAtomsLabelElement = document.createElement("div");
     this.selectedAtomsLabelElement.id = "selectedAtomSymbol";
@@ -145,8 +148,17 @@ class AtomsViewer {
     this.requestRedraw("render");
   }
 
+  setFermiSurfaceData(data) {
+    this.fermiSurfaceData = data;
+    if (this.fermiSurfaceManager) {
+      this.fermiSurfaceManager.drawFermiSurfaces();
+    }
+    this.requestRedraw("render");
+  }
+
   reset() {
     this.volumetricData = null;
+    this.fermiSurfaceData = null;
     this.atomLabels = [];
     this.atomArrows = null;
     this.atomColors = new Array();
