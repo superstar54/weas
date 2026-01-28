@@ -189,6 +189,10 @@ export declare class AtomsViewer {
   volumetricData: any;
   /** Set volumetric data and redraw dependent plugins */
   setVolumetricData(data: any): void;
+  /** Any loaded Fermi surface data */
+  fermiSurfaceData: any;
+  /** Set Fermi surface data and redraw dependent plugins */
+  setFermiSurfaceData(data: any): void;
 
   /** Begin a batched update to defer redraws */
   beginUpdate(): void;
