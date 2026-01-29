@@ -184,6 +184,9 @@ export class FermiSurface {
   }
 
   createGui() {
+    if (!this.viewer.fermiSurfaceData) {
+      return;
+    }
     if (this.viewer.guiManager.gui && !this.guiFolder) {
       this.guiFolder = this.viewer.guiManager.gui.addFolder("FermiSurface");
     }
@@ -211,6 +214,9 @@ export class FermiSurface {
     this.settings = {};
     this.clearFermiSurfaces();
     this.removeGui();
+    if (!this.viewer.fermiSurfaceData) {
+      return;
+    }
     this.createGui();
     Object.entries(settings).forEach(([name, setting]) => {
       this.addSetting(name, setting);
@@ -228,10 +234,12 @@ export class FermiSurface {
     if (this.globalIsovalue === null || typeof this.globalIsovalue !== "number") {
       this.globalIsovalue = (minValue + maxValue) / 2;
     }
+    const range = Math.abs(maxValue - minValue);
+    const step = Math.min(0.1, Math.max(range / 2000, 1e-3));
     const folder = this.guiFolder.addFolder("Global");
     this.globalFolder = folder;
     folder
-      .add(this, "globalIsovalue", minValue, maxValue)
+      .add(this, "globalIsovalue", minValue, maxValue, step)
       .name("Fermi Energy")
       .onFinishChange(() => {
         Object.values(this.settings).forEach((setting) => {
@@ -304,7 +312,10 @@ export class FermiSurface {
 
   drawFermiSurfaces() {
     const data = this.viewer.fermiSurfaceData;
-    if (!data) return;
+    if (!data) {
+      this.removeGui();
+      return;
+    }
     if (this.lastDataRef !== data) {
       this.cache.clear();
       this.lastDataRef = data;

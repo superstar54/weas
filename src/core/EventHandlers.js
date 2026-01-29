@@ -73,7 +73,7 @@ class EventHandlers {
     }
 
     if (this.transformControls.mode !== null) {
-      if (this.transformControls.mode === "rotate" && this.weas.selectionManager.isAxisPicking) {
+      if ((this.transformControls.mode === "rotate" || this.transformControls.mode === "translate") && this.weas.selectionManager.isAxisPicking) {
         return;
       }
       this.transformControls.onMouseMove(event);
@@ -95,6 +95,16 @@ class EventHandlers {
       }
       return;
     }
+    if (this.transformControls.mode === "translate" && (event.key === "p" || event.key === "n")) {
+      const key = event.key.toLowerCase();
+      if (key === "p") {
+        this.transformControls.setTranslatePlaneConstraint("plane");
+      } else {
+        this.transformControls.setTranslatePlaneConstraint("normal");
+      }
+      this.transformControls.initialMousePosition = this.currentMousePosition.clone();
+      return;
+    }
     if (this.transformControls.mode === "rotate" && (event.key === "x" || event.key === "y" || event.key === "z")) {
       const key = event.key.toLowerCase();
       if (this.transformControls.rotationAxisLockKey === key) {
@@ -104,13 +114,30 @@ class EventHandlers {
       }
       return;
     }
+    if (this.transformControls.mode === "translate" && event.key === "a") {
+      if (this.weas.selectionManager.isAxisPicking) {
+        this.weas.selectionManager.stopAxisPicking("Translate mode: move mouse to translate, press A to set axis, X/Y/Z to lock");
+        if (this.weas.selectionManager.axisAtomIndices.length === 3) {
+          this.transformControls.setTranslatePlaneFromAtoms();
+        } else if (this.weas.selectionManager.axisAtomIndices.length === 2) {
+          this.transformControls.setTranslateAxisFromAtoms();
+        }
+        this.transformControls.initialMousePosition = this.currentMousePosition.clone();
+      } else {
+        this.transformControls.setTranslateAxisLock(null);
+        this.weas.selectionManager.hideTranslatePlane();
+        this.weas.selectionManager.startAxisPicking("translate");
+        this.weas.selectionManager.setModeHint("Axis pick: click 2 or 3 atoms, press A to exit");
+      }
+      return;
+    }
     if (this.transformControls.mode === "rotate" && event.key === "a") {
       if (this.weas.selectionManager.isAxisPicking) {
         this.weas.selectionManager.stopAxisPicking();
         this.transformControls.refreshRotationPivot();
         this.transformControls.initialMousePosition = this.currentMousePosition.clone();
       } else {
-        this.weas.selectionManager.startAxisPicking();
+        this.weas.selectionManager.startAxisPicking("rotate");
       }
       return;
     }
@@ -194,6 +221,13 @@ class EventHandlers {
       this.weas.selectionManager.pickAxisAtom(event);
       this.transformControls.refreshRotationPivot();
       this.transformControls.initialMousePosition = this.currentMousePosition.clone();
+      return;
+    }
+    if (this.transformControls.mode === "translate" && this.weas.selectionManager.isAxisPicking) {
+      this.weas.selectionManager.pickAxisAtom(event);
+      return;
+    }
+    if (this.transformControls.mode === "translate" && this.transformControls.translatePlanePending) {
       return;
     }
     if (this.transformControls.mode) {

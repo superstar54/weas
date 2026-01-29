@@ -21,10 +21,14 @@ export class SelectionManager {
     this.axisLineExtendFactor = 3;
     this.axisLine = null;
     this.isAxisPicking = false;
+    this.axisPickMode = null;
     this.axisVisible = false;
     this.modeHint = null;
     this.translateAxisLine = null;
     this.translateAxisLength = 20;
+    this.translatePlaneMesh = null;
+    this.translateNormalLine = null;
+    this.translatePlaneSize = 30;
     this.rotateAxisLine = null;
     this.rotateAxisLength = 20;
 
@@ -214,17 +218,23 @@ export class SelectionManager {
     this.weas.avr.selectedAtomsIndices = [...new Set([...this.oldSelectedAtomsIndices, ...selectedIndices])];
   }
 
-  startAxisPicking() {
+  startAxisPicking(mode = "rotate") {
     this.isAxisPicking = true;
+    this.axisPickMode = mode;
     this.axisVisible = true;
     this.updateAxisHighlight();
     this.updateAxisLine();
-    this.setModeHint("Axis pick: click 1 or 2 atoms, press A to exit");
+    if (mode === "translate") {
+      this.setModeHint("Axis pick: click 2 or 3 atoms, press A to exit");
+    } else {
+      this.setModeHint("Axis pick: click 1 or 2 atoms, press A to exit");
+    }
   }
 
-  stopAxisPicking() {
+  stopAxisPicking(modeHint = "Rotate mode: move mouse to rotate, click to confirm") {
     this.isAxisPicking = false;
-    this.setModeHint("Rotate mode: move mouse to rotate, click to confirm");
+    this.axisPickMode = null;
+    this.setModeHint(modeHint);
   }
 
   clearAxis() {
@@ -241,16 +251,13 @@ export class SelectionManager {
     }
     if (this.axisAtomIndices.includes(atomIndex)) {
       this.axisAtomIndices = this.axisAtomIndices.filter((index) => index !== atomIndex);
-    } else if (this.axisAtomIndices.length >= 2) {
+    } else if (this.axisAtomIndices.length >= (this.axisPickMode === "translate" ? 3 : 2)) {
       this.axisAtomIndices = [atomIndex];
     } else {
       this.axisAtomIndices.push(atomIndex);
     }
     this.updateAxisHighlight();
     this.updateAxisLine();
-    if (this.axisAtomIndices.length === 2) {
-      this.isAxisPicking = false;
-    }
     return true;
   }
 
@@ -485,6 +492,78 @@ export class SelectionManager {
     this.translateAxisLine.geometry.dispose();
     this.translateAxisLine.material.dispose();
     this.translateAxisLine = null;
+    this.weas?.avr?.requestRedraw?.("render");
+  }
+
+  showTranslatePlane(center, normal) {
+    if (!center || !normal) {
+      return;
+    }
+    const unitNormal = normal.clone().normalize();
+    if (unitNormal.lengthSq() === 0) {
+      return;
+    }
+    const size = this.translatePlaneSize;
+    if (!this.translatePlaneMesh) {
+      const geometry = new THREE.PlaneGeometry(size, size);
+      const material = new THREE.MeshBasicMaterial({
+        color: 0x55aaff,
+        transparent: true,
+        opacity: 0.15,
+        side: THREE.DoubleSide,
+        depthTest: false,
+      });
+      this.translatePlaneMesh = new THREE.Mesh(geometry, material);
+      this.translatePlaneMesh.userData.notSelectable = true;
+      this.translatePlaneMesh.layers.set(1);
+      this.translatePlaneMesh.renderOrder = 998;
+      this.tjs.scene.add(this.translatePlaneMesh);
+    }
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), unitNormal);
+    this.translatePlaneMesh.position.copy(center);
+    this.translatePlaneMesh.quaternion.copy(quaternion);
+    if (!this.translateNormalLine) {
+      const start = center.clone();
+      const end = center.clone().addScaledVector(unitNormal, this.translateAxisLength);
+      const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+      const material = new THREE.LineDashedMaterial({
+        color: 0x55aaff,
+        dashSize: 0.6,
+        gapSize: 0.4,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+      });
+      this.translateNormalLine = new THREE.Line(geometry, material);
+      this.translateNormalLine.computeLineDistances();
+      this.translateNormalLine.userData.notSelectable = true;
+      this.translateNormalLine.layers.set(1);
+      this.translateNormalLine.renderOrder = 999;
+      this.tjs.scene.add(this.translateNormalLine);
+    } else {
+      const start = center.clone();
+      const end = center.clone().addScaledVector(unitNormal, this.translateAxisLength);
+      this.translateNormalLine.geometry.setFromPoints([start, end]);
+      this.translateNormalLine.geometry.attributes.position.needsUpdate = true;
+      this.translateNormalLine.geometry.computeBoundingSphere();
+      this.translateNormalLine.computeLineDistances();
+    }
+    this.weas?.avr?.requestRedraw?.("render");
+  }
+
+  hideTranslatePlane() {
+    if (this.translatePlaneMesh) {
+      this.tjs.scene.remove(this.translatePlaneMesh);
+      this.translatePlaneMesh.geometry.dispose();
+      this.translatePlaneMesh.material.dispose();
+      this.translatePlaneMesh = null;
+    }
+    if (this.translateNormalLine) {
+      this.tjs.scene.remove(this.translateNormalLine);
+      this.translateNormalLine.geometry.dispose();
+      this.translateNormalLine.material.dispose();
+      this.translateNormalLine = null;
+    }
     this.weas?.avr?.requestRedraw?.("render");
   }
 

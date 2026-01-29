@@ -24,6 +24,10 @@ export class TransformControls {
     this.translateVector = new THREE.Vector3();
     this.translateAxisLock = null;
     this.translateAxis = new THREE.Vector3();
+    this.translateConstraintType = null; // null | "axis" | "plane" | "normal"
+    this.translatePlaneNormal = new THREE.Vector3();
+    this.translatePlaneOrigin = new THREE.Vector3();
+    this.translatePlanePending = false;
     this.rotationAxisLock = null;
     this.rotationAxis = new THREE.Vector3();
     this.rotationAxisLockKey = null;
@@ -61,8 +65,15 @@ export class TransformControls {
       // Update the plane's normal
       this.translatePlane.normal.copy(this.cameraDirection);
       this.translateAxisLock = null;
+      this.translateConstraintType = null;
+      this.translatePlanePending = false;
       this.weas.selectionManager.hideTranslateAxisLine();
-      this.weas.selectionManager.setModeHint("Translate mode: move mouse to translate, press X/Y/Z to lock");
+      this.weas.selectionManager.setModeHint("Translate mode: move mouse to translate, press A to set axis, X/Y/Z to lock");
+      if (this.weas.selectionManager.axisAtomIndices?.length === 3) {
+        this.setTranslatePlaneFromAtoms();
+      } else if (this.weas.selectionManager.axisAtomIndices?.length === 2) {
+        this.setTranslateAxisFromAtoms();
+      }
     } else if (this.mode === "rotate") {
       this.weas.selectionManager.showAxisVisuals();
       this.rotationAxisLock = null;
@@ -122,7 +133,14 @@ export class TransformControls {
     }
     if (mode === "translate") {
       this.weas.selectionManager.hideTranslateAxisLine();
+      this.weas.selectionManager.hideAxisVisuals();
+      this.weas.selectionManager.stopAxisPicking("Translate mode: move mouse to translate, press A to set axis, X/Y/Z to lock");
+      this.weas.selectionManager.hideTranslatePlane();
       this.translateAxisLock = null;
+      this.translateConstraintType = null;
+      this.translatePlaneNormal.set(0, 0, 0);
+      this.translatePlaneOrigin.set(0, 0, 0);
+      this.translatePlanePending = false;
     }
     this.weas.selectionManager.setModeHint("");
     this.initialAtomPositions.clear();
@@ -155,7 +173,14 @@ export class TransformControls {
     }
     if (mode === "translate") {
       this.weas.selectionManager.hideTranslateAxisLine();
+      this.weas.selectionManager.hideAxisVisuals();
+      this.weas.selectionManager.stopAxisPicking("Translate mode: move mouse to translate, press A to set axis, X/Y/Z to lock");
+      this.weas.selectionManager.hideTranslatePlane();
       this.translateAxisLock = null;
+      this.translateConstraintType = null;
+      this.translatePlaneNormal.set(0, 0, 0);
+      this.translatePlaneOrigin.set(0, 0, 0);
+      this.translatePlanePending = false;
     }
     this.weas.selectionManager.setModeHint("");
     // reset the selected objects positions, scales, and rotations
@@ -277,11 +302,24 @@ export class TransformControls {
     const initialNDC = this.getNDC(previousMousePosition);
     const previousWorldPosition = getWorldPositionFromScreen(this.tjs.camera, initialNDC, this.translatePlane);
     const delta = currentWorldPosition.sub(previousWorldPosition);
-    if (!this.translateAxisLock) {
+    if (this.translatePlanePending) {
+      return new THREE.Vector3(0, 0, 0);
+    }
+    if (!this.translateConstraintType) {
       return delta;
     }
-    const projected = this.translateAxis.clone().multiplyScalar(delta.dot(this.translateAxis));
-    return projected;
+    if (this.translateConstraintType === "axis") {
+      return this.translateAxis.clone().multiplyScalar(delta.dot(this.translateAxis));
+    }
+    if (this.translateConstraintType === "plane") {
+      const normal = this.translatePlaneNormal.clone().normalize();
+      return delta.sub(normal.multiplyScalar(delta.dot(normal)));
+    }
+    if (this.translateConstraintType === "normal") {
+      const normal = this.translatePlaneNormal.clone().normalize();
+      return normal.multiplyScalar(delta.dot(normal));
+    }
+    return delta;
   }
 
   rotateSelectedObjects(event) {
@@ -307,11 +345,15 @@ export class TransformControls {
   setTranslateAxisLock(axisKey) {
     if (!axisKey) {
       this.translateAxisLock = null;
+      this.translateConstraintType = null;
+      this.translatePlanePending = false;
       this.weas.selectionManager.hideTranslateAxisLine();
-      this.weas.selectionManager.setModeHint("Translate mode: move mouse to translate, press X/Y/Z to lock");
+      this.weas.selectionManager.setModeHint("Translate mode: move mouse to translate, press A to set axis, X/Y/Z to lock");
       return;
     }
     this.translateAxisLock = axisKey;
+    this.translateConstraintType = "axis";
+    this.weas.selectionManager.hideTranslatePlane();
     if (axisKey === "x") {
       this.translateAxis.set(1, 0, 0);
     } else if (axisKey === "y") {
@@ -322,6 +364,82 @@ export class TransformControls {
     const centroid = this.getSelectionCentroid();
     this.weas.selectionManager.showTranslateAxisLine(centroid, this.translateAxis);
     this.weas.selectionManager.setModeHint(`Translate mode: locked to ${axisKey.toUpperCase()} axis`);
+  }
+
+  setTranslateAxisFromAtoms() {
+    const axisAtoms = this.weas.selectionManager.axisAtomIndices || [];
+    if (axisAtoms.length !== 2) {
+      return false;
+    }
+    const positions = this.weas?.avr?.atoms?.positions;
+    if (!positions || !positions[axisAtoms[0]] || !positions[axisAtoms[1]]) {
+      return false;
+    }
+    const first = new THREE.Vector3(...positions[axisAtoms[0]]);
+    const second = new THREE.Vector3(...positions[axisAtoms[1]]);
+    const axis = second.clone().sub(first);
+    if (axis.lengthSq() === 0) {
+      return false;
+    }
+    this.translateAxis.copy(axis.normalize());
+    this.translateAxisLock = "axis";
+    this.translateConstraintType = "axis";
+    this.translatePlaneNormal.set(0, 0, 0);
+    this.translatePlaneOrigin.set(0, 0, 0);
+    this.translatePlanePending = false;
+    this.weas.selectionManager.hideTranslatePlane();
+    this.weas.selectionManager.hideTranslateAxisLine();
+    this.weas.selectionManager.showAxisVisuals();
+    this.weas.selectionManager.setModeHint("Translate mode: locked to atom axis");
+    return true;
+  }
+
+  setTranslatePlaneFromAtoms() {
+    const axisAtoms = this.weas.selectionManager.axisAtomIndices || [];
+    if (axisAtoms.length !== 3) {
+      return false;
+    }
+    const positions = this.weas?.avr?.atoms?.positions;
+    if (!positions || !positions[axisAtoms[0]] || !positions[axisAtoms[1]] || !positions[axisAtoms[2]]) {
+      return false;
+    }
+    const a = new THREE.Vector3(...positions[axisAtoms[0]]);
+    const b = new THREE.Vector3(...positions[axisAtoms[1]]);
+    const c = new THREE.Vector3(...positions[axisAtoms[2]]);
+    const normal = b.clone().sub(a).cross(c.clone().sub(a));
+    if (normal.lengthSq() === 0) {
+      return false;
+    }
+    this.translatePlaneNormal.copy(normal.normalize());
+    this.translatePlaneOrigin.copy(
+      a
+        .clone()
+        .add(b)
+        .add(c)
+        .multiplyScalar(1 / 3),
+    );
+    this.translateConstraintType = null;
+    this.translateAxisLock = null;
+    this.translatePlanePending = true;
+    this.weas.selectionManager.hideTranslateAxisLine();
+    this.weas.selectionManager.showAxisVisuals();
+    this.weas.selectionManager.showTranslatePlane(this.translatePlaneOrigin, this.translatePlaneNormal);
+    this.weas.selectionManager.setModeHint("Translate mode: choose plane (P) or normal (N)");
+    return true;
+  }
+
+  setTranslatePlaneConstraint(type) {
+    if (type !== "plane" && type !== "normal") {
+      return;
+    }
+    if (this.translatePlaneNormal.lengthSq() === 0) {
+      return;
+    }
+    this.translateConstraintType = type;
+    this.translateAxisLock = null;
+    this.translatePlanePending = false;
+    this.weas.selectionManager.hideTranslateAxisLine();
+    this.weas.selectionManager.setModeHint(`Translate mode: locked to ${type}`);
   }
 
   setRotateAxisLock(axisKey) {
