@@ -108,7 +108,7 @@ test("Highlight CrossView", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("Highlight-crossView.png");
 });
 
-test("Transform Axis", async ({ page }) => {
+test("Transform Rotate Axis", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");
   await page.waitForFunction(() => window.editor);
   // focus the element
@@ -154,10 +154,26 @@ test("Transform Axis", async ({ page }) => {
     editor.tjs.render();
   });
   await expect.soft(page).toHaveScreenshot("Transform-rotate-axis-lock.png");
+});
+
+test("Transform Translate Axis", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");
+  await page.waitForFunction(() => window.editor);
+  // focus the element
+  const element = await page.$("#viewer");
+  await element.focus();
+  const boundingBox = await element.boundingBox();
+  // Calculate the center of the element
+  const centerX = boundingBox.x + boundingBox.width / 2;
+  const centerY = boundingBox.y + boundingBox.height / 2;
+  page.centerX = centerX;
+  page.centerY = centerY;
+  // Move the mouse to the center of the element
+  await page.mouse.move(centerX, centerY);
 
   await page.evaluate(() => {
     const editor = window.editor;
-    editor.eventHandlers.transformControls.exitMode();
+    editor.avr.selectedAtomsIndices = [2, 4, 6, 7];
     editor.eventHandlers.currentMousePosition.set(300, 200);
     editor.eventHandlers.transformControls.enterMode("translate", editor.eventHandlers.currentMousePosition);
     editor.eventHandlers.transformControls.setTranslateAxisLock("x");
