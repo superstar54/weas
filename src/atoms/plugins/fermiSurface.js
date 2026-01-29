@@ -591,6 +591,14 @@ export class FermiSurface {
     if (!anyMesh || typeof anyMesh.setSettings !== "function") return;
     const currentSettings = Array.isArray(anyMesh.settings) ? anyMesh.settings : [];
     const preserved = currentSettings.filter((setting) => setting?.userData?.source !== "fermiSurface" && setting?.userData?.source !== "brillouinZone");
+    if (!Array.isArray(nextFermiSettings) || nextFermiSettings.length === 0) {
+      const hasFermiMeshes = currentSettings.some((setting) => setting?.userData?.source === "fermiSurface" || setting?.userData?.source === "brillouinZone");
+      if (!hasFermiMeshes) {
+        return;
+      }
+      anyMesh.setSettings([...preserved]);
+      return;
+    }
     const previous = new Map();
     currentSettings.forEach((setting) => {
       if (setting?.name && (setting?.userData?.source === "fermiSurface" || setting?.userData?.source === "brillouinZone")) {
