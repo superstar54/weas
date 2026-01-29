@@ -137,6 +137,15 @@ test("Transform Rotate Axis", async ({ page }) => {
   await expect(await page.evaluate(() => window.editor.selectionManager.isAxisPicking)).toBe(true);
   await page.evaluate(() => {
     const editor = window.editor;
+    editor.selectionManager.axisAtomIndices = [0, 1, 2];
+    editor.selectionManager.showAxisVisuals();
+    editor.selectionManager.updateAxisLine();
+    editor.tjs.render();
+  });
+  await expect.soft(page).toHaveScreenshot("Transform-rotate-axis-pick-plane.png");
+  await expect(await page.evaluate(() => Boolean(window.editor.selectionManager.rotatePlaneMesh))).toBe(true);
+  await page.evaluate(() => {
+    const editor = window.editor;
     editor.selectionManager.stopAxisPicking();
     editor.eventHandlers.transformControls.refreshRotationPivot();
     editor.eventHandlers.transformControls.initialMousePosition = editor.eventHandlers.currentMousePosition.clone();

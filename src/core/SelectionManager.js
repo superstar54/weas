@@ -31,6 +31,9 @@ export class SelectionManager {
     this.translatePlaneSize = 30;
     this.rotateAxisLine = null;
     this.rotateAxisLength = 20;
+    this.rotatePlaneMesh = null;
+    this.rotateNormalLine = null;
+    this.rotatePlaneSize = 30;
 
     this.raycaster = new THREE.Raycaster();
     // only interact with layer 0
@@ -227,7 +230,7 @@ export class SelectionManager {
     if (mode === "translate") {
       this.setModeHint("Axis pick: click 2 or 3 atoms, press A to exit");
     } else {
-      this.setModeHint("Axis pick: click 1 or 2 atoms, press A to exit");
+      this.setModeHint("Axis pick: click 1, 2, or 3 atoms, press A to exit");
     }
   }
 
@@ -242,6 +245,7 @@ export class SelectionManager {
     this.axisVisible = false;
     this.updateAxisHighlight();
     this.updateAxisLine();
+    this.hideRotatePlane();
   }
 
   pickAxisAtom(event) {
@@ -251,7 +255,7 @@ export class SelectionManager {
     }
     if (this.axisAtomIndices.includes(atomIndex)) {
       this.axisAtomIndices = this.axisAtomIndices.filter((index) => index !== atomIndex);
-    } else if (this.axisAtomIndices.length >= (this.axisPickMode === "translate" ? 3 : 2)) {
+    } else if (this.axisAtomIndices.length >= (this.axisPickMode === "translate" ? 3 : 3)) {
       this.axisAtomIndices = [atomIndex];
     } else {
       this.axisAtomIndices.push(atomIndex);
@@ -387,7 +391,28 @@ export class SelectionManager {
   }
 
   updateAxisLine() {
-    if (!this.axisVisible || this.axisAtomIndices.length !== 2) {
+    if (!this.axisVisible) {
+      if (this.axisLine) {
+        this.tjs.scene.remove(this.axisLine);
+        this.axisLine.geometry.dispose();
+        this.axisLine.material.dispose();
+        this.axisLine = null;
+      }
+      this.hideRotatePlane();
+      return;
+    }
+    if (this.axisAtomIndices.length === 3) {
+      if (this.axisLine) {
+        this.tjs.scene.remove(this.axisLine);
+        this.axisLine.geometry.dispose();
+        this.axisLine.material.dispose();
+        this.axisLine = null;
+      }
+      this.showRotatePlaneFromAxisAtoms();
+      return;
+    }
+    this.hideRotatePlane();
+    if (this.axisAtomIndices.length !== 2) {
       if (this.axisLine) {
         this.tjs.scene.remove(this.axisLine);
         this.axisLine.geometry.dispose();
@@ -433,9 +458,7 @@ export class SelectionManager {
   }
 
   refreshAxisLine() {
-    if (this.axisAtomIndices.length === 2) {
-      this.updateAxisLine();
-    }
+    this.updateAxisLine();
   }
 
   showAxisVisuals() {
@@ -449,53 +472,111 @@ export class SelectionManager {
     this.axisVisible = false;
     this.updateAxisHighlight();
     this.updateAxisLine();
+    this.hideRotatePlane();
     this.weas?.avr?.requestRedraw?.("render");
   }
 
   showTranslateAxisLine(center, axis) {
-    if (!center || !axis) {
-      return;
-    }
-    const direction = axis.clone().normalize();
-    const start = center.clone().addScaledVector(direction, -this.translateAxisLength);
-    const end = center.clone().addScaledVector(direction, this.translateAxisLength);
-    if (!this.translateAxisLine) {
-      const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
-      const material = new THREE.LineDashedMaterial({
-        color: 0x55aaff,
-        dashSize: 0.6,
-        gapSize: 0.4,
-        transparent: true,
-        opacity: 0.9,
-        depthTest: false,
-      });
-      this.translateAxisLine = new THREE.Line(geometry, material);
-      this.translateAxisLine.computeLineDistances();
-      this.translateAxisLine.userData.notSelectable = true;
-      this.translateAxisLine.layers.set(1);
-      this.translateAxisLine.renderOrder = 999;
-      this.tjs.scene.add(this.translateAxisLine);
-    } else {
-      this.translateAxisLine.geometry.setFromPoints([start, end]);
-      this.translateAxisLine.geometry.attributes.position.needsUpdate = true;
-      this.translateAxisLine.geometry.computeBoundingSphere();
-      this.translateAxisLine.computeLineDistances();
-    }
-    this.weas?.avr?.requestRedraw?.("render");
+    this.showAxisLine({
+      center,
+      axis,
+      length: this.translateAxisLength,
+      color: 0x55aaff,
+      lineKey: "translateAxisLine",
+    });
   }
 
   hideTranslateAxisLine() {
-    if (!this.translateAxisLine) {
-      return;
-    }
-    this.tjs.scene.remove(this.translateAxisLine);
-    this.translateAxisLine.geometry.dispose();
-    this.translateAxisLine.material.dispose();
-    this.translateAxisLine = null;
-    this.weas?.avr?.requestRedraw?.("render");
+    this.hideAxisLine({ lineKey: "translateAxisLine" });
   }
 
   showTranslatePlane(center, normal) {
+    this.showPlaneWithNormal({
+      center,
+      normal,
+      size: this.translatePlaneSize,
+      color: 0x55aaff,
+      lineLength: this.translateAxisLength,
+      meshKey: "translatePlaneMesh",
+      lineKey: "translateNormalLine",
+    });
+  }
+
+  hideTranslatePlane() {
+    this.hidePlaneWithNormal({
+      meshKey: "translatePlaneMesh",
+      lineKey: "translateNormalLine",
+    });
+  }
+
+  showRotateAxisLine(center, axis) {
+    this.hideRotatePlane();
+    this.showAxisLine({
+      center,
+      axis,
+      length: this.rotateAxisLength,
+      color: 0xffaa55,
+      lineKey: "rotateAxisLine",
+    });
+  }
+
+  hideRotateAxisLine() {
+    this.hideAxisLine({ lineKey: "rotateAxisLine" });
+    this.hideRotatePlane();
+  }
+
+  showRotatePlaneFromAxisAtoms() {
+    const positions = this.weas?.avr?.atoms?.positions;
+    if (!positions || this.axisAtomIndices.length !== 3) {
+      this.hidePlaneWithNormal({
+        meshKey: "rotatePlaneMesh",
+        lineKey: "rotateNormalLine",
+      });
+      return;
+    }
+    const [i0, i1, i2] = this.axisAtomIndices;
+    if (!positions[i0] || !positions[i1] || !positions[i2]) {
+      this.hidePlaneWithNormal({
+        meshKey: "rotatePlaneMesh",
+        lineKey: "rotateNormalLine",
+      });
+      return;
+    }
+    const a = new THREE.Vector3(...positions[i0]);
+    const b = new THREE.Vector3(...positions[i1]);
+    const c = new THREE.Vector3(...positions[i2]);
+    const normal = b.clone().sub(a).cross(c.clone().sub(a));
+    if (normal.lengthSq() === 0) {
+      this.hidePlaneWithNormal({
+        meshKey: "rotatePlaneMesh",
+        lineKey: "rotateNormalLine",
+      });
+      return;
+    }
+    const center = a
+      .clone()
+      .add(b)
+      .add(c)
+      .multiplyScalar(1 / 3);
+    this.showPlaneWithNormal({
+      center,
+      normal,
+      size: this.rotatePlaneSize,
+      color: 0xffaa55,
+      lineLength: this.rotateAxisLength,
+      meshKey: "rotatePlaneMesh",
+      lineKey: "rotateNormalLine",
+    });
+  }
+
+  hideRotatePlane() {
+    this.hidePlaneWithNormal({
+      meshKey: "rotatePlaneMesh",
+      lineKey: "rotateNormalLine",
+    });
+  }
+
+  showPlaneWithNormal({ center, normal, size, color, lineLength, meshKey, lineKey }) {
     if (!center || !normal) {
       return;
     }
@@ -503,110 +584,110 @@ export class SelectionManager {
     if (unitNormal.lengthSq() === 0) {
       return;
     }
-    const size = this.translatePlaneSize;
-    if (!this.translatePlaneMesh) {
+    if (!this[meshKey]) {
       const geometry = new THREE.PlaneGeometry(size, size);
       const material = new THREE.MeshBasicMaterial({
-        color: 0x55aaff,
+        color,
         transparent: true,
         opacity: 0.15,
         side: THREE.DoubleSide,
         depthTest: false,
       });
-      this.translatePlaneMesh = new THREE.Mesh(geometry, material);
-      this.translatePlaneMesh.userData.notSelectable = true;
-      this.translatePlaneMesh.layers.set(1);
-      this.translatePlaneMesh.renderOrder = 998;
-      this.tjs.scene.add(this.translatePlaneMesh);
+      this[meshKey] = new THREE.Mesh(geometry, material);
+      this[meshKey].userData.notSelectable = true;
+      this[meshKey].layers.set(1);
+      this[meshKey].renderOrder = 998;
+      this.tjs.scene.add(this[meshKey]);
     }
     const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), unitNormal);
-    this.translatePlaneMesh.position.copy(center);
-    this.translatePlaneMesh.quaternion.copy(quaternion);
-    if (!this.translateNormalLine) {
-      const start = center.clone();
-      const end = center.clone().addScaledVector(unitNormal, this.translateAxisLength);
+    this[meshKey].position.copy(center);
+    this[meshKey].quaternion.copy(quaternion);
+    const start = center.clone();
+    const end = center.clone().addScaledVector(unitNormal, lineLength);
+    if (!this[lineKey]) {
       const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
       const material = new THREE.LineDashedMaterial({
-        color: 0x55aaff,
+        color,
         dashSize: 0.6,
         gapSize: 0.4,
         transparent: true,
         opacity: 0.9,
         depthTest: false,
       });
-      this.translateNormalLine = new THREE.Line(geometry, material);
-      this.translateNormalLine.computeLineDistances();
-      this.translateNormalLine.userData.notSelectable = true;
-      this.translateNormalLine.layers.set(1);
-      this.translateNormalLine.renderOrder = 999;
-      this.tjs.scene.add(this.translateNormalLine);
+      this[lineKey] = new THREE.Line(geometry, material);
+      this[lineKey].computeLineDistances();
+      this[lineKey].userData.notSelectable = true;
+      this[lineKey].layers.set(1);
+      this[lineKey].renderOrder = 999;
+      this.tjs.scene.add(this[lineKey]);
     } else {
-      const start = center.clone();
-      const end = center.clone().addScaledVector(unitNormal, this.translateAxisLength);
-      this.translateNormalLine.geometry.setFromPoints([start, end]);
-      this.translateNormalLine.geometry.attributes.position.needsUpdate = true;
-      this.translateNormalLine.geometry.computeBoundingSphere();
-      this.translateNormalLine.computeLineDistances();
+      this[lineKey].geometry.setFromPoints([start, end]);
+      this[lineKey].geometry.attributes.position.needsUpdate = true;
+      this[lineKey].geometry.computeBoundingSphere();
+      this[lineKey].computeLineDistances();
     }
     this.weas?.avr?.requestRedraw?.("render");
   }
 
-  hideTranslatePlane() {
-    if (this.translatePlaneMesh) {
-      this.tjs.scene.remove(this.translatePlaneMesh);
-      this.translatePlaneMesh.geometry.dispose();
-      this.translatePlaneMesh.material.dispose();
-      this.translatePlaneMesh = null;
+  hidePlaneWithNormal({ meshKey, lineKey }) {
+    if (this[meshKey]) {
+      this.tjs.scene.remove(this[meshKey]);
+      this[meshKey].geometry.dispose();
+      this[meshKey].material.dispose();
+      this[meshKey] = null;
     }
-    if (this.translateNormalLine) {
-      this.tjs.scene.remove(this.translateNormalLine);
-      this.translateNormalLine.geometry.dispose();
-      this.translateNormalLine.material.dispose();
-      this.translateNormalLine = null;
+    if (this[lineKey]) {
+      this.tjs.scene.remove(this[lineKey]);
+      this[lineKey].geometry.dispose();
+      this[lineKey].material.dispose();
+      this[lineKey] = null;
     }
     this.weas?.avr?.requestRedraw?.("render");
   }
 
-  showRotateAxisLine(center, axis) {
+  showAxisLine({ center, axis, length, color, lineKey }) {
     if (!center || !axis) {
       return;
     }
     const direction = axis.clone().normalize();
-    const start = center.clone().addScaledVector(direction, -this.rotateAxisLength);
-    const end = center.clone().addScaledVector(direction, this.rotateAxisLength);
-    if (!this.rotateAxisLine) {
+    if (direction.lengthSq() === 0) {
+      return;
+    }
+    const start = center.clone().addScaledVector(direction, -length);
+    const end = center.clone().addScaledVector(direction, length);
+    if (!this[lineKey]) {
       const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
       const material = new THREE.LineDashedMaterial({
-        color: 0xffaa55,
+        color,
         dashSize: 0.6,
         gapSize: 0.4,
         transparent: true,
         opacity: 0.9,
         depthTest: false,
       });
-      this.rotateAxisLine = new THREE.Line(geometry, material);
-      this.rotateAxisLine.computeLineDistances();
-      this.rotateAxisLine.userData.notSelectable = true;
-      this.rotateAxisLine.layers.set(1);
-      this.rotateAxisLine.renderOrder = 999;
-      this.tjs.scene.add(this.rotateAxisLine);
+      this[lineKey] = new THREE.Line(geometry, material);
+      this[lineKey].computeLineDistances();
+      this[lineKey].userData.notSelectable = true;
+      this[lineKey].layers.set(1);
+      this[lineKey].renderOrder = 999;
+      this.tjs.scene.add(this[lineKey]);
     } else {
-      this.rotateAxisLine.geometry.setFromPoints([start, end]);
-      this.rotateAxisLine.geometry.attributes.position.needsUpdate = true;
-      this.rotateAxisLine.geometry.computeBoundingSphere();
-      this.rotateAxisLine.computeLineDistances();
+      this[lineKey].geometry.setFromPoints([start, end]);
+      this[lineKey].geometry.attributes.position.needsUpdate = true;
+      this[lineKey].geometry.computeBoundingSphere();
+      this[lineKey].computeLineDistances();
     }
     this.weas?.avr?.requestRedraw?.("render");
   }
 
-  hideRotateAxisLine() {
-    if (!this.rotateAxisLine) {
+  hideAxisLine({ lineKey }) {
+    if (!this[lineKey]) {
       return;
     }
-    this.tjs.scene.remove(this.rotateAxisLine);
-    this.rotateAxisLine.geometry.dispose();
-    this.rotateAxisLine.material.dispose();
-    this.rotateAxisLine = null;
+    this.tjs.scene.remove(this[lineKey]);
+    this[lineKey].geometry.dispose();
+    this[lineKey].material.dispose();
+    this[lineKey] = null;
     this.weas?.avr?.requestRedraw?.("render");
   }
 
