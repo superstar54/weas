@@ -108,7 +108,7 @@ test("Highlight CrossView", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("Highlight-crossView.png");
 });
 
-test("Transform Axis", async ({ page }) => {
+test("Transform Rotate Axis", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");
   await page.waitForFunction(() => window.editor);
   // focus the element
@@ -127,12 +127,20 @@ test("Transform Axis", async ({ page }) => {
     editor.avr.selectedAtomsIndices = [2, 4, 6, 7];
     editor.eventHandlers.currentMousePosition.set(300, 200);
     editor.eventHandlers.transformControls.enterMode("rotate", editor.eventHandlers.currentMousePosition);
+    editor.selectionManager.startAxisPicking("rotate");
     editor.selectionManager.axisAtomIndices = [0, 1];
     editor.selectionManager.showAxisVisuals();
     editor.selectionManager.updateAxisLine();
     editor.tjs.render();
   });
   await expect.soft(page).toHaveScreenshot("Transform-rotate-axis-pick.png");
+  await expect(await page.evaluate(() => window.editor.selectionManager.isAxisPicking)).toBe(true);
+  await page.evaluate(() => {
+    const editor = window.editor;
+    editor.selectionManager.stopAxisPicking();
+    editor.eventHandlers.transformControls.refreshRotationPivot();
+    editor.eventHandlers.transformControls.initialMousePosition = editor.eventHandlers.currentMousePosition.clone();
+  });
   // mouse move to the center of the canvas element
   await page.mouse.move(page.centerX + 100, page.centerY);
   await page.mouse.click(page.centerX + 100, page.centerY);
@@ -146,10 +154,26 @@ test("Transform Axis", async ({ page }) => {
     editor.tjs.render();
   });
   await expect.soft(page).toHaveScreenshot("Transform-rotate-axis-lock.png");
+});
+
+test("Transform Translate Axis", async ({ page }) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");
+  await page.waitForFunction(() => window.editor);
+  // focus the element
+  const element = await page.$("#viewer");
+  await element.focus();
+  const boundingBox = await element.boundingBox();
+  // Calculate the center of the element
+  const centerX = boundingBox.x + boundingBox.width / 2;
+  const centerY = boundingBox.y + boundingBox.height / 2;
+  page.centerX = centerX;
+  page.centerY = centerY;
+  // Move the mouse to the center of the element
+  await page.mouse.move(centerX, centerY);
 
   await page.evaluate(() => {
     const editor = window.editor;
-    editor.eventHandlers.transformControls.exitMode();
+    editor.avr.selectedAtomsIndices = [2, 4, 6, 7];
     editor.eventHandlers.currentMousePosition.set(300, 200);
     editor.eventHandlers.transformControls.enterMode("translate", editor.eventHandlers.currentMousePosition);
     editor.eventHandlers.transformControls.setTranslateAxisLock("x");
@@ -160,6 +184,42 @@ test("Transform Axis", async ({ page }) => {
   await page.mouse.move(page.centerX + 200, page.centerY);
   await page.mouse.click(page.centerX + 200, page.centerY);
   await expect.soft(page).toHaveScreenshot("Transform-translate-axis-lock-move.png");
+
+  await page.evaluate(() => {
+    const editor = window.editor;
+    editor.eventHandlers.transformControls.exitMode();
+    editor.eventHandlers.currentMousePosition.set(300, 200);
+    editor.eventHandlers.transformControls.enterMode("translate", editor.eventHandlers.currentMousePosition);
+    editor.selectionManager.startAxisPicking("translate");
+    editor.selectionManager.axisAtomIndices = [0, 1];
+    editor.selectionManager.showAxisVisuals();
+    editor.selectionManager.updateAxisLine();
+    editor.selectionManager.stopAxisPicking("Translate mode: move mouse to translate, press A to set axis, X/Y/Z to lock");
+    editor.eventHandlers.transformControls.setTranslateAxisFromAtoms();
+    editor.tjs.render();
+  });
+  await expect.soft(page).toHaveScreenshot("Transform-translate-atom-axis.png");
+
+  await page.evaluate(() => {
+    const editor = window.editor;
+    editor.eventHandlers.transformControls.exitMode();
+    editor.eventHandlers.currentMousePosition.set(300, 200);
+    editor.eventHandlers.transformControls.enterMode("translate", editor.eventHandlers.currentMousePosition);
+    editor.selectionManager.startAxisPicking("translate");
+    editor.selectionManager.axisAtomIndices = [0, 1, 2];
+    editor.selectionManager.showAxisVisuals();
+    editor.selectionManager.updateAxisLine();
+    editor.selectionManager.stopAxisPicking("Translate mode: move mouse to translate, press A to set axis, X/Y/Z to lock");
+    editor.eventHandlers.transformControls.setTranslatePlaneFromAtoms();
+    editor.tjs.render();
+  });
+  await expect(await page.evaluate(() => window.editor.eventHandlers.transformControls.translatePlanePending)).toBe(true);
+  await expect.soft(page).toHaveScreenshot("Transform-translate-plane-pick.png");
+  await page.evaluate(() => {
+    const editor = window.editor;
+    editor.eventHandlers.transformControls.setTranslatePlaneConstraint("plane");
+  });
+  await expect(await page.evaluate(() => window.editor.eventHandlers.transformControls.translatePlanePending)).toBe(false);
 });
 
 test("Text Manager", async ({ page }) => {
