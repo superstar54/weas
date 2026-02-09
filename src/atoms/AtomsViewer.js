@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { CellManager } from "./cell.js";
 import { AtomManager } from "./plugins/atom.js";
 import { BondManager, defaultBondRadius, searchBondedAtoms } from "./plugins/bond.js";
-import { clearObjects, clearObject, toIndexArray, toVector3 } from "../utils.js";
+import { clearObjects, clearObject, toIndexArray, toVector3, calculateCartesianCoordinates, calculateInverseMatrix, multiplyMatrixVector } from "../utils.js";
 import { PolyhedraManager } from "./plugins/polyhedra.js";
 import { BoundaryManager } from "./plugins/boundary.js";
 import { AtomLabelManager } from "./plugins/atomLabel.js";
@@ -38,6 +38,7 @@ class AtomsViewer {
     this._showBondedAtoms = viewerSettings.showBondedAtoms;
     this._boundary = viewerSettings.boundary;
     this._atomScale = viewerSettings.atomScale;
+    this._wrapOnMove = viewerSettings.wrapOnMove;
     this._backgroundColor = viewerSettings.backgroundColor;
     this.tjs.scene.background = new THREE.Color(this._backgroundColor);
     this._selectedAtomsIndices = new Array(); // Store selected atoms
@@ -636,6 +637,19 @@ class AtomsViewer {
     this.applyState({ atomScale: newValue }, { redraw: "render" });
   }
 
+  get wrapOnMove() {
+    return this._wrapOnMove;
+  }
+
+  set wrapOnMove(newValue) {
+    if (this._syncingState) {
+      this._wrapOnMove = newValue;
+      this.weas.eventHandlers.dispatchViewerUpdated({ wrapOnMove: newValue });
+      return;
+    }
+    this.applyState({ wrapOnMove: newValue }, { redraw: "none" });
+  }
+
   get atomScales() {
     return this._atomScales;
   }
@@ -1036,16 +1050,58 @@ class AtomsViewer {
   }
 
   setAtomPosition({ index, position }) {
+    const nextPosition = this.wrapPositionIfNeeded(position);
     // Update the atom position
     const matrix = new THREE.Matrix4();
     this.atomManager.meshes["atom"].getMatrixAt(index, matrix);
-    matrix.setPosition(position);
+    matrix.setPosition(nextPosition);
     this.atomManager.meshes["atom"].setMatrixAt(index, matrix);
-    this.atoms.positions[index] = [position.x, position.y, position.z];
+    this.atoms.positions[index] = [nextPosition.x, nextPosition.y, nextPosition.z];
     // update the other meshes
     this.atomManager.updateImageAtomsMesh(index);
     this.bondManager.updateBondMesh(index);
     this.polyhedraManager.updatePolyhedraMesh(index);
+  }
+
+  wrapPositionIfNeeded(position) {
+    if (!this._wrapOnMove) {
+      return position;
+    }
+    if (!this.atoms || !Array.isArray(this.atoms.pbc) || !this.atoms.pbc.some(Boolean)) {
+      return position;
+    }
+    if (typeof this.atoms.isUndefinedCell === "function" && this.atoms.isUndefinedCell()) {
+      return position;
+    }
+    const cell = this.atoms.cell;
+    if (!Array.isArray(cell) || cell.length !== 3) {
+      return position;
+    }
+    try {
+      const cellT = cell[0].map((_, i) => cell.map((row) => row[i]));
+      const invCellT = calculateInverseMatrix(cellT);
+      const fractional = multiplyMatrixVector(invCellT, [position.x, position.y, position.z]);
+      let changed = false;
+      for (let i = 0; i < 3; i++) {
+        if (!this.atoms.pbc[i]) {
+          continue;
+        }
+        const f = fractional[i];
+        const wrapped = f - Math.floor(f);
+        if (wrapped !== f) {
+          changed = true;
+        }
+        fractional[i] = wrapped;
+      }
+      if (!changed) {
+        return position;
+      }
+      const wrappedCartesian = calculateCartesianCoordinates(cell, fractional);
+      return new THREE.Vector3(wrappedCartesian[0], wrappedCartesian[1], wrappedCartesian[2]);
+    } catch (err) {
+      this.logger.debug("wrapPositionIfNeeded failed:", err);
+      return position;
+    }
   }
 
   resetSelectedAtomsPositions(initialAtomPositionsOrOptions, indices = null) {

@@ -15,6 +15,7 @@ function createDefaultState() {
       showBondedAtoms: viewerDefaults.showBondedAtoms,
       boundary: viewerDefaults.boundary,
       atomScale: viewerDefaults.atomScale,
+      wrapOnMove: viewerDefaults.wrapOnMove,
       atomScales: [],
       modelSticks: [],
       modelPolyhedras: [],

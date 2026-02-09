@@ -224,6 +224,13 @@ class AtomsGUI {
       );
     });
     boundaryFolder.add({ apply: () => this.applyBoundaryChanges() }, "apply").name("Apply Changes");
+    this.wrapOnMoveController = boundaryFolder
+      .add({ wrapOnMove: this.viewer.wrapOnMove }, "wrapOnMove")
+      .name("Wrap On Move")
+      .onChange((value) => {
+        if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
+        this.viewer.setState({ wrapOnMove: value }, { record: true, redraw: "none" });
+      });
   }
 
   addColorControl() {
@@ -448,6 +455,9 @@ class AtomsGUI {
         case "boundary":
           this.updateBoundary(value);
           break;
+        case "wrapOnMove":
+          this.updateWrapOnMove(value);
+          break;
         default:
           break;
       }
@@ -532,6 +542,12 @@ class AtomsGUI {
           controller.setValue(newValue[i][j]);
         }
       }
+    }
+  }
+
+  updateWrapOnMove(newValue) {
+    if (this.wrapOnMoveController && this.wrapOnMoveController.getValue() !== newValue) {
+      this.wrapOnMoveController.setValue(newValue);
     }
   }
 }

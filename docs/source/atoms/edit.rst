@@ -50,6 +50,18 @@ to apply the transform and click to confirm.
 - ``r`` rotate
 - ``s`` scale
 
+Wrap On Move (PBC)
+-------------------
+By default, translations do not wrap atoms back into the unit cell. To enable
+PBC wrapping after moving atoms, set ``wrapOnMove`` to ``true`` (a valid cell
+and ``pbc`` flags are required).
+
+.. code-block:: javascript
+
+   editor.avr.wrapOnMove = true;
+
+You can also toggle this in the GUI under **Boundary**.
+
 Rotation defaults to the camera axis through the selection center.
 To rotate around a custom axis, press ``r`` to enter rotate mode, then press ``a`` and click one, two, or three atoms, then press ``a`` again to exit axis picking.
 One atom sets the rotation center (camera axis), two atoms define the bond axis, and three atoms define the plane normal through their centroid.
