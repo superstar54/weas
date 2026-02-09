@@ -30,6 +30,7 @@ const defaultViewerSettings = {
     [0, 1],
   ],
   atomScale: 0.4, // Default atom scale
+  wrapOnMove: false, // Wrap atoms into the unit cell after moving
   backgroundColor: "#ffffff", // Default background color (white)
   logLevel: "warn", // Default log level
   continuousUpdate: true, // Default continuous update

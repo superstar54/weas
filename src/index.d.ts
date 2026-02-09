@@ -163,6 +163,8 @@ export declare class AtomsViewer {
   boundary: any;
   /** Atom scale factor */
   atomScale: number;
+  /** Whether to wrap atoms into the unit cell after moving */
+  wrapOnMove: boolean;
   /** Per-atom scale overrides */
   atomScales: number[];
   /** Per-atom stick style overrides */
