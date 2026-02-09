@@ -238,7 +238,30 @@ export class TransformControls {
     }
     const axisAtoms = this.weas.selectionManager.axisAtomIndices || [];
     const selectedAtoms = this.weas.avr.selectedAtomsIndices;
-    if (axisAtoms.length === 2) {
+    if (axisAtoms.length === 3) {
+      const positions = this.weas?.avr?.atoms?.positions;
+      if (positions && positions[axisAtoms[0]] && positions[axisAtoms[1]] && positions[axisAtoms[2]]) {
+        const a = new THREE.Vector3(...positions[axisAtoms[0]]);
+        const b = new THREE.Vector3(...positions[axisAtoms[1]]);
+        const c = new THREE.Vector3(...positions[axisAtoms[2]]);
+        const normal = b.clone().sub(a).cross(c.clone().sub(a));
+        if (normal.lengthSq() > 0) {
+          const axis = normal.normalize();
+          if (axis.dot(this.cameraDirection) < 0) {
+            axis.negate();
+          }
+          this.rotationAxis.copy(axis);
+          this.rotationCentroid.copy(
+            a
+              .clone()
+              .add(b)
+              .add(c)
+              .multiplyScalar(1 / 3),
+          );
+          return;
+        }
+      }
+    } else if (axisAtoms.length === 2) {
       const first = new THREE.Vector3(...this.weas.avr.atoms.positions[axisAtoms[0]]);
       const second = new THREE.Vector3(...this.weas.avr.atoms.positions[axisAtoms[1]]);
       const axis = second.clone().sub(first);
@@ -250,6 +273,30 @@ export class TransformControls {
     } else if (axisAtoms.length === 1) {
       this.rotationCentroid.copy(new THREE.Vector3(...this.weas.avr.atoms.positions[axisAtoms[0]]));
       return;
+    }
+    if (selectedAtoms.length === 3) {
+      const positions = this.weas?.avr?.atoms?.positions;
+      if (positions && positions[selectedAtoms[0]] && positions[selectedAtoms[1]] && positions[selectedAtoms[2]]) {
+        const a = new THREE.Vector3(...positions[selectedAtoms[0]]);
+        const b = new THREE.Vector3(...positions[selectedAtoms[1]]);
+        const c = new THREE.Vector3(...positions[selectedAtoms[2]]);
+        const normal = b.clone().sub(a).cross(c.clone().sub(a));
+        if (normal.lengthSq() > 0) {
+          const axis = normal.normalize();
+          if (axis.dot(this.cameraDirection) < 0) {
+            axis.negate();
+          }
+          this.rotationAxis.copy(axis);
+          this.rotationCentroid.copy(
+            a
+              .clone()
+              .add(b)
+              .add(c)
+              .multiplyScalar(1 / 3),
+          );
+          return;
+        }
+      }
     }
     if (selectedAtoms.length > 0) {
       selectedAtoms.forEach((atomIndex) => {
