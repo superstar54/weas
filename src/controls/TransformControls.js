@@ -111,7 +111,21 @@ export class TransformControls {
     const mode = this.mode;
     if (this.mode === "translate") {
       const translateVector = this.getTranslateVector(this.eventHandler.currentMousePosition, this.initialMousePosition);
-      const translateOperation = new TranslateOperation({ weas: this.weas, vector: translateVector });
+      const constraintType = this.translateConstraintType;
+      let axis = null;
+      let planeNormal = null;
+      if (constraintType === "axis") {
+        axis = this.translateAxis.clone();
+      } else if (constraintType === "plane" || constraintType === "normal") {
+        planeNormal = this.translatePlaneNormal.clone();
+      }
+      const translateOperation = new TranslateOperation({
+        weas: this.weas,
+        vector: translateVector,
+        constraintType,
+        axis,
+        planeNormal,
+      });
       this.weas.ops.execute(translateOperation, false);
     } else if (this.mode === "rotate") {
       const rotationAngle = this.getRotationAngle(this.eventHandler.currentMousePosition, this.initialMousePosition);

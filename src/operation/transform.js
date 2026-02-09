@@ -13,7 +13,7 @@ class TranslateOperation extends BaseOperation {
     },
   };
 
-  constructor({ weas, vector = new THREE.Vector3() }) {
+  constructor({ weas, vector = new THREE.Vector3(), constraintType = null, axis = null, planeNormal = null }) {
     super(weas);
     // currentFrame
     this.currentFrame = weas.avr.currentFrame;
@@ -25,6 +25,26 @@ class TranslateOperation extends BaseOperation {
       vector = new THREE.Vector3(vector[0], vector[1], vector[2]);
     }
     this.vector = vector.clone();
+    this.constraintType = constraintType || null; // null | "axis" | "plane" | "normal"
+    this.axis = axis ? axis.clone() : new THREE.Vector3();
+    this.normal = new THREE.Vector3();
+    this.planeNormal = new THREE.Vector3();
+    this.planeU = new THREE.Vector3();
+    this.planeV = new THREE.Vector3();
+    this.distance = 0;
+    this.uDistance = 0;
+    this.vDistance = 0;
+    if (this.constraintType === "axis" && this.axis.lengthSq() === 0) {
+      this.axis.set(1, 0, 0);
+    }
+    if (this.constraintType === "normal" && planeNormal) {
+      this.normal.copy(planeNormal);
+    }
+    if (this.constraintType === "plane" && planeNormal) {
+      this.planeNormal.copy(planeNormal);
+    }
+    this.refreshConstraintStateFromVector();
+    this.uiFields = this.buildUISchema();
   }
 
   execute() {
@@ -49,6 +69,109 @@ class TranslateOperation extends BaseOperation {
     this.adjustWithReset(params, () => {
       this.undo();
     });
+  }
+
+  buildUISchema() {
+    if (this.constraintType === "axis") {
+      return {
+        title: "Translate (Axis)",
+        fields: {
+          distance: { type: "number", min: -10, max: 10, step: 0.1 },
+          axisX: { type: "number", min: -1, max: 1, step: 0.01, path: "axis.x" },
+          axisY: { type: "number", min: -1, max: 1, step: 0.01, path: "axis.y" },
+          axisZ: { type: "number", min: -1, max: 1, step: 0.01, path: "axis.z" },
+        },
+      };
+    }
+    if (this.constraintType === "normal") {
+      return {
+        title: "Translate (Normal)",
+        fields: {
+          distance: { type: "number", min: -10, max: 10, step: 0.1 },
+          normalX: { type: "number", min: -1, max: 1, step: 0.01, path: "normal.x" },
+          normalY: { type: "number", min: -1, max: 1, step: 0.01, path: "normal.y" },
+          normalZ: { type: "number", min: -1, max: 1, step: 0.01, path: "normal.z" },
+        },
+      };
+    }
+    if (this.constraintType === "plane") {
+      return {
+        title: "Translate (Plane)",
+        fields: {
+          u: { type: "number", min: -10, max: 10, step: 0.1, path: "uDistance" },
+          v: { type: "number", min: -10, max: 10, step: 0.1, path: "vDistance" },
+          normalX: { type: "number", min: -1, max: 1, step: 0.01, path: "planeNormal.x" },
+          normalY: { type: "number", min: -1, max: 1, step: 0.01, path: "planeNormal.y" },
+          normalZ: { type: "number", min: -1, max: 1, step: 0.01, path: "planeNormal.z" },
+        },
+      };
+    }
+    return this.constructor.ui || null;
+  }
+
+  applyParams(params) {
+    super.applyParams(params);
+    this.refreshVectorFromConstraint();
+  }
+
+  refreshConstraintStateFromVector() {
+    if (this.constraintType === "axis") {
+      this.normalizeAxis(this.axis);
+      this.distance = this.vector.dot(this.axis);
+      return;
+    }
+    if (this.constraintType === "normal") {
+      this.normalizeAxis(this.normal, new THREE.Vector3(0, 0, 1));
+      this.distance = this.vector.dot(this.normal);
+      return;
+    }
+    if (this.constraintType === "plane") {
+      this.ensurePlaneBasis();
+      this.uDistance = this.vector.dot(this.planeU);
+      this.vDistance = this.vector.dot(this.planeV);
+      return;
+    }
+  }
+
+  refreshVectorFromConstraint() {
+    if (this.constraintType === "axis") {
+      this.normalizeAxis(this.axis);
+      this.vector.copy(this.axis).multiplyScalar(this.distance || 0);
+      return;
+    }
+    if (this.constraintType === "normal") {
+      this.normalizeAxis(this.normal, new THREE.Vector3(0, 0, 1));
+      this.vector.copy(this.normal).multiplyScalar(this.distance || 0);
+      return;
+    }
+    if (this.constraintType === "plane") {
+      this.ensurePlaneBasis();
+      this.vector
+        .copy(this.planeU)
+        .multiplyScalar(this.uDistance || 0)
+        .add(this.planeV.clone().multiplyScalar(this.vDistance || 0));
+    }
+  }
+
+  normalizeAxis(axis, fallback = new THREE.Vector3(1, 0, 0)) {
+    if (!axis || axis.lengthSq() === 0) {
+      axis.copy(fallback);
+    }
+    axis.normalize();
+  }
+
+  ensurePlaneBasis() {
+    this.normalizeAxis(this.planeNormal, new THREE.Vector3(0, 0, 1));
+    const n = this.planeNormal;
+    const ref = Math.abs(n.x) < 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+    const u = new THREE.Vector3().crossVectors(n, ref);
+    if (u.lengthSq() === 0) {
+      u.crossVectors(n, new THREE.Vector3(0, 0, 1));
+    }
+    u.normalize();
+    const v = new THREE.Vector3().crossVectors(n, u).normalize();
+    this.planeU.copy(u);
+    this.planeV.copy(v);
   }
 }
 
