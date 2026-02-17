@@ -432,32 +432,38 @@ export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, 
   const bondMesh = new THREE.InstancedMesh(cylinderGeometry, material, bondIndices.length * 2);
   const bondCap = withCap ? new THREE.InstancedMesh(sphereGeometry, material, bondIndices.length * 2) : null;
 
+  // pre assign some vectors
+  const position1 = new THREE.Vector3();
+  const position2 = new THREE.Vector3();
+  const midpoint1 = new THREE.Vector3();
+  const midpoint2 = new THREE.Vector3();
+  const instanceMatrix = new THREE.Matrix4();
   for (let i = 0; i < bondIndices.length; i++) {
     const [index1, index2, offset1, offset2] = bondList[bondIndices[i]];
-    var position1 = atoms.positions[index1].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset1)[index]);
-    position1 = new THREE.Vector3(...position1);
+    const p1 = atoms.positions[index1].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset1)[index]);
+    position1.set(...p1);
 
-    var position2 = atoms.positions[index2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
-    position2 = new THREE.Vector3(...position2);
+    const p2 = atoms.positions[index2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
+    position2.set(...p2);
 
     const key = atoms.symbols[index1] + "-" + atoms.symbols[index2];
     const color1 = atomColors ? atomColors[index1] : settings[key].color1;
     const color2 = atomColors ? atomColors[index2] : settings[key].color2;
 
     // Midpoints and quaternion for cylinder placement
-    const midpoint1 = new THREE.Vector3().lerpVectors(position1, position2, 0.25);
-    const midpoint2 = new THREE.Vector3().lerpVectors(position1, position2, 0.75);
+    midpoint1.lerpVectors(position1, position2, 0.25);
+    midpoint2.lerpVectors(position1, position2, 0.75);
     const quaternion = calculateQuaternion(position1, position2);
     const scale = calculateScale(position1, position2, radius);
 
     // Set the first cylinder
-    const instanceMatrix1 = new THREE.Matrix4().compose(midpoint1, quaternion, scale);
-    bondMesh.setMatrixAt(i * 2, instanceMatrix1);
+    instanceMatrix.compose(midpoint1, quaternion, scale)
+    bondMesh.setMatrixAt(i * 2, instanceMatrix);
     bondMesh.setColorAt(i * 2, color1);
 
     // Set the second cylinder
-    const instanceMatrix2 = new THREE.Matrix4().compose(midpoint2, quaternion, scale);
-    bondMesh.setMatrixAt(i * 2 + 1, instanceMatrix2);
+    instanceMatrix.compose(midpoint2, quaternion, scale)
+    bondMesh.setMatrixAt(i * 2 + 1, instanceMatrix);
     bondMesh.setColorAt(i * 2 + 1, color2);
 
     // If withCap is true, add spheres at ends
