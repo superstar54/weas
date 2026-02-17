@@ -210,8 +210,11 @@ export class PolyhedraManager {
   drawPolyhedraMesh(atoms, materialType = "standard", showEdges = true) {
     const material = materials[materialType].clone();
     material.transparent = true;
-    material.opacity = 0.8;
-    material.vertexColors = true; // Ensure vertex colors are applied
+    material.opacity = 0.50; // reduced opacity since DoubleSide is now used.
+    material.vertexColors = true;
+    material.depthWrite = false;     // prevents faces from blocking each other
+    material.side = THREE.DoubleSide;
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(this.allVertices, 3));
     geometry.setAttribute("normal", new THREE.Float32BufferAttribute(this.allNormals, 3));
