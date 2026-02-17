@@ -207,7 +207,7 @@ export class PolyhedraManager {
     this.vertexAtomMap = vertexAtomMap;
   }
 
-  drawPolyhedraMesh(atoms, materialType = "standard") {
+  drawPolyhedraMesh(atoms, materialType = "standard", showEdges = true) {
     const material = materials[materialType].clone();
     material.transparent = true;
     material.opacity = 0.8;
@@ -223,6 +223,23 @@ export class PolyhedraManager {
     mesh.userData.notSelectable = true;
     mesh.layers.set(1);
 
+     if (showEdges) {
+    // Generate edges from the same geometry
+    const edgesGeometry = new THREE.EdgesGeometry(geometry, 1); // 1 = angle threshold
+    const lineMaterial = new THREE.LineBasicMaterial({
+      color: 0x000,
+      linewidth: 1,
+      transparent: true,
+      opacity: 0.25,
+    });
+    const edgesMesh = new THREE.LineSegments(edgesGeometry, lineMaterial);
+
+    edgesMesh.renderOrder = 1001; // Render edges after the transparent mesh
+    edgesMesh.layers.set(1);
+
+    // Add edges as a child of the main mesh
+    mesh.add(edgesMesh);
+  }
     return mesh;
   }
 
