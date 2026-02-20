@@ -210,7 +210,7 @@ export class PolyhedraManager {
   drawPolyhedraMesh(atoms, materialType = "standard", showEdges = true) {
     const material = materials[materialType].clone();
     material.transparent = true;
-    material.opacity = 0.50; // reduced opacity since DoubleSide is now used.
+    material.opacity = 0.60;
     material.vertexColors = true;
     material.depthWrite = false;     // prevents faces from blocking each other
     material.side = THREE.DoubleSide;
@@ -230,10 +230,10 @@ export class PolyhedraManager {
     // Generate edges from the same geometry
     const edgesGeometry = new THREE.EdgesGeometry(geometry, 1); // 1 = angle threshold
     const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0x000,
+      color: 0xb4b4b4,
       linewidth: 1,
       transparent: true,
-      opacity: 0.25,
+      opacity: 0.50,
     });
     const edgesMesh = new THREE.LineSegments(edgesGeometry, lineMaterial);
 
