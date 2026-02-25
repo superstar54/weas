@@ -24,7 +24,6 @@ class WEAS {
     this.uuid = THREE.MathUtils.generateUUID();
     // Initialize Three.js scene, camera, and renderer
     this.tjs = new BlendJS(domElement, this);
-    this.tjs.weas = this;
     this.tjs.requestRedraw = this.requestRedraw.bind(this);
     this.guiManager = new GUIManager(this, guiConfig);
     this.eventHandlers = new EventHandlers(this);
