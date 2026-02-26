@@ -12,6 +12,10 @@ export interface WEASOptions {
   viewerConfig?: Record<string, any>;
   /** Configuration for the GUIManager */
   guiConfig?: Record<string, any>;
+  /** Configuration for the tjs renderer */
+  tjsConfig?: Record<string, any>;
+  /** Configuration for keybinds */
+  keybindConfig?: Record<string, any>;
 }
 
 /**
