@@ -20,11 +20,20 @@ import { createDefaultState } from "./state/defaultState.js";
 import { fromWidgetSnapshot } from "./state/adapters.js";
 
 class WEAS {
-  constructor({ domElement, atoms = [new Atoms()], viewerConfig = {}, guiConfig = {} }) {
+  constructor({ 
+    domElement,
+    atoms = [new Atoms()],
+    viewerConfig = {},
+    guiConfig = {},
+    tjsConfig = null,
+    keybindConfig = null
+  }) {
     this.uuid = THREE.MathUtils.generateUUID();
     // Initialize Three.js scene, camera, and renderer
+    this.tjsConfig = tjsConfig 
     this.tjs = new BlendJS(domElement, this);
-    this.tjs.weas = this;
+    this.keybindConfig = keybindConfig
+    
     this.tjs.requestRedraw = this.requestRedraw.bind(this);
     this.guiManager = new GUIManager(this, guiConfig);
     this.eventHandlers = new EventHandlers(this);

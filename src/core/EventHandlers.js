@@ -6,14 +6,83 @@ Object mode:
 
 import * as THREE from "three";
 import { TransformControls } from "../controls/TransformControls.js";
+import { defaultKeyBindConfig } from "../config.js";
+
+// pattern to determine if a keycombo is being pressed
+function matchKey(event, combo) {
+  const key = combo[combo.length - 1];
+  const modifiers = combo.slice(0, -1); 
+  // Check main key
+  if (event.key.toLowerCase() !== key.toLowerCase()) return false;
+
+  // Check modifiers
+  const ctrl = modifiers.includes("ctrl");
+  const shift = modifiers.includes("shift");
+  const alt = modifiers.includes("alt");
+  const meta = modifiers.includes("meta");
+
+  if (ctrl !== event.ctrlKey) return false;
+  if (shift !== event.shiftKey) return false;
+  if (alt !== event.altKey) return false;
+  if (meta !== event.metaKey) return false;
+  return true;
+}
 
 class EventHandlers {
+    // map named actions to their respective operation.
+    // this could be moved to a private controller somewhere.
+    actionMap = {
+      exitMode: () => this.transformControls.exitMode(),
+      undo: () => this.weas.ops.undo(),
+      redo: () => this.weas.ops.redo(),
+      adjustLastOperation: () => this.weas.ops.updateAdjustLastOperationGUI(),
+
+      DeleteOperation: () => this.weas.ops.object.DeleteOperation(),
+      enterObjectMode: () => {this.weas.objectManager.enterMode("object");
+      },
+      enterEditMode: () => {this.weas.objectManager.enterMode("edit");
+      },
+      TranslateOperation: () =>
+        this.transformControls.enterMode(
+          "translate",
+          this.currentMousePosition,
+        ),
+      ScaleOperation: () =>
+        this.transformControls.enterMode("scale", this.currentMousePosition),
+      RotateOperation: () =>
+        this.transformControls.enterMode("rotate", this.currentMousePosition),
+      CopyOperation: () => {
+        this.weas.ops.object.CopyOperation();
+        this.transformControls.enterMode(
+          "translate",
+          this.currentMousePosition,
+        );
+      },      
+      ReplaceOperation: () => this.weas.ops.atoms.ReplaceOperation(),
+      measure: () =>
+        this.weas.avr.Measurement.measure(this.weas.avr.selectedAtomsIndices),
+      camera1: () =>
+        this.weas.tjs.updateCameraAndControls({ direction: [0, -100, 0] }),
+      camera2: () =>
+        this.weas.tjs.updateCameraAndControls({ direction: [-100, 0, 0] }),
+      camera3: () =>
+        this.weas.tjs.updateCameraAndControls({ direction: [0, 0, 100] }),
+      camera4: () =>
+        this.weas.tjs.updateCameraAndControls({ direction: [0, 100, 0] }),
+      camera5: () =>
+        this.weas.tjs.updateCameraAndControls({ direction: [100, 0, 0] }),
+      camera6: () =>
+        this.weas.tjs.updateCameraAndControls({ direction: [0, 0, -100] }),
+
+    };
+
   constructor(weas) {
     this.weas = weas;
     this.tjs = weas.tjs;
     this.init();
     this.transformControls = new TransformControls(weas, this);
     this.setupEventListeners();
+    this.keybindConfig = weas.keybindConfig || defaultKeyBindConfig
   }
 
   init() {
@@ -84,133 +153,79 @@ class EventHandlers {
     }
   }
 
-  onKeyDown(event) {
-    // Implement the logic for key down events
-    if (this.transformControls.mode === "translate" && (event.key === "x" || event.key === "y" || event.key === "z")) {
-      const key = event.key.toLowerCase();
-      if (this.transformControls.translateAxisLock === key) {
-        this.transformControls.setTranslateAxisLock(null);
-      } else {
-        this.transformControls.setTranslateAxisLock(key);
+  handleTransformModeKeys(event) {
+    const key = event.key.toLowerCase();
+
+    if (this.transformControls.mode === "translate") {
+      if (["x", "y", "z"].includes(key)) {
+        this.transformControls.setTranslateAxisLock(
+          this.transformControls.translateAxisLock === key ? null : key,
+        );
+        return true;
       }
-      return;
-    }
-    if (this.transformControls.mode === "translate" && (event.key === "p" || event.key === "n")) {
-      const key = event.key.toLowerCase();
-      if (key === "p") {
-        this.transformControls.setTranslatePlaneConstraint("plane");
-      } else {
-        this.transformControls.setTranslatePlaneConstraint("normal");
+      if (["p", "n"].includes(key)) {
+        this.transformControls.setTranslatePlaneConstraint(
+          key === "p" ? "plane" : "normal",
+        );
+        this.transformControls.initialMousePosition =
+          this.currentMousePosition.clone();
+        return true;
       }
-      this.transformControls.initialMousePosition = this.currentMousePosition.clone();
-      return;
-    }
-    if (this.transformControls.mode === "rotate" && (event.key === "x" || event.key === "y" || event.key === "z")) {
-      const key = event.key.toLowerCase();
-      if (this.transformControls.rotationAxisLockKey === key) {
-        this.transformControls.setRotateAxisLock(null);
-      } else {
-        this.transformControls.setRotateAxisLock(key);
-      }
-      return;
-    }
-    if (this.transformControls.mode === "translate" && event.key === "a") {
-      if (this.weas.selectionManager.isAxisPicking) {
-        this.weas.selectionManager.stopAxisPicking("Translate mode: move mouse to translate, press A to set axis, X/Y/Z to lock");
-        if (this.weas.selectionManager.axisAtomIndices.length === 3) {
-          this.transformControls.setTranslatePlaneFromAtoms();
-        } else if (this.weas.selectionManager.axisAtomIndices.length === 2) {
-          this.transformControls.setTranslateAxisFromAtoms();
+      if (key === "a") {
+        if (this.weas.selectionManager.isAxisPicking) {
+          this.weas.selectionManager.stopAxisPicking(
+            "Translate mode: move mouse to translate, press A to set axis, X/Y/Z to lock",
+          );
+          if (this.weas.selectionManager.axisAtomIndices.length === 3) {
+            this.transformControls.setTranslatePlaneFromAtoms();
+          } else if (this.weas.selectionManager.axisAtomIndices.length === 2) {
+            this.transformControls.setTranslateAxisFromAtoms();
+          }
+          this.transformControls.initialMousePosition =
+            this.currentMousePosition.clone();
+        } else {
+          this.transformControls.setTranslateAxisLock(null);
+          this.weas.selectionManager.hideTranslatePlane();
+          this.weas.selectionManager.startAxisPicking("translate");
+          this.weas.selectionManager.setModeHint(
+            "Axis pick: click 2 or 3 atoms, press A to exit",
+          );
         }
-        this.transformControls.initialMousePosition = this.currentMousePosition.clone();
-      } else {
-        this.transformControls.setTranslateAxisLock(null);
-        this.weas.selectionManager.hideTranslatePlane();
-        this.weas.selectionManager.startAxisPicking("translate");
-        this.weas.selectionManager.setModeHint("Axis pick: click 2 or 3 atoms, press A to exit");
+        return true;
       }
-      return;
     }
-    if (this.transformControls.mode === "rotate" && event.key === "a") {
-      if (this.weas.selectionManager.isAxisPicking) {
-        this.weas.selectionManager.stopAxisPicking();
-        this.transformControls.refreshRotationPivot();
-        this.transformControls.initialMousePosition = this.currentMousePosition.clone();
-      } else {
-        this.weas.selectionManager.startAxisPicking("rotate");
+
+    if (this.transformControls.mode === "rotate") {
+      if (["x", "y", "z"].includes(key)) {
+        this.transformControls.setRotateAxisLock(
+          this.transformControls.rotationAxisLockKey === key ? null : key,
+        );
+        return true;
       }
-      return;
+      if (key === "a") {
+        if (this.weas.selectionManager.isAxisPicking) {
+          this.weas.selectionManager.stopAxisPicking();
+          this.transformControls.refreshRotationPivot();
+          this.transformControls.initialMousePosition =
+            this.currentMousePosition.clone();
+        } else {
+          this.weas.selectionManager.startAxisPicking("rotate");
+        }
+        return true;
+      }
     }
-    if (event.ctrlKey || event.metaKey) {
-      // metaKey is for MacOS
-      switch (event.key) {
-        case "z":
-          this.weas.ops.undo();
-          break;
-        case "y":
-          this.weas.ops.redo();
-          break;
-      }
-    } else {
-      switch (event.key) {
-        case "Delete":
-        case "x":
-          this.weas.ops.object.DeleteOperation();
-          break;
-        case "Escape":
-          this.transformControls.exitMode();
-          break;
-        case "o":
-          this.weas.objectManager.enterMode("object");
-          break;
-        case "e":
-          this.weas.objectManager.enterMode("edit");
-          break;
-        case "g":
-          this.transformControls.enterMode("translate", this.currentMousePosition);
-          break;
-        case "s":
-          this.transformControls.enterMode("scale", this.currentMousePosition);
-          break;
-        case "r":
-          this.transformControls.enterMode("rotate", this.currentMousePosition);
-          break;
-        case "d":
-          this.weas.ops.object.CopyOperation();
-          this.transformControls.enterMode("translate", this.currentMousePosition);
-          break;
-        case "c":
-          this.weas.ops.atoms.ReplaceOperation();
-          break;
-        case "1":
-          this.weas.tjs.updateCameraAndControls({ direction: [0, -100, 0] });
-          break;
-        case "2":
-          this.weas.tjs.updateCameraAndControls({ direction: [-100, 0, 0] });
-          break;
-        case "3":
-          this.weas.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
-          break;
-        case "4":
-          this.weas.tjs.updateCameraAndControls({ direction: [0, 100, 0] });
-          break;
-        case "5":
-          this.weas.tjs.updateCameraAndControls({ direction: [100, 0, 0] });
-          break;
-        case "6":
-          this.weas.tjs.updateCameraAndControls({ direction: [0, 0, -100] });
-          break;
-        case "F9":
-          this.weas.ops.updateAdjustLastOperationGUI();
-          break;
-        // In jupyter notebook, the F9 key is not available
-        case "l":
-          this.weas.ops.updateAdjustLastOperationGUI();
-          break;
-        case "m":
-          // measure the distance, angle, or dihedral angle between atoms
-          this.weas.avr.Measurement.measure(this.weas.avr.selectedAtomsIndices);
-          break;
+
+    return false;
+  }
+
+  onKeyDown(event) {
+    if (this.handleTransformModeKeys(event)) return;
+
+    for (const [action, combos] of Object.entries(this.keybindConfig)) {
+      if (combos.some((combo) => matchKey(event, combo))) {
+        const fn = this.actionMap[action];
+        if (fn) fn();
+        return;
       }
     }
   }

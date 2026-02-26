@@ -37,6 +37,43 @@ const defaultViewerSettings = {
   autoResetCameraOnAtomsUpdate: false, // Default to preserving view on atoms updates
 };
 
+const defaultTjsConfig = {
+  renderConfig: {
+      alpha: true,
+      antialias: true, 
+      depth: true,
+      preserveDrawingBuffer: true,
+    } 
+}
+
+const defaultKeyBindConfig = {
+  // handler operations
+  SearchOperation: [["ctrl", "f"]],
+  exitMode: [["Escape"]],
+  // history management
+  undo: [["ctrl", "z"]],
+  redo: [["ctrl", "y"]],
+  adjustLastOperation: [["F9"], ["l"]],
+  // transformation methods
+  DeleteOperation: [["x"], ["Delete"]],
+  enterObjectMode: [["o"]],
+  enterEditMode: [["e"]],
+  TranslateOperation: [["g"]],
+  ScaleOperation: [["s"]],
+  RotateOperation: [["r"]],
+  CopyOperation: [["d"]],
+  ReplaceOperation: [["c"]],
+  // measuring
+  measure: [["m"]],
+  // camera methods
+  camera1: [["1"]],
+  camera2: [["2"]],
+  camera3: [["3"]],
+  camera4: [["4"]],
+  camera5: [["5"]],
+  camera6: [["6"]],
+};
+
 const defaultGuiConfig = {
   controls: {
     enabled: true,
@@ -103,4 +140,13 @@ const radiusTypes = {
   VDW: "VDW",
 };
 
-export { defaultViewerSettings, defaultGuiConfig, MODEL_STYLE_MAP, colorTypes, colorBys, radiusTypes };
+export {
+  defaultViewerSettings,
+  defaultGuiConfig,
+  defaultTjsConfig,
+  defaultKeyBindConfig,
+  MODEL_STYLE_MAP,
+  colorTypes,
+  colorBys,
+  radiusTypes,
+};

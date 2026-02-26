@@ -46,7 +46,14 @@ const guiConfig = {
     measurement: true,
   },
 };
-const editor = new WEAS({ domElement, viewerConfig, guiConfig });
+
+const editor = new WEAS({ 
+  domElement, 
+  viewerConfig, 
+  guiConfig,
+  // keybindConfig: {} // pass empty config for no keybinds
+    });
+
 window.editor = editor;
 document.getElementById("structure-selector").addEventListener("change", async (event) => {
   const filename = event.target.value;

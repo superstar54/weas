@@ -4,6 +4,7 @@ import { OrbitControls } from "../three/OrbitControls.js";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { WeasScene } from "./SceneManager.js";
 import { OrthographicCamera } from "./Camera.js";
+import { defaultTjsConfig } from "../config.js";
 
 class BlendJSObject {
   constructor(name, geometry, material) {
@@ -45,6 +46,7 @@ class BlendJSRenderer {
 export class BlendJS {
   constructor(containerElement, weas) {
     this.containerElement = containerElement;
+    this.tjsConfig = weas.tjsConfig || defaultTjsConfig
     this.weas = weas;
     this.scene = new WeasScene(this);
     this.objects = {};
@@ -113,16 +115,17 @@ export class BlendJS {
   }
 
   init() {
-    this.scene.background = new THREE.Color(0xffffff); // Set the scene's background to white
+    this.scene.background = new THREE.Color(0xffffff); // init bg as white
+    const renderConfig = this?.tjsConfig?.renderConfig || defaultTjsConfig.renderConfig 
+
+
     // Create a renderer
-    const renderer = new THREE.WebGLRenderer({ alpha: true });
+    const renderer = new THREE.WebGLRenderer(renderConfig);
     renderer.autoClear = false;
     const rect = this.containerElement.getBoundingClientRect();
     const clientWidth = this.containerElement.clientWidth || rect.width || 1;
     const clientHeight = this.containerElement.clientHeight || rect.height || 1;
     renderer.setSize(clientWidth, clientHeight);
-    // renderer.shadowMap.enabled = true;
-    // renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
     // For high DPI screens
     renderer.setPixelRatio(window.devicePixelRatio);
 

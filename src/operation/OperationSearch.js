@@ -1,8 +1,31 @@
+import { defaultKeyBindConfig } from "../config.js";
+
+// utility to check if an event matches a key combo
+function matchKey(event, combo) {
+  const key = combo[combo.length - 1];
+  const modifiers = combo.slice(0, -1);
+
+  if (event.key.toLowerCase() !== key.toLowerCase()) return false;
+
+  const ctrl = modifiers.includes("ctrl");
+  const shift = modifiers.includes("shift");
+  const alt = modifiers.includes("alt");
+  const meta = modifiers.includes("meta");
+
+  if (ctrl !== event.ctrlKey) return false;
+  if (shift !== event.shiftKey) return false;
+  if (alt !== event.altKey) return false;
+  if (meta !== event.metaKey) return false;
+
+  return true;
+}
+
 export class OperationSearchManager {
   constructor(weas, ops) {
     this.weas = weas;
     // change the operations to an array
-    this.operations = getAllOperations(ops);
+    this.keybindConfig = this.weas.keybindConfig || defaultKeyBindConfig;
+    this.operations = getAllOperations(ops, this.keybindConfig);
     this.overlay = this.createOverlay();
     this.bindEvents();
     this.updateSearchResults("");
@@ -51,13 +74,18 @@ export class OperationSearchManager {
     });
     // Bind global keydown event for showing and hiding the search
     this.weas.tjs.containerElement.addEventListener("keydown", (e) => {
-      if (e.ctrlKey && e.key === "f") {
-        // Ctrl+F to show
+      // Show search if any combo in the "search" keybind matches
+      const searchCombos = this.keybindConfig.SearchOperation || []
+      if (searchCombos.some((combo) => matchKey(e, combo))) {
         e.preventDefault();
         this.show();
-      } else if (e.key === "Escape") {
-        // Escape to hide
+        return;
+      }
+
+      // Hide search on Escape
+      if (e.key === "Escape") {
         this.hide();
+        return;
       }
     });
   }
@@ -120,18 +148,35 @@ export class OperationSearchManager {
   }
 }
 
+function AddKeyToDesc(descOrName, keybinds, opName) {
+  let desc = descOrName || "Operation";
+  const combos = keybinds[opName] || [];
+  if (combos.length > 0 && combos[0].length > 0) {
+    // Format first combo like "Ctrl+F"
+    const firstComboStr = combos[0]
+      .map((k) => k.charAt(0).toUpperCase() + k.slice(1))
+      .join("+");
+    desc += ` [${firstComboStr}]`;
+  }
+
+  return desc;
+}
+
 // Function to extract all operation classes into an array
-function getAllOperations(ops) {
-  let operations = [];
+// Function to extract all operation classes into an array with keybind appended
+function getAllOperations(ops, keybinds) {
+  const operations = [];
   Object.keys(ops).forEach((category) => {
     Object.values(ops[category]).forEach((opClass) => {
+      const baseDesc = opClass.description || opClass.name || "Operation";
       operations.push({
         cls: opClass,
         name: opClass.name || "Operation",
         category: opClass.category || category,
-        description: opClass.description || opClass.name,
+        description: AddKeyToDesc(baseDesc, keybinds, opClass.name),
       });
     });
   });
+  console.log(operations)
   return operations;
 }
