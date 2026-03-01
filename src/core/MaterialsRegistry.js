@@ -22,18 +22,16 @@ export default class MaterialsRegistry {
     // Mark built-in materials as read-only
     Object.values(this.materials).forEach((mat) => (mat.__builtIn = true));
 
-    // Event listeners
-    this._listeners = [];
-    this._onChangeCallbacks = [];
-  }
-
-  // ---------------- Event system ----------------
-  onChange(callback) {
-    if (typeof callback === "function") this._onChangeCallbacks.push(callback);
+    this._callbacks = new Set();
   }
 
   _emitChange() {
-    this._onChangeCallbacks.forEach((cb) => cb());
+    this._callbacks.forEach((cb) => cb());
+  }
+
+  onChange(callback) {
+    this._callbacks.add(callback);
+    return () => this._callbacks.delete(callback); // unsubscribe
   }
 
   // get a material by name so that it can be used elsewhere
@@ -54,6 +52,8 @@ export default class MaterialsRegistry {
       console.warn(`Material "${newName}" will overwrite existing`);
     this.materials[newName] = this.materials[oldName];
     delete this.materials[oldName];
+
+    this._emitChange();
   }
 
   // allow in spot updating
@@ -63,6 +63,8 @@ export default class MaterialsRegistry {
     if (this._builtIn.has(name))
       throw new Error(`Cannot modify built-in material "${name}"`);
     Object.assign(this.materials[name], overrides);
+
+    this._emitChange();
   }
 
   // Allow direct copying (with overrides)
@@ -78,10 +80,13 @@ export default class MaterialsRegistry {
     matCopy.__userDefined = true;
 
     this.materials[newName] = matCopy;
+
+    this._emitChange();
   }
 
   // Access all available material names
   list() {
+    // return fresh array of keys every time
     return Object.keys(this.materials);
   }
 

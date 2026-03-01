@@ -70,10 +70,10 @@ class GUIManager {
       this.addCameraControls();
     }
 
-    const debug = true
+    const debug = true;
     if (debug) {
-    if (this.weas.materialsRegistry) this.addMaterialsFolder();
-    if (this.weas.shapeRegistry) this.addShapesFolder();
+      if (this.weas.materialsRegistry) this.addMaterialsFolder();
+      if (this.weas.shapeRegistry) this.addShapesFolder();
     }
   }
 
@@ -98,19 +98,30 @@ class GUIManager {
     const registry = this.weas.materialsRegistry;
 
     const refreshMaterials = () => {
-      // Clear existing subfolders
+      // Preserve expanded subfolders
+      const expanded = Object.entries(folder.__folders)
+        .filter(([_, f]) => !f.closed)
+        .map(([name]) => name);
+
+      // Remove all existing subfolders
       for (let key in folder.__folders) {
         folder.removeFolder(folder.__folders[key]);
       }
 
+      // Build subfolders from registry
       for (const name of registry.list()) {
         const mat = registry.getMaterial(name, false);
         const displayName = mat.__builtIn ? `${name} (built-in)` : name;
         const subFolder = folder.addFolder(displayName);
 
+        if (expanded.includes(displayName)) subFolder.open();
+
         const addSlider = (obj, prop, min, max, step = 0.01) => {
           const controller = subFolder.add(obj, prop, min, max);
-          if (mat.__builtIn) lockController(controller);
+          if (mat.__builtIn) {
+            controller.domElement.querySelector("input").disabled = true;
+            controller.domElement.style.opacity = 0.5;
+          }
           controller.onChange(() => this.weas.tjs.requestRedraw());
         };
 
@@ -118,7 +129,6 @@ class GUIManager {
           case "MeshPhongMaterial":
             addSlider(mat, "shininess", 0, 300);
             addSlider(mat, "reflectivity", 0, 1);
-
             const specCtrl = subFolder
               .addColor({ specular: mat.specular.getHex() }, "specular")
               .onChange((val) => mat.specular.setHex(val));
@@ -144,19 +154,16 @@ class GUIManager {
                 let baseName = name + " Copy";
                 let counter = 1;
                 let newName = `${baseName} (${counter})`;
-                while (registry.list().includes(newName)) {
-                  counter++;
-                  newName = `${baseName} (${counter})`;
-                }
+                while (registry.list().includes(newName))
+                  (counter++, (newName = `${baseName} (${counter})`));
                 registry.copyMaterial(name, newName);
-                this.refreshMaterials(); // triggers shapes refresh too
               },
             },
             "copy",
           )
           .name("Copy");
 
-        // Rename button for non-built-ins
+        // Rename button for non-built-in materials
         if (!mat.__builtIn) {
           subFolder
             .add(
@@ -169,7 +176,6 @@ class GUIManager {
                     return;
                   }
                   registry.renameMaterial(name, newName);
-                  this.refreshMaterials(); // triggers shapes refresh too
                 },
               },
               "rename",
@@ -179,16 +185,15 @@ class GUIManager {
       }
     };
 
-    // Combine material refresh with shapes refresh
     this.refreshMaterials = () => {
       refreshMaterials();
       if (this.refreshShapes) this.refreshShapes();
     };
 
-    // Listen for changes in materials registry
+    // Hook into registry updates
     if (registry.onChange) registry.onChange(this.refreshMaterials);
 
-    // Initial draw
+    // Initial render
     this.refreshMaterials();
   }
 
@@ -198,13 +203,17 @@ class GUIManager {
     const registry = this.weas.shapeRegistry;
 
     const refreshShapes = () => {
-      // Remove existing subfolders
+      const expanded = Object.entries(folder.__folders)
+        .filter(([_, f]) => !f.closed)
+        .map(([name]) => name);
+
       for (let key in folder.__folders) {
         folder.removeFolder(folder.__folders[key]);
       }
 
       for (const shapeName of registry.list()) {
         const shapeFolder = folder.addFolder(shapeName);
+        if (expanded.includes(shapeName)) shapeFolder.open();
 
         const params = {
           x: 0,
@@ -216,8 +225,8 @@ class GUIManager {
           rotationX: 0,
           rotationY: 0,
           rotationZ: 0,
-          color: "#bd0d87", // default color
-          opacity: 1.0, // default opacity
+          color: "#bd0d87",
+          opacity: 1,
         };
 
         // Position
@@ -235,13 +244,11 @@ class GUIManager {
         shapeFolder.add(params, "rotationY", 0, Math.PI * 2).name("Rot Y");
         shapeFolder.add(params, "rotationZ", 0, Math.PI * 2).name("Rot Z");
 
-        // Color
+        // Color & opacity
         shapeFolder.addColor(params, "color").name("Color");
-
-        // Opacity
         shapeFolder.add(params, "opacity", 0, 1).name("Opacity");
 
-        // Material dropdown dynamically generated
+        // Material dropdown dynamically
         const materialNames = this.weas.materialsRegistry.list();
         params.material = materialNames[0] || null;
         shapeFolder.add(params, "material", materialNames).name("Material");
@@ -276,9 +283,14 @@ class GUIManager {
 
     this.refreshShapes = refreshShapes;
 
+    // Hook into shape registry updates
     if (registry.onChange) registry.onChange(this.refreshShapes);
 
-    // Initial draw
+    // Also refresh shapes whenever materials change
+    if (this.weas.materialsRegistry?.onChange)
+      this.weas.materialsRegistry.onChange(this.refreshShapes);
+
+    // Initial render
     this.refreshShapes();
   }
 

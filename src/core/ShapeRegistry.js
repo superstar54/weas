@@ -4,9 +4,19 @@ export default class ShapeRegistry {
   constructor(materialRegistry) {
     this.shapes = {};
     this.materials = materialRegistry;
+    this._callbacks = new Set();
 
     // Built-in primitive shapes
     this._registerBuiltIns();
+  }
+
+  _emitChange() {
+    this._callbacks.forEach((cb) => cb());
+  }
+
+  onChange(callback) {
+    this._callbacks.add(callback);
+    return () => this._callbacks.delete(callback); // unsubscribe
   }
 
   // Internal reusable mesh creation
@@ -94,13 +104,14 @@ export default class ShapeRegistry {
   register(name, factoryFn) {
     if (this.shapes[name]) console.warn(`Shape "${name}" is being overwritten`);
     this.shapes[name] = factoryFn;
+    this._emitChange();
   }
 
   // Create a shape (returns a new mesh or group)
   create(name, options = {}) {
     const factory = this.shapes[name];
     if (!factory) throw new Error(`Shape "${name}" not registered`);
-    const shape = factory(this.materials, options); // <-- pass options here
+    const shape = factory(this.materials, options);
 
     if (shape instanceof THREE.Object3D) {
       if (options.position) shape.position.set(...options.position);
@@ -111,7 +122,6 @@ export default class ShapeRegistry {
     return shape;
   }
 
-  // List all available shapes
   list() {
     return Object.keys(this.shapes);
   }
