@@ -2,18 +2,44 @@ import { GUI } from "dat.gui";
 import { setupCameraGUI } from "../tools/camera.js";
 import { createViewpointButtons } from "../tools/viewpoint.js";
 import { defaultGuiConfig } from "../config.js";
-import { parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "../io/structure.js";
+import {
+  parseStructureText,
+  applyStructurePayload,
+  buildExportPayload,
+  downloadText,
+} from "../io/structure.js";
+
+function lockController(controller) {
+  // Disable user input for the controller
+  controller.__li.style.pointerEvents = "none"; // Prevent any interaction
+  controller.__li.style.opacity = 0.85; // Gray it out visually
+}
 
 class GUIManager {
   constructor(weas, guiConfig) {
     this.weas = weas;
-    const mergedButtons = { ...defaultGuiConfig.buttons, ...(guiConfig?.buttons || {}) };
-    const mergedControls = { ...defaultGuiConfig.controls, ...(guiConfig?.controls || {}) };
-    const mergedTimeline = { ...defaultGuiConfig.timeline, ...(guiConfig?.timeline || {}) };
+    const mergedButtons = {
+      ...defaultGuiConfig.buttons,
+      ...(guiConfig?.buttons || {}),
+    };
+    const mergedControls = {
+      ...defaultGuiConfig.controls,
+      ...(guiConfig?.controls || {}),
+    };
+    const mergedTimeline = {
+      ...defaultGuiConfig.timeline,
+      ...(guiConfig?.timeline || {}),
+    };
     const legendOverride = guiConfig?.atomLegend || guiConfig?.legend || {};
     const mergedLegend = { ...defaultGuiConfig.atomLegend, ...legendOverride };
-    const mergedMeshLegend = { ...defaultGuiConfig.meshLegend, ...(guiConfig?.meshLegend || {}) };
-    const mergedButtonStyle = { ...defaultGuiConfig.buttonStyle, ...(guiConfig?.buttonStyle || {}) };
+    const mergedMeshLegend = {
+      ...defaultGuiConfig.meshLegend,
+      ...(guiConfig?.meshLegend || {}),
+    };
+    const mergedButtonStyle = {
+      ...defaultGuiConfig.buttonStyle,
+      ...(guiConfig?.buttonStyle || {}),
+    };
     this.guiConfig = {
       ...defaultGuiConfig,
       ...guiConfig,
@@ -43,6 +69,12 @@ class GUIManager {
     if (this.guiConfig.controls.cameraControls) {
       this.addCameraControls();
     }
+
+    const debug = true
+    if (debug) {
+    if (this.weas.materialsRegistry) this.addMaterialsFolder();
+    if (this.weas.shapeRegistry) this.addShapesFolder();
+    }
   }
 
   createGUIContainer() {
@@ -58,6 +90,196 @@ class GUIManager {
     ["click", "keydown", "keyup", "keypress"].forEach((eventType) => {
       guiContainer.addEventListener(eventType, stopPropagation, false);
     });
+  }
+
+  /* ---------------- Materials Folder ---------------- */
+  addMaterialsFolder() {
+    const folder = this.gui.addFolder("Materials");
+    const registry = this.weas.materialsRegistry;
+
+    const refreshMaterials = () => {
+      // Clear existing subfolders
+      for (let key in folder.__folders) {
+        folder.removeFolder(folder.__folders[key]);
+      }
+
+      for (const name of registry.list()) {
+        const mat = registry.getMaterial(name, false);
+        const displayName = mat.__builtIn ? `${name} (built-in)` : name;
+        const subFolder = folder.addFolder(displayName);
+
+        const addSlider = (obj, prop, min, max, step = 0.01) => {
+          const controller = subFolder.add(obj, prop, min, max);
+          if (mat.__builtIn) lockController(controller);
+          controller.onChange(() => this.weas.tjs.requestRedraw());
+        };
+
+        switch (mat.type) {
+          case "MeshPhongMaterial":
+            addSlider(mat, "shininess", 0, 300);
+            addSlider(mat, "reflectivity", 0, 1);
+
+            const specCtrl = subFolder
+              .addColor({ specular: mat.specular.getHex() }, "specular")
+              .onChange((val) => mat.specular.setHex(val));
+            if (mat.__builtIn) lockController(specCtrl);
+            break;
+
+          case "MeshStandardMaterial":
+            addSlider(mat, "metalness", 0, 1);
+            addSlider(mat, "roughness", 0, 1);
+            addSlider(mat, "envMapIntensity", 0, 5);
+            break;
+
+          case "MeshBasicMaterial":
+            addSlider(mat, "opacity", 0, 1);
+            break;
+        }
+
+        // Copy button
+        subFolder
+          .add(
+            {
+              copy: () => {
+                let baseName = name + " Copy";
+                let counter = 1;
+                let newName = `${baseName} (${counter})`;
+                while (registry.list().includes(newName)) {
+                  counter++;
+                  newName = `${baseName} (${counter})`;
+                }
+                registry.copyMaterial(name, newName);
+                this.refreshMaterials(); // triggers shapes refresh too
+              },
+            },
+            "copy",
+          )
+          .name("Copy");
+
+        // Rename button for non-built-ins
+        if (!mat.__builtIn) {
+          subFolder
+            .add(
+              {
+                rename: () => {
+                  const newName = prompt("Rename material to:", name);
+                  if (!newName || newName === name) return;
+                  if (registry.list().includes(newName)) {
+                    alert(`Material "${newName}" already exists.`);
+                    return;
+                  }
+                  registry.renameMaterial(name, newName);
+                  this.refreshMaterials(); // triggers shapes refresh too
+                },
+              },
+              "rename",
+            )
+            .name("Rename");
+        }
+      }
+    };
+
+    // Combine material refresh with shapes refresh
+    this.refreshMaterials = () => {
+      refreshMaterials();
+      if (this.refreshShapes) this.refreshShapes();
+    };
+
+    // Listen for changes in materials registry
+    if (registry.onChange) registry.onChange(this.refreshMaterials);
+
+    // Initial draw
+    this.refreshMaterials();
+  }
+
+  /* ---------------- Shapes Folder ---------------- */
+  addShapesFolder() {
+    const folder = this.gui.addFolder("Shapes");
+    const registry = this.weas.shapeRegistry;
+
+    const refreshShapes = () => {
+      // Remove existing subfolders
+      for (let key in folder.__folders) {
+        folder.removeFolder(folder.__folders[key]);
+      }
+
+      for (const shapeName of registry.list()) {
+        const shapeFolder = folder.addFolder(shapeName);
+
+        const params = {
+          x: 0,
+          y: 0,
+          z: 0,
+          scaleX: 1,
+          scaleY: 1,
+          scaleZ: 1,
+          rotationX: 0,
+          rotationY: 0,
+          rotationZ: 0,
+          color: "#bd0d87", // default color
+          opacity: 1.0, // default opacity
+        };
+
+        // Position
+        shapeFolder.add(params, "x", -50, 50).name("X");
+        shapeFolder.add(params, "y", -50, 50).name("Y");
+        shapeFolder.add(params, "z", -50, 50).name("Z");
+
+        // Scale
+        shapeFolder.add(params, "scaleX", 0.1, 10).name("Scale X");
+        shapeFolder.add(params, "scaleY", 0.1, 10).name("Scale Y");
+        shapeFolder.add(params, "scaleZ", 0.1, 10).name("Scale Z");
+
+        // Rotation
+        shapeFolder.add(params, "rotationX", 0, Math.PI * 2).name("Rot X");
+        shapeFolder.add(params, "rotationY", 0, Math.PI * 2).name("Rot Y");
+        shapeFolder.add(params, "rotationZ", 0, Math.PI * 2).name("Rot Z");
+
+        // Color
+        shapeFolder.addColor(params, "color").name("Color");
+
+        // Opacity
+        shapeFolder.add(params, "opacity", 0, 1).name("Opacity");
+
+        // Material dropdown dynamically generated
+        const materialNames = this.weas.materialsRegistry.list();
+        params.material = materialNames[0] || null;
+        shapeFolder.add(params, "material", materialNames).name("Material");
+
+        // Create button
+        shapeFolder
+          .add(
+            {
+              create: () => {
+                const options = {
+                  position: [params.x, params.y, params.z],
+                  scale: [params.scaleX, params.scaleY, params.scaleZ],
+                  rotation: [
+                    params.rotationX,
+                    params.rotationY,
+                    params.rotationZ,
+                  ],
+                  materialType: params.material,
+                  color: params.color,
+                  opacity: params.opacity,
+                };
+                const shapeObj = registry.create(shapeName, options);
+                this.weas.tjs.scene.add(shapeObj);
+                this.weas.tjs.requestRedraw();
+              },
+            },
+            "create",
+          )
+          .name("Create");
+      }
+    };
+
+    this.refreshShapes = refreshShapes;
+
+    if (registry.onChange) registry.onChange(this.refreshShapes);
+
+    // Initial draw
+    this.refreshShapes();
   }
 
   addCameraControls() {
@@ -104,7 +326,9 @@ class GUIManager {
       fullscreenButton.addEventListener("click", () => {
         if (!document.fullscreenElement) {
           this.weas.tjs.containerElement.requestFullscreen().catch((err) => {
-            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            alert(
+              `Error attempting to enable full-screen mode: ${err.message} (${err.name})`,
+            );
           });
           fullscreenButton.innerHTML = compressSVG;
         } else {
@@ -152,7 +376,8 @@ class GUIManager {
       exportPopup.style.position = "absolute";
       exportPopup.style.top = "38px";
       exportPopup.style.right = "5px";
-      exportPopup.style.background = "linear-gradient(180deg, #ffffff 0%, #f8f9fb 100%)";
+      exportPopup.style.background =
+        "linear-gradient(180deg, #ffffff 0%, #f8f9fb 100%)";
       exportPopup.style.borderRadius = "10px";
       exportPopup.style.border = "1px solid rgba(20, 23, 28, 0.12)";
       exportPopup.style.padding = "6px";
@@ -196,17 +421,26 @@ class GUIManager {
       addDownloadOption("Standalone HTML", "html");
       addDownloadOption("Structure (XYZ)", "xyz");
       addDownloadOption("Structure (CIF)", "cif");
-      const animationOption = addDownloadOption("Animation (WebM)", "animation");
+      const animationOption = addDownloadOption(
+        "Animation (WebM)",
+        "animation",
+      );
 
       exportButton.addEventListener("click", () => {
         if (animationOption) {
-          const hasTrajectory = Array.isArray(this.weas.avr?.trajectory) && this.weas.avr.trajectory.length > 1;
+          const hasTrajectory =
+            Array.isArray(this.weas.avr?.trajectory) &&
+            this.weas.avr.trajectory.length > 1;
           animationOption.style.display = hasTrajectory ? "" : "none";
         }
-        exportPopup.style.display = exportPopup.style.display === "none" ? "flex" : "none";
+        exportPopup.style.display =
+          exportPopup.style.display === "none" ? "flex" : "none";
       });
       document.addEventListener("click", (event) => {
-        if (!exportPopup.contains(event.target) && event.target !== exportButton) {
+        if (
+          !exportPopup.contains(event.target) &&
+          event.target !== exportButton
+        ) {
           exportPopup.style.display = "none";
         }
       });
@@ -255,7 +489,10 @@ class GUIManager {
             <path d="M177.9 494.1c-18.7 18.7-49.1 18.7-67.9 0L17.9 401.9c-18.7-18.7-18.7-49.1 0-67.9l50.7-50.7 48 48c6.2 6.2 16.4 6.2 22.6 0s6.2-16.4 0-22.6l-48-48 41.4-41.4 48 48c6.2 6.2 16.4 6.2 22.6 0s6.2-16.4 0-22.6l-48-48 41.4-41.4 48 48c6.2 6.2 16.4 6.2 22.6 0s6.2-16.4 0-22.6l-48-48 41.4-41.4 48 48c6.2 6.2 16.4 6.2 22.6 0s6.2-16.4 0-22.6l-48-48 50.7-50.7c18.7-18.7 49.1-18.7 67.9 0l92.1 92.1c18.7 18.7 18.7 49.1 0 67.9L177.9 494.1z"/>
           </svg>
       `;
-      const measurementButton = this.createButton(measurementSVG, "measurement");
+      const measurementButton = this.createButton(
+        measurementSVG,
+        "measurement",
+      );
       buttonContainer.appendChild(measurementButton);
       measurementButton.addEventListener("click", () => {
         this.weas.avr.Measurement.measure(this.weas.avr.selectedAtomsIndices);

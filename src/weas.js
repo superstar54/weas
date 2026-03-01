@@ -19,21 +19,29 @@ import { StateStore, cloneValue } from "./state/store.js";
 import { createDefaultState } from "./state/defaultState.js";
 import { fromWidgetSnapshot } from "./state/adapters.js";
 
+import MaterialsRegistry from "./core/MaterialsRegistry.js";
+import ShapeRegistry from "./core/ShapeRegistry.js";
+
 class WEAS {
-  constructor({ 
+  constructor({
     domElement,
     atoms = [new Atoms()],
     viewerConfig = {},
     guiConfig = {},
     tjsConfig = null,
-    keybindConfig = null
+    keybindConfig = null,
   }) {
     this.uuid = THREE.MathUtils.generateUUID();
     // Initialize Three.js scene, camera, and renderer
-    this.tjsConfig = tjsConfig 
+    this.tjsConfig = tjsConfig;
     this.tjs = new BlendJS(domElement, this);
-    this.keybindConfig = keybindConfig
-    
+    this.keybindConfig = keybindConfig;
+
+    // initialise base materials with the MaterialRegistry
+    this.materialsRegistry = new MaterialsRegistry();
+    // initialise shapes using these materials
+    this.shapeRegistry = new ShapeRegistry(this.materialsRegistry)
+
     this.tjs.requestRedraw = this.requestRedraw.bind(this);
     this.guiManager = new GUIManager(this, guiConfig);
     this.eventHandlers = new EventHandlers(this);

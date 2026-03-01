@@ -8,7 +8,8 @@ const phongMaterial = new THREE.MeshPhongMaterial({
   shininess: 100,
   reflectivity: 0.9, // Reflectivity strength for the environment map
 });
-const standarMaterial = new THREE.MeshStandardMaterial({
+
+const standardMaterial = new THREE.MeshStandardMaterial({
   metalness: 0.1,
   roughness: 0.01,
   envMapIntensity: 1.0,
@@ -20,4 +21,8 @@ const basicMaterial = new THREE.MeshBasicMaterial({
   opacity: 1, // Set the transparency level (0.0 to 1.0)
 });
 
-export const materials = { Phong: phongMaterial, Standard: standarMaterial, Basic: basicMaterial };
+export const materials = {
+  Phong: phongMaterial,
+  Standard: standardMaterial,
+  Basic: basicMaterial,
+};
