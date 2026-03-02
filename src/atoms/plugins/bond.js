@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { calculateCartesianCoordinates, calculateQuaternion } from "../../utils.js";
-import { materials } from "../../tools/materials.js";
 import { elementsWithPolyhedra, covalentRadii, elementColors, default_bond_pairs } from "../atoms_data.js";
 import { convertColor } from "../utils.js";
 import { kdTree } from "../../geometry/kdTree.js";
@@ -45,6 +44,7 @@ export class BondManager {
     this.scene = this.viewer.tjs.scene;
     this.settings = {};
     this.meshes = {};
+    this.shapeRegistry = this.viewer.weas.shapeRegistry;
     this.hideLongBonds = settings.hideLongBonds ?? true;
     this.showHydrogenBonds = settings.showHydrogenBonds ?? false;
     this.showOutBoundaryBonds = settings.showOutBoundaryBonds ?? false;
@@ -226,18 +226,42 @@ export class BondManager {
       atomColors = this.viewer.atomColors;
     }
 
-    const stickBondMesh = drawStick(
-      this.viewer.originalAtoms,
-      this.bondList,
-      this.bondMap["sticks"],
-      this.viewer.cutoffs,
-      this.bondRadius,
-      this.viewer._materialType,
-      atomColors,
-      false,
-      this.viewer.logger,
-    );
-    const { bondMesh, bondCap } = drawStick(
+    const stickBondMesh = drawStick({
+      atoms: this.viewer.originalAtoms,
+      bondList: this.bondList,
+      bondIndices: this.bondMap["sticks"],
+      settings: this.viewer.cutoffs,
+      radius: this.bondRadius,
+      materialType: this.viewer._materialType,
+      atomColors: atomColors,
+      withCap: false,
+      logger: this.viewer.logger,
+      shapeRegistry: this.shapeRegistry,
+    });
+    const { bondMesh, bondCap } = drawStick({
+      atoms: this.viewer.originalAtoms,
+      bondList: this.bondList,
+      bondIndices: this.bondMap["stickCaps"],
+      settings: this.viewer.cutoffs,
+      raiuds: this.bondRadius,
+      materialType: this.viewer._materialType,
+      atomColors: atomColors,
+      withCap: true,
+      logger: this.viewer.logger,
+      shapeRegistry: this.shapeRegistry,
+    });
+    let dashedBondLine;
+    if (this.showHydrogenBonds) {
+      dashedBondLine = drawLine(
+        this.viewer.originalAtoms,
+        this.bondList,
+        this.bondMap["dashedLines"],
+        this.viewer.cutoffs,
+        "dashed",
+        atomColors,
+      );
+    }
+    const solidBondLine = drawLine(
       this.viewer.originalAtoms,
       this.bondList,
       this.bondMap["stickCaps"],
@@ -245,15 +269,8 @@ export class BondManager {
       this.bondRadius,
       this.viewer._materialType,
       atomColors,
-      true,
-      this.viewer.logger,
     );
-    let dashedBondLine;
-    if (this.showHydrogenBonds) {
-      dashedBondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["dashedLines"], this.viewer.cutoffs, "dashed", atomColors);
-    }
-    const solidBondLine = drawLine(this.viewer.originalAtoms, this.bondList, this.bondMap["solidLines"], this.viewer.cutoffs, "solid", atomColors);
-    this.meshes = { stickBondMesh: stickBondMesh, stickCapBondMesh: bondMesh, stickCapBondCap: bondCap, dashedBondLine: dashedBondLine, solidBondLine: solidBondLine };
+    this.meshes = {stickBondMesh: stickBondMesh, stickCapBondMesh: bondMesh, stickCapBondCap: bondCap, dashedBondLine: dashedBondLine, solidBondLine: solidBondLine };
     Object.values(this.meshes).forEach((mesh) => {
       if (mesh) {
         bondGroup.add(mesh);
@@ -412,7 +429,18 @@ export class BondManager {
   }
 }
 
-export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, materialType = "standard", atomColors = null, withCap = false, logger = console) {
+export function drawStick({
+  atoms,
+  bondList,
+  bondIndices,
+  settings,
+  radius = 0.1,
+  materialType = "Standard",
+  atomColors = null,
+  withCap = false,
+  logger = console,
+  shapeRegistry,
+}) {
   /* Draw bonds between atoms.
   atoms: the atoms object
   bondList: list of bonds, each bond is a list of 4 elements:
@@ -423,14 +451,59 @@ export function drawStick(atoms, bondList, bondIndices, settings, radius = 0.1, 
   Returns:
   instancedMesh: the instancedMesh object of the bonds
   */
+
+  const cylinderSegmentThresholds = [
+    [10_000, 6],
+    [2_000, 12],
+    [500, 18],
+    [100, 24],
+  ];
+  const segments =
+    cylinderSegmentThresholds.find(([limit]) => bondIndices.length > limit)?.[1] ??
+    24;
+
+  // Create prototypes from the shape Registry
+  const cylinderShape = shapeRegistry.create("Cylinder", {
+    materialType,
+    segments: segments
+  });
+  const sphereShape = withCap
+    ? shapeRegistry.create("Sphere", { materialType })
+    : null;
+
+  let cylinderGeometry, cylinderMaterial;
+  if (cylinderShape instanceof THREE.Mesh) {
+    cylinderGeometry = cylinderShape.geometry.clone();
+    cylinderMaterial = cylinderShape.material.clone();
+  } else {
+    throw new Error("Cylinder shape must be a mesh");
+  }
+
+  let sphereGeometry;
+  if (sphereShape) {
+    if (sphereShape instanceof THREE.Mesh) {
+      sphereGeometry = sphereShape.geometry.clone();
+    } else {
+      throw new Error("Sphere shape must be a mesh");
+    }
+  }
+  // use cylinder material as a source of truth
+  const material = cylinderShape.material.clone();
+  // reset color to apply new colors properly
+  material.color.set(0xffffff);
+  material.transparent = true;
+  // material.side = THREE.DoubleSide;
+
   const t0 = performance.now();
 
-  const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1); // Adjust segment count as needed
-  const sphereGeometry = new THREE.SphereGeometry(1, 8, 8); // Sphere geometry for caps
-
-  const material = materials[materialType].clone();
-  const bondMesh = new THREE.InstancedMesh(cylinderGeometry, material, bondIndices.length * 2);
-  const bondCap = withCap ? new THREE.InstancedMesh(sphereGeometry, material, bondIndices.length * 2) : null;
+  const bondMesh = new THREE.InstancedMesh(
+    cylinderGeometry,
+    material,
+    bondIndices.length * 2,
+  );
+  const bondCap = withCap
+    ? new THREE.InstancedMesh(sphereGeometry, material, bondIndices.length * 2)
+    : null;
 
   // pre assign some vectors
   const position1 = new THREE.Vector3();

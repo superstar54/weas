@@ -31,6 +31,9 @@ export class AtomManager {
     this.scene = this.viewer.tjs.scene;
     this.settings = {};
     this.meshes = {};
+    this.materialsRegistry = this.viewer.weas.materialsRegistry
+    this.shapeRegistry = this.viewer.weas.shapeRegistry
+
     this.init();
     const pluginState = this.viewer.state.get("plugins.species");
     if (pluginState && pluginState.settings) {
@@ -151,6 +154,7 @@ export class AtomManager {
       settings: this.settings,
       colors: this.viewer.atomColors,
       materialType: this.viewer._materialType,
+      shapeRegistry: this.shapeRegistry,
     });
     this.scene.add(atomsMesh);
     // atoms to be drawn, boundary atoms, and the bonded atoms
@@ -185,6 +189,7 @@ export class AtomManager {
         settings: this.settings,
         colors: atomColors,
         materialType: this.viewer._materialType,
+        shapeRegistry: this.shapeRegistry,
         data_type: "image",
       });
       atomsMesh.add(imageAtomsMesh);

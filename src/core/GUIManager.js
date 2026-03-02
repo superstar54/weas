@@ -12,7 +12,7 @@ import {
 function lockController(controller) {
   // Disable user input for the controller
   controller.__li.style.pointerEvents = "none"; // Prevent any interaction
-  controller.__li.style.opacity = 0.85; // Gray it out visually
+  controller.__li.style.opacity = 0.95; // Gray it out visually
 }
 
 class GUIManager {
@@ -123,26 +123,41 @@ class GUIManager {
             controller.domElement.style.opacity = 0.5;
           }
           controller.onChange(() => this.weas.tjs.requestRedraw());
+          return controller;
         };
 
         switch (mat.type) {
           case "MeshPhongMaterial":
-            addSlider(mat, "shininess", 0, 300);
-            addSlider(mat, "reflectivity", 0, 1);
+            const shininessCtrl = addSlider(mat, "shininess", 0, 300);
+            const reflectivityCtrl = addSlider(mat, "reflectivity", 0, 1);
             const specCtrl = subFolder
               .addColor({ specular: mat.specular.getHex() }, "specular")
               .onChange((val) => mat.specular.setHex(val));
-            if (mat.__builtIn) lockController(specCtrl);
+            if (mat.__builtIn) {
+              lockController(shininessCtrl);
+              lockController(reflectivityCtrl);
+              lockController(specCtrl);
+            }
             break;
 
           case "MeshStandardMaterial":
-            addSlider(mat, "metalness", 0, 1);
-            addSlider(mat, "roughness", 0, 1);
-            addSlider(mat, "envMapIntensity", 0, 5);
+            const metalnessCtrl = addSlider(mat, "metalness", 0, 1);
+            const roughnessCtrl = addSlider(mat, "roughness", 0, 1);
+            const envMapCtrl = addSlider(mat, "envMapIntensity", 0, 5);
+
+            if (mat.__builtIn) {
+              lockController(metalnessCtrl);
+              lockController(roughnessCtrl);
+              lockController(envMapCtrl);
+            }
             break;
 
           case "MeshBasicMaterial":
-            addSlider(mat, "opacity", 0, 1);
+            const opacity = addSlider(mat, "opacity", 0, 1);
+            if (mat.__builtIn) {
+              lockController(opacity);
+            }
+
             break;
         }
 

@@ -23,7 +23,6 @@ export default class ShapeRegistry {
     geometry,
     { materialType = "Standard", color = "#bd0d87", opacity = 1.0 } = {},
   ) {
-    console.log("called with", materialType);
     const material = materialsRegistry.getMaterial(materialType, true);
     if ("color" in material) material.color = new THREE.Color(color);
     material.transparent = true;
@@ -35,34 +34,48 @@ export default class ShapeRegistry {
 
   // Register built-in primitives
   _registerBuiltIns() {
+    const s = 1;
     this.register("Cube", (materials, options) =>
-      this._createBaseMesh(materials, new THREE.BoxGeometry(1, 1, 1), options),
-    );
-
-    this.register("Sphere", (materials, options) =>
       this._createBaseMesh(
         materials,
-        new THREE.SphereGeometry(0.5, 16, 16),
+        new THREE.BoxGeometry(2 * s, 2 * s, 2 * s),
         options,
       ),
     );
+
+    this.register("Sphere", (materials, options) => {
+      const widthSegments = options.widthSegments ?? 32;
+      const heightSegments = options.heightSegments ?? 32;
+
+      return this._createBaseMesh(
+        materials,
+        new THREE.SphereGeometry(s, widthSegments, heightSegments),
+        options,
+      );
+    });
 
     this.register("Plane", (materials, options) =>
-      this._createBaseMesh(materials, new THREE.PlaneGeometry(1, 1), options),
-    );
-
-    this.register("Cylinder", (materials, options) =>
       this._createBaseMesh(
         materials,
-        new THREE.CylinderGeometry(0.5, 0.5, 1, 16),
+        new THREE.PlaneGeometry(2 * s, 2 * s),
         options,
       ),
     );
+
+    this.register("Cylinder", (materials, options) => {
+      const segments = options.segments ?? 24;
+
+      return this._createBaseMesh(
+        materials,
+        new THREE.CylinderGeometry(s, s, s, segments),
+        options,
+      );
+    });
 
     this.register("Cone", (materials, options) =>
       this._createBaseMesh(
         materials,
-        new THREE.ConeGeometry(0.5, 1, 16),
+        new THREE.ConeGeometry(s, 2 * s, 16),
         options,
       ),
     );
@@ -70,7 +83,7 @@ export default class ShapeRegistry {
     this.register("Torus", (materials, options) =>
       this._createBaseMesh(
         materials,
-        new THREE.TorusGeometry(0.5, 0.2, 16, 32),
+        new THREE.TorusGeometry(s * 0.75, s * 0.25, 16, 32),
         options,
       ),
     );
