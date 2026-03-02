@@ -240,9 +240,9 @@ class GUIManager {
         shapeFolder.add(params, "scaleZ", 0.1, 10).name("Scale Z");
 
         // Rotation
-        shapeFolder.add(params, "rotationX", 0, Math.PI * 2).name("Rot X");
-        shapeFolder.add(params, "rotationY", 0, Math.PI * 2).name("Rot Y");
-        shapeFolder.add(params, "rotationZ", 0, Math.PI * 2).name("Rot Z");
+        shapeFolder.add(params, "rotationX", 0, 360).name("Rot X");
+        shapeFolder.add(params, "rotationY", 0, 360).name("Rot Y");
+        shapeFolder.add(params, "rotationZ", 0, 360).name("Rot Z");
 
         // Color & opacity
         shapeFolder.addColor(params, "color").name("Color");
@@ -271,8 +271,8 @@ class GUIManager {
                   opacity: params.opacity,
                 };
                 const shapeObj = registry.create(shapeName, options);
-                this.weas.tjs.scene.add(shapeObj);
-                this.weas.tjs.requestRedraw();
+                this.weas.tjs.scene.add(shapeObj); // draw to weas
+                this.weas.tjs.requestRedraw(); // redraw using the renderer?
               },
             },
             "create",

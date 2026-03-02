@@ -6,7 +6,6 @@ export default class ShapeRegistry {
     this.materials = materialRegistry;
     this._callbacks = new Set();
 
-    // Built-in primitive shapes
     this._registerBuiltIns();
   }
 
@@ -16,17 +15,16 @@ export default class ShapeRegistry {
 
   onChange(callback) {
     this._callbacks.add(callback);
-    return () => this._callbacks.delete(callback); // unsubscribe
+    return () => this._callbacks.delete(callback);
   }
 
-  // Internal reusable mesh creation
   _createBaseMesh(
     materialsRegistry,
     geometry,
     { materialType = "Standard", color = "#bd0d87", opacity = 1.0 } = {},
   ) {
     console.log("called with", materialType);
-    const material = materialsRegistry.getMaterial(materialType, true); // clone material
+    const material = materialsRegistry.getMaterial(materialType, true);
     if ("color" in material) material.color = new THREE.Color(color);
     material.transparent = true;
     material.opacity = opacity;
@@ -116,7 +114,16 @@ export default class ShapeRegistry {
     if (shape instanceof THREE.Object3D) {
       if (options.position) shape.position.set(...options.position);
       if (options.scale) shape.scale.set(...options.scale);
-      if (options.rotation) shape.rotation.set(...options.rotation);
+
+      // rotation in degrees.
+      if (options.rotation) {
+        const [rx, ry, rz] = options.rotation;
+        shape.rotation.set(
+          THREE.MathUtils.degToRad(rx),
+          THREE.MathUtils.degToRad(ry),
+          THREE.MathUtils.degToRad(rz),
+        );
+      }
     }
 
     return shape;
