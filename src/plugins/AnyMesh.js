@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { clearObject } from "../utils.js";
 import { cloneValue } from "../state/store.js";
-import { materials } from "../tools/materials.js";
 
 class Setting {
   constructor({
@@ -61,6 +60,7 @@ export class AnyMesh {
     this.guiFolder = null;
     this.legendContainer = null;
     this.meshLegendConfig = this.getMeshLegendConfig();
+    this.materialsRegistry = this.viewer.materialsRegistry
     this.createGui();
 
     const pluginState = this.viewer.state.get("plugins.anyMesh");
@@ -159,7 +159,7 @@ export class AnyMesh {
         this.viewer.tjs.renderer.clearDepth();
       }
       const materialType = setting.materialType || "Standard";
-      const material = materials[materialType].clone();
+      const material = this.materialsRegistry.getMaterial(materialType, true);
       if (Array.isArray(setting.color)) {
         material.color.setRGB(setting.color[0], setting.color[1], setting.color[2]);
       } else {

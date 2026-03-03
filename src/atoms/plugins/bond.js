@@ -492,7 +492,6 @@ export function drawStick({
   // reset color to apply new colors properly
   material.color.set(0xffffff);
   material.transparent = true;
-  // material.side = THREE.DoubleSide;
 
   const t0 = performance.now();
 

@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { clearObject } from "../utils.js";
 import { cloneValue } from "../state/store.js";
-import { materials } from "../tools/materials.js";
 
 class Setting {
   constructor({ type, shape, instances, materialType = "Standard", opacity = 1 }) {
@@ -19,6 +18,7 @@ export class InstancedMeshPrimitive {
   constructor(viewer) {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
+    this.materialsRegistry = this.viewer.materialsRegistry
     this.settings = [];
     this.meshes = [];
 
@@ -71,7 +71,8 @@ export class InstancedMeshPrimitive {
     this.settings.forEach((setting) => {
       const geometry = this.getGeometry(setting);
       const materialType = setting.materialType || "Standard";
-      const material = materials[materialType].clone();
+      const material = this.materialsRegistry.getMaterial(materialType, true);
+      // const material = materials[materialType].clone();
       material.transparent = true; // Enable transparency
       material.opacity = setting.opacity || 1;
       const instancedMesh = new THREE.InstancedMesh(geometry, material, setting.instances.length);

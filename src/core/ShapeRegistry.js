@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 export default class ShapeRegistry {
   constructor(materialRegistry) {
@@ -28,11 +29,15 @@ export default class ShapeRegistry {
     material.transparent = true;
     material.opacity = opacity;
     material.side = THREE.DoubleSide;
+    if (opacity < 1.0) {
+      material.depthWrite = false;
+    }
 
     return new THREE.Mesh(geometry, material);
   }
 
   // Register built-in primitives
+  // these act as friendly abstractions to allow users to generate common shapes without having to know **anything** about three.
   _registerBuiltIns() {
     const s = 1;
     this.register("Cube", (materials, options) =>
@@ -89,25 +94,36 @@ export default class ShapeRegistry {
     );
 
     this.register("Arrow", (materials, options) => {
-      const group = new THREE.Group();
-      const shaft = this._createBaseMesh(
-        materials,
-        new THREE.CylinderGeometry(0.05, 0.05, 1, 12),
-        options,
+      const shaftRatio = 0.75; 
+      const totalLength = s;
+      const shaftLength = totalLength * shaftRatio;
+      const headLength = totalLength - shaftLength;
+
+      const shaftRadius = (options.shaftRadius ?? 0.075) * s;
+      const headRadius = (options.headRadius ?? 0.15) * s;
+
+      // Shaft
+      const shaft = new THREE.CylinderGeometry(
+        shaftRadius,
+        shaftRadius,
+        shaftLength,
+        options.segments ?? 12,
       );
-      shaft.position.set(0, 0.5, 0);
+      shaft.translate(0, shaftLength / 2, 0); // anchor at base
 
-      const cone = this._createBaseMesh(
-        materials,
-        new THREE.ConeGeometry(0.1, 0.2, 12),
-        options,
+      // Cone
+      // should sit ontop of shaft irrespective of relative scaling
+      const cone = new THREE.ConeGeometry(
+        headRadius,
+        headLength,
+        options.segments ?? 12,
       );
-      cone.position.set(0, 1.1, 0);
+      cone.translate(0, shaftLength + headLength / 2, 0);
 
-      group.add(shaft);
-      group.add(cone);
+      // Merge into a single BaseMesh so scale works uniform
+      const geometry = mergeGeometries([shaft, cone], false);
 
-      return group;
+      return this._createBaseMesh(materials, geometry, options);
     });
   }
 

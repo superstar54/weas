@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { clearObject, calculateQuaternion } from "../../utils.js";
-import { materials } from "../../tools/materials.js";
 import { convertColor } from "../utils.js";
 import { cloneValue } from "../../state/store.js";
 
@@ -21,6 +20,7 @@ export class VectorField {
   constructor(viewer) {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
+    this.shapeRegistry = this.viewer.weas.shapeRegistry;
     this._show = true;
     this.init();
 
@@ -148,79 +148,95 @@ export class VectorField {
     return [origins, vectors];
   }
 
+  // simple method that just loops over all vectors and renders an arrow for them
   drawVectorFields() {
-    /* Draw vectorfields */
     this.viewer.logger.debug("drawVectorFields");
     this.clearMeshes();
-    // loop over settings by key and value
+
     Object.entries(this.settings).forEach(([name, setting]) => {
-      // Generate vectorfield geometry
-      // if origin and vector are string, which means they are from atoms attributes
       const [origins, vectors] = this.getData(setting);
-      const [shaftMesh, headMesh] = drawAtomArrows(vectors.length, setting, setting.color, "Standard");
-      shaftMesh.visible = this.show;
-      headMesh.visible = this.show;
-      // Add mesh to the scene
-      this.scene.add(shaftMesh);
-      this.scene.add(headMesh);
-      this.meshes[name] = { shaft: shaftMesh, head: headMesh };
+
+      // we use the arrow geometry builtin from the shapeRegistry
+      const arrowMesh = drawAtomArrows({
+        length: vectors.length,
+        color: setting.color,
+        materialType: "Standard",
+        shapeRegistry: this.shapeRegistry,
+      });
+
+      // set its state
+      arrowMesh.visible = this.show;
+
+      this.scene.add(arrowMesh);
+      this.meshes[name] = { arrow: arrowMesh };
     });
+
     this.updateArrowMesh();
     this.viewer.requestRedraw?.("render");
   }
 
+
   updateArrowMesh(atomIndex = null, atoms = null) {
-    /* When the atom is moved, the vectorfield created from the atom attribute will be updated.
-    if atomIndex is null, update all bonds
-    if atoms is null, use this.viewer.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
-    */
-    if (atoms === null) {
-      atoms = this.viewer.atoms;
-    }
-    // loop all settings with index
+    if (atoms === null) atoms = this.viewer.atoms;
+
     Object.entries(this.settings).forEach(([name, setting]) => {
       const [origins, vectors] = this.getData(setting);
-      let atomIndices = [];
-      if (atomIndex) {
-        atomIndices = [atomIndex];
-      } else {
-        // use all atoms
-        atomIndices = [...Array(origins.length).keys()];
-      }
-      const shaftMesh = this.meshes[name]["shaft"];
-      const headMesh = this.meshes[name]["head"];
-      atomIndices.forEach((i) => {
-        const position1 = new THREE.Vector3(...origins[i]);
-        const scaledVector = new THREE.Vector3(...vectors[i]).multiplyScalar(setting.factor);
-        const position2 = position1.clone().add(scaledVector);
-        const midpoint = new THREE.Vector3().lerpVectors(position1, position2, 0.5);
-        const quaternion = calculateQuaternion(position1, position2);
-        const scale = new THREE.Vector3(setting.radius, position1.distanceTo(position2), setting.radius);
-        const shaftMatrix = new THREE.Matrix4().compose(midpoint, quaternion, scale);
-        const coneMatrix = new THREE.Matrix4().compose(position2, quaternion, new THREE.Vector3(1, 1, 1));
-        shaftMesh.setMatrixAt(i, shaftMatrix);
-        headMesh.setMatrixAt(i, coneMatrix);
+      const arrowMesh = this.meshes[name].arrow; // single instanced mesh
+      if (!arrowMesh) return;
+
+      const count = origins.length;
+      const indices =
+        atomIndex !== null ? [atomIndex] : [...Array(count).keys()];
+
+      indices.forEach((i) => {
+        const start = new THREE.Vector3(...origins[i]);
+        const vec = new THREE.Vector3(...vectors[i]).multiplyScalar(
+          setting.factor,
+        );
+        const end = start.clone().add(vec);
+
+        // Arrow geometry is designed along Y-axis; scale Y = length of vector
+        const mid = new THREE.Vector3().lerpVectors(start, end, 0.0);
+        const quaternion = calculateQuaternion(start, end);
+
+        // Uniform scale in X/Z, length along Y
+        const scale = new THREE.Vector3(
+          10 * setting.radius,
+          start.distanceTo(end),
+          10 * setting.radius,
+        );
+
+        const matrix = new THREE.Matrix4().compose(mid, quaternion, scale);
+        arrowMesh.setMatrixAt(i, matrix);
       });
-      shaftMesh.instanceMatrix.needsUpdate = true;
-      headMesh.instanceMatrix.needsUpdate = true;
+
+      arrowMesh.instanceMatrix.needsUpdate = true;
     });
   }
 }
 
-export function drawAtomArrows(length, setting, color = "0x000000", materialType = "Standard") {
-  // Arrow Shaft (Cylinder)
-  const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1); // Adjust segment count as needed
-  const material = materials[materialType].clone();
-  material.color = new THREE.Color(color);
-  // Arrowhead (Cone)
-  const coneGeometry = new THREE.ConeGeometry(setting.radius * 2, 6 * setting.radius, 8); // 0.5 is the base radius, 2 is the height
-  // align cone to point up
-  coneGeometry.rotateX(Math.PI);
 
-  const shaftMesh = new THREE.InstancedMesh(cylinderGeometry, material, length);
-  const headMesh = new THREE.InstancedMesh(coneGeometry, material, length);
-  color = new THREE.Color(color);
-  shaftMesh.userData.type = "arrow";
-  headMesh.userData.type = "arrow";
-  return [shaftMesh, headMesh];
+// basic creat arrow wrapper
+export function drawAtomArrows({
+  length = 0,
+  color = 0x000000,
+  materialType = "Standard",
+  shapeRegistry,
+}) {
+  // Get the base arrow mesh (merged shaft + cone)
+  const baseArrow = shapeRegistry.create("Arrow", { materialType });
+
+  if (!(baseArrow instanceof THREE.Mesh)) {
+    throw new Error("Arrow must return a THREE.Mesh");
+  }
+
+  const geometry = baseArrow.geometry.clone();
+  const material = baseArrow.material.clone();
+
+  material.color.set(color)
+
+  const instanced = new THREE.InstancedMesh(geometry, material, length);
+  instanced.userData.type = "arrow";
+
+  return instanced;
 }

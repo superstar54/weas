@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { ConvexHull } from "three/examples/jsm/math/ConvexHull.js";
 import { elementColors, elementsWithPolyhedra } from "../atoms_data.js";
 import { clearObject, calculateCartesianCoordinates } from "../../utils.js";
-import { materials } from "../../tools/materials.js";
 import { convertColor } from "../utils.js";
 import { cloneValue } from "../../state/store.js";
 
@@ -35,6 +34,7 @@ export class PolyhedraManager {
     this.allNormals = [];
     this.allColors = [];
     this.init();
+    this.materialsRegistry = this.viewer.weas.materialsRegistry
 
     const pluginState = this.viewer.state.get("plugins.polyhedra");
     if (pluginState && Array.isArray(pluginState.settings) && pluginState.settings.length > 0) {
@@ -207,11 +207,14 @@ export class PolyhedraManager {
     this.vertexAtomMap = vertexAtomMap;
   }
 
+  // TODO - fix rendering overlaps here - should be fairly normal
   drawPolyhedraMesh(atoms, materialType = "standard") {
-    const material = materials[materialType].clone();
+    const material = this.materialsRegistry.getMaterial(materialType, true)    
+    
     material.transparent = true;
-    material.opacity = 0.8;
+    material.opacity = 0.5;
     material.vertexColors = true; // Ensure vertex colors are applied
+    material.side = THREE.DoubleSide
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(this.allVertices, 3));
     geometry.setAttribute("normal", new THREE.Float32BufferAttribute(this.allNormals, 3));
@@ -222,6 +225,7 @@ export class PolyhedraManager {
     mesh.userData.objectMode = "edit";
     mesh.userData.notSelectable = true;
     mesh.layers.set(1);
+    mesh.renderOrder = 400
 
     return mesh;
   }
