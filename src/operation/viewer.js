@@ -15,6 +15,7 @@ class SetViewerState extends BaseOperation {
   constructor({ weas, patch = {}, redraw = "auto" }) {
     super(weas);
     this.affectsAtoms = false;
+    this.weas = weas
     this.patch = cloneValue(patch);
     this.redraw = redraw;
     this.colorByOptions = Object.keys(this.weas.avr.atoms.attributes["atom"] || {}).concat(["Element", "Index", "Random", "Uniform"]);

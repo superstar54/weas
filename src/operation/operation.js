@@ -8,6 +8,8 @@ import * as selection from "./selection.js";
 import * as viewer from "./viewer.js";
 import * as settings from "./settings.js";
 
+import { ShapeOperation } from "./shape.js";
+
 // Organize them under namespaces
 export const ops = {
   object: object,
@@ -17,6 +19,9 @@ export const ops = {
   selection: selection,
   viewer: viewer,
   settings: settings,
+  Shapes: {
+    ShapeOperation,
+  },
 };
 
 export class OperationManager {
@@ -40,11 +45,23 @@ export class OperationManager {
       // Iterate over each operation within the category
       for (const operationName in ops[category]) {
         // Dynamically create a function for each operation
+
+        //
         this[category][operationName] = (args = {}) => {
-          // Instantiate the operation with its arguments and execute it
-          args.weas = this.weas;
-          const operation = new ops[category][operationName](args);
-          this.execute(operation);
+          if (category === "Shapes") {
+            const { shapeName, options } = args;
+            const operation = new ops[category][operationName](
+              this.weas,
+              shapeName,
+              options,
+            );
+            this.execute(operation);
+          } else {
+            // Instantiate the operation with its arguments and execute it
+            args.weas = this.weas;
+            const operation = new ops[category][operationName](args);
+            this.execute(operation);
+          }
         };
       }
     }
@@ -153,18 +170,25 @@ export class OperationManager {
       this.guiContainer.style.display = "block";
       const lastOperation = this.undoStack[this.undoStack.length - 1];
 
-      if (typeof lastOperation.supportsAdjustGUI === "function" && !lastOperation.supportsAdjustGUI()) {
+      if (
+        typeof lastOperation.supportsAdjustGUI === "function" &&
+        !lastOperation.supportsAdjustGUI()
+      ) {
         this.guiContainer.style.display = "none";
         return;
       }
 
       // Clear the existing GUI controls and folders
       while (this.adjustLastOpFolder.__controllers.length > 0) {
-        this.adjustLastOpFolder.remove(this.adjustLastOpFolder.__controllers[0]);
+        this.adjustLastOpFolder.remove(
+          this.adjustLastOpFolder.__controllers[0],
+        );
       }
       const folderKeys = Object.keys(this.adjustLastOpFolder.__folders);
       folderKeys.forEach((key) => {
-        this.adjustLastOpFolder.removeFolder(this.adjustLastOpFolder.__folders[key]);
+        this.adjustLastOpFolder.removeFolder(
+          this.adjustLastOpFolder.__folders[key],
+        );
       });
 
       // Call the operation's setupGUI method if it exists

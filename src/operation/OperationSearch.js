@@ -1,4 +1,5 @@
 import { defaultKeyBindConfig } from "../config.js";
+import { ShapeOperation } from "./shape.js";
 
 // utility to check if an event matches a key combo
 function matchKey(event, combo) {
@@ -103,8 +104,36 @@ export class OperationSearchManager {
     const resultsContainer = this.overlay.querySelector("#search-results");
     resultsContainer.innerHTML = ""; // Clear previous results
 
-    // Determine the operations to display
+  // Determine the operations to display
     let displayOperations = this.operations;
+    if (value) {
+      displayOperations = displayOperations.filter(
+        (op) =>
+          op.description &&
+          op.description.toLowerCase().includes(value.toLowerCase()),
+      );
+    }
+
+    // Dynamic shapes
+    const shapeMatches = this.weas.shapeRegistry
+      .list()
+      .filter((name) => name.toLowerCase().includes(value.toLowerCase()));
+
+    shapeMatches.forEach((shapeName) => {
+      // only add if not already present
+      const exists = displayOperations.some(
+        (op) => op.category === "Shapes" && op.name === shapeName,
+      );
+      if (!exists) {
+        displayOperations.push({
+          cls: ShapeOperation,
+          name: shapeName,
+          category: "Shapes",
+          description: `Add ${shapeName}`,
+        });
+      }
+    });
+
     if (value) {
       displayOperations = displayOperations.filter((op) => op.description && op.description.toLowerCase().includes(value.toLowerCase()));
     }
@@ -137,13 +166,20 @@ export class OperationSearchManager {
   }
 
   execute(operation) {
-    // Placeholder for operation execution logic
-    // Add execution code
-    const op = new operation.cls({ weas: this.weas });
-    this.weas.ops.execute(op);
-    // Hide the search overlay
+    let opInstance;
+    if (operation.category === "Shapes") {
+      // Dynamic shape: pass WEAS and shapeName
+      opInstance = new operation.cls(this.weas, operation.name, {});
+      opInstance.supportsAdjustGUI = () => false;
+
+    } else {
+      // Other ops: pass as { weas: this.weas } plus default params
+      opInstance = new operation.cls({ weas: this.weas });
+    }
+
+    this.weas.ops.execute(opInstance);
+
     this.hide();
-    // refocus on the weas container
     this.weas.tjs.containerElement.focus();
   }
 }
