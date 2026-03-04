@@ -19,6 +19,7 @@ export class ShapeOperation extends BaseOperation {
     this.options.opacity = this.options.opacity ?? 1;
     this.options.scale = this.options.scale || [1, 1, 1];
     this.options.rotation = this.options.rotation || [0, 0, 0];
+    this.options.wireframe = this.options.wireframe || false;
 
     this.object = null;
 
@@ -37,6 +38,10 @@ export class ShapeOperation extends BaseOperation {
         color: {
           type: "color",
           path: "options.color",
+        },
+        wireframe: {
+          type: "boolean",
+          path: "options.wireframe",
         },
         opacity: {
           type: "number",
@@ -118,9 +123,9 @@ export class ShapeOperation extends BaseOperation {
 
       // Apply rotation
       this.object.rotation.set(
-        this.options.rotation[0] / (360/Math.PI),
-        this.options.rotation[1] / (360/Math.PI),
-        this.options.rotation[2] / (360/Math.PI),
+        this.options.rotation[0] / (360 / Math.PI),
+        this.options.rotation[1] / (360 / Math.PI),
+        this.options.rotation[2] / (360 / Math.PI),
       );
     }
 

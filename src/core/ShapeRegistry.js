@@ -37,16 +37,19 @@ export default class ShapeRegistry {
   _createBaseMesh(
     materialsRegistry,
     geometry,
-    { materialType = "Standard", color = "#bd0d87", opacity = 1.0 } = {},
+    { materialType = "Standard", color = "#bd0d87", opacity = 1.0, wireframe = false } = {},
   ) {
     const material = materialsRegistry.getMaterial(materialType, true);
     if ("color" in material) material.color = new THREE.Color(color);
     material.transparent = true;
     material.opacity = opacity;
     material.side = THREE.DoubleSide;
+    material.wireframe = wireframe; 
     if (opacity < 1.0) {
       material.depthWrite = false;
     }
+
+    console.log("mat", material)
 
     return new THREE.Mesh(geometry, material);
   }

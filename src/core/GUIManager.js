@@ -95,7 +95,6 @@ class GUIManager {
   }
 
   /* ---------------- Materials Folder ---------------- */
-  /* ---------------- Materials Folder ---------------- */
   addMaterialsFolder() {
     const folder = this.gui.addFolder("Materials");
     const registry = this.weas.materialsRegistry;
@@ -117,26 +116,25 @@ class GUIManager {
         const subFolder = folder.addFolder(displayName);
         if (expanded.includes(displayName)) subFolder.open();
 
-        // Get editable schema for this material
+        // Get schema for editable/advanced fields
         const schema = registry.getSchema(name);
 
         schema.forEach((field) => {
-          const { prop, type, min, max, step, level } = field;
-
-          // Only create GUI for editable or advanced fields
+          const { prop, type, min, max, step } = field;
           const editableObj = { [prop]: mat[prop] };
           let controller;
 
           if (type === "number") {
-            controller = subFolder.add(editableObj, prop, min, max, step);
+            controller = subFolder
+              .add(editableObj, prop, min, max, step)
+              .name(prop);
           } else if (type === "color") {
-            controller = subFolder.addColor(editableObj, prop);
+            controller = subFolder.addColor(editableObj, prop).name(prop);
           }
 
           if (controller) {
             controller.onChange((val) => {
-              if (type === "color" && mat[prop] && mat[prop].setHex) {
-                // some Three.js props like specular are Color objects
+              if (type === "color" && mat[prop]?.isColor) {
                 mat[prop].set(val);
               } else {
                 mat[prop] = val;
@@ -144,11 +142,8 @@ class GUIManager {
               this.weas.tjs.requestRedraw();
             });
 
-            // Disable controllers for built-in materials
-            if (mat.__builtIn) {
-              controller.domElement.querySelector("input").disabled = true;
-              controller.domElement.style.opacity = 0.5;
-            }
+            // Lock controller for built-in materials
+            if (mat.__builtIn) lockController(controller);
           }
         });
 

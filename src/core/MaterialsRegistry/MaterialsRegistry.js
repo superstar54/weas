@@ -15,7 +15,6 @@ export default class MaterialsRegistry {
       Standard: new THREE.MeshStandardMaterial({
         metalness: 0.2,
         roughness: 0.5,
-        envMapIntensity: 0.8,
       }),
       Phong: new THREE.MeshPhongMaterial({
         specular: 0x222222,
@@ -44,14 +43,6 @@ export default class MaterialsRegistry {
           step: 0.01,
           level: "editable",
         },
-        {
-          prop: "envMapIntensity",
-          type: "number",
-          min: 0,
-          max: 5,
-          step: 0.01,
-          level: "advanced",
-        },
       ],
       MeshPhongMaterial: [
         {
@@ -70,17 +61,8 @@ export default class MaterialsRegistry {
           step: 0.01,
           level: "advanced",
         },
-        { prop: "specular", type: "color", level: "editable" },
       ],
       MeshBasicMaterial: [
-        {
-          prop: "opacity",
-          type: "number",
-          min: 0,
-          max: 1,
-          step: 0.01,
-          level: "editable",
-        },
       ],
     };
 
