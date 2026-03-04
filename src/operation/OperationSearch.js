@@ -170,7 +170,7 @@ export class OperationSearchManager {
     if (operation.category === "Shapes") {
       // Dynamic shape: pass WEAS and shapeName
       opInstance = new operation.cls(this.weas, operation.name, {});
-      opInstance.supportsAdjustGUI = () => false;
+      // opInstance.supportsAdjustGUI = () => false;
 
     } else {
       // Other ops: pass as { weas: this.weas } plus default params
@@ -198,7 +198,6 @@ function AddKeyToDesc(descOrName, keybinds, opName) {
   return desc;
 }
 
-// Function to extract all operation classes into an array
 // Function to extract all operation classes into an array with keybind appended
 function getAllOperations(ops, keybinds) {
   const operations = [];
@@ -213,6 +212,5 @@ function getAllOperations(ops, keybinds) {
       });
     });
   });
-  console.log(operations)
   return operations;
 }

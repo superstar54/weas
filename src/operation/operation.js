@@ -132,7 +132,7 @@ export class OperationManager {
     Object.assign(guiContainer.style, {
       position: "absolute",
       bottom: "30px",
-      left: "10px",
+      right: "10px",
       display: "none", // Hide by default
     });
     this.weas.tjs.containerElement.appendChild(guiContainer);
@@ -165,39 +165,33 @@ export class OperationManager {
   }
 
   updateAdjustLastOperationGUI() {
-    // Ensure the GUI container is shown when there are operations to adjust
-    if (this.undoStack.length > 0) {
-      this.guiContainer.style.display = "block";
-      const lastOperation = this.undoStack[this.undoStack.length - 1];
-
-      if (
-        typeof lastOperation.supportsAdjustGUI === "function" &&
-        !lastOperation.supportsAdjustGUI()
-      ) {
-        this.guiContainer.style.display = "none";
-        return;
-      }
-
-      // Clear the existing GUI controls and folders
-      while (this.adjustLastOpFolder.__controllers.length > 0) {
-        this.adjustLastOpFolder.remove(
-          this.adjustLastOpFolder.__controllers[0],
-        );
-      }
-      const folderKeys = Object.keys(this.adjustLastOpFolder.__folders);
-      folderKeys.forEach((key) => {
-        this.adjustLastOpFolder.removeFolder(
-          this.adjustLastOpFolder.__folders[key],
-        );
-      });
-
-      // Call the operation's setupGUI method if it exists
-      if (typeof lastOperation.setupGUI === "function") {
-        lastOperation.setupGUI(this.adjustLastOpFolder);
-      }
-    } else {
-      // Hide the GUI container if there are no operations
+    const lastOperation = this.undoStack[this.undoStack.length - 1];
+    if (!lastOperation || !lastOperation.supportsAdjustGUI?.()) {
       this.guiContainer.style.display = "none";
+      return;
+    }
+
+    this.guiContainer.style.display = "block";
+
+    // Only rebuild if last operation changed
+    if (this.lastAdjustedOperation !== lastOperation) {
+      this.lastAdjustedOperation = lastOperation;
+
+      // Clear previous GUI
+      Object.values(this.adjustLastOpFolder.__controllers).forEach((c) =>
+        this.adjustLastOpFolder.remove(c),
+      );
+      Object.values(this.adjustLastOpFolder.__folders).forEach((f) =>
+        this.adjustLastOpFolder.removeFolder(f),
+      );
+
+      // Setup GUI for the new operation
+      lastOperation.setupGUI(this.adjustLastOpFolder);
+    }
+
+    // Live update: call some method on the operation to refresh GUI values
+    if (typeof lastOperation.refreshGUIValues === "function") {
+      lastOperation.refreshGUIValues();
     }
   }
 }
