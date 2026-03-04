@@ -310,11 +310,54 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.showBondedAtoms = false;
       editor.avr.modelStyle = 1;
       break;
-    case "Primitives":
+    case "Shapes":
       editor.clear();
-      editor.ops.mesh.AddSphereOperation({ position: [-5, 0, 0], scale: [1, 1, 1], color: "#00FF00", opacity: 0.5 });
-      editor.ops.mesh.AddCylinderOperation({ position: [0, 0, 0], scale: [1, 1, 1], color: "#bd0d87", opacity: 0.5 });
-      editor.ops.mesh.AddCubeOperation({ position: [5, 0, 0], scale: [1, 1, 1], color: "#0000FF", opacity: 0.5 });
+
+      const registry = editor.shapeRegistry;
+      const baseScale = [0.5, 0.5, 0.5];
+      const spacing = 2.2;     // distance between shapes
+      const gridCols = 6;    // shapes per row
+      const opacities = [0.25, 0.75, 1.0]; // different opacity levels
+
+      const randomColor = () =>
+        `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
+
+      let index = 0; // overall index for grid positioning
+
+      for (const shapeName of registry.list()) {
+        for (const opacity of opacities) {
+          // Normal solid version
+          let row = Math.floor(index / gridCols);
+          let col = index % gridCols;
+          let position = [
+            col * spacing - ((gridCols - 1) * spacing) / 2,
+            0,
+            row * spacing,
+          ];
+
+          editor.ops.Shapes.ShapeOperation({
+            shapeName,
+            options: { scale: baseScale, opacity, color: randomColor(), wireframe: false, position },
+          });
+          index++;
+
+          // Wireframe version right next to it
+          row = Math.floor(index / gridCols);
+          col = index % gridCols;
+          position = [
+            col * spacing - ((gridCols - 1) * spacing) / 2,
+            0,
+            row * spacing,
+          ];
+
+          editor.ops.Shapes.ShapeOperation({
+            shapeName,
+            options: { scale: baseScale, opacity, color: randomColor(), wireframe: true, position },
+          });
+          index++;
+        }
+      }
+
       editor.ops.hideGUI();
       break;
     case "mesh_primitives_settings.json":
