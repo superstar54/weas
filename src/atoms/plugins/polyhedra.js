@@ -207,7 +207,6 @@ export class PolyhedraManager {
     this.vertexAtomMap = vertexAtomMap;
   }
 
-  // TODO - fix rendering overlaps here - should be fairly normal
   drawPolyhedraMesh(atoms, materialType = "standard") {
     const material = this.materialsRegistry.getMaterial(materialType, true)    
     
@@ -215,6 +214,9 @@ export class PolyhedraManager {
     material.opacity = 0.5;
     material.vertexColors = true; // Ensure vertex colors are applied
     material.side = THREE.DoubleSide
+    material.depthWrite = false;
+    material.depthTest = true;
+    // material.sortElements = true // investigate if this improves layers
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(this.allVertices, 3));
     geometry.setAttribute("normal", new THREE.Float32BufferAttribute(this.allNormals, 3));

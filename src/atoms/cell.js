@@ -1,12 +1,11 @@
 import * as THREE from "three";
-import { createLabel } from "../utils.js";
-import { drawArrow } from "../tools/primitives.js";
 
 export class CellManager {
   constructor(viewer, settings = {}) {
     this.viewer = viewer;
     this.cellMesh = null;
     this.cellVectors = null;
+    this.shapeRegistry = viewer.weas.shapeRegistry
 
     // Default settings with user overrides
     this.settings = {
@@ -15,10 +14,6 @@ export class CellManager {
       cellColor: settings.cellColor ?? 0x000000, // Default black
       cellLineWidth: settings.cellLineWidth ?? 2, // Default width
       axisColors: settings.axisColors ?? { a: 0xff0000, b: 0x00ff00, c: 0x0000ff }, // RGB
-      axisRadius: settings.axisRadius ?? 0.15,
-      axisConeHeight: settings.axisConeHeight ?? 0.8,
-      axisConeRadius: settings.axisConeRadius ?? 0.3,
-      axisSphereRadius: settings.axisSphereRadius ?? 0.3,
     };
 
     this._showCell = this.settings.showCell;
@@ -139,65 +134,65 @@ export class CellManager {
     return line;
   }
 
-  drawUnitCellVectors() {
-    const origin = new THREE.Vector3(0, 0, 0);
-    const cell = this.viewer.originalCell;
-    if (!cell || cell.length !== 3) {
-      console.warn("Invalid or missing unit cell data for vectors");
-      return;
+    drawUnitCellVectors() {
+      const origin = new THREE.Vector3(0, 0, 0);
+      const cell = this.viewer.originalCell;
+      if (!cell || cell.length !== 3) {
+        console.warn("Invalid or missing unit cell data for vectors");
+        return;
+      }
+
+      const unitCellGroup = new THREE.Group();
+      const directions = [
+        new THREE.Vector3(...cell[0]).normalize(),
+        new THREE.Vector3(...cell[1]).normalize(),
+        new THREE.Vector3(...cell[2]).normalize(),
+      ];
+
+      const axisNames = ["a", "b", "c"];
+      const axisColors = this.settings.axisColors;
+      const offset = 3.3;
+
+      directions.forEach((dir, i) => {
+        // Create Arrow from shapeRegistry
+        if (this.shapeRegistry.shapes["Arrow"]) {
+          const arrow = this.shapeRegistry.create("Arrow", {
+            color: axisColors[axisNames[i]],
+            position: origin.clone(),
+            rotation: [
+              0,
+              0,
+              0,
+            ],
+            scale: [2.5, 2.5, 2.5],
+          });
+
+          // Align arrow with direction
+          const axis = new THREE.Vector3(0, 1, 0); // default arrow points +Y
+          const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, dir);
+          arrow.setRotationFromQuaternion(quaternion);
+
+          unitCellGroup.add(arrow);
+        }
+
+        // Add axis label
+        unitCellGroup.add(createSpriteLabel(dir.clone().multiplyScalar(offset), axisNames[i], "black", "150px"));
+
+        // Add origin sphere for each axis (optional: only once is fine)
+        if (i === 0 && this.shapeRegistry.shapes["Sphere"]) {
+          const sphere = this.shapeRegistry.create("Sphere", {
+            color: "grey",
+            position: origin.clone(),
+            scale: [this.settings.axisSphereRadius, this.settings.axisSphereRadius, this.settings.axisSphereRadius],
+          });
+          unitCellGroup.add(sphere);
+        }
+      });
+
+      this.viewer.tjs.coordScene.add(unitCellGroup);
+      unitCellGroup.visible = this.showCell;
+      return unitCellGroup;
     }
-
-    const unitCellGroup = new THREE.Group();
-    const directions = [new THREE.Vector3(...cell[0]).normalize(), new THREE.Vector3(...cell[1]).normalize(), new THREE.Vector3(...cell[2]).normalize()];
-
-    // Draw arrows
-    const aArrow = drawArrow({
-      position: origin,
-      direction: directions[0],
-      arrowLength: 3,
-      arrowRadius: this.settings.axisRadius,
-      coneHeight: this.settings.axisConeHeight,
-      coneRadius: this.settings.axisConeRadius,
-      color: this.settings.axisColors.a,
-    });
-
-    const bArrow = drawArrow({
-      position: origin,
-      direction: directions[1],
-      arrowLength: 3,
-      arrowRadius: this.settings.axisRadius,
-      coneHeight: this.settings.axisConeHeight,
-      coneRadius: this.settings.axisConeRadius,
-      color: this.settings.axisColors.b,
-    });
-
-    const cArrow = drawArrow({
-      position: origin,
-      direction: directions[2],
-      arrowLength: 3,
-      arrowRadius: this.settings.axisRadius,
-      coneHeight: this.settings.axisConeHeight,
-      coneRadius: this.settings.axisConeRadius,
-      color: this.settings.axisColors.c,
-    });
-
-    unitCellGroup.add(aArrow, bArrow, cArrow);
-
-    // Add axis labels
-    const offset = 3.3;
-    unitCellGroup.add(createSpriteLabel(directions[0].multiplyScalar(offset), "a", "black", "80px"));
-    unitCellGroup.add(createSpriteLabel(directions[1].multiplyScalar(offset), "b", "black", "80px"));
-    unitCellGroup.add(createSpriteLabel(directions[2].multiplyScalar(offset), "c", "black", "80px"));
-
-    // Create sphere at origin
-    const sphereGeometry = new THREE.SphereGeometry(this.settings.axisSphereRadius, 16, 16);
-    const sphereMaterial = new THREE.MeshStandardMaterial({ color: "grey" });
-    unitCellGroup.add(new THREE.Mesh(sphereGeometry, sphereMaterial));
-
-    this.viewer.tjs.coordScene.add(unitCellGroup);
-    unitCellGroup.visible = this.showCell;
-    return unitCellGroup;
-  }
 
   updateCellMesh(cell) {
     if (!cell || cell.length !== 3) {
@@ -253,18 +248,29 @@ export class CellManager {
 }
 
 function createSpriteLabel(position, text, color, size) {
+  const canvasSize = 128;
   const canvas = document.createElement("canvas");
-  canvas.width = 120;
-  canvas.height = 120;
+  canvas.width = canvasSize;
+  canvas.height = canvasSize;
   const context = canvas.getContext("2d");
-  context.font = `${size} Arial`;
+
+  context.font = `${parseInt(size) * (canvasSize / 180)}px Arial`;
   context.fillStyle = color;
   context.textAlign = "center";
+  context.textBaseline = "middle";
   context.fillText(text, canvas.width / 2, canvas.height / 2);
 
   const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.encoding = THREE.sRGBEncoding;
+  texture.anisotropy = 16;
+
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }));
   sprite.position.copy(position);
-  sprite.scale.set(1.5, 1.5, 1);
+
+  const scale = 2.25;
+  sprite.scale.set(scale, scale, 1);
+
   return sprite;
 }

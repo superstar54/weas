@@ -125,6 +125,8 @@ export class HighlightManager {
       opacity: 0.6,
       transparent: true,
     });
+    material.depthWrite = false
+    material.depthTest = true
     // sphere
     const geometry = new THREE.SphereGeometry(1, 16, 16);
     this.drawHighlightMesh("sphere", geometry, material);

@@ -49,8 +49,6 @@ export default class ShapeRegistry {
       material.depthWrite = false;
     }
 
-    console.log("mat", material)
-
     return new THREE.Mesh(geometry, material);
   }
 
