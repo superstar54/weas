@@ -1,6 +1,21 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
+/**
+ * ShapeRegistry manages a collection of reusable 3D shapes for the scene.
+ *
+ * Allows external registration of shapes
+ * Notifies listeners of all the availible shapes so that they can be inspected and created
+ *
+ * Example usage:
+ * const registry = new ShapeRegistry(materialsRegistry);
+ * const cube = registry.create("Cube", { position: [1,2,3], scale: [2,2,2], materialType: "Phong" });
+ * scene.add(cube);
+ *
+ * Creation of shapes this way avoids the operations manager entirely and
+ * acts as a way to add shapes to a scene without interacting with history or state (for example initialising atoms)
+ * also exposes the ability to override default settings that operations doesnt expose (i.e. shape segments...)
+ */
 export default class ShapeRegistry {
   constructor(materialRegistry) {
     this.shapes = {};
@@ -36,8 +51,6 @@ export default class ShapeRegistry {
     return new THREE.Mesh(geometry, material);
   }
 
-  // Register built-in primitives
-  // these act as friendly abstractions to allow users to generate common shapes without having to know **anything** about three.
   _registerBuiltIns() {
     const s = 1;
     this.register("Cube", (materials, options) =>
@@ -94,7 +107,7 @@ export default class ShapeRegistry {
     );
 
     this.register("Arrow", (materials, options) => {
-      const shaftRatio = 0.75; 
+      const shaftRatio = 0.75;
       const totalLength = s;
       const shaftLength = totalLength * shaftRatio;
       const headLength = totalLength - shaftLength;

@@ -104,7 +104,7 @@ export class OperationSearchManager {
     const resultsContainer = this.overlay.querySelector("#search-results");
     resultsContainer.innerHTML = ""; // Clear previous results
 
-  // Determine the operations to display
+    // Determine the operations to display
     let displayOperations = this.operations;
     if (value) {
       displayOperations = displayOperations.filter(
@@ -171,7 +171,6 @@ export class OperationSearchManager {
       // Dynamic shape: pass WEAS and shapeName
       opInstance = new operation.cls(this.weas, operation.name, {});
       // opInstance.supportsAdjustGUI = () => false;
-
     } else {
       // Other ops: pass as { weas: this.weas } plus default params
       opInstance = new operation.cls({ weas: this.weas });
@@ -203,6 +202,9 @@ function getAllOperations(ops, keybinds) {
   const operations = [];
   Object.keys(ops).forEach((category) => {
     Object.values(ops[category]).forEach((opClass) => {
+      // Skip abstract classes
+      if (opClass.abstract) return;
+
       const baseDesc = opClass.description || opClass.name || "Operation";
       operations.push({
         cls: opClass,
@@ -213,4 +215,29 @@ function getAllOperations(ops, keybinds) {
     });
   });
   return operations;
+}
+
+// generic fuzzy matcher - should be maybe moved to fuse.js
+function fuzzyMatch(str, query) {
+  str = str.toLowerCase();
+  query = query.toLowerCase();
+
+  // exact substring match
+  if (str.includes(query)) return true;
+
+  // simple typo-tolerance: allow edit distance of 1
+  let distance = 0;
+  let i = 0,
+    j = 0;
+  while (i < str.length && j < query.length) {
+    if (str[i] === query[j]) {
+      i++;
+      j++;
+    } else {
+      distance++;
+      i++;
+      if (distance > 1) return false;
+    }
+  }
+  return true;
 }

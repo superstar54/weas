@@ -1,10 +1,16 @@
 import * as THREE from "three";
 
+/**
+ * Registry for materials with editable schemas.
+ * Supports built-in and user-defined materials, cloning, renaming, copying,
+ * and exposes editable properties for GUI generation.
+ */
 export default class MaterialsRegistry {
   constructor() {
-    // Built-in defaults
+    // Built-in default names
     this._builtIn = new Set(["Standard", "Phong", "Basic"]);
 
+    // Material instances
     this.materials = {
       Standard: new THREE.MeshStandardMaterial({
         metalness: 0.2,
@@ -17,6 +23,65 @@ export default class MaterialsRegistry {
         reflectivity: 0.9,
       }),
       Basic: new THREE.MeshBasicMaterial({ color: 0xffff00 }),
+    };
+
+    // Attach schema definitions to built-in materials
+    this.materialSchemas = {
+      MeshStandardMaterial: [
+        {
+          prop: "metalness",
+          type: "number",
+          min: 0,
+          max: 1,
+          step: 0.01,
+          level: "editable",
+        },
+        {
+          prop: "roughness",
+          type: "number",
+          min: 0,
+          max: 1,
+          step: 0.01,
+          level: "editable",
+        },
+        {
+          prop: "envMapIntensity",
+          type: "number",
+          min: 0,
+          max: 5,
+          step: 0.01,
+          level: "advanced",
+        },
+      ],
+      MeshPhongMaterial: [
+        {
+          prop: "shininess",
+          type: "number",
+          min: 0,
+          max: 300,
+          step: 1,
+          level: "editable",
+        },
+        {
+          prop: "reflectivity",
+          type: "number",
+          min: 0,
+          max: 1,
+          step: 0.01,
+          level: "advanced",
+        },
+        { prop: "specular", type: "color", level: "editable" },
+      ],
+      MeshBasicMaterial: [
+        {
+          prop: "opacity",
+          type: "number",
+          min: 0,
+          max: 1,
+          step: 0.01,
+          level: "editable",
+        },
+      ],
     };
 
     // Mark built-in materials as read-only
@@ -34,15 +99,20 @@ export default class MaterialsRegistry {
     return () => this._callbacks.delete(callback); // unsubscribe
   }
 
-  // get a material by name so that it can be used elsewhere
+  /** Get a material instance by name. Optionally clone it. */
   getMaterial(name, clone = false) {
-    if (!(name in this.materials)) {
+    if (!(name in this.materials))
       throw new Error(`Material "${name}" not found`);
-    }
     return clone ? this.materials[name].clone() : this.materials[name];
   }
 
-  // allow renaming
+  /** Get the schema (editable properties) for a material */
+  getSchema(name) {
+    const mat = this.getMaterial(name);
+    return this.materialSchemas[mat.type] || [];
+  }
+
+  /** Rename a user-defined material */
   renameMaterial(oldName, newName) {
     if (!(oldName in this.materials))
       throw new Error(`Material "${oldName}" not found`);
@@ -52,50 +122,45 @@ export default class MaterialsRegistry {
       console.warn(`Material "${newName}" will overwrite existing`);
     this.materials[newName] = this.materials[oldName];
     delete this.materials[oldName];
-
     this._emitChange();
   }
 
-  // allow in spot updating
+  /** Update user-defined material in place */
   updateMaterial(name, overrides) {
     if (!(name in this.materials))
       throw new Error(`Material "${name}" not found`);
     if (this._builtIn.has(name))
       throw new Error(`Cannot modify built-in material "${name}"`);
     Object.assign(this.materials[name], overrides);
-
     this._emitChange();
   }
 
-  // Allow direct copying (with overrides)
+  /** Copy a material (built-in or user-defined) */
   copyMaterial(existingName, newName, overrides = {}) {
     if (!(existingName in this.materials))
       throw new Error(`Material "${existingName}" not found`);
-
     if (newName in this.materials)
       console.warn(`Material "${newName}" will overwrite existing`);
-
     const matCopy = this.materials[existingName].clone();
     Object.assign(matCopy, overrides);
     matCopy.__userDefined = true;
-
     this.materials[newName] = matCopy;
-
     this._emitChange();
   }
 
-  // Access all available material names
+  /** List material names */
   list() {
-    // return fresh array of keys every time
     return Object.keys(this.materials);
   }
 
+  /** List detailed info for all materials */
   listDetails() {
     return Object.entries(this.materials).map(([name, mat]) => ({
       name,
       type: mat.type,
       builtIn: !!mat.__builtIn,
       userDefined: !!mat.__userDefined,
+      schema: this.getSchema(name),
     }));
   }
 }

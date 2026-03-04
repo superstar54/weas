@@ -2,7 +2,6 @@ import { GUI } from "dat.gui";
 import { OperationSearchManager } from "./OperationSearch.js";
 import * as transform from "./transform.js";
 import * as object from "./object.js";
-import * as mesh from "./mesh.js";
 import * as atoms from "./atoms.js";
 import * as selection from "./selection.js";
 import * as viewer from "./viewer.js";
@@ -14,7 +13,6 @@ import { ShapeOperation } from "./shape.js";
 export const ops = {
   object: object,
   transform: transform,
-  mesh: mesh,
   atoms: atoms,
   selection: selection,
   viewer: viewer,

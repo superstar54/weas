@@ -75,8 +75,7 @@ class GUIManager {
     if (debug) {
       if (this.weas.materialsRegistry) this.addMaterialsFolder();
       // if (this.weas.shapeRegistry) this.addShapesFolder();
-      this.addShapeOperationsFolder(); 
-
+      this.addShapeOperationsFolder();
     }
   }
 
@@ -96,6 +95,7 @@ class GUIManager {
   }
 
   /* ---------------- Materials Folder ---------------- */
+  /* ---------------- Materials Folder ---------------- */
   addMaterialsFolder() {
     const folder = this.gui.addFolder("Materials");
     const registry = this.weas.materialsRegistry;
@@ -106,63 +106,51 @@ class GUIManager {
         .filter(([_, f]) => !f.closed)
         .map(([name]) => name);
 
-      // Remove all existing subfolders
+      // Clear existing subfolders
       for (let key in folder.__folders) {
         folder.removeFolder(folder.__folders[key]);
       }
 
-      // Build subfolders from registry
       for (const name of registry.list()) {
         const mat = registry.getMaterial(name, false);
         const displayName = mat.__builtIn ? `${name} (built-in)` : name;
         const subFolder = folder.addFolder(displayName);
-
         if (expanded.includes(displayName)) subFolder.open();
 
-        const addSlider = (obj, prop, min, max, step = 0.01) => {
-          const controller = subFolder.add(obj, prop, min, max);
-          if (mat.__builtIn) {
-            controller.domElement.querySelector("input").disabled = true;
-            controller.domElement.style.opacity = 0.5;
+        // Get editable schema for this material
+        const schema = registry.getSchema(name);
+
+        schema.forEach((field) => {
+          const { prop, type, min, max, step, level } = field;
+
+          // Only create GUI for editable or advanced fields
+          const editableObj = { [prop]: mat[prop] };
+          let controller;
+
+          if (type === "number") {
+            controller = subFolder.add(editableObj, prop, min, max, step);
+          } else if (type === "color") {
+            controller = subFolder.addColor(editableObj, prop);
           }
-          controller.onChange(() => this.weas.tjs.requestRedraw());
-          return controller;
-        };
 
-        switch (mat.type) {
-          case "MeshPhongMaterial":
-            const shininessCtrl = addSlider(mat, "shininess", 0, 300);
-            const reflectivityCtrl = addSlider(mat, "reflectivity", 0, 1);
-            const specCtrl = subFolder
-              .addColor({ specular: mat.specular.getHex() }, "specular")
-              .onChange((val) => mat.specular.setHex(val));
+          if (controller) {
+            controller.onChange((val) => {
+              if (type === "color" && mat[prop] && mat[prop].setHex) {
+                // some Three.js props like specular are Color objects
+                mat[prop].set(val);
+              } else {
+                mat[prop] = val;
+              }
+              this.weas.tjs.requestRedraw();
+            });
+
+            // Disable controllers for built-in materials
             if (mat.__builtIn) {
-              lockController(shininessCtrl);
-              lockController(reflectivityCtrl);
-              lockController(specCtrl);
+              controller.domElement.querySelector("input").disabled = true;
+              controller.domElement.style.opacity = 0.5;
             }
-            break;
-
-          case "MeshStandardMaterial":
-            const metalnessCtrl = addSlider(mat, "metalness", 0, 1);
-            const roughnessCtrl = addSlider(mat, "roughness", 0, 1);
-            const envMapCtrl = addSlider(mat, "envMapIntensity", 0, 5);
-
-            if (mat.__builtIn) {
-              lockController(metalnessCtrl);
-              lockController(roughnessCtrl);
-              lockController(envMapCtrl);
-            }
-            break;
-
-          case "MeshBasicMaterial":
-            const opacity = addSlider(mat, "opacity", 0, 1);
-            if (mat.__builtIn) {
-              lockController(opacity);
-            }
-
-            break;
-        }
+          }
+        });
 
         // Copy button
         subFolder
@@ -215,185 +203,29 @@ class GUIManager {
     this.refreshMaterials();
   }
 
-  /* ---------------- Shapes Folder ---------------- */
-  addShapesFolder() {
-    const folder = this.gui.addFolder("Shapes");
-    const registry = this.weas.shapeRegistry;
-
-    const refreshShapes = () => {
-      const expanded = Object.entries(folder.__folders)
-        .filter(([_, f]) => !f.closed)
-        .map(([name]) => name);
-
-      for (let key in folder.__folders) {
-        folder.removeFolder(folder.__folders[key]);
-      }
-
-      for (const shapeName of registry.list()) {
-        const shapeFolder = folder.addFolder(shapeName);
-        if (expanded.includes(shapeName)) shapeFolder.open();
-
-        const params = {
-          x: 0,
-          y: 0,
-          z: 0,
-          scaleX: 1,
-          scaleY: 1,
-          scaleZ: 1,
-          rotationX: 0,
-          rotationY: 0,
-          rotationZ: 0,
-          color: "#bd0d87",
-          opacity: 1,
-        };
-
-        // Position
-        shapeFolder.add(params, "x", -50, 50).name("X");
-        shapeFolder.add(params, "y", -50, 50).name("Y");
-        shapeFolder.add(params, "z", -50, 50).name("Z");
-
-        // Scale
-        shapeFolder.add(params, "scaleX", 0.1, 10).name("Scale X");
-        shapeFolder.add(params, "scaleY", 0.1, 10).name("Scale Y");
-        shapeFolder.add(params, "scaleZ", 0.1, 10).name("Scale Z");
-
-        // Rotation
-        shapeFolder.add(params, "rotationX", 0, 360).name("Rot X");
-        shapeFolder.add(params, "rotationY", 0, 360).name("Rot Y");
-        shapeFolder.add(params, "rotationZ", 0, 360).name("Rot Z");
-
-        // Color & opacity
-        shapeFolder.addColor(params, "color").name("Color");
-        shapeFolder.add(params, "opacity", 0, 1).name("Opacity");
-
-        // Material dropdown dynamically
-        const materialNames = this.weas.materialsRegistry.list();
-        params.material = materialNames[0] || null;
-        shapeFolder.add(params, "material", materialNames).name("Material");
-
-        // Create button
-        shapeFolder
-          .add(
-            {
-              create: () => {
-                const options = {
-                  position: [params.x, params.y, params.z],
-                  scale: [params.scaleX, params.scaleY, params.scaleZ],
-                  rotation: [
-                    params.rotationX,
-                    params.rotationY,
-                    params.rotationZ,
-                  ],
-                  materialType: params.material,
-                  color: params.color,
-                  opacity: params.opacity,
-                };
-                const shapeObj = registry.create(shapeName, options);
-                this.weas.tjs.scene.add(shapeObj); // draw to weas
-                this.weas.tjs.requestRedraw(); // redraw using the renderer?
-              },
-            },
-            "create",
-          )
-          .name("Create");
-      }
-    };
-
-    this.refreshShapes = refreshShapes;
-
-    // Hook into shape registry updates
-    if (registry.onChange) registry.onChange(this.refreshShapes);
-
-    // Also refresh shapes whenever materials change
-    if (this.weas.materialsRegistry?.onChange)
-      this.weas.materialsRegistry.onChange(this.refreshShapes);
-
-    // Initial render
-    this.refreshShapes();
-  }
-
   /* ---------------- Shapes Folder (Operation-based) ---------------- */
   addShapeOperationsFolder() {
     const folder = this.gui.addFolder("Shapes");
     const registry = this.weas.shapeRegistry;
 
     const refreshShapes = () => {
-      const expanded = Object.entries(folder.__folders)
-        .filter(([_, f]) => !f.closed)
-        .map(([name]) => name);
-
-      // Clear existing subfolders
-      for (let key in folder.__folders) {
-        folder.removeFolder(folder.__folders[key]);
+      // Remove old controllers
+      while (folder.__controllers.length > 0) {
+        folder.remove(folder.__controllers[0]);
       }
 
+      // Add a button per shape
       for (const shapeName of registry.list()) {
-        const shapeFolder = folder.addFolder(shapeName);
-        if (expanded.includes(shapeName)) shapeFolder.open();
-
-        const params = {
-          x: 0,
-          y: 0,
-          z: 0,
-          scaleX: 1,
-          scaleY: 1,
-          scaleZ: 1,
-          rotationX: 0,
-          rotationY: 0,
-          rotationZ: 0,
-          color: "#bd0d87",
-          opacity: 1,
-        };
-
-        // Position
-        shapeFolder.add(params, "x", -50, 50).name("X");
-        shapeFolder.add(params, "y", -50, 50).name("Y");
-        shapeFolder.add(params, "z", -50, 50).name("Z");
-
-        // Scale
-        shapeFolder.add(params, "scaleX", 0.1, 10).name("Scale X");
-        shapeFolder.add(params, "scaleY", 0.1, 10).name("Scale Y");
-        shapeFolder.add(params, "scaleZ", 0.1, 10).name("Scale Z");
-
-        // Rotation
-        shapeFolder.add(params, "rotationX", 0, 360).name("Rot X");
-        shapeFolder.add(params, "rotationY", 0, 360).name("Rot Y");
-        shapeFolder.add(params, "rotationZ", 0, 360).name("Rot Z");
-
-        // Color & opacity
-        shapeFolder.addColor(params, "color").name("Color");
-        shapeFolder.add(params, "opacity", 0, 1).name("Opacity");
-
-        // Material dropdown dynamically
-        const materialNames = this.weas.materialsRegistry.list();
-        params.materialType = materialNames[0] || null;
-        shapeFolder.add(params, "materialType", materialNames).name("Material");
-
-        // Create button triggers ShapeOperation
-        shapeFolder
+        folder
           .add(
             {
               create: () => {
-                const options = {
-                  position: [params.x, params.y, params.z],
-                  scale: [params.scaleX, params.scaleY, params.scaleZ],
-                  rotation: [
-                    params.rotationX,
-                    params.rotationY,
-                    params.rotationZ,
-                  ],
-                  color: params.color,
-                  opacity: params.opacity,
-                  materialType: params.materialType,
-                };
-
-                // Use the wrapped operator
-                this.weas.ops.Shapes.ShapeOperation({ shapeName, options });
+                this.weas.ops.Shapes.ShapeOperation({ shapeName, options: {} });
               },
             },
             "create",
           )
-          .name("Create");
+          .name(shapeName);
       }
     };
 

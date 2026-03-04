@@ -19,7 +19,7 @@ import { StateStore, cloneValue } from "./state/store.js";
 import { createDefaultState } from "./state/defaultState.js";
 import { fromWidgetSnapshot } from "./state/adapters.js";
 
-import MaterialsRegistry from "./core/MaterialsRegistry.js";
+import MaterialsRegistry from "./core/MaterialsRegistry/MaterialsRegistry.js";
 import ShapeRegistry from "./core/ShapeRegistry.js";
 
 class WEAS {
