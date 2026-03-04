@@ -19,7 +19,7 @@ import { StateStore, cloneValue } from "./state/store.js";
 import { createDefaultState } from "./state/defaultState.js";
 import { fromWidgetSnapshot } from "./state/adapters.js";
 
-import MaterialsRegistry from "./core/MaterialsRegistry/MaterialsRegistry.js";
+import MaterialsRegistry from "./core/MaterialsRegistry.js";
 import ShapeRegistry from "./core/ShapeRegistry.js";
 
 class WEAS {
@@ -40,7 +40,7 @@ class WEAS {
     // initialise base materials with the MaterialRegistry
     this.materialsRegistry = new MaterialsRegistry();
     // initialise shapes using these materials
-    this.shapeRegistry = new ShapeRegistry(this.materialsRegistry)
+    this.shapeRegistry = new ShapeRegistry(this.materialsRegistry);
 
     this.tjs.requestRedraw = this.requestRedraw.bind(this);
     this.guiManager = new GUIManager(this, guiConfig);
@@ -51,7 +51,11 @@ class WEAS {
     this.state = new StateStore(createDefaultState());
     this.textManager = new TextManager(this);
     // Initialize AtomsViewer
-    this.avr = new AtomsViewer({ weas: this, atoms: atoms, viewerConfig: viewerConfig });
+    this.avr = new AtomsViewer({
+      weas: this,
+      atoms: atoms,
+      viewerConfig: viewerConfig,
+    });
     // Initialize other plugins
     this.instancedMeshPrimitive = new InstancedMeshPrimitive(this);
     this.anyMesh = new AnyMesh(this);
@@ -102,7 +106,13 @@ class WEAS {
     this._applyCameraState(this.state.get("camera"));
   }
 
-  async exportAnimation({ format = "webm", fps = 12, startFrame = 0, endFrame = null, mimeType = null } = {}) {
+  async exportAnimation({
+    format = "webm",
+    fps = 12,
+    startFrame = 0,
+    endFrame = null,
+    mimeType = null,
+  } = {}) {
     if (!this.avr || !this.avr.trajectory || this.avr.trajectory.length === 0) {
       throw new Error("No trajectory data available for animation export.");
     }
@@ -158,7 +168,12 @@ class WEAS {
     const target = controls?.target?.toArray?.() || null;
     let direction = null;
     let distance = null;
-    if (Array.isArray(position) && Array.isArray(target) && position.length === 3 && target.length === 3) {
+    if (
+      Array.isArray(position) &&
+      Array.isArray(target) &&
+      position.length === 3 &&
+      target.length === 3
+    ) {
       const dx = position[0] - target[0];
       const dy = position[1] - target[1];
       const dz = position[2] - target[2];
@@ -185,7 +200,8 @@ class WEAS {
     if (state.type) {
       this.tjs.cameraType = state.type;
     }
-    const hasDirection = Array.isArray(state.direction) && state.direction.length === 3;
+    const hasDirection =
+      Array.isArray(state.direction) && state.direction.length === 3;
     const hasTarget = Array.isArray(state.target) && state.target.length === 3;
     const hasDistance = typeof state.distance === "number";
     if (hasDirection || hasTarget || hasDistance) {
@@ -201,7 +217,11 @@ class WEAS {
     const camera = this.tjs.camera;
     const controls = this.tjs.controls;
     if (Array.isArray(state.position) && state.position.length === 3) {
-      camera.position.set(state.position[0], state.position[1], state.position[2]);
+      camera.position.set(
+        state.position[0],
+        state.position[1],
+        state.position[2],
+      );
     }
     if (Array.isArray(state.target) && state.target.length === 3 && controls) {
       controls.target.set(state.target[0], state.target[1], state.target[2]);
@@ -224,7 +244,10 @@ class WEAS {
   }
 
   exportState() {
-    const atoms = Array.isArray(this.avr.trajectory) && this.avr.trajectory.length > 1 ? this.avr.trajectory.map((item) => item.toDict()) : this.avr.atoms.toDict();
+    const atoms =
+      Array.isArray(this.avr.trajectory) && this.avr.trajectory.length > 1
+        ? this.avr.trajectory.map((item) => item.toDict())
+        : this.avr.atoms.toDict();
     const state = cloneValue(this.state.get());
     const cameraState = this._exportCameraState();
     state.camera = cameraState;
@@ -239,10 +262,14 @@ class WEAS {
     }
     if (state.plugins) {
       if (this.anyMesh) {
-        state.plugins.anyMesh = { settings: cloneValue(this.anyMesh.settings || []) };
+        state.plugins.anyMesh = {
+          settings: cloneValue(this.anyMesh.settings || []),
+        };
       }
       if (this.instancedMeshPrimitive) {
-        state.plugins.instancedMeshPrimitive = { settings: cloneValue(this.instancedMeshPrimitive.settings || []) };
+        state.plugins.instancedMeshPrimitive = {
+          settings: cloneValue(this.instancedMeshPrimitive.settings || []),
+        };
       }
     }
     return {
@@ -257,7 +284,10 @@ class WEAS {
     if (!snapshot || typeof snapshot !== "object") {
       throw new Error("Invalid snapshot payload.");
     }
-    const normalized = snapshot.version === "weas_widget_state_v1" ? fromWidgetSnapshot(snapshot) : snapshot;
+    const normalized =
+      snapshot.version === "weas_widget_state_v1"
+        ? fromWidgetSnapshot(snapshot)
+        : snapshot;
     const atoms = this._buildAtomsFromSnapshot(normalized.atoms);
     if (atoms) {
       this.avr.atoms = atoms;
