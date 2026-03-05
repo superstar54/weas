@@ -134,66 +134,60 @@ export class CellManager {
     return line;
   }
 
-    drawUnitCellVectors() {
-      const origin = new THREE.Vector3(0, 0, 0);
-      const cell = this.viewer.originalCell;
-      if (!cell || cell.length !== 3) {
-        console.warn("Invalid or missing unit cell data for vectors");
-        return;
-      }
+  drawUnitCellVectors() {
+    const origin = new THREE.Vector3(0, 0, 0);
+    const cell = this.viewer.originalCell;
 
-      const unitCellGroup = new THREE.Group();
-      const directions = [
-        new THREE.Vector3(...cell[0]).normalize(),
-        new THREE.Vector3(...cell[1]).normalize(),
-        new THREE.Vector3(...cell[2]).normalize(),
-      ];
-
-      const axisNames = ["a", "b", "c"];
-      const axisColors = this.settings.axisColors;
-      const offset = 3.3;
-
-      directions.forEach((dir, i) => {
-        // Create Arrow from shapeRegistry
-        if (this.shapeRegistry.shapes["Arrow"]) {
-          const arrow = this.shapeRegistry.create("Arrow", {
-            color: axisColors[axisNames[i]],
-            position: origin.clone(),
-            rotation: [
-              0,
-              0,
-              0,
-            ],
-            scale: [2.5, 2.5, 2.5],
-          });
-
-          // Align arrow with direction
-          const axis = new THREE.Vector3(0, 1, 0); // default arrow points +Y
-          const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, dir);
-          arrow.setRotationFromQuaternion(quaternion);
-
-          unitCellGroup.add(arrow);
-        }
-
-        // Add axis label
-        unitCellGroup.add(createSpriteLabel(dir.clone().multiplyScalar(offset), axisNames[i], "black", "150px"));
-
-        // Add origin sphere for each axis (optional: only once is fine)
-        if (i === 0 && this.shapeRegistry.shapes["Sphere"]) {
-          const sphere = this.shapeRegistry.create("Sphere", {
-            color: "grey",
-            position: origin.clone(),
-            scale: [this.settings.axisSphereRadius, this.settings.axisSphereRadius, this.settings.axisSphereRadius],
-          });
-          unitCellGroup.add(sphere);
-        }
-      });
-
-      this.viewer.tjs.coordScene.add(unitCellGroup);
-      unitCellGroup.visible = this.showCell;
-      return unitCellGroup;
+    if (!cell || cell.length !== 3) {
+      console.warn("Invalid or missing unit cell data for vectors");
+      return;
     }
 
+    const unitCellGroup = new THREE.Group();
+    const axisNames = ["a", "b", "c"];
+    const axisColors = this.settings.axisColors;
+    const offset = 0.5;
+
+    cell.forEach((vec, i) => {
+      const end = new THREE.Vector3(...vec);
+
+    // Create directional arrow using start/end
+      const arrow = this.shapeRegistry.create("Arrow", {
+        color: axisColors[axisNames[i]],
+        start: origin.clone(),
+        end: end.clone(),
+        shaftRadius: 0.2,
+        headRadius: 0.5,
+        shaftRatio: 0.75,
+      });
+      unitCellGroup.add(arrow);
+
+      // Add axis label slightly beyond the tip
+      const labelPos = end.clone().multiplyScalar(1 + offset / end.length());
+      unitCellGroup.add(
+        createSpriteLabel(labelPos, axisNames[i], "black", "150px")
+      );
+
+      const sphere = this.shapeRegistry.create("Sphere", {
+        color: "grey",
+        position: origin.clone(),
+        scale: [
+          this.settings.axisSphereRadius,
+          this.settings.axisSphereRadius,
+          this.settings.axisSphereRadius,
+        ],
+      });
+      unitCellGroup.add(sphere);
+    
+    });
+
+    this.viewer.tjs.coordScene.add(unitCellGroup);
+    unitCellGroup.visible = this.showCell;
+
+    return unitCellGroup;
+  }
+
+  // This seems unused - perhaps in a clean up we can consider removing this.
   updateCellMesh(cell) {
     if (!cell || cell.length !== 3) {
       console.warn("Invalid cell data for updating cell mesh");

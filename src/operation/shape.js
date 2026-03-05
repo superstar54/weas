@@ -102,7 +102,17 @@ export class ShapeOperation extends BaseOperation {
 
     this.object = registry.create(this.shapeName, this.options);
 
-    // Apply transparent rendering settings if needed
+    // Apply extra userData options
+    if (this.object) {
+      if (this.options.notSelectable) this.object.userData.notSelectable = true;
+      if (this.options.type) this.object.userData.type = this.options.type;
+      if (this.options.customData) {
+        Object.entries(this.options.customData).forEach(([k, v]) => {
+          this.object.userData[k] = v;
+        });
+      }
+    }
+
     if (this.options.transparent || this.options.opacity < 1) {
       this.object.traverse((child) => {
         if (child.isMesh) {
@@ -123,9 +133,9 @@ export class ShapeOperation extends BaseOperation {
 
       // Apply rotation
       this.object.rotation.set(
-        this.options.rotation[0] / (360 / Math.PI),
-        this.options.rotation[1] / (360 / Math.PI),
-        this.options.rotation[2] / (360 / Math.PI),
+        this.options.rotation[0] / (180 / Math.PI),
+        this.options.rotation[1] / (180 / Math.PI),
+        this.options.rotation[2] / (180 / Math.PI),
       );
     }
 

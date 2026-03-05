@@ -37,14 +37,19 @@ export default class ShapeRegistry {
   _createBaseMesh(
     materialsRegistry,
     geometry,
-    { materialType = "Standard", color = "#bd0d87", opacity = 1.0, wireframe = false } = {},
+    {
+      materialType = "Standard",
+      color = "#bd0d87",
+      opacity = 1.0,
+      wireframe = false,
+    } = {},
   ) {
     const material = materialsRegistry.getMaterial(materialType, true);
     if ("color" in material) material.color = new THREE.Color(color);
     material.transparent = true;
     material.opacity = opacity;
     material.side = THREE.DoubleSide;
-    material.wireframe = wireframe; 
+    material.wireframe = wireframe;
     if (opacity < 1.0) {
       material.depthWrite = false;
     }
@@ -108,13 +113,13 @@ export default class ShapeRegistry {
     );
 
     this.register("Arrow", (materials, options) => {
-      const shaftRatio = 0.75;
-      const totalLength = s;
+      const shaftRatio = options.shaftRatio ?? 0.75;
+      const totalLength = options.length ?? 1;
       const shaftLength = totalLength * shaftRatio;
       const headLength = totalLength - shaftLength;
 
-      const shaftRadius = (options.shaftRadius ?? 0.075) * s;
-      const headRadius = (options.headRadius ?? 0.15) * s;
+      const shaftRadius = (options.shaftRadius ?? 0.075) * totalLength;
+      const headRadius = (options.headRadius ?? 0.15) * totalLength;
 
       // Shaft
       const shaft = new THREE.CylinderGeometry(
@@ -123,10 +128,9 @@ export default class ShapeRegistry {
         shaftLength,
         options.segments ?? 12,
       );
-      shaft.translate(0, shaftLength / 2, 0); // anchor at base
+      shaft.translate(0, shaftLength / 2, 0);
 
       // Cone
-      // should sit ontop of shaft irrespective of relative scaling
       const cone = new THREE.ConeGeometry(
         headRadius,
         headLength,
@@ -134,10 +138,60 @@ export default class ShapeRegistry {
       );
       cone.translate(0, shaftLength + headLength / 2, 0);
 
-      // Merge into a single BaseMesh so scale works uniform
       const geometry = mergeGeometries([shaft, cone], false);
+      const arrow = this._createBaseMesh(materials, geometry, options);
 
-      return this._createBaseMesh(materials, geometry, options);
+      // accepts start and end as simple directions
+      if (options.start && options.end) {
+        const start = new THREE.Vector3(...options.start);
+        const end = new THREE.Vector3(...options.end);
+        const dir = new THREE.Vector3().subVectors(end, start);
+        const length = dir.length();
+        dir.normalize();
+
+        // Scale to actual distance
+        arrow.scale.set(1, length / totalLength, 1);
+
+        // Rotate Y-axis to match direction
+        const axis = new THREE.Vector3(0, 1, 0).cross(dir);
+        const angle = Math.acos(new THREE.Vector3(0, 1, 0).dot(dir));
+        if (axis.lengthSq() > 0)
+          arrow.quaternion.setFromAxisAngle(axis.normalize(), angle);
+
+        // Position base at start
+        arrow.position.copy(start);
+      }
+
+      return arrow;
+    });
+
+    this.register("Line", (materials, options) => {
+      const color = options.color || "#000000";
+      // accepts start and end as simple directions
+      const start = options.start || [0, 0, 0];
+      const end = options.end || [0, 1, 0]; // default to 'up'
+
+      const points = [new THREE.Vector3(...start), new THREE.Vector3(...end)];
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({ color });
+
+      const line = new THREE.Line(geometry, material);
+
+      // scale and position
+      if (options.position) line.position.set(...options.position);
+      if (options.scale) line.scale.set(...options.scale);
+      if (options.rotation) {
+        const [rx, ry, rz] = options.rotation;
+        line.rotation.set(
+          THREE.MathUtils.degToRad(rx),
+          THREE.MathUtils.degToRad(ry),
+          THREE.MathUtils.degToRad(rz),
+        );
+      }
+
+      if (options.notSelectable) line.userData.notSelectable = true;
+      if (options.type) line.userData.type = options.type;
+      return line;
     });
   }
 
@@ -167,6 +221,14 @@ export default class ShapeRegistry {
           THREE.MathUtils.degToRad(rz),
         );
       }
+    }
+
+    if (options.notSelectable) shape.userData.notSelectable = true;
+    if (options.type) shape.userData.type = options.type;
+    if (options.customData) {
+      Object.entries(options.customData).forEach(
+        ([k, v]) => (shape.userData[k] = v),
+      );
     }
 
     return shape;
