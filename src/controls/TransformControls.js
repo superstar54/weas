@@ -5,8 +5,8 @@ mode:
 - "scale": scale selected
 
 */
-import { getWorldPositionFromScreen } from "../utils.js";
-import { TranslateOperation, RotateOperation, ScaleOperation } from "../operation/transform.js";
+import { getWorldPositionFromScreen } from "../utils";
+import { TranslateOperation, RotateOperation, ScaleOperation } from "../operation/transform";
 import * as THREE from "three";
 
 export class TransformControls {

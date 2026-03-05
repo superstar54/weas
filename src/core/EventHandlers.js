@@ -1,12 +1,13 @@
+import * as THREE from "three";
+import { TransformControls } from "../controls/TransformControls";
+import { defaultKeyBindConfig } from "../config";
+
 /*
 Object mode:
 - "edit": select vertex
 - "object": select objects
 */
 
-import * as THREE from "three";
-import { TransformControls } from "../controls/TransformControls.js";
-import { defaultKeyBindConfig } from "../config.js";
 
 // pattern to determine if a keycombo is being pressed
 function matchKey(event, combo) {

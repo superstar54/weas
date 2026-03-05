@@ -1,5 +1,5 @@
-import { elementAtomicNumbers } from "./atoms_data.js";
-import { convertToMatrixFromABCAlphaBetaGamma, calculateInverseMatrix } from "../utils.js";
+import { elementAtomicNumbers } from "./atoms_data";
+import { convertToMatrixFromABCAlphaBetaGamma, calculateInverseMatrix } from "../utils";
 
 class Specie {
   constructor(element) {

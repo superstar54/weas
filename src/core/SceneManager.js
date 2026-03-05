@@ -1,7 +1,7 @@
 /*
  */
 import * as THREE from "three";
-import { clearObjects } from "../utils.js";
+import { clearObjects } from "../utils";
 
 export class WeasScene extends THREE.Scene {
   constructor(tjs) {

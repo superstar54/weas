@@ -1,4 +1,4 @@
-import { BaseOperation } from "./baseOperation.js";
+import { BaseOperation } from "./baseOperation";
 import * as THREE from "three";
 
 class TranslateOperation extends BaseOperation {

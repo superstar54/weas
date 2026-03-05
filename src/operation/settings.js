@@ -1,4 +1,4 @@
-import { BaseOperation } from "./baseOperation.js";
+import { BaseOperation } from "./baseOperation";
 
 function normalizeValue(value) {
   if (value && typeof value.getHexString === "function") {

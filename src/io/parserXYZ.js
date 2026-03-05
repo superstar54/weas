@@ -1,4 +1,4 @@
-import { Atoms } from "../atoms/atoms.js";
+import { Atoms } from "../atoms/atoms";
 
 // Regex helpers for extxyz key=value parsing
 const KV_PAIR = /([A-Za-z_][A-Za-z0-9_-]*)\s*=\s*("[^"]*"|'[^']*'|\{[^}]*\}|\S+)/g;

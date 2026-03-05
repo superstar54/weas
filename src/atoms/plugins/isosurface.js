@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { marchingCubes } from "../../geometry/marchingCubes.js";
-import { cloneValue } from "../../state/store.js";
+import { marchingCubes } from "../../geometry/marchingCubes";
+import { cloneValue } from "../../state/store";
 
 function normalizeHexColor(color) {
   const threeColor = color instanceof THREE.Color ? color : new THREE.Color(color);

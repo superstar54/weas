@@ -1,4 +1,4 @@
-import { WEAS, Atoms, Specie, parseXYZ, parseCIF, parseCube, parseXSF } from "../src/index.js"; // Adjust the path as necessary
+import { WEAS, Atoms, Specie, parseXYZ, parseCIF, parseCube, parseXSF } from "../src/index";
 import * as THREE from "three";
 
 window.THREE = THREE;

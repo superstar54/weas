@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { clearObject } from "../utils.js";
-import { cloneValue } from "../state/store.js";
+import { clearObject } from "../utils";
+import { cloneValue } from "../state/store";
 
 class Setting {
   constructor({ type, shape, instances, materialType = "Standard", opacity = 1 }) {

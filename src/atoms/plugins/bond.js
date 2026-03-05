@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import { calculateCartesianCoordinates, calculateQuaternion } from "../../utils.js";
-import { elementsWithPolyhedra, covalentRadii, elementColors, default_bond_pairs } from "../atoms_data.js";
-import { convertColor } from "../utils.js";
-import { kdTree } from "../../geometry/kdTree.js";
-import { searchBoundary } from "./boundary.js";
-import { clearObject } from "../../utils.js";
-import { cloneValue } from "../../state/store.js";
+import { calculateCartesianCoordinates, calculateQuaternion } from "../../utils";
+import { elementsWithPolyhedra, covalentRadii, elementColors, default_bond_pairs } from "../atoms_data";
+import { convertColor } from "../utils";
+import { kdTree } from "../../geometry/kdTree";
+import { searchBoundary } from "./boundary";
+import { clearObject } from "../../utils";
+import { cloneValue } from "../../state/store";
 
 // default bond radius
 export const defaultBondRadius = 0.1;

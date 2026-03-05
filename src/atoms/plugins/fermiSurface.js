@@ -1,5 +1,5 @@
-import { marchingCubes, clipMeshToPlanes } from "../../geometry/marchingCubes.js";
-import { cloneValue } from "../../state/store.js";
+import { marchingCubes, clipMeshToPlanes } from "../../geometry/marchingCubes";
+import { cloneValue } from "../../state/store";
 
 class FermiSurfaceSetting {
   constructor({

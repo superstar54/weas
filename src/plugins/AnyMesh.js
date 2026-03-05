@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { clearObject } from "../utils.js";
-import { cloneValue } from "../state/store.js";
+import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils";
+import { clearObject } from "../utils";
+import { cloneValue } from "../state/store";
 
 class Setting {
   constructor({

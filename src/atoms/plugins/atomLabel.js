@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { cloneValue } from "../../state/store.js";
+import { cloneValue } from "../../state/store";
 
 class Setting {
   constructor({ origins = [], texts = [], selection = null, color = "#000000ff", fontSize = 0.05, className = "atom-label", renderMode = "glyph", shift = false }) {

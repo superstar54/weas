@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { createLabel } from "../utils.js";
-import { cloneValue } from "../state/store.js";
+import { createLabel } from "../utils";
+import { cloneValue } from "../state/store";
 
 class Setting {
   constructor({ positions = [], texts = "+", color = "#111111", fontSize = "16px", className = "text-label text-label-cross", renderMode = "glyph", shift = [0, 0, 0] }) {

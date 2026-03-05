@@ -1,5 +1,5 @@
-import { defaultViewerSettings } from "../config.js";
-import { cloneValue } from "./store.js";
+import { defaultViewerSettings } from "../config";
+import { cloneValue } from "./store";
 
 function createDefaultState() {
   const viewerDefaults = cloneValue(defaultViewerSettings);

@@ -1,5 +1,5 @@
-import { defaultKeyBindConfig } from "../config.js";
-import { ShapeOperation } from "./shape.js";
+import { defaultKeyBindConfig } from "../config";
+import { ShapeOperation } from "./shape";
 
 // utility to check if an event matches a key combo
 function matchKey(event, combo) {
@@ -217,7 +217,7 @@ function getAllOperations(ops, keybinds) {
   return operations;
 }
 
-// generic fuzzy matcher - should be maybe moved to fuse.js
+// generic fuzzy matcher - should be maybe moved to fuse
 function fuzzyMatch(str, query) {
   str = str.toLowerCase();
   query = query.toLowerCase();

@@ -1,6 +1,6 @@
-import { Atoms } from "../atoms/atoms.js";
-import { parseXYZ } from "./parserXYZ.js";
-import { parseCIF } from "./parserCif.js";
+import { Atoms } from "../atoms/atoms";
+import { parseXYZ } from "./parserXYZ";
+import { parseCIF } from "./parserCif";
 
 function formatNumber(value) {
   if (typeof value !== "number" || Number.isNaN(value)) {
@@ -90,7 +90,7 @@ function parseStructureText(text, extension) {
   if (ext === ".cif") {
     return { kind: "atoms", data: parseCIF(text) };
   }
-  if (ext === ".json") {
+  if (ext === "on") {
     return { kind: "json", data: JSON.parse(text) };
   }
   throw new Error(`Unsupported file extension: ${extension}`);
@@ -154,7 +154,7 @@ function buildExportPayload(weas, format) {
   if (normalized === "json") {
     return {
       text: JSON.stringify(weas.exportState(), null, 2),
-      filename: "weas-state.json",
+      filename: "weas-stateon",
       mimeType: "application/json",
     };
   }

@@ -1,4 +1,4 @@
-import { Atoms } from "../atoms/atoms.js";
+import { Atoms } from "../atoms/atoms";
 
 function parsePOSCAR(poscarString) {
   const lines = poscarString.trim().split("\n");

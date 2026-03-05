@@ -1,9 +1,9 @@
 import * as THREE from "three";
-import { ConvexHull } from "three/examples/jsm/math/ConvexHull.js";
-import { elementColors, elementsWithPolyhedra } from "../atoms_data.js";
-import { clearObject, calculateCartesianCoordinates } from "../../utils.js";
-import { convertColor } from "../utils.js";
-import { cloneValue } from "../../state/store.js";
+import { ConvexHull } from "three/examples/jsm/math/ConvexHull";
+import { elementColors, elementsWithPolyhedra } from "../atoms_data";
+import { clearObject, calculateCartesianCoordinates } from "../../utils";
+import { convertColor } from "../utils";
+import { cloneValue } from "../../state/store";
 
 const defaultColor = 0xffffff;
 
@@ -141,7 +141,7 @@ export class PolyhedraManager {
 
   buildPolyhedras(atoms, polyhedras, bondList, colorType = "CPK", materialType = "standard") {
     /*
-      Draw polyhedra using the ConvexGeometry class from three.js
+      Draw polyhedra using the ConvexGeometry class from three
     */
     const allVertices = [];
     const allNormals = [];

@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { covalentRadii } from "./atoms_data.js";
-import { ReplaceOperation, AddAtomOperation } from "../operation/atoms.js";
-import { MODEL_STYLE_MAP, colorTypes, colorBys, radiusTypes } from "../config.js";
-import AtomsLegend from "./plugins/AtomsLegend.js";
+import { covalentRadii } from "./atoms_data";
+import { ReplaceOperation, AddAtomOperation } from "../operation/atoms";
+import { MODEL_STYLE_MAP, colorTypes, colorBys, radiusTypes } from "../config";
+import AtomsLegend from "./plugins/AtomsLegend";
 
 class AtomsGUI {
   constructor(viewer, gui, guiConfig) {

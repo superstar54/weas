@@ -1,14 +1,15 @@
-// src/index.js
-import { WEAS } from "./weas.js";
-import { Specie, Atom, Atoms } from "./atoms/atoms.js";
-import { AtomsViewer } from "./atoms/AtomsViewer.js";
-import { parseXYZ } from "./io/parserXYZ.js";
-import { parseCIF } from "./io/parserCif.js";
-import { parseCube } from "./io/parserCube.js";
-import { parseXSF } from "./io/parserXsf.js";
-import { elementAtomicNumbers } from "./atoms/atoms_data.js";
-import { fromWidgetSnapshot } from "./state/adapters.js";
-import { atomsToXYZ, atomsToCIF, parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "./io/structure.js";
+import { WEAS } from "./weas";
+import { Specie, Atom, Atoms } from "./atoms/atoms";
+import { AtomsViewer } from "./atoms/AtomsViewer";
+import { parseXYZ } from "./io/parserXYZ";
+import { parseCIF } from "./io/parserCif";
+import { parseCube } from "./io/parserCube";
+import { parseXSF } from "./io/parserXsf";
+import { elementAtomicNumbers } from "./atoms/atoms_data";
+import { fromWidgetSnapshot } from "./state/adapters";
+import { atomsToXYZ, atomsToCIF, parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "./io/structure";
+
+import "./style.css"
 
 // Export the modules to be publicly available
 export {

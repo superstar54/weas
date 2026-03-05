@@ -1,5 +1,5 @@
-import { Atoms } from "../atoms/atoms.js";
-import { convertToMatrixFromABCAlphaBetaGamma, calculateCartesianCoordinates } from "../utils.js";
+import { Atoms } from "../atoms/atoms";
+import { convertToMatrixFromABCAlphaBetaGamma, calculateCartesianCoordinates } from "../utils";
 
 export function parseCIF(cifString) {
   const data = {

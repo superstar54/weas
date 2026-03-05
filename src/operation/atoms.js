@@ -1,7 +1,7 @@
-import { BaseOperation } from "./baseOperation.js";
-import { elementAtomicNumbers } from "../atoms/atoms_data.js";
-import { colorBys } from "../config.js";
-import { parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "../io/structure.js";
+import { BaseOperation } from "./baseOperation";
+import { elementAtomicNumbers } from "../atoms/atoms_data";
+import { colorBys } from "../config";
+import { parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "../io/structure";
 
 class ReplaceOperation extends BaseOperation {
   static description = "Replace atoms";
@@ -318,7 +318,7 @@ class ImportStructureOperation extends BaseOperation {
   execute() {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = ".json,.xyz,.cif";
+    fileInput.accept = "on,.xyz,.cif";
     fileInput.style.display = "none";
     document.body.appendChild(fileInput);
     fileInput.addEventListener(

@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import { calculateCartesianCoordinates } from "../../utils.js";
-import { radiiData, elementColors } from "../atoms_data.js";
-import { getAtomColors } from "../color.js";
-import { getImageAtoms } from "./boundary.js";
-import { convertColor, drawAtoms } from "../utils.js";
-import { clearObject } from "../../utils.js";
-import { cloneValue } from "../../state/store.js";
+import { calculateCartesianCoordinates } from "../../utils";
+import { radiiData, elementColors } from "../atoms_data";
+import { getAtomColors } from "../color";
+import { getImageAtoms } from "./boundary";
+import { convertColor, drawAtoms } from "../utils";
+import { clearObject } from "../../utils";
+import { cloneValue } from "../../state/store";
 
 class Setting {
   constructor({ element, symbol, radius = 2.0, color = "#3d82ed" }) {

@@ -1,13 +1,13 @@
 import { GUI } from "dat.gui";
-import { OperationSearchManager } from "./OperationSearch.js";
-import * as transform from "./transform.js";
-import * as object from "./object.js";
-import * as atoms from "./atoms.js";
-import * as selection from "./selection.js";
-import * as viewer from "./viewer.js";
-import * as settings from "./settings.js";
+import { OperationSearchManager } from "./OperationSearch";
+import * as transform from "./transform";
+import * as object from "./object";
+import * as atoms from "./atoms";
+import * as selection from "./selection";
+import * as viewer from "./viewer";
+import * as settings from "./settings";
 
-import { ShapeOperation } from "./shape.js";
+import { ShapeOperation } from "./shape";
 
 // Organize them under namespaces
 export const ops = {

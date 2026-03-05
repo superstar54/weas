@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { clearObject, createLabel } from "../../utils.js";
-import { cloneValue } from "../../state/store.js";
+import { clearObject, createLabel } from "../../utils";
+import { cloneValue } from "../../state/store";
 
 class Setting {
   constructor({ indices = [], color = "black", fontSize = 16 }) {

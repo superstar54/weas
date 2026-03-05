@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { clearObject } from "../utils.js";
+import { clearObject } from "../utils";
 
 export class ObjectManager {
   constructor(weas) {

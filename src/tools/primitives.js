@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { materials } from "./materials.js";
+import { materials } from "./materials";
 
 // A base function for creating and configuring a mesh
 function createMesh(geometry, { position = [0, 0, 0], scale = [1, 1, 1], rotation = [0, 0, 0], color = "#bd0d87", opacity = 1.0, materialType = "Standard" }) {

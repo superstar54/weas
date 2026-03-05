@@ -1,5 +1,5 @@
-import { createDefaultState } from "./defaultState.js";
-import { cloneValue } from "./store.js";
+import { createDefaultState } from "./defaultState";
+import { cloneValue } from "./store";
 
 function applyDefined(target, source, keys) {
   if (!source) {

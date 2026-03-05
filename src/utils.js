@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 
 export function toVector3(value, name = "value") {
   console.log("toVector3 called with value:", value);

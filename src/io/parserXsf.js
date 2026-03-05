@@ -1,5 +1,5 @@
-import { Atoms } from "../atoms/atoms.js";
-import { elementAtomicNumbers } from "../atoms/atoms_data.js";
+import { Atoms } from "../atoms/atoms";
+import { elementAtomicNumbers } from "../atoms/atoms_data";
 
 export function parseXSF(xsfContent) {
   const lines = xsfContent.trim().split(/\r?\n/);

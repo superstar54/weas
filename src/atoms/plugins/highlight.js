@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { convertColor } from "../utils.js";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js"; // Import BufferGeometryUtils
-import { cloneValue } from "../../state/store.js";
+import { convertColor } from "../utils";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils"; 
+import { cloneValue } from "../../state/store";
 
 class Setting {
   constructor({ indices, scale = 1.1, type = "sphere", color = "yellow", opacity = 0.6 }) {

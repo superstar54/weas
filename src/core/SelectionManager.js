@@ -2,10 +2,10 @@
 This module is responsible for managing the selection of objects and vertices in the 3D viewer.
  */
 import * as THREE from "three";
-import { createOutline, removeOutline } from "./ObjectManager.js";
-import { SelectionBox } from "three/examples/jsm/interactive/SelectionBox.js";
-import { SelectionHelper } from "../three/SelectionHelper.js";
-import { LassoHelper } from "../three/LassoHelper.js";
+import { createOutline, removeOutline } from "./ObjectManager";
+import { SelectionBox } from "three/examples/jsm/interactive/SelectionBox";
+import { SelectionHelper } from "../three/SelectionHelper";
+import { LassoHelper } from "../three/LassoHelper";
 
 export class SelectionManager {
   constructor(weas) {

@@ -1,5 +1,5 @@
-import { BaseOperation } from "./baseOperation.js";
-import { MODEL_STYLE_MAP } from "../config.js";
+import { BaseOperation } from "./baseOperation";
+import { MODEL_STYLE_MAP } from "../config";
 
 function cloneValue(value) {
   if (value === undefined) {

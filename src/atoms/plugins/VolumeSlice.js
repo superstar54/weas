@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { clearObject } from "../../utils.js";
-import { convertColor } from "../utils.js";
-import { cloneValue } from "../../state/store.js";
+import { clearObject } from "../../utils";
+import { convertColor } from "../utils";
+import { cloneValue } from "../../state/store";
 
 class SliceSetting {
   constructor({ method = "miller", h = 0, k = 0, l = 1, distance = 0, selectedAtomIndices = [], colorMap = "viridis", opacity = 1.0, samplingDistance = 0.2 }) {

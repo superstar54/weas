@@ -1,22 +1,22 @@
 import * as THREE from "three";
-import { CellManager } from "./cell.js";
-import { AtomManager } from "./plugins/atom.js";
-import { BondManager, defaultBondRadius, searchBondedAtoms } from "./plugins/bond.js";
-import { clearObjects, clearObject, toIndexArray, toVector3, calculateCartesianCoordinates, calculateInverseMatrix, multiplyMatrixVector } from "../utils.js";
-import { PolyhedraManager } from "./plugins/polyhedra.js";
-import { BoundaryManager } from "./plugins/boundary.js";
-import { AtomLabelManager } from "./plugins/atomLabel.js";
-import { Atom, Atoms } from "./atoms.js";
-import { Isosurface } from "./plugins/isosurface.js";
-import { FermiSurface } from "./plugins/fermiSurface.js";
-import { VolumeSlice } from "./plugins/VolumeSlice.js";
-import { VectorField } from "./plugins/vectorField.js";
-import { Measurement } from "./plugins/measurement.js";
-import { HighlightManager } from "./plugins/highlight.js";
-import { AtomsGUI } from "./atomsGui.js";
-import { defaultViewerSettings, MODEL_STYLE_MAP } from "../config.js";
-import { Phonon } from "./plugins/phonon.js";
-import { Logger } from "../logger.js";
+import { CellManager } from "./cell";
+import { AtomManager } from "./plugins/atom";
+import { BondManager, defaultBondRadius, searchBondedAtoms } from "./plugins/bond";
+import { clearObjects, clearObject, toIndexArray, toVector3, calculateCartesianCoordinates, calculateInverseMatrix, multiplyMatrixVector } from "../utils";
+import { PolyhedraManager } from "./plugins/polyhedra";
+import { BoundaryManager } from "./plugins/boundary";
+import { AtomLabelManager } from "./plugins/atomLabel";
+import { Atom, Atoms } from "./atoms";
+import { Isosurface } from "./plugins/isosurface";
+import { FermiSurface } from "./plugins/fermiSurface";
+import { VolumeSlice } from "./plugins/VolumeSlice";
+import { VectorField } from "./plugins/vectorField";
+import { Measurement } from "./plugins/measurement";
+import { HighlightManager } from "./plugins/highlight";
+import { AtomsGUI } from "./atomsGui";
+import { defaultViewerSettings, MODEL_STYLE_MAP } from "../config";
+import { Phonon } from "./plugins/phonon";
+import { Logger } from "../logger";
 
 class AtomsViewer {
   constructor({ weas, atoms = [new Atoms()], viewerConfig = {} }) {

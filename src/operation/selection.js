@@ -1,5 +1,5 @@
-import { BaseOperation } from "./baseOperation.js";
-import { pointsInsideMesh } from "../geometry/utils.js";
+import { BaseOperation } from "./baseOperation";
+import { pointsInsideMesh } from "../geometry/utils";
 
 class SelectAll extends BaseOperation {
   static description = "Select all";

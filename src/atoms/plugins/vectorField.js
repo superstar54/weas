@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { clearObject, calculateQuaternion } from "../../utils.js";
-import { convertColor } from "../utils.js";
-import { cloneValue } from "../../state/store.js";
+import { clearObject, calculateQuaternion } from "../../utils";
+import { convertColor } from "../utils";
+import { cloneValue } from "../../state/store";
 
 class Setting {
   constructor({ origins = [], vectors = [], factor = 1, color = "#3d82ed", radius = 0.05, centerOnAtoms = false }) {

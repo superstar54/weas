@@ -1,10 +1,9 @@
-// Import necessary Three.js components
 import * as THREE from "three";
-import { OrbitControls } from "../three/OrbitControls.js";
-import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { WeasScene } from "./SceneManager.js";
-import { OrthographicCamera } from "./Camera.js";
-import { defaultTjsConfig } from "../config.js";
+import { OrbitControls } from "../three/OrbitControls";
+import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
+import { WeasScene } from "./SceneManager";
+import { OrthographicCamera } from "./Camera";
+import { defaultTjsConfig } from "../config";
 
 class BlendJSObject {
   constructor(name, geometry, material) {

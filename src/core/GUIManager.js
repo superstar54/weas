@@ -1,13 +1,13 @@
 import { GUI } from "dat.gui";
-import { setupCameraGUI } from "../tools/camera.js";
-import { createViewpointButtons } from "../tools/viewpoint.js";
-import { defaultGuiConfig } from "../config.js";
+import { setupCameraGUI } from "../tools/camera";
+import { createViewpointButtons } from "../tools/viewpoint";
+import { defaultGuiConfig } from "../config";
 import {
   parseStructureText,
   applyStructurePayload,
   buildExportPayload,
   downloadText,
-} from "../io/structure.js";
+} from "../io/structure";
 
 function lockController(controller) {
   // Disable user input for the controller

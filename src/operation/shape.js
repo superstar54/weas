@@ -1,5 +1,5 @@
-import { BaseOperation } from "./baseOperation.js";
-import { clearObject } from "../utils.js";
+import { BaseOperation } from "./baseOperation";
+import { clearObject } from "../utils";
 
 // common shape operation with GUI schema for position, material, color, and opacity
 export class ShapeOperation extends BaseOperation {

@@ -1,5 +1,5 @@
-import { BaseOperation } from "./baseOperation.js";
-import { clearObject } from "../utils.js";
+import { BaseOperation } from "./baseOperation";
+import { clearObject } from "../utils";
 
 class DeleteOperation extends BaseOperation {
   static description = "Delete";

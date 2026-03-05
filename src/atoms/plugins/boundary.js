@@ -1,6 +1,6 @@
-import { calculateCartesianCoordinates } from "../../utils.js";
-import { radiiData, elementColors } from "../atoms_data.js";
-import { Atoms } from "../atoms.js";
+import { calculateCartesianCoordinates } from "../../utils";
+import { radiiData, elementColors } from "../atoms_data";
+import { Atoms } from "../atoms";
 
 class Setting {
   constructor({ element, symbol, radius = 2.0, color = "#3d82ed" }) {
