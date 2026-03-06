@@ -1,4 +1,12 @@
-import { WEAS, Atoms, Specie, parseXYZ, parseCIF, parseCube, parseXSF } from "../src/index";
+import {
+  WEAS,
+  Atoms,
+  Specie,
+  parseXYZ,
+  parseCIF,
+  parseCube,
+  parseXSF,
+} from "../src/index";
 import * as THREE from "three";
 
 window.THREE = THREE;
@@ -47,33 +55,37 @@ const guiConfig = {
   },
 };
 
-const editor = new WEAS({ 
-  domElement, 
-  viewerConfig, 
+const editor = new WEAS({
+  domElement,
+  viewerConfig,
   guiConfig,
   // keybindConfig: {} // pass empty config for no keybinds
-    });
+});
 
 window.editor = editor;
-document.getElementById("structure-selector").addEventListener("change", async (event) => {
-  const filename = event.target.value;
-  // console.log("filename: ", filename);
-  await updateAtoms(filename);
-});
+document
+  .getElementById("structure-selector")
+  .addEventListener("change", async (event) => {
+    const filename = event.target.value;
+    // console.log("filename: ", filename);
+    await updateAtoms(filename);
+  });
 
-document.getElementById("file-upload").addEventListener("change", async (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    const filename = file.name;
-    console.log("Uploaded file: ", filename);
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const fileContent = e.target.result;
-      await drawAtoms(filename, fileContent);
-    };
-    reader.readAsText(file);
-  }
-});
+document
+  .getElementById("file-upload")
+  .addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const filename = file.name;
+      console.log("Uploaded file: ", filename);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const fileContent = e.target.result;
+        await drawAtoms(filename, fileContent);
+      };
+      reader.readAsText(file);
+    }
+  });
 
 async function updateAtoms(filename, fileContent = null) {
   console.log(filename);
@@ -121,9 +133,16 @@ async function updateAtoms(filename, fileContent = null) {
       atoms = atoms.multiply(8, 8, 8);
       editor.avr.modelStyle = 0;
       editor.avr.atoms = atoms;
-      editor.ops.mesh.AddSphereOperation({ position: [15, 15, 10], scale: [8, 8, 8], color: "#bd0d87", opacity: 0.5 });
+      editor.ops.mesh.AddSphereOperation({
+        position: [15, 15, 10],
+        scale: [8, 8, 8],
+        color: "#bd0d87",
+        opacity: 0.5,
+      });
       // select the last object in the scene
-      editor.selectionManager.selectedObjects = [editor.tjs.scene.children[editor.tjs.scene.children.length - 1]];
+      editor.selectionManager.selectedObjects = [
+        editor.tjs.scene.children[editor.tjs.scene.children.length - 1],
+      ];
       // select atoms inside the sphere
       // editor.ops.selection.InsideSelection();
       editor.ops.hideGUI();
@@ -140,12 +159,37 @@ async function updateAtoms(filename, fileContent = null) {
       const p1 = atoms.positions[1];
       const p2 = atoms.positions[2];
       const ontop = [p0[0], p0[1], p0[2] + 1.8];
-      const bridge = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2 + 1.8];
-      const hollow = [(p0[0] + p1[0] + p2[0]) / 3, (p0[1] + p1[1] + p2[1]) / 3, (p0[2] + p1[2] + p2[2]) / 3 + 1.8];
-      const highlightSettings = editor.avr.state.get("plugins.highlight")?.settings || {};
-      highlightSettings.crossView = { indices: Array.from({ length: 100 }, (_, i) => i), type: "crossView", color: "#111111", scale: 1.0 };
-      highlightSettings.cross = { indices: [2, 3], type: "cross", color: "#111111", scale: 1.0 };
-      highlightSettings.box = { indices: [4, 5], type: "box", color: "#111111", scale: 1.0, opacity: 0.3 };
+      const bridge = [
+        (p0[0] + p1[0]) / 2,
+        (p0[1] + p1[1]) / 2,
+        (p0[2] + p1[2]) / 2 + 1.8,
+      ];
+      const hollow = [
+        (p0[0] + p1[0] + p2[0]) / 3,
+        (p0[1] + p1[1] + p2[1]) / 3,
+        (p0[2] + p1[2] + p2[2]) / 3 + 1.8,
+      ];
+      const highlightSettings =
+        editor.avr.state.get("plugins.highlight")?.settings || {};
+      highlightSettings.crossView = {
+        indices: Array.from({ length: 100 }, (_, i) => i),
+        type: "crossView",
+        color: "#111111",
+        scale: 1.0,
+      };
+      highlightSettings.cross = {
+        indices: [2, 3],
+        type: "cross",
+        color: "#111111",
+        scale: 1.0,
+      };
+      highlightSettings.box = {
+        indices: [4, 5],
+        type: "box",
+        color: "#111111",
+        scale: 1.0,
+        opacity: 0.3,
+      };
       editor.avr.highlightManager.setSettings(highlightSettings);
       editor.textManager.setSettings([
         {
@@ -173,8 +217,16 @@ async function updateAtoms(filename, fileContent = null) {
         const p1 = atoms.positions[1];
         const p2 = atoms.positions[2];
         const ontop = [p0[0], p0[1], p0[2] + 1.8];
-        const bridge = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2 + 1.8];
-        const hollow = [(p0[0] + p1[0] + p2[0]) / 3, (p0[1] + p1[1] + p2[1]) / 3, (p0[2] + p1[2] + p2[2]) / 3 + 1.8];
+        const bridge = [
+          (p0[0] + p1[0]) / 2,
+          (p0[1] + p1[1]) / 2,
+          (p0[2] + p1[2]) / 2 + 1.8,
+        ];
+        const hollow = [
+          (p0[0] + p1[0] + p2[0]) / 3,
+          (p0[1] + p1[1] + p2[1]) / 3,
+          (p0[2] + p1[2] + p2[2]) / 3 + 1.8,
+        ];
         editor.textManager.setSettings([
           {
             positions: [ontop],
@@ -251,8 +303,22 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.atoms = cubeData1.atoms;
       editor.avr.volumetricData = cubeData1.volumetricData;
       // editor.avr.volumeSliceManager.addSetting(0.0002);
-      editor.avr.volumeSliceManager.addSetting("Slice 1", { h: 0, k: 1, l: 0, distance: 5.5, colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
-      editor.avr.volumeSliceManager.addSetting("Slice 2", { method: "bestFit", selectedAtomIndices: [0, 1, 2], colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
+      editor.avr.volumeSliceManager.addSetting("Slice 1", {
+        h: 0,
+        k: 1,
+        l: 0,
+        distance: 5.5,
+        colorMap: "viridis",
+        opacity: 0.8,
+        samplingDistance: 0.1,
+      });
+      editor.avr.volumeSliceManager.addSetting("Slice 2", {
+        method: "bestFit",
+        selectedAtomIndices: [0, 1, 2],
+        colorMap: "viridis",
+        opacity: 0.8,
+        samplingDistance: 0.1,
+      });
       editor.avr.volumeSliceManager.drawSlices();
       editor.avr.tjs.updateCameraAndControls({ direction: [0.5, 1, 2] });
       editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
@@ -302,9 +368,9 @@ async function updateAtoms(filename, fileContent = null) {
 
       // control the speed of the animation
       editor.avr.boundary = [
-        [-0.01, 1.01],
-        [-0.01, 1.01],
-        [-0.01, 1.01],
+        [-0.03, 1.05],
+        [-0.03, 1.05],
+        [-0.03, 1.05],
       ];
       editor.avr.frameDuration = 50;
       editor.avr.showBondedAtoms = false;
@@ -312,24 +378,25 @@ async function updateAtoms(filename, fileContent = null) {
       break;
     case "Shapes":
       editor.clear();
-
       const registry = editor.shapeRegistry;
       const baseScale = [0.5, 0.5, 0.5];
-      const spacing = 2.2;     // distance between shapes
-      const gridCols = 6;    // shapes per row
+      const spacing = 2.2; // distance between shapes
+      const gridCols = 4; // shapes per row
       const opacities = [0.25, 0.75, 1.0]; // different opacity levels
 
       const randomColor = () =>
-        `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`;
+        `#${Math.floor(Math.random() * 0xffffff)
+          .toString(16)
+          .padStart(6, "0")}`;
 
       let index = 0; // overall index for grid positioning
 
       for (const shapeName of registry.list()) {
+        // Create normal solid versions with different opacities
         for (const opacity of opacities) {
-          // Normal solid version
-          let row = Math.floor(index / gridCols);
-          let col = index % gridCols;
-          let position = [
+          const row = Math.floor(index / gridCols);
+          const col = index % gridCols;
+          const position = [
             col * spacing - ((gridCols - 1) * spacing) / 2,
             0,
             row * spacing,
@@ -337,25 +404,36 @@ async function updateAtoms(filename, fileContent = null) {
 
           editor.ops.Shapes.ShapeOperation({
             shapeName,
-            options: { scale: baseScale, opacity, color: randomColor(), wireframe: false, position },
-          });
-          index++;
-
-          // Wireframe version right next to it
-          row = Math.floor(index / gridCols);
-          col = index % gridCols;
-          position = [
-            col * spacing - ((gridCols - 1) * spacing) / 2,
-            0,
-            row * spacing,
-          ];
-
-          editor.ops.Shapes.ShapeOperation({
-            shapeName,
-            options: { scale: baseScale, opacity, color: randomColor(), wireframe: true, position },
+            options: {
+              scale: baseScale,
+              opacity,
+              color: randomColor(),
+              wireframe: false,
+              position,
+            },
           });
           index++;
         }
+        // Add a single wireframe version per shape
+        const row = Math.floor(index / gridCols);
+        const col = index % gridCols;
+        const position = [
+          col * spacing - ((gridCols - 1) * spacing) / 2,
+          0,
+          row * spacing,
+        ];
+        editor.ops.Shapes.ShapeOperation({
+          shapeName,
+          options: {
+            scale: baseScale,
+            opacity: 1.0,
+            color: randomColor(),
+            wireframe: true,
+            position,
+          },
+        });
+
+        index++;
       }
 
       editor.ops.hideGUI();
@@ -421,7 +499,9 @@ async function drawAtoms(filename, fileContent) {
     const cubeData = parseCube(fileContent);
     editor.avr.atoms = cubeData.atoms;
     editor.avr.isosurfaceManager.volumetricData = cubeData.volumetricData;
-    editor.avr.isosurfaceManager.setSettings([{ isovalue: 0.0002, mode: 1, step_size: 1 }]);
+    editor.avr.isosurfaceManager.setSettings([
+      { isovalue: 0.0002, mode: 1, step_size: 1 },
+    ]);
   }
 }
 
