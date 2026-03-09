@@ -62,18 +62,13 @@ class EventHandlers {
       ReplaceOperation: () => this.weas.ops.atoms.ReplaceOperation(),
       measure: () =>
         this.weas.avr.Measurement.measure(this.weas.avr.selectedAtomsIndices),
-      camera1: () =>
-        this.weas.tjs.updateCameraAndControls({ direction: [0, -100, 0] }),
-      camera2: () =>
-        this.weas.tjs.updateCameraAndControls({ direction: [-100, 0, 0] }),
-      camera3: () =>
-        this.weas.tjs.updateCameraAndControls({ direction: [0, 0, 100] }),
-      camera4: () =>
-        this.weas.tjs.updateCameraAndControls({ direction: [0, 100, 0] }),
-      camera5: () =>
-        this.weas.tjs.updateCameraAndControls({ direction: [100, 0, 0] }),
-      camera6: () =>
-        this.weas.tjs.updateCameraAndControls({ direction: [0, 0, -100] }),
+      
+      camera1: () => this.weas.tjs.controls.view("top"),
+      camera3: () => this.weas.tjs.controls.view("front"),
+      camera2: () => this.weas.tjs.controls.view("left"),
+      camera4: () => this.weas.tjs.controls.view("bottom"),
+      camera5: () => this.weas.tjs.controls.view("right"),
+      camera6: () => this.weas.tjs.controls.view("back"),
 
     };
 

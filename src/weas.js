@@ -103,7 +103,6 @@ class WEAS {
     if (this.avr) {
       this.avr.atoms = new Atoms();
     }
-    this._applyCameraState(this.state.get("camera"));
   }
 
   async exportAnimation({
@@ -193,55 +192,6 @@ class WEAS {
     };
   }
 
-  _applyCameraState(state) {
-    if (!state || typeof state !== "object") {
-      return;
-    }
-    if (state.type) {
-      this.tjs.cameraType = state.type;
-    }
-    const hasDirection =
-      Array.isArray(state.direction) && state.direction.length === 3;
-    const hasTarget = Array.isArray(state.target) && state.target.length === 3;
-    const hasDistance = typeof state.distance === "number";
-    if (hasDirection || hasTarget || hasDistance) {
-      this.tjs.updateCameraAndControls({
-        lookAt: hasTarget ? state.target : null,
-        direction: hasDirection ? state.direction : [0, 0, 1],
-        distance: hasDistance ? state.distance : null,
-        zoom: typeof state.zoom === "number" ? state.zoom : 1,
-        fov: typeof state.fov === "number" ? state.fov : 50,
-      });
-      return;
-    }
-    const camera = this.tjs.camera;
-    const controls = this.tjs.controls;
-    if (Array.isArray(state.position) && state.position.length === 3) {
-      camera.position.set(
-        state.position[0],
-        state.position[1],
-        state.position[2],
-      );
-    }
-    if (Array.isArray(state.target) && state.target.length === 3 && controls) {
-      controls.target.set(state.target[0], state.target[1], state.target[2]);
-      controls.update();
-    }
-    if (typeof state.zoom === "number") {
-      if (typeof camera.updateZoom === "function") {
-        camera.updateZoom(state.zoom);
-      } else {
-        camera.zoom = state.zoom;
-        camera.updateProjectionMatrix();
-      }
-    }
-    if (typeof state.fov === "number" && camera.isPerspectiveCamera) {
-      camera.fov = state.fov;
-      camera.updateProjectionMatrix();
-    }
-    camera.updateProjectionMatrix();
-    this.requestRedraw("render");
-  }
 
   exportState() {
     const atoms =

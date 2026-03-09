@@ -66,9 +66,6 @@ class GUIManager {
 
   initGUI() {
     this.createGUIContainer();
-    if (this.guiConfig.controls.cameraControls) {
-      this.addCameraControls();
-    }
 
     const debug = true;
 
@@ -76,6 +73,8 @@ class GUIManager {
       if (this.weas.materialsRegistry) this.addMaterialsFolder();
       // if (this.weas.shapeRegistry) this.addShapesFolder();
       this.addShapeOperationsFolder();
+      this.addCameraControlsFolder();
+      this.addCameraSettingsFolder();
     }
   }
 
@@ -233,10 +232,74 @@ class GUIManager {
     this.refreshShapeOperations();
   }
 
-  addCameraControls() {
-    createViewpointButtons(this.weas, this.gui);
-    setupCameraGUI(this.weas.tjs, this.gui, this.weas.tjs.camera);
+  /* ---------------- Camera Folder (Camera-manager based) ---------------- */
+  addCameraControlsFolder() {
+    const folder = this.gui.addFolder("Camera Views");
+    const cameraController = this.weas.tjs.controls;
+
+    const refreshViews = () => {
+      // Remove old controllers
+      while (folder.__controllers.length > 0) {
+        folder.remove(folder.__controllers[0]);
+      }
+
+      cameraController.list().forEach((viewName) => {
+        const isBuiltIn = cameraController._builtInViews.has(viewName);
+
+        folder
+          .add({ load: () => cameraController.view(viewName) }, "load")
+          .name(`View ${viewName}`);
+      });
+
+      // Button to save current camera state
+      folder
+        .add(
+          {
+            save: () => {
+              const name = prompt("Name of new camera view:");
+              if (!name) return;
+              cameraController.saveView(name);
+              refreshViews();
+            },
+          },
+          "save",
+        )
+        .name("Save Current View");
+    };
+
+    refreshViews();
   }
+
+  addCameraSettingsFolder() {
+    const folder = this.gui.addFolder("Camera Settings");
+    const controller = this.weas.tjs.controls;
+    if (!controller) return;
+
+    const refreshCameraFolder = () => {
+      // Remove old controllers
+      while (folder.__controllers.length)
+        folder.remove(folder.__controllers[0]);
+
+      // Loop over schema
+      for (const [key, info] of Object.entries(controller.paramSchema)) {
+        if (typeof controller[key] === "boolean") {
+          folder.add(controller, key);
+        } else {
+          folder.add(controller, key, info.min, info.max, info.step);
+        }
+      }
+
+      folder.add({ reset: () => controller.resetSettings() }, "reset");
+    };
+
+    controller.onChange(refreshCameraFolder);
+    refreshCameraFolder();
+  }
+
+  // addCameraControls() {
+  //   createViewpointButtons(this.weas, this.gui);
+  //   setupCameraGUI(this.weas.tjs, this.gui, this.weas.tjs.camera);
+  // }
 
   addButtons() {
     this.ensureToolbarStyles();

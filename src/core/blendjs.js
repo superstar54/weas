@@ -1,6 +1,5 @@
 import * as THREE from "three";
-// import { OrbitControls } from "../three/OrbitControls";
-import { TrackballControls } from "../three/TrackballControls";
+import { CameraController } from "./CameraController";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { WeasScene } from "./SceneManager";
 import { OrthographicCamera } from "./Camera";
@@ -46,7 +45,7 @@ class BlendJSRenderer {
 export class BlendJS {
   constructor(containerElement, weas) {
     this.containerElement = containerElement;
-    this.tjsConfig = weas.tjsConfig || defaultTjsConfig
+    this.tjsConfig = weas.tjsConfig || defaultTjsConfig;
     this.weas = weas;
     this.scene = new WeasScene(this);
     this.objects = {};
@@ -70,7 +69,14 @@ export class BlendJS {
       height: this.sceneView.height * coordSceneRatio,
     };
 
-    this.coordCamera = new THREE.OrthographicCamera(this.orthographicCamera.left, this.orthographicCamera.right, this.orthographicCamera.top, this.orthographicCamera.bottom, 1, 2000);
+    this.coordCamera = new THREE.OrthographicCamera(
+      this.orthographicCamera.left,
+      this.orthographicCamera.right,
+      this.orthographicCamera.top,
+      this.orthographicCamera.bottom,
+      1,
+      2000,
+    );
     this.coordCamera.position.copy(this.camera.position);
     // Add ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
@@ -93,7 +99,14 @@ export class BlendJS {
       height: this.sceneView.height * legendSceneRatio,
     };
 
-    this.legendCamera = new THREE.OrthographicCamera(this.orthographicCamera.left, this.orthographicCamera.right, this.orthographicCamera.top, this.orthographicCamera.bottom, 1, 2000);
+    this.legendCamera = new THREE.OrthographicCamera(
+      this.orthographicCamera.left,
+      this.orthographicCamera.right,
+      this.orthographicCamera.top,
+      this.orthographicCamera.bottom,
+      1,
+      2000,
+    );
     this.legendCamera.position.set(0, 0, 100);
   }
 
@@ -104,8 +117,10 @@ export class BlendJS {
   set cameraType(value) {
     this._cameraType = value;
     // this.controls = new OrbitControls(this.camera, this.renderers["MainRenderer"].renderer.domElement);
-    this.controls = new TrackballControls(this.camera, this.renderers["MainRenderer"].renderer.domElement)
-    this.updateCameraAndControls({});
+    this.controls = new CameraController(
+      this.camera,
+      this.renderers["MainRenderer"].renderer.domElement,
+    );
   }
 
   get camera() {
@@ -117,8 +132,8 @@ export class BlendJS {
 
   init() {
     this.scene.background = new THREE.Color(0xffffff); // init bg as white
-    const renderConfig = this?.tjsConfig?.renderConfig || defaultTjsConfig.renderConfig 
-
+    const renderConfig =
+      this?.tjsConfig?.renderConfig || defaultTjsConfig.renderConfig;
 
     // Create a renderer
     const renderer = new THREE.WebGLRenderer(renderConfig);
@@ -139,7 +154,12 @@ export class BlendJS {
     labelRenderer.domElement.style.pointerEvents = "none";
     this.addRenderer("LabelRenderer", labelRenderer);
     // Create a camera
-    this.perspectiveCamera = new THREE.PerspectiveCamera(50, clientWidth / clientHeight, 1, 500);
+    this.perspectiveCamera = new THREE.PerspectiveCamera(
+      50,
+      clientWidth / clientHeight,
+      1,
+      500,
+    );
     this.perspectiveCamera.layers.enable(1);
     const frustumSize = 20; // This can be adjusted based on scene's scale
     const aspect = clientWidth / clientHeight;
@@ -175,7 +195,7 @@ export class BlendJS {
     this.addLight("AmbientLight", ambientLight);
     // OrbitControls for camera movement
     // check example here https://threejs.org/examples/?q=control#misc_controls_orbit
-    this.controls = new TrackballControls(this.camera, renderer.domElement);
+    this.controls = new CameraController(this.camera, renderer.domElement);
     // Disable shift behavior
     // this.controls.enablePan = true; // This line disables panning
     // this.controls.enableDamping = true; // Enable smooth camera movements
@@ -186,10 +206,16 @@ export class BlendJS {
     // Add event listeners for mouse events
     this.containerElement.addEventListener("mousemove", this.render.bind(this));
     this.containerElement.addEventListener("pointerup", this.render.bind(this));
-    this.containerElement.addEventListener("pointerdown", this.render.bind(this));
+    this.containerElement.addEventListener(
+      "pointerdown",
+      this.render.bind(this),
+    );
     this.containerElement.addEventListener("click", this.render.bind(this));
     this.containerElement.addEventListener("wheel", this.render.bind(this));
-    this.containerElement.addEventListener("atomsUpdated", this.render.bind(this));
+    this.containerElement.addEventListener(
+      "atomsUpdated",
+      this.render.bind(this),
+    );
     this.createCoordScene();
     this.createLegendScene();
   }
@@ -209,7 +235,10 @@ export class BlendJS {
       if (!width || !height) {
         return;
       }
-      if (width === this._lastObservedSize.width && height === this._lastObservedSize.height) {
+      if (
+        width === this._lastObservedSize.width &&
+        height === this._lastObservedSize.height
+      ) {
         return;
       }
       this._lastObservedSize = { width, height };
@@ -292,7 +321,8 @@ export class BlendJS {
     const legendWidth = clientWidth * this.legendSceneView.width;
     const legendHeight = clientHeight * this.legendSceneView.height;
     const legendAspect = legendWidth / legendHeight;
-    const frustumHeightLegend = this.legendCamera.top - this.legendCamera.bottom;
+    const frustumHeightLegend =
+      this.legendCamera.top - this.legendCamera.bottom;
     this.legendCamera.left = (-frustumHeightLegend * legendAspect) / 2;
     this.legendCamera.right = (frustumHeightLegend * legendAspect) / 2;
     this.legendCamera.updateProjectionMatrix();
@@ -305,107 +335,22 @@ export class BlendJS {
     this.render();
   }
 
-  //
-  updateCameraAndControls({ lookAt = null, direction = [0, 0, 1], distance = null, zoom = 1, fov = 50 }) {
-    /*
-    Calculate the camera parameters based on the bounding box of the scene and the camera direction
-    The camera to look at the lookAt, and rotate around the lookAt of the atoms.
-    Position of the camera is defined by the look_at, direction, and distance attributes.
-    */
-    const rect = this.containerElement.getBoundingClientRect();
-    const containerWidth = this.containerElement.clientWidth || rect.width;
-    const containerHeight = this.containerElement.clientHeight || rect.height;
-    const rendererSize = this.renderers["MainRenderer"]?.renderer?.getSize(new THREE.Vector2()) || { x: 1, y: 1 };
-    const clientWidth = containerWidth || rendererSize.x || 1;
-    const clientHeight = containerHeight || rendererSize.y || 1;
-    // normalize the camera direction
-    direction = new THREE.Vector3(...direction).normalize();
-    const sceneBoundingBox = this.getSceneBoundingBox();
-    // lookAt of the bounding box
-    if (lookAt === null) {
-      lookAt = sceneBoundingBox.getCenter(new THREE.Vector3());
-    } else {
-      lookAt = new THREE.Vector3(...lookAt);
-    }
-
-    const size = calculateBoundingBox(sceneBoundingBox, direction);
-    let aspect;
-    // Determine the aspect ratio of the camera
-    if (this.camera.isOrthographicCamera) {
-      aspect = clientWidth / clientHeight;
-    } else {
-      aspect = this.camera.aspect;
-    }
-
-    let padding = 10; // Adjust this value as needed for padding around the scene
-
-    // Calculate the camera parameters based on the bounding box
-    let cameraWidth = Math.max(size.x, size.y * aspect) + padding;
-    let cameraHeight = cameraWidth / aspect;
-
-    this.camera.left = -cameraWidth / 2;
-    this.camera.right = cameraWidth / 2;
-    this.camera.top = cameraHeight / 2;
-    this.camera.bottom = -cameraHeight / 2;
-    this.coordCamera.left = this.camera.left;
-    this.coordCamera.right = this.camera.right;
-    this.coordCamera.top = this.camera.top;
-    this.coordCamera.bottom = this.camera.bottom;
-
-    // Adjust camera position based on the lookAt of the bounding box and the camera direction
-    if (distance === null) {
-      distance = size.z + padding;
-    }
-    let cameraPosition = lookAt.clone().add(direction.multiplyScalar(distance));
-    this.camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-
-    this.camera.lookAt(lookAt);
-    if (this.camera.isOrthographicCamera) {
-      this.camera.updateZoom(zoom);
-    } else {
-      this.camera.fov = fov; // Set the new field of view
-    }
-    this.camera.updateProjectionMatrix();
-    // Set the camera target to the lookAt of the atoms
-    this.controls.target.set(lookAt.x, lookAt.y, lookAt.z);
-    this.render();
-    if (this.weas.state && typeof this.weas.state.set === "function") {
-      this.weas.state.set({ camera: this.weas._exportCameraState() });
-    }
-  }
-
-  getSceneBoundingBox() {
-    // Create a bounding box that will include all objects
-    let sceneBoundingBox = new THREE.Box3();
-    // For each object in the scene, expand the bounding box to include it
-    this.scene.traverse(function (object) {
-      if (object.isMesh || object.isLineSegments || object.isInstancedMesh) {
-        let objectBoundingBox;
-        // if it is a instancedMesh
-        if (object.isInstancedMesh) {
-          if (object.count === 0) {
-            return;
-          }
-          object.computeBoundingBox();
-          objectBoundingBox = object.boundingBox;
-        } else {
-          object.geometry.computeBoundingBox();
-          objectBoundingBox = object.geometry.boundingBox;
-        }
-        // Temporary bounding box to hold the object's world bounding box
-        objectBoundingBox = new THREE.Box3().copy(objectBoundingBox).applyMatrix4(object.matrixWorld);
-        // if objectBoundingBox is NaN, skip this object
-        if (isNaN(objectBoundingBox.min.x) || isNaN(objectBoundingBox.min.y) || isNaN(objectBoundingBox.min.z)) {
-          return;
-        }
-        sceneBoundingBox.union(objectBoundingBox); // Union this with the scene bounding box
-      }
+  // now bundles inside controls
+  // TODO, this sort of thing should not be handled here
+  updateCameraAndControls({
+    lookAt = null,
+    direction = [0, 0, 1],
+    zoom = 1,
+    fov = 50,
+    padding = 10,
+  }) {
+    this.controls.fitToScene(this.scene, {
+      lookAt: lookAt,
+      direction: direction,
+      zoom: zoom,
+      fov: fov,
+      padding: padding,
     });
-    // if the bounding box is empty, return a default bounding box
-    if (sceneBoundingBox.isEmpty()) {
-      sceneBoundingBox = new THREE.Box3(new THREE.Vector3(-10, -10, -10), new THREE.Vector3(10, 10, 10));
-    }
-    return sceneBoundingBox;
   }
 
   renderSceneInfo(scene, camera, left, bottom, width, height, renderer) {
@@ -427,12 +372,29 @@ export class BlendJS {
 
   render() {
     this.renderers["MainRenderer"].renderer.clear();
-    this.weas?.textManager?.updateLabelSizes?.(this.camera, this.renderers["MainRenderer"].renderer);
-    this.weas?.avr?.ALManager?.updateLabelSizes?.(this.camera, this.renderers["MainRenderer"].renderer);
-    this.weas?.avr?.highlightManager?.updateLabelSizes?.(this.camera, this.renderers["MainRenderer"].renderer);
+    this.weas?.textManager?.updateLabelSizes?.(
+      this.camera,
+      this.renderers["MainRenderer"].renderer,
+    );
+    this.weas?.avr?.ALManager?.updateLabelSizes?.(
+      this.camera,
+      this.renderers["MainRenderer"].renderer,
+    );
+    this.weas?.avr?.highlightManager?.updateLabelSizes?.(
+      this.camera,
+      this.renderers["MainRenderer"].renderer,
+    );
     // loop through renderers to render the scene
     this.renderers["LabelRenderer"].renderer.render(this.scene, this.camera);
-    this.renderSceneInfo(this.scene, this.camera, this.sceneView.left, this.sceneView.bottom, this.sceneView.width, this.sceneView.height, this.renderers["MainRenderer"].renderer);
+    this.renderSceneInfo(
+      this.scene,
+      this.camera,
+      this.sceneView.left,
+      this.sceneView.bottom,
+      this.sceneView.width,
+      this.sceneView.height,
+      this.renderers["MainRenderer"].renderer,
+    );
     this.coordCamera.position.copy(this.camera.position);
     this.coordCamera.position.sub(this.controls.target);
     this.coordCamera.lookAt(this.coordScene.position);
@@ -481,7 +443,12 @@ export class BlendJS {
     compositeCanvas.height = renderer.domElement.height;
     const compositeContext = compositeCanvas.getContext("2d");
     compositeContext.drawImage(renderer.domElement, 0, 0);
-    this.drawLabelsToCanvas(compositeContext, compositeCanvas.width, compositeCanvas.height, highResPixelRatio);
+    this.drawLabelsToCanvas(
+      compositeContext,
+      compositeCanvas.width,
+      compositeCanvas.height,
+      highResPixelRatio,
+    );
     // Get the image data URL
     var imgData = compositeCanvas.toDataURL("image/png");
 
@@ -517,7 +484,11 @@ export class BlendJS {
       }
       const element = label.element;
       const styles = window.getComputedStyle(element);
-      if (styles.display === "none" || styles.visibility === "hidden" || styles.opacity === "0") {
+      if (
+        styles.display === "none" ||
+        styles.visibility === "hidden" ||
+        styles.opacity === "0"
+      ) {
         return;
       }
 
@@ -597,25 +568,41 @@ export class BlendJS {
     if (!canvas.captureStream) {
       renderer.setPixelRatio(originalPixelRatio);
       renderer.setSize(originalSize.x, originalSize.y, false);
-      throw new Error("Canvas captureStream() is not supported in this browser.");
+      throw new Error(
+        "Canvas captureStream() is not supported in this browser.",
+      );
     }
 
     const formatKey = String(format || "webm").toLowerCase();
     if (formatKey === "gif") {
-      throw new Error("GIF export is not supported without an external encoder. Use webm or mp4.");
+      throw new Error(
+        "GIF export is not supported without an external encoder. Use webm or mp4.",
+      );
     }
-    let supportedMimeTypes = this.getSupportedAnimationMimeTypes(formatKey, mimeType);
+    let supportedMimeTypes = this.getSupportedAnimationMimeTypes(
+      formatKey,
+      mimeType,
+    );
     if (formatKey === "mp4" && !supportedMimeTypes) {
       supportedMimeTypes = this.getSupportedAnimationMimeTypes("webm");
-      console.warn("MP4 export is not supported in this browser. Falling back to WebM.");
+      console.warn(
+        "MP4 export is not supported in this browser. Falling back to WebM.",
+      );
     }
 
     const start = Math.max(0, Math.min(startFrame, frameCount - 1));
-    const end = Math.max(start, Math.min(endFrame ?? frameCount - 1, frameCount - 1));
+    const end = Math.max(
+      start,
+      Math.min(endFrame ?? frameCount - 1, frameCount - 1),
+    );
 
-    const recorderOptions = supportedMimeTypes ? { mimeType: supportedMimeTypes } : undefined;
+    const recorderOptions = supportedMimeTypes
+      ? { mimeType: supportedMimeTypes }
+      : undefined;
     const stream = canvas.captureStream(fps);
-    const recorder = recorderOptions ? new MediaRecorder(stream, recorderOptions) : new MediaRecorder(stream);
+    const recorder = recorderOptions
+      ? new MediaRecorder(stream, recorderOptions)
+      : new MediaRecorder(stream);
     const chunks = [];
 
     recorder.ondataavailable = (event) => {
@@ -687,8 +674,13 @@ export class BlendJS {
     if (formatKey === "gif") {
       return null;
     }
-    const candidates = formatKey === "mp4" ? ["video/mp4;codecs=avc1.42E01E", "video/mp4"] : ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
-    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || null;
+    const candidates =
+      formatKey === "mp4"
+        ? ["video/mp4;codecs=avc1.42E01E", "video/mp4"]
+        : ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+    return (
+      candidates.find((type) => MediaRecorder.isTypeSupported(type)) || null
+    );
   }
 }
 
@@ -702,7 +694,11 @@ function calculateBoundingBox(box, direction) {
 
   // Create a matrix that will align the camera's direction with the Z axis
   let alignCameraMatrix = new THREE.Matrix4();
-  alignCameraMatrix.lookAt(direction, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
+  alignCameraMatrix.lookAt(
+    direction,
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 1, 0),
+  );
 
   // For each corner of the bounding box
   box.corners = [
