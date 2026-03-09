@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { OrbitControls } from "../three/OrbitControls";
+// import { OrbitControls } from "../three/OrbitControls";
+import { TrackballControls } from "../three/TrackballControls";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { WeasScene } from "./SceneManager";
 import { OrthographicCamera } from "./Camera";
@@ -102,7 +103,8 @@ export class BlendJS {
 
   set cameraType(value) {
     this._cameraType = value;
-    this.controls = new OrbitControls(this.camera, this.renderers["MainRenderer"].renderer.domElement);
+    // this.controls = new OrbitControls(this.camera, this.renderers["MainRenderer"].renderer.domElement);
+    this.controls = new TrackballControls(this.camera, this.renderers["MainRenderer"].renderer.domElement)
     this.updateCameraAndControls({});
   }
 
@@ -173,7 +175,7 @@ export class BlendJS {
     this.addLight("AmbientLight", ambientLight);
     // OrbitControls for camera movement
     // check example here https://threejs.org/examples/?q=control#misc_controls_orbit
-    this.controls = new OrbitControls(this.camera, renderer.domElement);
+    this.controls = new TrackballControls(this.camera, renderer.domElement);
     // Disable shift behavior
     // this.controls.enablePan = true; // This line disables panning
     // this.controls.enableDamping = true; // Enable smooth camera movements
