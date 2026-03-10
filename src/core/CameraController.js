@@ -1,6 +1,7 @@
 import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
 import { Vector3 } from "three";
 
+// TODO - make the hotkeys refire a reset so that you dont have to click to see snapping to position
 class CameraController extends TrackballControls {
   constructor(camera, domElement, params = {}) {
     super(camera, domElement);
@@ -9,28 +10,28 @@ class CameraController extends TrackballControls {
     this._views = {};
     this._builtInViews = new Set();
 
-    this.defaultSettings = {
-      rotateSpeed: 1.0,
-      zoomSpeed: 1.2,
-      panSpeed: 0.3,
-      staticMoving: false,
-      dynamicDampingFactor: 0.2,
-      minDistance: 0,
-      maxDistance: Infinity,
-    };
-
-    // Parameter schema: min/max/default/step
+    // initialise a s.o.t schema - this 'can' be overridden and will be respected by reset
     this.paramSchema = {
-      rotateSpeed: { min: 0, max: 5, step: 0.01, default: 1.0 },
-      zoomSpeed: { min: 0, max: 5, step: 0.01, default: 1.2 },
-      panSpeed: { min: 0, max: 5, step: 0.01, default: 0.3 },
-      dynamicDampingFactor: { min: 0, max: 1, step: 0.01, default: 0.2 },
-      staticMoving: { default: false },
-      minDistance: { min: 0, max: 1000, step: 0.1, default: 0 },
-      maxDistance: { min: 0, max: 5000, step: 0.1, default: Infinity },
+      rotateSpeed: { min: 0, max: 5, step: 0.01, default: 2.5, gui: true },
+      zoomSpeed: { min: 0, max: 5, step: 0.01, default: 1.2, gui: true },
+      panSpeed: { min: 0, max: 50, step: 0.05, default: 15, gui: true },
+      staticMoving: { default: true, gui: false },
+      minDistance: { min: 0, max: 1000, step: 0.1, default: 0, gui: false },
+      maxDistance: {
+        min: 0,
+        max: 5000,
+        step: 0.1,
+        default: Infinity,
+        gui: false,
+      },
     };
 
-    this.setParams({ ...this.defaultSettings, ...params });
+    // init defaults
+    for (const [key, info] of Object.entries(this.paramSchema)) {
+      this[key] = info.default;
+    }
+
+    this.setParams(params);
     this._initDefaultViews();
   }
 
@@ -49,20 +50,17 @@ class CameraController extends TrackballControls {
   }
 
   getParams() {
-    return {
-      rotateSpeed: this.rotateSpeed,
-      zoomSpeed: this.zoomSpeed,
-      panSpeed: this.panSpeed,
-      staticMoving: this.staticMoving,
-      dynamicDampingFactor: this.dynamicDampingFactor,
-      minDistance: this.minDistance,
-      maxDistance: this.maxDistance,
-    };
+    const params = {};
+    for (const [key, info] of Object.entries(this.paramSchema)) {
+      params[key] = this[key];
+    }
+    return params;
   }
 
-  // --- Reset to default rates
   resetSettings() {
-    this.setParams(this.defaultSettings);
+    for (const [key, info] of Object.entries(this.paramSchema)) {
+      this[key] = info.default;
+    }
     this._emitChange();
     this.update();
   }

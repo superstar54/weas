@@ -282,6 +282,8 @@ class GUIManager {
 
       // Loop over schema
       for (const [key, info] of Object.entries(controller.paramSchema)) {
+        if (!info.gui) continue;
+
         if (typeof controller[key] === "boolean") {
           folder.add(controller, key);
         } else {
@@ -295,11 +297,6 @@ class GUIManager {
     controller.onChange(refreshCameraFolder);
     refreshCameraFolder();
   }
-
-  // addCameraControls() {
-  //   createViewpointButtons(this.weas, this.gui);
-  //   setupCameraGUI(this.weas.tjs, this.gui, this.weas.tjs.camera);
-  // }
 
   addButtons() {
     this.ensureToolbarStyles();
