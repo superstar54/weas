@@ -2,9 +2,15 @@ import { TrackballControls } from "three/examples/jsm/controls/TrackballControls
 import { Vector3 } from "three";
 
 // TODO - make the hotkeys refire a reset so that you dont have to click to see snapping to position
+// TODO - re-add perspective camera as i've bonked this in the migration of methods.
 class CameraController extends TrackballControls {
   constructor(camera, domElement, params = {}) {
     super(camera, domElement);
+    this.cameras = new Map();
+    this.activeCamera = "default";
+
+    this.cameras.set("default", camera);
+
     this._callbacks = new Set();
 
     this._views = {};
@@ -42,6 +48,38 @@ class CameraController extends TrackballControls {
 
   _emitChange() {
     this._callbacks.forEach((cb) => cb());
+  }
+
+  // --- individual camera management
+  addCamera(name, camera) {
+    this.cameras.set(name, camera);
+  }
+
+  setCamera(name) {
+    const newCam = this.cameras.get(name);
+    if (!newCam || newCam === this.object) return;
+
+    const oldCam = this.object;
+
+    // copy pose
+    newCam.position.copy(oldCam.position);
+    newCam.quaternion.copy(oldCam.quaternion);
+    newCam.up.copy(oldCam.up);
+
+    if (newCam.isOrthographicCamera) newCam.zoom = oldCam.zoom;
+    if (newCam.isPerspectiveCamera && oldCam.fov) newCam.fov = oldCam.fov;
+
+    newCam.updateProjectionMatrix();
+
+    this.object = newCam;
+    this.activeCamera = name;
+
+    this.update();
+    this._emitChange();
+  }
+
+  listCameras() {
+    return [...this.cameras.keys()];
   }
 
   // --- Parameter management
@@ -178,7 +216,7 @@ class CameraController extends TrackballControls {
     }
 
     this.object.position.copy(center.clone().add(dir.multiplyScalar(distance)));
-    this.target.copy(center); // TrackballControls uses this.target
+    this.target.copy(center);
     this.object.lookAt(center);
 
     if (this.object.isOrthographicCamera) this.object.zoom = zoom;
@@ -190,6 +228,55 @@ class CameraController extends TrackballControls {
 
   reset() {
     if (this._views["default"]) this.view("default");
+  }
+
+  // self contained state management
+  exportState() {
+    const cam = this.object;
+
+    const position = cam.position.toArray();
+    const target = this.target.toArray();
+
+    const dx = position[0] - target[0];
+    const dy = position[1] - target[1];
+    const dz = position[2] - target[2];
+
+    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+    const direction =
+      distance > 0 ? [dx / distance, dy / distance, dz / distance] : [0, 0, 1];
+
+    return {
+      type: this.activeCamera,
+      position,
+      target,
+      direction,
+      distance,
+      zoom: cam.zoom,
+      fov: cam.fov,
+      params: this.getParams(),
+    };
+  }
+
+  importState(state) {
+    if (!state) return;
+
+    if (state.type) this.setCamera(state.type);
+
+    const cam = this.object;
+
+    if (state.position) cam.position.fromArray(state.position);
+    if (state.target) this.target.fromArray(state.target);
+
+    if (cam.isOrthographicCamera && state.zoom !== undefined)
+      cam.zoom = state.zoom;
+
+    if (cam.isPerspectiveCamera && state.fov !== undefined) cam.fov = state.fov;
+
+    cam.updateProjectionMatrix();
+    this.update();
+
+    if (state.params) this.setParams(state.params);
   }
 }
 

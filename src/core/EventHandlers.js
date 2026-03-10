@@ -63,12 +63,12 @@ class EventHandlers {
       measure: () =>
         this.weas.avr.Measurement.measure(this.weas.avr.selectedAtomsIndices),
       
-      camera1: () => this.weas.tjs.controls.view("top"),
-      camera3: () => this.weas.tjs.controls.view("front"),
-      camera2: () => this.weas.tjs.controls.view("left"),
-      camera4: () => this.weas.tjs.controls.view("bottom"),
-      camera5: () => this.weas.tjs.controls.view("right"),
-      camera6: () => this.weas.tjs.controls.view("back"),
+      camera1: () => this.weas.tjs.cameraController.view("top"),
+      camera3: () => this.weas.tjs.cameraController.view("front"),
+      camera2: () => this.weas.tjs.cameraController.view("left"),
+      camera4: () => this.weas.tjs.cameraController.view("bottom"),
+      camera5: () => this.weas.tjs.cameraController.view("right"),
+      camera6: () => this.weas.tjs.cameraController.view("back"),
 
     };
 

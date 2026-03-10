@@ -116,11 +116,7 @@ export class BlendJS {
 
   set cameraType(value) {
     this._cameraType = value;
-    // this.controls = new OrbitControls(this.camera, this.renderers["MainRenderer"].renderer.domElement);
-    this.controls = new CameraController(
-      this.camera,
-      this.renderers["MainRenderer"].renderer.domElement,
-    );
+    this.cameraController = new CameraController(this.camera, this.renderers["MainRenderer"].renderer.domElement)
   }
 
   get camera() {
@@ -153,6 +149,7 @@ export class BlendJS {
     labelRenderer.domElement.style.top = "0px";
     labelRenderer.domElement.style.pointerEvents = "none";
     this.addRenderer("LabelRenderer", labelRenderer);
+
     // Create a camera
     this.perspectiveCamera = new THREE.PerspectiveCamera(
       50,
@@ -193,13 +190,12 @@ export class BlendJS {
     this.camera.add(light);
     const ambientLight = new THREE.AmbientLight(0x404040, 20); // Soft white light
     this.addLight("AmbientLight", ambientLight);
-    // OrbitControls for camera movement
-    // check example here https://threejs.org/examples/?q=control#misc_controls_orbit
-    this.controls = new CameraController(this.camera, renderer.domElement);
-    // Disable shift behavior
-    // this.controls.enablePan = true; // This line disables panning
-    // this.controls.enableDamping = true; // Enable smooth camera movements
-    // Add event listener for window resize
+    
+    // set up camera controller (a thin wrapper around three.js orbit controls)
+    this.cameraController = new CameraController(this.camera, renderer.domElement);
+
+    this.cameraController.addCamera("orthographic", this.perspectiveCamera)
+
     this.updateViewerRect();
     this.observeContainerResize();
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
@@ -343,8 +339,8 @@ export class BlendJS {
     zoom = 1,
     fov = 50,
     padding = 10,
-  }) {
-    this.controls.fitToScene(this.scene, {
+  }) { 
+    this.cameraController.fitToScene(this.scene, {
       lookAt: lookAt,
       direction: direction,
       zoom: zoom,
@@ -395,8 +391,12 @@ export class BlendJS {
       this.sceneView.height,
       this.renderers["MainRenderer"].renderer,
     );
+
+    // clean this up
     this.coordCamera.position.copy(this.camera.position);
-    this.coordCamera.position.sub(this.controls.target);
+    this.coordCamera.position.sub(this.cameraController.target);
+
+
     this.coordCamera.lookAt(this.coordScene.position);
     this.renderSceneInfo(
       this.coordScene,
@@ -419,7 +419,7 @@ export class BlendJS {
     );
     // legend
 
-    this.controls.update();
+    this.cameraController.update();
   }
 
   exportImage(resolution = 2) {

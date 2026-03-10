@@ -235,7 +235,7 @@ class GUIManager {
   /* ---------------- Camera Folder (Camera-manager based) ---------------- */
   addCameraControlsFolder() {
     const folder = this.gui.addFolder("Camera Views");
-    const cameraController = this.weas.tjs.controls;
+    const cameraController = this.weas.tjs.cameraController;
 
     const refreshViews = () => {
       // Remove old controllers
@@ -272,19 +272,22 @@ class GUIManager {
 
   addCameraSettingsFolder() {
     const folder = this.gui.addFolder("Camera Settings");
-    const controller = this.weas.tjs.controls;
+    const controller = this.weas.tjs.cameraController;
     if (!controller) return;
 
     const refreshCameraFolder = () => {
-      // Remove old controllers
       while (folder.__controllers.length)
         folder.remove(folder.__controllers[0]);
 
-      // Loop over schema
       for (const [key, info] of Object.entries(controller.paramSchema)) {
         if (!info.gui) continue;
 
-        if (typeof controller[key] === "boolean") {
+        if (info.type === "select") {
+          folder.add(controller, key, info.options).onChange((v) => {
+            if (typeof controller.setCameraType === "function")
+              controller.setCameraType(v);
+          });
+        } else if (typeof controller[key] === "boolean") {
           folder.add(controller, key);
         } else {
           folder.add(controller, key, info.min, info.max, info.step);

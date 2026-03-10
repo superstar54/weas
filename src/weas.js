@@ -82,7 +82,7 @@ class WEAS {
   }
 
   _initCameraStateSync() {
-    const controls = this.tjs.controls;
+    const controls = this.tjs.cameraController;
     if (!controls || typeof controls.addEventListener !== "function") {
       return;
     }
@@ -161,37 +161,10 @@ class WEAS {
   }
 
   _exportCameraState() {
-    const camera = this.tjs.camera;
     const controls = this.tjs.controls;
-    const position = camera?.position?.toArray?.() || null;
-    const target = controls?.target?.toArray?.() || null;
-    let direction = null;
-    let distance = null;
-    if (
-      Array.isArray(position) &&
-      Array.isArray(target) &&
-      position.length === 3 &&
-      target.length === 3
-    ) {
-      const dx = position[0] - target[0];
-      const dy = position[1] - target[1];
-      const dz = position[2] - target[2];
-      distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      if (distance > 0) {
-        direction = [dx / distance, dy / distance, dz / distance];
-      }
-    }
-    return {
-      type: this.tjs.cameraType,
-      position,
-      target,
-      direction,
-      distance,
-      zoom: camera?.zoom,
-      fov: camera?.fov,
-    };
+    if (!controls) return null;
+    return controls.exportState();
   }
-
 
   exportState() {
     const atoms =
