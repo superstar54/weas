@@ -43,6 +43,7 @@ export default class HUDController {
       { width: 100, height: 100 },
       { bottom: 10, left: 10 },
       true,
+      true,
     );
   }
 
@@ -53,6 +54,7 @@ export default class HUDController {
     size = { width: 150, height: 150 },
     position = { top: 10, left: 10 },
     rotation = false,
+    visible = true,
   ) {
     const canvas = document.createElement("canvas");
     canvas.width = size.width;
@@ -70,6 +72,7 @@ export default class HUDController {
       height: size.height,
       position: { ...position },
       rotation: rotation,
+      visible: visible
     });
 
     // Apply the position using the helper
@@ -77,13 +80,12 @@ export default class HUDController {
   }
 
   render(mainCamera) {
-    this.miniScenes.forEach(({ scene, camera, canvas, rotation }) => {
-      if (!canvas.width || !canvas.height) return;
+    this.miniScenes.forEach(({ scene, camera, canvas, rotation, visible }) => {
+      if (!visible || !canvas.width || !canvas.height) return;
 
-      // Rotate mini-scene camera if rotation flag is true
       if (rotation) {
         camera.position.copy(mainCamera.position);
-        camera.quaternion.copy(mainCamera.quaternion);
+        camera.lookAt(scene.position);
       }
 
       const rect = canvas.getBoundingClientRect();
@@ -175,6 +177,22 @@ export default class HUDController {
     if (!mini) return;
     mini.position = { ...mini.position, ...newPosition }; // update stored position
     this._applyPosition(mini.canvas, mini.position);
+  }
+
+  // Mini-scene visibility
+  setMiniSceneVisible(key, visible) {
+    const mini = this.miniScenes.get(key);
+    if (!mini) return;
+    mini.visible = visible;
+    mini.canvas.style.display = visible ? "" : "none";
+  }
+
+  // HTML element visibility
+  setHTMLElementVisible(key, visible) {
+    const el = this.htmlElements.get(key);
+    if (!el) return;
+    el.visible = visible;
+    el.style.display = visible ? "" : "none";
   }
 
   // Helper to apply CSS from position object

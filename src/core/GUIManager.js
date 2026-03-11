@@ -335,6 +335,9 @@ class GUIManager {
 
         // Rotation
         sceneFolder.add(mini, "rotation").onChange((v) => (mini.rotation = v));
+        // Visible
+        sceneFolder.add(mini, "visible").onChange((v) => (mini.visible = v));
+
       });
 
       // optional: list HTML elements
