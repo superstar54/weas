@@ -226,6 +226,63 @@ class CameraController extends TrackballControls {
     this.update();
   }
 
+  // --- Fit current camera positions
+  fit(positions) {
+    if (!positions || positions.length === 0) return;
+
+    let minX = Infinity,
+      minY = Infinity,
+      minZ = Infinity;
+    let maxX = -Infinity,
+      maxY = -Infinity,
+      maxZ = -Infinity;
+
+    for (const p of positions) {
+      const x = p[0],
+        y = p[1],
+        z = p[2];
+
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (z < minZ) minZ = z;
+
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+      if (z > maxZ) maxZ = z;
+    }
+
+    const center = new Vector3(
+      (minX + maxX) / 2,
+      (minY + maxY) / 2,
+      (minZ + maxZ) / 2,
+    );
+
+    const dx = maxX - minX;
+    const dy = maxY - minY;
+    const dz = maxZ - minZ;
+
+    const size = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+    const cam = this.object;
+
+    let distance;
+
+    if (cam.isPerspectiveCamera) {
+      const fov = (cam.fov * Math.PI) / 180;
+      distance = size / 2 / Math.tan(fov / 2);
+    } else {
+      distance = size;
+    }
+    // preserve viewing direction
+    const dir = cam.position.clone().sub(this.target).normalize();
+
+    this.target.copy(center);
+    cam.position.copy(center.clone().add(dir.multiplyScalar(distance)));
+
+    cam.updateProjectionMatrix();
+    this.update();
+  }
+
   reset() {
     if (this._views["default"]) this.view("default");
   }

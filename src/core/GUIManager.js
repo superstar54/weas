@@ -1,6 +1,4 @@
 import { GUI } from "dat.gui";
-import { setupCameraGUI } from "../tools/camera";
-import { createViewpointButtons } from "../tools/viewpoint";
 import { defaultGuiConfig } from "../config";
 import {
   parseStructureText,
