@@ -5,6 +5,8 @@ import { WeasScene } from "./SceneManager";
 import { OrthographicCamera } from "./Camera";
 import { defaultTjsConfig } from "../config";
 
+import HUDController from "./HUDController";
+
 class BlendJSObject {
   constructor(name, geometry, material) {
     this.name = name;
@@ -48,6 +50,7 @@ export class BlendJS {
     this.tjsConfig = weas.tjsConfig || defaultTjsConfig;
     this.weas = weas;
     this.scene = new WeasScene(this);
+
     this.objects = {};
     this.materials = {};
     this.meshes = {};
@@ -56,6 +59,13 @@ export class BlendJS {
     this._cameraType = "Orthographic"; //"Perspective"
     this.sceneView = { left: 0, bottom: 0, width: 1.0, height: 1.0 };
     this.init();
+
+    // HUD setup
+    this.hud = new HUDController(
+      this.containerElement,
+      this.renderers["MainRenderer"].renderer,
+    );
+    this.hud.initCoordScene(this.camera); // uses main camera to sync
   }
 
   createCoordScene() {
@@ -116,7 +126,10 @@ export class BlendJS {
 
   set cameraType(value) {
     this._cameraType = value;
-    this.cameraController = new CameraController(this.camera, this.renderers["MainRenderer"].renderer.domElement)
+    this.cameraController = new CameraController(
+      this.camera,
+      this.renderers["MainRenderer"].renderer.domElement,
+    );
   }
 
   get camera() {
@@ -190,11 +203,14 @@ export class BlendJS {
     this.camera.add(light);
     const ambientLight = new THREE.AmbientLight(0x404040, 20); // Soft white light
     this.addLight("AmbientLight", ambientLight);
-    
-    // set up camera controller (a thin wrapper around three.js orbit controls)
-    this.cameraController = new CameraController(this.camera, renderer.domElement);
 
-    this.cameraController.addCamera("orthographic", this.perspectiveCamera)
+    // set up camera controller (a thin wrapper around three.js orbit controls)
+    this.cameraController = new CameraController(
+      this.camera,
+      renderer.domElement,
+    );
+
+    this.cameraController.addCamera("orthographic", this.perspectiveCamera);
 
     this.updateViewerRect();
     this.observeContainerResize();
@@ -339,7 +355,7 @@ export class BlendJS {
     zoom = 1,
     fov = 50,
     padding = 10,
-  }) { 
+  }) {
     this.cameraController.fitToScene(this.scene, {
       lookAt: lookAt,
       direction: direction,
@@ -396,7 +412,6 @@ export class BlendJS {
     this.coordCamera.position.copy(this.camera.position);
     this.coordCamera.position.sub(this.cameraController.target);
 
-
     this.coordCamera.lookAt(this.coordScene.position);
     this.renderSceneInfo(
       this.coordScene,
@@ -418,6 +433,10 @@ export class BlendJS {
       this.renderers["MainRenderer"].renderer,
     );
     // legend
+
+    if (this.hud) {
+      this.hud.render(this.camera);
+    }
 
     this.cameraController.update();
   }
