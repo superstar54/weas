@@ -73,6 +73,7 @@ class GUIManager {
       this.addShapeOperationsFolder();
       this.addCameraControlsFolder();
       this.addCameraSettingsFolder();
+      this.addHUDSettingsFolder();
     }
   }
 
@@ -297,6 +298,56 @@ class GUIManager {
 
     controller.onChange(refreshCameraFolder);
     refreshCameraFolder();
+  }
+
+  // TODO - move this into the HUD Controller in a similar pattern to Camera
+  addHUDSettingsFolder() {
+    const folder = this.gui.addFolder("HUD Settings");
+    const hud = this.weas.tjs.hud;
+    if (!hud) return;
+
+    const refreshHUDFolder = () => {
+      // remove old controllers
+      while (folder.__controllers.length)
+        folder.remove(folder.__controllers[0]);
+
+      hud.miniScenes.forEach((mini, key) => {
+        const sceneFolder = folder.addFolder(key);
+
+        // Iterate over each defined position property in mini.position
+        for (const posKey of ["top", "bottom", "left", "right"]) {
+          if (mini.position[posKey] != null) {
+            sceneFolder
+              .add(mini.position, posKey, 0, 2500, 1)
+              .onChange((v) => hud.setMiniScenePosition(key, { [posKey]: v }));
+          }
+        }
+
+        // Size controls
+        sceneFolder.add(mini, "width", 50, 500, 1).onChange((v) => {
+          mini.width = v;
+          mini.canvas.width = v;
+        });
+        sceneFolder.add(mini, "height", 50, 500, 1).onChange((v) => {
+          mini.height = v;
+          mini.canvas.height = v;
+        });
+
+        // Rotation
+        sceneFolder.add(mini, "rotation").onChange((v) => (mini.rotation = v));
+      });
+
+      // optional: list HTML elements
+      for (const [key, el] of hud.htmlElements) {
+        folder.add(
+          { remove: () => hud.removeHTMLElement(key) },
+          key + " (HTML)",
+        );
+      }
+    };
+
+    hud.onChange?.(refreshHUDFolder);
+    refreshHUDFolder();
   }
 
   addButtons() {

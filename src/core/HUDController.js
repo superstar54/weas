@@ -1,3 +1,7 @@
+/**
+ * HUDController manages overlay elements and mini 3D scenes on top of a main Three.js renderer.
+ * Allows arbitrary HTML overlays and mini-scenes
+ */
 export default class HUDController {
   constructor(container, mainRenderer) {
     this.container = document.createElement("div");
@@ -38,6 +42,7 @@ export default class HUDController {
       camera,
       { width: 100, height: 100 },
       { bottom: 10, left: 10 },
+      true,
     );
   }
 
@@ -47,6 +52,7 @@ export default class HUDController {
     camera,
     size = { width: 150, height: 150 },
     position = { top: 10, left: 10 },
+    rotation = false,
   ) {
     const canvas = document.createElement("canvas");
     canvas.width = size.width;
@@ -63,6 +69,7 @@ export default class HUDController {
       width: size.width,
       height: size.height,
       position: { ...position },
+      rotation: rotation,
     });
 
     // Apply the position using the helper
@@ -70,12 +77,13 @@ export default class HUDController {
   }
 
   render(mainCamera) {
-    this.miniScenes.forEach(({ scene, camera, canvas }) => {
+    this.miniScenes.forEach(({ scene, camera, canvas, rotation }) => {
       if (!canvas.width || !canvas.height) return;
 
-      if (scene === this.miniScenes.get("coord")?.scene) {
+      // Rotate mini-scene camera if rotation flag is true
+      if (rotation) {
         camera.position.copy(mainCamera.position);
-        camera.lookAt(scene.position);
+        camera.quaternion.copy(mainCamera.quaternion);
       }
 
       const rect = canvas.getBoundingClientRect();
@@ -104,9 +112,8 @@ export default class HUDController {
     });
   }
 
-  update() {
-    // optional: resize mini-scene canvases
-  }
+  // TODO, make this pass a refire feedback to main three JS
+  update() {}
 
   // List all mini-scenes and HTML elements by key
   list() {
@@ -145,6 +152,21 @@ export default class HUDController {
     });
 
     return { miniScenes, htmlElements };
+  }
+
+  getTopLeft(key) {
+    const mini = this.miniScenes.get(key);
+    if (!mini) return { top: 0, left: 0 };
+    // If 'top' is null, compute it from bottom
+    const containerHeight = this.container.clientHeight;
+    const top =
+      mini.position.top != null
+        ? mini.position.top
+        : mini.position.bottom != null
+          ? containerHeight - mini.position.bottom - mini.height
+          : 0;
+    const left = mini.position.left != null ? mini.position.left : 0;
+    return { top, left };
   }
 
   // Move an existing mini-scene
