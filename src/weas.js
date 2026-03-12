@@ -43,7 +43,10 @@ class WEAS {
     this.shapeRegistry = new ShapeRegistry(this.materialsRegistry);
 
     this.tjs.requestRedraw = this.requestRedraw.bind(this);
+
     this.guiManager = new GUIManager(this, guiConfig);
+
+
     this.eventHandlers = new EventHandlers(this);
     this.ops = new OperationManager(this);
     this.selectionManager = new SelectionManager(this);

@@ -72,11 +72,66 @@ export default class HUDController {
       height: size.height,
       position: { ...position },
       rotation: rotation,
-      visible: visible
+      visible: visible,
     });
 
     // Apply the position using the helper
     this.setMiniScenePosition(key, position);
+  }
+
+  // HTML handling
+  addHTMLPanel(key, element, options = {}) {
+    const {
+      width,
+      height,
+      anchor = "top-left", // new default anchor
+      offset = { x: 0, y: 0 }, // x/y offsets from the anchor
+    } = options;
+
+    element.style.position = "absolute";
+    if (width) element.style.width = width + "px";
+    if (height) element.style.height = height + "px";
+
+    this.container.appendChild(element);
+
+    this.htmlElements.set(key, {
+      element,
+      width: width || element.offsetWidth,
+      height: height || element.offsetHeight,
+      anchor,
+      offset: { ...offset },
+    });
+
+    this._updateHTMLPosition(key);
+  }
+
+  addPanel(key, element, position) {
+    this.addHTMLPanel(key, element, position);
+  }
+
+  getPresetPosition(preset, padding = 10) {
+    const cW = this.container.clientWidth;
+    const cH = this.container.clientHeight;
+
+    switch (preset) {
+      case "top-left":
+        return { top: padding, left: padding };
+      case "top-right":
+        return { top: padding, left: cW - padding };
+      case "bottom-left":
+        return { top: cH - padding, left: padding };
+      case "bottom-right":
+        return { top: cH - padding, left: cW - padding };
+      default:
+        return { top: padding, left: padding };
+    }
+  }
+
+  setHTMLPosition(key, newPosition) {
+    const panel = this.htmlElements.get(key);
+    if (!panel) return;
+    panel.position = { ...panel.position, ...newPosition };
+    this._applyPosition(panel.element, panel.position);
   }
 
   render(mainCamera) {
@@ -171,6 +226,15 @@ export default class HUDController {
     return { top, left };
   }
 
+  getHTMLTopLeft(key) {
+    const panel = this.htmlElements.get(key);
+    if (!panel) return { top: 0, left: 0 };
+    return {
+      top: panel.position.top != null ? panel.position.top : 0,
+      left: panel.position.left != null ? panel.position.left : 0,
+    };
+  }
+
   // Move an existing mini-scene
   setMiniScenePosition(key, newPosition) {
     const mini = this.miniScenes.get(key);
@@ -199,19 +263,57 @@ export default class HUDController {
   _applyPosition(el, pos) {
     if (pos.top !== undefined) {
       el.style.top = pos.top + "px";
-      el.style.bottom = ""; // reset opposite
+      el.style.bottom = "";
     }
     if (pos.left !== undefined) {
       el.style.left = pos.left + "px";
-      el.style.right = ""; // reset opposite
+      el.style.right = "";
     }
     if (pos.bottom !== undefined) {
       el.style.bottom = pos.bottom + "px";
-      el.style.top = ""; // reset opposite
+      el.style.top = "";
     }
     if (pos.right !== undefined) {
       el.style.right = pos.right + "px";
-      el.style.left = ""; // reset opposite
+      el.style.left = "";
+    }
+  }
+
+  _updateHTMLPosition(key) {
+    const panel = this.htmlElements.get(key);
+    if (!panel) return;
+
+    const { element, anchor, offset } = panel;
+
+    // reset previous positioning
+    element.style.top = "";
+    element.style.bottom = "";
+    element.style.left = "";
+    element.style.right = "";
+    element.style.transform = "";
+
+    switch (anchor) {
+      case "top-left":
+        element.style.top = `${offset.y}%`;
+        element.style.left = `${offset.x}%`;
+        break;
+      case "top-right":
+        element.style.top = `${offset.y}%`;
+        element.style.right = `${offset.x}%`;
+        break;
+      case "bottom-left":
+        element.style.bottom = `${offset.y}%`;
+        element.style.left = `${offset.x}%`;
+        break;
+      case "bottom-right":
+        element.style.bottom = `${offset.y}%`;
+        element.style.right = `${offset.x}%`;
+        break;
+      case "center":
+        element.style.top = `calc(50% + ${offset.y}%)`;
+        element.style.left = `calc(50% + ${offset.x}%)`;
+        element.style.transform = "translate(-50%, -50%)";
+        break;
     }
   }
 }
