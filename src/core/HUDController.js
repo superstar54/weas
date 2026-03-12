@@ -1,3 +1,5 @@
+import { LegendHUD } from "./ui/LegendHUD";
+
 /**
  * HUDController manages overlay elements and mini 3D scenes on top of a main Three.js renderer.
  * Allows arbitrary HTML overlays and mini-scenes
@@ -17,6 +19,8 @@ export default class HUDController {
     this.htmlElements = new Map();
     this.miniScenes = new Map();
     this.renderer = mainRenderer;
+
+    this.legendHUD = new LegendHUD(this, { position: "bottom-right" });
 
     window.addEventListener("resize", () => this.update());
 
