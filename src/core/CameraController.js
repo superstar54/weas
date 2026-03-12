@@ -37,6 +37,26 @@ class CameraController extends TrackballControls {
       this[key] = info.default;
     }
 
+    // TODO - move this to be controlled by keybinds
+    // disable rotation on shift held.
+    this._shiftDown = false;
+    this._storedRotateSpeed = this.rotateSpeed;
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Shift" && !this._shiftDown) {
+        this._shiftDown = true;
+        this._storedRotateSpeed = this.rotateSpeed;
+        this.rotateSpeed = 0;
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.key === "Shift" && this._shiftDown) {
+        this._shiftDown = false;
+        this.rotateSpeed = this._storedRotateSpeed;
+      }
+    });
+
     this.setParams(params);
     this._initDefaultViews();
   }

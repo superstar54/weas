@@ -69,7 +69,6 @@ class GUIManager {
 
     if (debug) {
       if (this.weas.materialsRegistry) this.addMaterialsFolder();
-      // if (this.weas.shapeRegistry) this.addShapesFolder();
       this.addShapeOperationsFolder();
       this.addCameraControlsFolder();
       this.addCameraSettingsFolder();
@@ -87,13 +86,13 @@ class GUIManager {
 
     this.gui.domElement.style.pointerEvents = "auto";
 
-    // Add to HUD using the new panel system
+    // Add to HUD using the panel system
     hud.addPanel("controls", this.gui.domElement, {
       anchor: "top-left",
       offset: { x: 1, y: 1 }, // 1% offset from top left
     });
 
-    // Optional: stop propagation for GUI input
+    // stop propagation for GUI input
     const stopPropagation = (e) => e.stopPropagation();
     ["click", "keydown", "keyup", "keypress"].forEach((evt) => {
       this.gui.domElement.addEventListener(evt, stopPropagation, false);
@@ -352,22 +351,18 @@ class GUIManager {
 
         // Anchor dropdown
         htmlFolder
-          .add(panel, "anchor", [
-            "top-left",
-            "top-right",
-            "bottom-left",
-            "bottom-right",
-            "center",
-          ])
+          .add(panel, "anchor", hud.ANCHORS)
           .onChange(() => hud._updateHTMLPosition(key));
 
         // X/Y offsets
         htmlFolder
           .add(panel.offset, "x", -51, 150, 1)
+          .name("Offset % X")
           .onChange(() => hud._updateHTMLPosition(key));
 
         htmlFolder
           .add(panel.offset, "y", -51, 151, 1)
+          .name("Offset % Y")
           .onChange(() => hud._updateHTMLPosition(key));
       }
     };

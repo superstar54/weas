@@ -19,6 +19,14 @@ export default class HUDController {
     this.renderer = mainRenderer;
 
     window.addEventListener("resize", () => this.update());
+
+    this.ANCHORS = [
+      "top-left",
+      "top-right",
+      "bottom-left",
+      "bottom-right",
+      "center",
+    ];
   }
 
   // defines space cartesian axis
@@ -239,7 +247,7 @@ export default class HUDController {
   setMiniScenePosition(key, newPosition) {
     const mini = this.miniScenes.get(key);
     if (!mini) return;
-    mini.position = { ...mini.position, ...newPosition }; // update stored position
+    mini.position = { ...mini.position, ...newPosition };
     this._applyPosition(mini.canvas, mini.position);
   }
 
@@ -292,6 +300,7 @@ export default class HUDController {
     element.style.right = "";
     element.style.transform = "";
 
+    // TODO - i dont like this strategy of positioning like this, it seems to scale poorly but its okay
     switch (anchor) {
       case "top-left":
         element.style.top = `${offset.y}%`;
