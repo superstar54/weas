@@ -98,9 +98,11 @@ export default class HUDController {
       height,
       anchor = "top-left", // new default anchor
       offset = { x: 0, y: 0 }, // x/y offsets from the anchor
+      visible = true,
     } = options;
 
     element.style.position = "absolute";
+    element.style.display = visible ? "flex" : "none";
     if (width) element.style.width = width + "px";
     if (height) element.style.height = height + "px";
 
@@ -112,6 +114,7 @@ export default class HUDController {
       height: height || element.offsetHeight,
       anchor,
       offset: { ...offset },
+      visible,
     });
 
     this._updateHTMLPosition(key);
@@ -144,6 +147,14 @@ export default class HUDController {
     if (!panel) return;
     panel.position = { ...panel.position, ...newPosition };
     this._applyPosition(panel.element, panel.position);
+  }
+
+  setHTMLPanelVisible(key, visible) {
+    const panel = this.htmlElements.get(key);
+    if (!panel) return;
+
+    panel.visible = visible;
+    panel.element.style.display = visible ? "flex" : "none";
   }
 
   render(mainCamera) {

@@ -73,6 +73,7 @@ class GUIManager {
       this.addCameraControlsFolder();
       this.addCameraSettingsFolder();
       this.addHUDSettingsFolder();
+      this.addLegendHUDFolder();
     }
   }
 
@@ -364,11 +365,76 @@ class GUIManager {
           .add(panel.offset, "y", -51, 151, 1)
           .name("Offset % Y")
           .onChange(() => hud._updateHTMLPosition(key));
+
+        htmlFolder
+          .add(panel, "visible")
+          .name("Visible")
+          .onChange((v) => hud.setHTMLPanelVisible(key, v));
       }
     };
 
     hud.onChange?.(refreshHUDFolder);
     refreshHUDFolder();
+  }
+
+  addLegendHUDFolder() {
+    const folder = this.gui.addFolder("Legend Appearance");
+
+    const legendHUD = this.weas.tjs.hud.legendHUD;
+    if (!legendHUD) return;
+
+    const settings = legendHUD.settings;
+
+    // Label font size
+    folder
+      .add(settings, "fontSize", 8, 36, 1)
+      .name("Label Font Size")
+      .onChange(() =>
+        legendHUD.updateSettings({ fontSize: settings.fontSize }),
+      );
+
+    // Heading font size
+    folder
+      .add(settings, "headingFontSize", 10, 48, 1)
+      .name("Heading Font Size")
+      .onChange(() =>
+        legendHUD.updateSettings({ headingFontSize: settings.headingFontSize }),
+      );
+
+    // Icon size
+    folder
+      .add(settings, "iconSize", 4, 48, 1)
+      .name("Icon Scales")
+      .onChange(() =>
+        legendHUD.updateSettings({ iconSize: settings.iconSize }),
+      );
+
+    // Row & column spacing
+    folder
+      .add(settings, "rowGap", 0, 20, 1)
+      .name("Row Gap")
+      .onChange(() => legendHUD.updateSettings({ rowGap: settings.rowGap }));
+
+    folder
+      .add(settings, "columnGap", 0, 30, 1)
+      .name("Column Gap")
+      .onChange(() =>
+        legendHUD.updateSettings({ columnGap: settings.columnGap }),
+      );
+
+    // Panel padding
+    folder
+      .add(settings, "panelPadding", 0, 20, 1)
+      .name("Panel Padding")
+      .onChange(() =>
+        legendHUD.updateSettings({ panelPadding: settings.panelPadding }),
+      );
+
+    // Panel background color
+    folder
+      .addColor(settings, "panelBackground")
+      .name("Panel")
+      .onChange((v) => legendHUD.updateSettings({ panelBackground: v }));
   }
 
   addButtons() {}
