@@ -393,6 +393,13 @@ class GUIManager {
         legendHUD.updateSettings({ fontSize: settings.fontSize }),
       );
 
+    folder
+      .add(settings, "fontFamily")
+      .name("Font Family")
+      .onChange(() =>
+        legendHUD.updateSettings({ fontFamily: settings.fontFamily }),
+      );
+
     // Heading font size
     folder
       .add(settings, "headingFontSize", 10, 48, 1)

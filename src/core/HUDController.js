@@ -1,4 +1,5 @@
 import { LegendHUD } from "./ui/LegendHUD";
+import { ToolbarHUD } from "./ui/ToolbarHUD";
 
 /**
  * HUDController manages overlay elements and mini 3D scenes on top of a main Three.js renderer.
@@ -21,6 +22,8 @@ export default class HUDController {
     this.renderer = mainRenderer;
 
     this.legendHUD = new LegendHUD(this, { position: "bottom-right" });
+
+    this.ToolbarHUD = new ToolbarHUD(this, { position: "top-right" });
 
     window.addEventListener("resize", () => this.update());
 

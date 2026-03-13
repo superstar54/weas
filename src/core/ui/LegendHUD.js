@@ -6,7 +6,7 @@ function applyStyle(el, styleObj) {
   Object.assign(el.style, styleObj);
 }
 
-// TODO - investigate bad alignment
+// TODO - investigate bad alignment due to svgs
 class LegendHUD {
   constructor(hudController, config = {}) {
     this.hud = hudController;
@@ -14,14 +14,14 @@ class LegendHUD {
     // Default settings (can be overridden via GUIManager)
     this.settings = Object.assign(
       {
-        fontFamily: "Lucida Grande, sans-serif",
+        fontFamily: "sans-serif",
         fontSize: 20,
         headingFontSize: 24,
         iconSize: 16,
         rowGap: 6,
         columnGap: 10,
         panelPadding: 6,
-        panelBackground: "rgba(0, 0, 0, 0.09)",
+        panelBackground: "rgba(0, 0, 0, 0.10)",
         panelBorderRadius: 5,
         heading: "Legend",
       },
