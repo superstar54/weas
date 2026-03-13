@@ -138,7 +138,7 @@
   height: 100%;
 }
 
-.toolbar-button:hover {
+.weas-toolbar-button:hover {
   scale: 1.05;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }

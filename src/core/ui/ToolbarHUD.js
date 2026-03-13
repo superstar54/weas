@@ -98,7 +98,7 @@ class ToolbarHUD {
     if (this.buttons.has(key)) this.removeButton(key);
 
     const btn = document.createElement("button");
-    btn.classList.add("toolbar-button");
+    btn.classList.add("weas-toolbar-button");
 
     if (toolbarIcons[key]) {
       const wrapper = document.createElement("span");

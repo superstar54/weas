@@ -56,7 +56,6 @@ class GUIManager {
     } else {
       this.initGUI();
     }
-
   }
 
   initGUI() {
@@ -439,45 +438,6 @@ class GUIManager {
       .addColor(settings, "panelBackground")
       .name("Panel")
       .onChange((v) => legendHUD.updateSettings({ panelBackground: v }));
-  }
-
-  ensureToolbarStyles() {
-    if (document.getElementById("weas-toolbar-styles")) {
-      return;
-    }
-    const style = document.createElement("style");
-    style.id = "weas-toolbar-styles";
-    style.textContent = `
-      .weas-toolbar button.weas-toolbar-button {
-        background: #ffffff;
-        border: 1px solid #dfe3eb;
-        border-radius: 6px;
-        color: #39424e;
-        transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
-      }
-      .weas-toolbar button.weas-toolbar-button:hover {
-        background: #eef3ff;
-        border-color: #5b7cfa;
-        box-shadow: 0 4px 10px rgba(60, 90, 255, 0.28);
-      }
-      .weas-toolbar button.weas-toolbar-button:active {
-        background: #e2e9ff;
-        border-color: #4a6df5;
-      }
-      .weas-toolbar .weas-toolbar-option {
-        background: #ffffff;
-        border: 1px solid #e1e6f0;
-        border-radius: 6px;
-        color: #39424e;
-        transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
-      }
-      .weas-toolbar .weas-toolbar-option:hover {
-        background: #f0f4ff;
-        border-color: #5b7cfa;
-        box-shadow: 0 3px 8px rgba(60, 90, 255, 0.2);
-      }
-    `;
-    document.head.appendChild(style);
   }
 }
 
