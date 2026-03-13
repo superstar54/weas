@@ -1,3 +1,5 @@
+import { createSphereIcon, createCubeIcon, createMeshIcon } from "./Icons.js";
+
 const LEGEND_CONTAINER_STYLE = {
   display: "grid",
   gridTemplateColumns: "22px auto",
@@ -62,37 +64,33 @@ class LegendHUD {
   }
 
   _createShape(shape, color, size) {
-    const el = document.createElement("div");
-
-    applyStyle(el, LEGEND_SHAPE_BASE_STYLE);
-
-    el.style.width = `${size}px`;
-    el.style.height = `${size}px`;
+    let el;
 
     switch (shape) {
-      case "circle":
-        el.style.background = color;
-        el.style.borderRadius = "50%";
-        break;
-
-      case "square":
-        el.style.background = color;
-        el.style.borderRadius = "2px";
-        break;
-
       case "sphere":
-        el.style.borderRadius = "50%";
-        el.style.background = `radial-gradient(circle at 30% 30%, #ffffffaa, ${color} 65%, #00000044)`;
+        el = createSphereIcon({ size });
+        el.style.color = color;
         break;
 
       case "cube":
-        el.style.background = `linear-gradient(145deg, #ffffff55, ${color})`;
-        el.style.boxShadow = "inset -2px -2px 3px rgba(0,0,0,0.4)";
+        el = createCubeIcon({ size });
+        el.style.color = color;
         break;
 
       default:
-        el.style.background = color;
-        el.style.borderRadius = "50%";
+        el = document.createElement("div");
+
+        applyStyle(el, LEGEND_SHAPE_BASE_STYLE);
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+
+        if (shape === "square") {
+          el.style.background = color;
+          el.style.borderRadius = "2px";
+        } else {
+          el.style.background = color;
+          el.style.borderRadius = "50%";
+        }
     }
 
     return el;
