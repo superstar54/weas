@@ -6,6 +6,7 @@ function applyStyle(el, styleObj) {
   Object.assign(el.style, styleObj);
 }
 
+// TODO - investigate bad alignment
 class LegendHUD {
   constructor(hudController, config = {}) {
     this.hud = hudController;
@@ -74,6 +75,7 @@ class LegendHUD {
 
     const scaledSize = size * (this.settings.iconSize / 16);
     const icon = this._createShape(shape, color, scaledSize);
+    icon.dataset.baseSize = size; // used in scale
 
     const labelEl = document.createElement("span");
     labelEl.textContent = label;
@@ -137,10 +139,12 @@ class LegendHUD {
 
     this.entries.forEach((row) => {
       row.style.gap = `${this.settings.columnGap}px`;
-      row.querySelector("span").style.fontSize = `${this.settings.fontSize}px`;
+      const label = row.querySelector("span");
+      if (label) label.style.fontSize = `${this.settings.fontSize}px`;
+
       const icon = row.querySelector("div");
-      if (icon) {
-        const baseSize = parseFloat(icon.dataset.baseSize || icon.offsetWidth);
+      if (icon && icon.dataset.baseSize) {
+        const baseSize = parseFloat(icon.dataset.baseSize);
         const scaled = baseSize * (this.settings.iconSize / 16);
         icon.style.width = icon.style.height = `${scaled}px`;
       }

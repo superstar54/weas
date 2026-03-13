@@ -154,6 +154,7 @@ export default class HUDController {
     if (!panel) return;
 
     panel.visible = visible;
+    // FIXME: May be buggy if panel original disp is something other than flex
     panel.element.style.display = visible ? "flex" : "none";
   }
 
