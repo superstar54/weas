@@ -1,6 +1,8 @@
 import { toolbarIcons } from "./Icons";
 
-// TODO, build the buttons from the operations maybe, or at the very least improve the pattern for registration of buttons
+// TODO / FIXME, build the buttons from the operations maybe,
+//  or at the very least improve the pattern for registration of buttons
+// This will not scale well and enforces two way coupling
 class ToolbarHUD {
   constructor(weas, hudController, config = {}) {
     this.weas = weas;
@@ -9,7 +11,7 @@ class ToolbarHUD {
     this.settings = Object.assign(
       {
         height: 40,
-        panelBackground: "rgba(255, 255, 255, 0.5)",
+        panelBackground: "rgba(255, 255, 255, 0)",
         panelBorderRadius: 20,
         gap: 6,
         paddingX: "0px",
