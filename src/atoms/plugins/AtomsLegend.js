@@ -1,4 +1,3 @@
-
 // Module that interacts with the defined 'Legend' HUD element
 // TODO - think on the interface with Legend, maybe some controlled namespaces would be nice
 export default class AtomsLegend {

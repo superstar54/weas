@@ -62,10 +62,12 @@ export class BlendJS {
 
     // HUD setup
     this.hud = new HUDController(
+      this.weas,
       this.containerElement,
       this.renderers["MainRenderer"].renderer,
     );
-    this.hud.initCoordScene(this.camera); // uses main camera to sync
+
+    this.hud.initCoordScene(this.camera);
   }
 
   createCoordScene() {

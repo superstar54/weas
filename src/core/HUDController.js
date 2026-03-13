@@ -6,7 +6,8 @@ import { ToolbarHUD } from "./ui/ToolbarHUD";
  * Allows arbitrary HTML overlays and mini-scenes
  */
 export default class HUDController {
-  constructor(container, mainRenderer) {
+  constructor(weas, container, mainRenderer) {
+    this.weas = weas
     this.container = document.createElement("div");
     this.container.style.position = "absolute";
     this.container.style.top = "0";
@@ -23,7 +24,9 @@ export default class HUDController {
 
     this.legendHUD = new LegendHUD(this, { position: "bottom-right" });
 
-    this.ToolbarHUD = new ToolbarHUD(this, { position: "top-right" });
+    this.ToolbarHUD = new ToolbarHUD(this.weas, this, {
+      position: "top-right",
+    });
 
     window.addEventListener("resize", () => this.update());
 

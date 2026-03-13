@@ -21,6 +21,7 @@ import { fromWidgetSnapshot } from "./state/adapters";
 
 import MaterialsRegistry from "./core/MaterialsRegistry";
 import ShapeRegistry from "./core/ShapeRegistry";
+import HUDController from "./core/HUDController";
 
 class WEAS {
   constructor({
@@ -45,7 +46,6 @@ class WEAS {
     this.tjs.requestRedraw = this.requestRedraw.bind(this);
 
     this.guiManager = new GUIManager(this, guiConfig);
-
 
     this.eventHandlers = new EventHandlers(this);
     this.ops = new OperationManager(this);

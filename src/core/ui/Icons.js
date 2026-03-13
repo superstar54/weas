@@ -156,3 +156,41 @@ export function createMeshIcon({ size = 14, className = "" } = {}) {
 
   return svg;
 }
+
+// toolbarIcons
+export const toolbarIcons = {
+  undo: `
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" 
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 14 4 9l5-5"/>
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>
+    </svg>
+  `,
+  redo: `
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m15 14 5-5-5-5"/>
+      <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13"/>
+    </svg>`,
+  fullscreen: `
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m15 15 6 6"/>
+      <path d="m15 9 6-6"/>
+      <path d="M21 16v5h-5"/>
+      <path d="M21 8V3h-5"/>
+      <path d="M3 16v5h5"/>
+      <path d="m3 21 6-6"/>
+      <path d="M3 8V3h5"/>
+      <path d="M9 9 3 3"/>
+    </svg>`,
+  measure: `
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/>
+      <path d="m14.5 12.5 2-2"/>
+      <path d="m11.5 9.5 2-2"/>
+      <path d="m8.5 6.5 2-2"/>
+      <path d="m17.5 15.5 2-2"/>
+    </svg>`,
+};

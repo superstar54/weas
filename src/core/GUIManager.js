@@ -57,9 +57,6 @@ class GUIManager {
       this.initGUI();
     }
 
-    if (this.guiConfig.buttons.enabled) {
-      this.addButtons();
-    }
   }
 
   initGUI() {
@@ -442,45 +439,6 @@ class GUIManager {
       .addColor(settings, "panelBackground")
       .name("Panel")
       .onChange((v) => legendHUD.updateSettings({ panelBackground: v }));
-  }
-
-  addButtons() {}
-
-  createButton(html, id = "button") {
-    const button = document.createElement("button");
-    button.id = id;
-    button.innerHTML = html;
-    button.className = "weas-toolbar-button";
-    this.setStyle(button);
-    return button;
-  }
-
-  setStyle(button) {
-    const styleConfig = this.guiConfig.buttonStyle || {};
-    for (const [key, value] of Object.entries(styleConfig)) {
-      button.style[key] = value;
-    }
-    const isIconButton = (button.textContent || "").trim().length === 0;
-    if (isIconButton) {
-      if (!styleConfig.width) {
-        button.style.width = "28px";
-      }
-      if (!styleConfig.height) {
-        button.style.height = "28px";
-      }
-      if (!styleConfig.display) {
-        button.style.display = "inline-flex";
-      }
-      if (!styleConfig.alignItems) {
-        button.style.alignItems = "center";
-      }
-      if (!styleConfig.justifyContent) {
-        button.style.justifyContent = "center";
-      }
-      if (!styleConfig.lineHeight) {
-        button.style.lineHeight = "0";
-      }
-    }
   }
 
   ensureToolbarStyles() {
