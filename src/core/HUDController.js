@@ -7,7 +7,7 @@ import { ToolbarHUD } from "./ui/ToolbarHUD";
  */
 export default class HUDController {
   constructor(weas, container, mainRenderer) {
-    this.weas = weas
+    this.weas = weas;
     this.container = document.createElement("div");
     this.container.style.position = "absolute";
     this.container.style.top = "0";
@@ -40,19 +40,28 @@ export default class HUDController {
   }
 
   // defines space cartesian axis
-  initCoordScene(mainCamera) {
+  // Todo fix why this doesnt work when rotating across the poles
+  initCoordScene() {
     const scene = new THREE.Scene();
     scene.add(new THREE.AmbientLight(0xffffff, 2.0));
+
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
     directionalLight.position.set(10, 10, 10);
     scene.add(directionalLight);
 
+    // Axes helper inside a group for rotation
     const axes = new THREE.AxesHelper(1.5);
-    scene.add(axes);
+    const axesGroup = new THREE.Group();
+    axesGroup.add(axes);
+    scene.add(axesGroup);
 
-    const camera = new THREE.OrthographicCamera(-2, 2, 2, -2, 1, 2000);
-    camera.position.copy(mainCamera.position);
+    // Fixed mini camera
+    const camera = new THREE.OrthographicCamera(-2, 2, 2, -2, 0.1, 100);
+    camera.position.set(0, 0, 5);
     camera.lookAt(0, 0, 0);
+
+    // Store the axes group for rotation sync
+    this.coordAxesGroup = axesGroup;
 
     this.addMiniScene(
       "coord",
@@ -168,9 +177,9 @@ export default class HUDController {
     this.miniScenes.forEach(({ scene, camera, canvas, rotation, visible }) => {
       if (!visible || !canvas.width || !canvas.height) return;
 
-      if (rotation) {
-        camera.position.copy(mainCamera.position);
-        camera.lookAt(scene.position);
+      // take the mainCamera and pin it to the coordAxes...
+      if (rotation && this.coordAxesGroup) {
+        this.coordAxesGroup.quaternion.copy(mainCamera.quaternion).invert();
       }
 
       const rect = canvas.getBoundingClientRect();
