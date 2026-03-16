@@ -279,6 +279,13 @@ class CameraController extends TrackballControls {
       this.object.position.set(...n), this.object.up.set(...r), this.object.lookAt(this.target), this.saveView(i, !0);
     this.object.position.copy(t.position), this.object.quaternion.copy(t.quaternion), this.target.copy(t.target), this.object.up.copy(t.up), this.object.zoom = t.zoom, this.object.isOrthographicCamera && this.object.updateProjectionMatrix(), this.update();
   }
+  _updateShiftState() {
+    const e = window.event ? window.event.shiftKey : !1;
+    e && !this._shiftDown ? (this._shiftDown = !0, this._storedRotateSpeed = this.rotateSpeed, this.rotateSpeed = 0) : !e && this._shiftDown && (this._shiftDown = !1, this.rotateSpeed = this._storedRotateSpeed);
+  }
+  update(...e) {
+    this._updateShiftState(), super.update(...e);
+  }
   view(e) {
     const t = this._views[e];
     t && (this.object.position.copy(t.position), this.object.quaternion.copy(t.quaternion), this.target.copy(t.target), this.object.up.copy(t.up), this.object.isOrthographicCamera ? this.object.zoom = t.zoom : this.object.fov = t.zoom, this.update(), this._emitChange());

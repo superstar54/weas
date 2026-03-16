@@ -160,6 +160,23 @@ class CameraController extends TrackballControls {
     this.update();
   }
 
+  _updateShiftState() {
+    const shiftPressed = window.event ? window.event.shiftKey : false;
+    if (shiftPressed && !this._shiftDown) {
+      this._shiftDown = true;
+      this._storedRotateSpeed = this.rotateSpeed;
+      this.rotateSpeed = 0;
+    } else if (!shiftPressed && this._shiftDown) {
+      this._shiftDown = false;
+      this.rotateSpeed = this._storedRotateSpeed;
+    }
+  }
+
+  update(...args) {
+    this._updateShiftState();
+    super.update(...args);
+  }
+
   view(name) {
     const v = this._views[name];
     if (!v) return;
