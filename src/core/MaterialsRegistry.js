@@ -26,44 +26,45 @@ export default class MaterialsRegistry {
 
     // Attach schema definitions to built-in materials
     this.materialSchemas = {
-      MeshStandardMaterial: [
-        {
-          prop: "metalness",
+      MeshStandardMaterial: {
+        metalness: {
           type: "number",
           min: 0,
           max: 1,
           step: 0.01,
-          level: "editable",
+          label: "Metalness",
+          hide: false,
         },
-        {
-          prop: "roughness",
+        roughness: {
           type: "number",
           min: 0,
           max: 1,
           step: 0.01,
-          level: "editable",
+          label: "Roughness",
+          hide: false,
         },
-      ],
-      MeshPhongMaterial: [
-        {
-          prop: "shininess",
+      },
+      MeshPhongMaterial: {
+        shininess: {
           type: "number",
           min: 0,
           max: 300,
           step: 1,
-          level: "editable",
+          label: "Shininess",
+          hide: false,
         },
-        {
-          prop: "reflectivity",
+        reflectivity: {
           type: "number",
           min: 0,
           max: 1,
           step: 0.01,
-          level: "advanced",
+          label: "Reflectivity",
+          hide: true,
         },
-      ],
-      MeshBasicMaterial: [
-      ],
+      },
+      MeshBasicMaterial: {
+        // empty
+      },
     };
 
     // Mark built-in materials as read-only

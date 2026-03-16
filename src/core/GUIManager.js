@@ -13,6 +13,13 @@ function lockController(controller) {
   controller.__li.style.opacity = 0.95; // Gray it out visually
 }
 
+/*
+GUIManager that allows UI elements that can tune weas scene.
+Should in theory know NOTHING about individual folders, with tunable params being derived 
+from the schema of the controller
+
+-- TODO: uphold the above statement
+*/
 class GUIManager {
   constructor(weas, guiConfig) {
     this.weas = weas;
@@ -64,7 +71,7 @@ class GUIManager {
     const debug = true;
 
     if (debug) {
-      if (this.weas.materialsRegistry) this.addMaterialsFolder();
+      this.addMaterialsFolder();
       this.addShapeOperationsFolder();
       this.addCameraControlsFolder();
       this.addCameraSettingsFolder();
@@ -82,6 +89,10 @@ class GUIManager {
     }
 
     this.gui.domElement.style.pointerEvents = "auto";
+
+    // HACK: pad ul to be below controls
+    const ul = this.gui.domElement.querySelector("ul");
+    if (ul) ul.style.paddingTop = "25px";
 
     // Add to HUD using the panel system
     hud.addPanel("controls", this.gui.domElement, {
@@ -118,35 +129,9 @@ class GUIManager {
         const subFolder = folder.addFolder(displayName);
         if (expanded.includes(displayName)) subFolder.open();
 
-        // Get schema for editable/advanced fields
-        const schema = registry.getSchema(name);
-
-        schema.forEach((field) => {
-          const { prop, type, min, max, step } = field;
-          const editableObj = { [prop]: mat[prop] };
-          let controller;
-
-          if (type === "number") {
-            controller = subFolder
-              .add(editableObj, prop, min, max, step)
-              .name(prop);
-          } else if (type === "color") {
-            controller = subFolder.addColor(editableObj, prop).name(prop);
-          }
-
-          if (controller) {
-            controller.onChange((val) => {
-              if (type === "color" && mat[prop]?.isColor) {
-                mat[prop].set(val);
-              } else {
-                mat[prop] = val;
-              }
-              this.weas.tjs.requestRedraw();
-            });
-
-            // Lock controller for built-in materials
-            if (mat.__builtIn) lockController(controller);
-          }
+        // Use reusable schema-based folder builder
+        this.addFolderFromSchema(subFolder, mat, registry.getSchema(name), {
+          lockBuiltIn: mat.__builtIn,
         });
 
         // Copy button
@@ -166,7 +151,7 @@ class GUIManager {
           )
           .name("Copy");
 
-        // Rename button for non-built-in materials
+        // Rename button for non-built-in
         if (!mat.__builtIn) {
           subFolder
             .add(
@@ -375,69 +360,54 @@ class GUIManager {
 
   addLegendHUDFolder() {
     const folder = this.gui.addFolder("Legend Appearance");
-
     const legendHUD = this.weas.tjs.hud.legendHUD;
     if (!legendHUD) return;
 
-    const settings = legendHUD.settings;
+    this.addFolderFromSchema(
+      folder,
+      legendHUD.settings,
+      legendHUD.getSchema(),
+      (key, value) => legendHUD.updateSettings({ [key]: value }),
+    );
+  }
 
-    // Label font size
-    folder
-      .add(settings, "fontSize", 8, 36, 1)
-      .name("Label Font Size")
-      .onChange(() =>
-        legendHUD.updateSettings({ fontSize: settings.fontSize }),
-      );
+  // generic method to add a gui folder from a schema and
+  // a callback function (if updates are required)
+  addFolderFromSchema(folder, settingsObj, schema, onChange) {
+    for (const [key, meta] of Object.entries(schema)) {
+      let controller;
 
-    folder
-      .add(settings, "fontFamily")
-      .name("Font Family")
-      .onChange(() =>
-        legendHUD.updateSettings({ fontFamily: settings.fontFamily }),
-      );
+      switch (meta.type) {
+        case "number":
+          controller = folder.add(
+            settingsObj,
+            key,
+            meta.min,
+            meta.max,
+            meta.step,
+          );
+          break;
+        case "color":
+          controller = folder.addColor(settingsObj, key);
+          break;
+        case "string":
+          controller = folder.add(settingsObj, key);
+          break;
+        default:
+          continue;
+      }
 
-    // Heading font size
-    folder
-      .add(settings, "headingFontSize", 10, 48, 1)
-      .name("Heading Font Size")
-      .onChange(() =>
-        legendHUD.updateSettings({ headingFontSize: settings.headingFontSize }),
-      );
+      const displayName = meta.label ?? key;
 
-    // Icon size
-    folder
-      .add(settings, "iconSize", 4, 48, 1)
-      .name("Icon Scales")
-      .onChange(() =>
-        legendHUD.updateSettings({ iconSize: settings.iconSize }),
-      );
-
-    // Row & column spacing
-    folder
-      .add(settings, "rowGap", 0, 20, 1)
-      .name("Row Gap")
-      .onChange(() => legendHUD.updateSettings({ rowGap: settings.rowGap }));
-
-    folder
-      .add(settings, "columnGap", 0, 30, 1)
-      .name("Column Gap")
-      .onChange(() =>
-        legendHUD.updateSettings({ columnGap: settings.columnGap }),
-      );
-
-    // Panel padding
-    folder
-      .add(settings, "panelPadding", 0, 20, 1)
-      .name("Panel Padding")
-      .onChange(() =>
-        legendHUD.updateSettings({ panelPadding: settings.panelPadding }),
-      );
-
-    // Panel background color
-    folder
-      .addColor(settings, "panelBackground")
-      .name("Panel")
-      .onChange((v) => legendHUD.updateSettings({ panelBackground: v }));
+      // Only call onChange if it’s a function
+      if (typeof onChange === "function") {
+        controller?.name(displayName).onChange(() => {
+          onChange(key, settingsObj[key]);
+        });
+      } else {
+        controller?.name(displayName);
+      }
+    }
   }
 }
 

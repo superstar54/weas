@@ -8,25 +8,81 @@ function applyStyle(el, styleObj) {
 
 // TODO - investigate bad alignment due to svgs
 class LegendHUD {
+  static schema = {
+    fontFamily: { type: "string", default: "sans-serif", label: "Font Family" },
+    fontSize: {
+      type: "number",
+      min: 8,
+      max: 36,
+      step: 1,
+      default: 20,
+      label: "Label Font Size",
+    },
+    headingFontSize: {
+      type: "number",
+      min: 10,
+      max: 48,
+      step: 1,
+      default: 24,
+      label: "Heading Font Size",
+    },
+    iconSize: {
+      type: "number",
+      min: 4,
+      max: 48,
+      step: 1,
+      default: 16,
+      label: "Icon Size",
+    },
+    rowGap: {
+      type: "number",
+      min: 0,
+      max: 20,
+      step: 1,
+      default: 6,
+      label: "Row Gap",
+    },
+    columnGap: {
+      type: "number",
+      min: 0,
+      max: 30,
+      step: 1,
+      default: 10,
+      label: "Column Gap",
+    },
+    panelPadding: {
+      type: "number",
+      min: 0,
+      max: 20,
+      step: 1,
+      default: 6,
+      label: "Panel Padding",
+    },
+    panelBackground: {
+      type: "color",
+      default: "rgba(0,0,0,0.1)",
+      label: "Color",
+    },
+    panelBorderRadius: {
+      type: "number",
+      min: 0,
+      max: 20,
+      step: 1,
+      default: 5,
+      label: "Panel Border Radius",
+    },
+    heading: { type: "string", default: "Legend", label: "Heading Text" },
+  };
+
   constructor(hudController, config = {}) {
     this.hud = hudController;
 
-    // Default settings (can be overridden via GUIManager)
-    this.settings = Object.assign(
-      {
-        fontFamily: "sans-serif",
-        fontSize: 20,
-        headingFontSize: 24,
-        iconSize: 16,
-        rowGap: 6,
-        columnGap: 10,
-        panelPadding: 6,
-        panelBackground: "rgba(0, 0, 0, 0.10)",
-        panelBorderRadius: 5,
-        heading: "Legend",
-      },
-      config.settings || {},
-    );
+    // Merge default schema values with user-provided settings
+    this.settings = {};
+    for (const [key, meta] of Object.entries(LegendHUD.schema)) {
+      this.settings[key] =
+        (config.settings && config.settings[key]) ?? meta.default;
+    }
 
     this.config = Object.assign(
       {
@@ -152,6 +208,10 @@ class LegendHUD {
 
     if (this.headingEl)
       this.headingEl.style.fontSize = `${this.settings.headingFontSize}px`;
+  }
+
+  getSchema() {
+    return LegendHUD.schema;
   }
 }
 

@@ -44,6 +44,7 @@ class InvertSelection extends BaseOperation {
   }
 }
 
+// FIXME: This broke in the selection
 class InsideSelection extends BaseOperation {
   static description = "Select inside";
   static category = "Select";
