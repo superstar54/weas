@@ -60,6 +60,6 @@ export default class AtomsLegend {
   _radiusToLegendSize(radius) {
     // map atom radius reasonable pixel size
     // TODO - address issues with SVG and Text alignment
-    return Math.min(30, Math.max(18, radius * 24));
+    return Math.min(30, Math.max(12, radius * 24));
   }
 }

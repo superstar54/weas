@@ -70,58 +70,6 @@ export class BlendJS {
     this.hud.initCoordScene(this.camera);
   }
 
-  createCoordScene() {
-    this.coordScene = new THREE.Scene();
-
-    const coordSceneRatio = 0.3;
-    this.coordSceneView = {
-      left: 0,
-      bottom: 0,
-      width: this.sceneView.width * coordSceneRatio,
-      height: this.sceneView.height * coordSceneRatio,
-    };
-
-    this.coordCamera = new THREE.OrthographicCamera(
-      this.orthographicCamera.left,
-      this.orthographicCamera.right,
-      this.orthographicCamera.top,
-      this.orthographicCamera.bottom,
-      1,
-      2000,
-    );
-    this.coordCamera.position.copy(this.camera.position);
-    // Add ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
-    this.coordScene.add(ambientLight);
-
-    // Add directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    directionalLight.position.set(10, 10, 10);
-    this.coordScene.add(directionalLight);
-  }
-
-  createLegendScene() {
-    this.legendScene = new THREE.Scene();
-
-    const legendSceneRatio = 0.3;
-    this.legendSceneView = {
-      left: 0.8,
-      bottom: 0,
-      width: this.sceneView.width * legendSceneRatio,
-      height: this.sceneView.height * legendSceneRatio,
-    };
-
-    this.legendCamera = new THREE.OrthographicCamera(
-      this.orthographicCamera.left,
-      this.orthographicCamera.right,
-      this.orthographicCamera.top,
-      this.orthographicCamera.bottom,
-      1,
-      2000,
-    );
-    this.legendCamera.position.set(0, 0, 100);
-  }
-
   get cameraType() {
     return this._cameraType;
   }
@@ -138,7 +86,6 @@ export class BlendJS {
     if (this._cameraType === "Orthographic") {
       return this.orthographicCamera;
     }
-    return this.perspectiveCamera;
   }
 
   init() {
@@ -165,14 +112,6 @@ export class BlendJS {
     labelRenderer.domElement.style.pointerEvents = "none";
     this.addRenderer("LabelRenderer", labelRenderer);
 
-    // Create a camera
-    this.perspectiveCamera = new THREE.PerspectiveCamera(
-      50,
-      clientWidth / clientHeight,
-      1,
-      500,
-    );
-    this.perspectiveCamera.layers.enable(1);
     const frustumSize = 20; // This can be adjusted based on scene's scale
     const aspect = clientWidth / clientHeight;
     const frustumHalfHeight = frustumSize / 2;
@@ -212,8 +151,6 @@ export class BlendJS {
       renderer.domElement,
     );
 
-    this.cameraController.addCamera("orthographic", this.perspectiveCamera);
-
     this.updateViewerRect();
     this.observeContainerResize();
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
@@ -230,8 +167,6 @@ export class BlendJS {
       "atomsUpdated",
       this.render.bind(this),
     );
-    this.createCoordScene();
-    this.createLegendScene();
   }
 
   observeContainerResize() {
@@ -321,25 +256,10 @@ export class BlendJS {
       const frustumHeight = this.camera.top - this.camera.bottom;
       this.camera.left = (-frustumHeight * aspect) / 2;
       this.camera.right = (frustumHeight * aspect) / 2;
-      this.coordCamera.left = this.camera.left;
-      this.coordCamera.right = this.camera.right;
     } else {
       this.camera.aspect = clientWidth / clientHeight;
-      this.coordCamera.aspect = this.camera.aspect;
     }
     this.camera.updateProjectionMatrix();
-    this.coordCamera.updateProjectionMatrix();
-
-    // Update legendCamera
-    // Compute the aspect ratio for the legendCamera based on the legendSceneView dimensions
-    const legendWidth = clientWidth * this.legendSceneView.width;
-    const legendHeight = clientHeight * this.legendSceneView.height;
-    const legendAspect = legendWidth / legendHeight;
-    const frustumHeightLegend =
-      this.legendCamera.top - this.legendCamera.bottom;
-    this.legendCamera.left = (-frustumHeightLegend * legendAspect) / 2;
-    this.legendCamera.right = (frustumHeightLegend * legendAspect) / 2;
-    this.legendCamera.updateProjectionMatrix();
 
     // Resize all renderers
     Object.values(this.renderers).forEach((rndr) => {
@@ -349,7 +269,7 @@ export class BlendJS {
     this.render();
   }
 
-  // now bundles inside controls
+  // now managed fully inside cameraControls
   // TODO, this sort of thing should not be handled here
   updateCameraAndControls({
     lookAt = null,
@@ -384,6 +304,9 @@ export class BlendJS {
     renderer.render(scene, camera);
   }
 
+  // I think this is managing text, labels, selection and highlighting
+  // it also presumes the existence of avr, which is suggests a two-way binding
+  // TODO - move this away and right some sort of hook pattern
   render() {
     this.renderers["MainRenderer"].renderer.clear();
     this.weas?.textManager?.updateLabelSizes?.(
@@ -409,32 +332,6 @@ export class BlendJS {
       this.sceneView.height,
       this.renderers["MainRenderer"].renderer,
     );
-
-    // clean this up
-    this.coordCamera.position.copy(this.camera.position);
-    this.coordCamera.position.sub(this.cameraController.target);
-
-    this.coordCamera.lookAt(this.coordScene.position);
-    this.renderSceneInfo(
-      this.coordScene,
-      this.coordCamera,
-      this.coordSceneView.left,
-      this.coordSceneView.bottom,
-      this.coordSceneView.width,
-      this.coordSceneView.height,
-      this.renderers["MainRenderer"].renderer,
-    );
-    // this.legendCamera.position.copy(this.camera.position);
-    this.renderSceneInfo(
-      this.legendScene,
-      this.legendCamera,
-      this.legendSceneView.left,
-      this.legendSceneView.bottom,
-      this.legendSceneView.width,
-      this.legendSceneView.height,
-      this.renderers["MainRenderer"].renderer,
-    );
-    // legend
 
     if (this.hud) {
       this.hud.render(this.camera);

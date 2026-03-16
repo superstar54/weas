@@ -1,5 +1,7 @@
 import * as THREE from "three";
 
+
+// TODO - investigate whether this is being cleaned up properly between swapping of structures etc.
 export class CellManager {
   constructor(viewer, settings = {}) {
     this.viewer = viewer;
@@ -89,7 +91,10 @@ export class CellManager {
       this.cellMesh = null;
     }
     if (this.cellVectors) {
-      this.viewer.tjs.coordScene.remove(this.cellVectors);
+      const coordMini = this.viewer.tjs.hud.miniScenes.get("coord");
+      if (coordMini) {
+        coordMini.scene.remove(this.cellVectors);
+      }
       this.cellVectors = null;
     }
   }

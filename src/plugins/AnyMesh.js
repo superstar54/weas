@@ -3,6 +3,7 @@ import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils";
 import { clearObject } from "../utils";
 import { cloneValue } from "../state/store";
 
+// TODO - add this to the HUD
 class Setting {
   constructor({
     name,
