@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 import { LegendHUD } from "./ui/LegendHUD";
 import { ToolbarHUD } from "./ui/ToolbarHUD";
 
@@ -49,7 +51,7 @@ export default class HUDController {
     scene.add(directionalLight);
 
     // Axes helper inside a group for rotation
-    const axes = new THREE.AxesHelper(1.0);
+    const axes = new THREE.AxesHelper(0.5);
     const axesGroup = new THREE.Group();
     axesGroup.add(axes);
     scene.add(axesGroup);

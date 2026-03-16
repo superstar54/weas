@@ -1,4 +1,4 @@
-import * as THREE$1 from "three";
+import * as THREE from "three";
 import { Vector2, Vector3, Quaternion, Controls, MOUSE, MathUtils, Matrix4, Object3D, Frustum, BufferGeometry, BufferAttribute, Line3, Plane, Triangle } from "three";
 import { GUI } from "dat.gui";
 import './index.css';const _changeEvent = { type: "change" }, _startEvent = { type: "start" }, _endEvent = { type: "end" }, _EPS = 1e-6, _STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM_PAN: 4 }, _v2 = new Vector2(), _mouseChange = new Vector2(), _objectUp = new Vector3(), _pan = new Vector3(), _axis = new Vector3(), _quaternion$1 = new Quaternion(), _eyeDirection = new Vector3(), _objectUpDirection = new Vector3(), _objectSidewaysDirection = new Vector3(), _moveDirection = new Vector3();
@@ -279,7 +279,6 @@ class CameraController extends TrackballControls {
       this.object.position.set(...n), this.object.up.set(...r), this.object.lookAt(this.target), this.saveView(i, !0);
     this.object.position.copy(t.position), this.object.quaternion.copy(t.quaternion), this.target.copy(t.target), this.object.up.copy(t.up), this.object.zoom = t.zoom, this.object.isOrthographicCamera && this.object.updateProjectionMatrix(), this.update();
   }
-  // --- Save a view
   view(e) {
     const t = this._views[e];
     t && (this.object.position.copy(t.position), this.object.quaternion.copy(t.quaternion), this.target.copy(t.target), this.object.up.copy(t.up), this.object.isOrthographicCamera ? this.object.zoom = t.zoom : this.object.fov = t.zoom, this.update(), this._emitChange());
@@ -443,14 +442,14 @@ class CSS2DRenderer {
   }
 }
 function toVector3(o, e = "value") {
-  if (console.log("toVector3 called with value:", o), o instanceof THREE$1.Vector3)
+  if (console.log("toVector3 called with value:", o), o instanceof THREE.Vector3)
     return o;
   if (Array.isArray(o) && o.length === 3)
-    return new THREE$1.Vector3(o[0], o[1], o[2]);
+    return new THREE.Vector3(o[0], o[1], o[2]);
   if (o && typeof o == "object" && "length" in o && o.length === 3)
-    return new THREE$1.Vector3(...o);
+    return new THREE.Vector3(...o);
   if (o && typeof o == "object" && "x" in o && "y" in o && "z" in o)
-    return new THREE$1.Vector3(o.x, o.y, o.z);
+    return new THREE.Vector3(o.x, o.y, o.z);
   throw new Error(`${e} must be a THREE.Vector3, an [x,y,z] array, or an {x,y,z} object, got ${typeof o}`);
 }
 function toIndexArray(o, e = "indices") {
@@ -460,21 +459,21 @@ function toIndexArray(o, e = "indices") {
 }
 function clearObjects(o, e = null) {
   [...o.children].forEach((s) => {
-    e !== null && (!s.userData || s.userData.uuid !== e) || (s instanceof THREE$1.Group ? clearGroup(o, s) : !(s instanceof THREE$1.Camera) && !(s instanceof THREE$1.Light) && clearObject(o, s));
+    e !== null && (!s.userData || s.userData.uuid !== e) || (s instanceof THREE.Group ? clearGroup(o, s) : !(s instanceof THREE.Camera) && !(s instanceof THREE.Light) && clearObject(o, s));
   });
 }
 function clearGroup(o, e) {
   e.children.forEach((t) => {
-    t instanceof THREE$1.Group ? clearGroup(o, t) : clearObject(o, t);
+    t instanceof THREE.Group ? clearGroup(o, t) : clearObject(o, t);
   });
 }
 function clearObject(o, e) {
   e !== null && (e.children && e.remove(...e.children), e.geometry && e.geometry.dispose(), e.material && (Array.isArray(e.material) ? e.material.forEach((t) => t.dispose()) : e.material.dispose()), o.remove(e));
 }
 function getWorldPositionFromScreen(o, e, t) {
-  const s = new THREE$1.Raycaster();
+  const s = new THREE.Raycaster();
   s.setFromCamera(e, o);
-  const i = new THREE$1.Vector3();
+  const i = new THREE.Vector3();
   return s.ray.intersectPlane(t, i), i;
 }
 function convertToMatrixFromABCAlphaBetaGamma(o) {
@@ -522,7 +521,7 @@ function calculateInverseMatrix(o) {
   ];
 }
 function calculateQuaternion(o, e) {
-  const t = new THREE$1.Matrix4().lookAt(o, e, new THREE$1.Object3D().up), s = new THREE$1.Quaternion().setFromRotationMatrix(t), i = new THREE$1.Quaternion().setFromAxisAngle(new THREE$1.Vector3(1, 0, 0), Math.PI / 2);
+  const t = new THREE.Matrix4().lookAt(o, e, new THREE.Object3D().up), s = new THREE.Quaternion().setFromRotationMatrix(t), i = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
   return s.multiply(i), s;
 }
 function createLabel(o, e, t = "black", s = "14px", i = "axis-label") {
@@ -531,9 +530,9 @@ function createLabel(o, e, t = "black", s = "14px", i = "axis-label") {
   const r = new CSS2DObject(n);
   return r.position.copy(o), r;
 }
-class WeasScene extends THREE$1.Scene {
+class WeasScene extends THREE.Scene {
   constructor(e) {
-    super(), this.tjs = e, this._boundingBox = new THREE$1.Box3(), this._center = new THREE$1.Vector3(), this._size = new THREE$1.Vector3(), this.objectGroups = {};
+    super(), this.tjs = e, this._boundingBox = new THREE.Box3(), this._center = new THREE.Vector3(), this._size = new THREE.Vector3(), this.objectGroups = {};
   }
   // --- Object management ---
   addObject(e, t = null) {
@@ -584,7 +583,7 @@ class WeasScene extends THREE$1.Scene {
   updateBoundingBox() {
     this._boundingBox.makeEmpty(), this.traverse((e) => {
       if (e.isMesh || e.isLineSegments || e.isInstancedMesh) {
-        let t = new THREE$1.Box3();
+        let t = new THREE.Box3();
         if (e.isInstancedMesh) {
           if (e.count === 0) return;
           e.computeBoundingBox(), t.copy(e.boundingBox);
@@ -592,7 +591,7 @@ class WeasScene extends THREE$1.Scene {
           e.geometry.computeBoundingBox(), t.copy(e.geometry.boundingBox);
         t.applyMatrix4(e.matrixWorld), this._boundingBox.union(t);
       }
-    }), this._center.copy(this._boundingBox.getCenter(new THREE$1.Vector3())), this._size.copy(this._boundingBox.getSize(new THREE$1.Vector3()));
+    }), this._center.copy(this._boundingBox.getCenter(new THREE.Vector3())), this._size.copy(this._boundingBox.getSize(new THREE.Vector3()));
   }
   getBoundingBox() {
     return this._boundingBox.clone();
@@ -604,39 +603,39 @@ class WeasScene extends THREE$1.Scene {
     return this._size.clone();
   }
   getProjectedBoundingBox(e = [0, 0, 1]) {
-    e = new THREE$1.Vector3(...e).normalize();
-    const t = new THREE$1.Box3();
+    e = new THREE.Vector3(...e).normalize();
+    const t = new THREE.Box3();
     if (this.traverse((l) => {
       if (l.isMesh || l.isLineSegments || l.isInstancedMesh) {
         l.geometry.computeBoundingBox();
         const c = l.geometry.boundingBox.clone().applyMatrix4(l.matrixWorld);
         t.union(c);
       }
-    }), t.isEmpty()) return new THREE$1.Vector3(0, 0, 0);
+    }), t.isEmpty()) return new THREE.Vector3(0, 0, 0);
     const s = [
-      new THREE$1.Vector3(t.min.x, t.min.y, t.min.z),
-      new THREE$1.Vector3(t.min.x, t.min.y, t.max.z),
-      new THREE$1.Vector3(t.min.x, t.max.y, t.min.z),
-      new THREE$1.Vector3(t.min.x, t.max.y, t.max.z),
-      new THREE$1.Vector3(t.max.x, t.min.y, t.min.z),
-      new THREE$1.Vector3(t.max.x, t.min.y, t.max.z),
-      new THREE$1.Vector3(t.max.x, t.max.y, t.min.z),
-      new THREE$1.Vector3(t.max.x, t.max.y, t.max.z)
-    ], i = new THREE$1.Matrix4().lookAt(
+      new THREE.Vector3(t.min.x, t.min.y, t.min.z),
+      new THREE.Vector3(t.min.x, t.min.y, t.max.z),
+      new THREE.Vector3(t.min.x, t.max.y, t.min.z),
+      new THREE.Vector3(t.min.x, t.max.y, t.max.z),
+      new THREE.Vector3(t.max.x, t.min.y, t.min.z),
+      new THREE.Vector3(t.max.x, t.min.y, t.max.z),
+      new THREE.Vector3(t.max.x, t.max.y, t.min.z),
+      new THREE.Vector3(t.max.x, t.max.y, t.max.z)
+    ], i = new THREE.Matrix4().lookAt(
       e,
-      new THREE$1.Vector3(0, 0, 0),
-      new THREE$1.Vector3(0, 1, 0)
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 1, 0)
     );
-    let n = new THREE$1.Vector3(1 / 0, 1 / 0, 1 / 0), r = new THREE$1.Vector3(-1 / 0, -1 / 0, -1 / 0);
+    let n = new THREE.Vector3(1 / 0, 1 / 0, 1 / 0), r = new THREE.Vector3(-1 / 0, -1 / 0, -1 / 0);
     s.forEach((l) => {
       const c = l.clone().applyMatrix4(i);
       n.min(c), r.max(c);
     });
-    const a = new THREE$1.Vector3();
+    const a = new THREE.Vector3();
     return a.subVectors(r, n), a;
   }
 }
-class OrthographicCamera extends THREE$1.OrthographicCamera {
+class OrthographicCamera extends THREE.OrthographicCamera {
   constructor(e, t, s, i, n, r, a = null) {
     super(e, t, s, i, n, r), this.tjs = a;
   }
@@ -650,7 +649,7 @@ class OrthographicCamera extends THREE$1.OrthographicCamera {
   }
   // Custom method to update position
   updatePosition(e, t, s) {
-    const i = new THREE$1.Vector3(e, t, s);
+    const i = new THREE.Vector3(e, t, s);
     this.position.equals(i) || (this.position.copy(i), this.updateProjectionMatrix(), this.dispatchObjectEvent({
       data: [e, t, s],
       action: "position",
@@ -1104,7 +1103,7 @@ class HUDController {
     e.add(new THREE.AmbientLight(16777215, 2));
     const t = new THREE.DirectionalLight(16777215, 2);
     t.position.set(10, 10, 10), e.add(t);
-    const s = new THREE.AxesHelper(1), i = new THREE.Group();
+    const s = new THREE.AxesHelper(0.5), i = new THREE.Group();
     i.add(s), e.add(i);
     const n = new THREE.OrthographicCamera(-2.5, 2.5, 2.5, -2.5, 0.1, 100);
     n.position.set(0, 0, 5), n.lookAt(0, 0, 0), this.coordAxesGroup = i, this.addMiniScene(
@@ -1282,7 +1281,7 @@ class HUDController {
 }
 class BlendJSObject {
   constructor(e, t, s) {
-    this.name = e, this.geometry = t, this.material = s, this.object3D = new THREE$1.Mesh(t, s);
+    this.name = e, this.geometry = t, this.material = s, this.object3D = new THREE.Mesh(t, s);
   }
 }
 class BlendJSMaterial {
@@ -1327,8 +1326,8 @@ class BlendJS {
       return this.orthographicCamera;
   }
   init() {
-    this.scene.background = new THREE$1.Color(16777215);
-    const e = this?.tjsConfig?.renderConfig || defaultTjsConfig.renderConfig, t = new THREE$1.WebGLRenderer(e);
+    this.scene.background = new THREE.Color(16777215);
+    const e = this?.tjsConfig?.renderConfig || defaultTjsConfig.renderConfig, t = new THREE.WebGLRenderer(e);
     t.autoClear = !1;
     const s = this.containerElement.getBoundingClientRect(), i = this.containerElement.clientWidth || s.width || 1, n = this.containerElement.clientHeight || s.height || 1;
     t.setSize(i, n), t.setPixelRatio(window.devicePixelRatio), this.addRenderer("MainRenderer", t);
@@ -1350,13 +1349,15 @@ class BlendJS {
       // far clipping plane
       this
     ), this.orthographicCamera.layers.enable(1), this.camera.position.set(0, -100, 0), this.camera.lookAt(0, 0, 0), this.scene.add(this.camera);
-    const d = new THREE$1.DirectionalLight(16777215, 2);
+    const d = new THREE.DirectionalLight(16777215, 2);
     d.position.set(50, 50, 100), this.addLight("MainLight", d), this.camera.add(d);
-    const u = new THREE$1.AmbientLight(4210752, 20);
+    const u = new THREE.AmbientLight(4210752, 20);
     this.addLight("AmbientLight", u), this.cameraController = new CameraController(
       this.camera,
       t.domElement
-    ), this.updateViewerRect(), this.observeContainerResize(), window.addEventListener("resize", this.onWindowResize.bind(this), !1), this.containerElement.addEventListener("mousemove", this.render.bind(this)), this.containerElement.addEventListener("pointerup", this.render.bind(this)), this.containerElement.addEventListener(
+    ), this.cameraController.onChange(() => {
+      this.render();
+    }), this.updateViewerRect(), this.observeContainerResize(), window.addEventListener("resize", this.onWindowResize.bind(this), !1), this.containerElement.addEventListener("mousemove", this.render.bind(this)), this.containerElement.addEventListener("pointerup", this.render.bind(this)), this.containerElement.addEventListener(
       "pointerdown",
       this.render.bind(this)
     ), this.containerElement.addEventListener("click", this.render.bind(this)), this.containerElement.addEventListener("wheel", this.render.bind(this)), this.containerElement.addEventListener(
@@ -1432,7 +1433,7 @@ class BlendJS {
     });
   }
   renderSceneInfo(e, t, s, i, n, r, a) {
-    const l = a.getSize(new THREE$1.Vector2());
+    const l = a.getSize(new THREE.Vector2());
     var c = Math.floor(l.width * s), h = Math.floor(l.height * i), d = Math.floor(l.width * n), u = Math.floor(l.height * r);
     a.setViewport(c, h, d, u), a.setScissor(c, h, d, u), a.setScissorTest(!1), a.render(e, t);
   }
@@ -1440,7 +1441,7 @@ class BlendJS {
   // it also presumes the existence of avr, which is suggests a two-way binding
   // TODO - move this away and right some sort of hook pattern
   render() {
-    this.renderers.MainRenderer.renderer.clear(), this.weas?.textManager?.updateLabelSizes?.(
+    this.cameraController.update(), this.renderers.MainRenderer.renderer.clear(), this.weas?.textManager?.updateLabelSizes?.(
       this.camera,
       this.renderers.MainRenderer.renderer
     ), this.weas?.avr?.ALManager?.updateLabelSizes?.(
@@ -1484,7 +1485,7 @@ class BlendJS {
     this.scene.updateMatrixWorld(!0), this.camera.updateMatrixWorld(!0);
     const r = e.textAlign, a = e.textBaseline;
     e.textAlign = "center", e.textBaseline = "middle";
-    const l = new THREE$1.Vector3();
+    const l = new THREE.Vector3();
     n.forEach((c) => {
       if (!c.visible)
         return;
@@ -1528,7 +1529,7 @@ class BlendJS {
       throw new Error("frameCount must be a positive number.");
     if (typeof l != "function")
       throw new Error("setFrame callback is required for animation export.");
-    const p = this.renderers.MainRenderer.renderer, m = p.getPixelRatio(), g = Math.min(r, 3), y = p.getSize(new THREE$1.Vector2());
+    const p = this.renderers.MainRenderer.renderer, m = p.getPixelRatio(), g = Math.min(r, 3), y = p.getSize(new THREE.Vector2());
     p.setPixelRatio(g), p.setSize(y.x, y.y, !1);
     const f = p.domElement;
     if (!f.captureStream)
@@ -1560,7 +1561,7 @@ class BlendJS {
     try {
       typeof l == "function" && l(x), await new Promise((P) => requestAnimationFrame(P)), await new Promise((P) => requestAnimationFrame(P)), v.start();
       for (let P = x; P <= S; P += 1)
-        l(P), await new Promise(($) => setTimeout($, L));
+        l(P), await new Promise((F) => setTimeout(F, L));
       const R = new Promise((P) => {
         v.onstop = P;
       });
@@ -4518,8 +4519,8 @@ class TranslateOperation extends BaseOperation {
       z: { type: "number", min: -10, max: 10, step: 0.1, path: "vector.z" }
     }
   };
-  constructor({ weas: e, vector: t = new THREE$1.Vector3(), constraintType: s = null, axis: i = null, planeNormal: n = null }) {
-    super(e), this.currentFrame = e.avr.currentFrame, this.selectedAtomsIndices = Array.from(this.stateGet("viewer.selectedAtomsIndices", []) || []), this.selectedObjects = e.selectionManager.selectedObjects, Array.isArray(t) && (t = new THREE$1.Vector3(t[0], t[1], t[2])), this.vector = t.clone(), this.constraintType = s || null, this.axis = i ? i.clone() : new THREE$1.Vector3(), this.normal = new THREE$1.Vector3(), this.planeNormal = new THREE$1.Vector3(), this.planeU = new THREE$1.Vector3(), this.planeV = new THREE$1.Vector3(), this.distance = 0, this.uDistance = 0, this.vDistance = 0, this.constraintType === "axis" && this.axis.lengthSq() === 0 && this.axis.set(1, 0, 0), this.constraintType === "normal" && n && this.normal.copy(n), this.constraintType === "plane" && n && this.planeNormal.copy(n), this.refreshConstraintStateFromVector(), this.uiFields = this.buildUISchema();
+  constructor({ weas: e, vector: t = new THREE.Vector3(), constraintType: s = null, axis: i = null, planeNormal: n = null }) {
+    super(e), this.currentFrame = e.avr.currentFrame, this.selectedAtomsIndices = Array.from(this.stateGet("viewer.selectedAtomsIndices", []) || []), this.selectedObjects = e.selectionManager.selectedObjects, Array.isArray(t) && (t = new THREE.Vector3(t[0], t[1], t[2])), this.vector = t.clone(), this.constraintType = s || null, this.axis = i ? i.clone() : new THREE.Vector3(), this.normal = new THREE.Vector3(), this.planeNormal = new THREE.Vector3(), this.planeU = new THREE.Vector3(), this.planeV = new THREE.Vector3(), this.distance = 0, this.uDistance = 0, this.vDistance = 0, this.constraintType === "axis" && this.axis.lengthSq() === 0 && this.axis.set(1, 0, 0), this.constraintType === "normal" && n && this.normal.copy(n), this.constraintType === "plane" && n && this.planeNormal.copy(n), this.refreshConstraintStateFromVector(), this.uiFields = this.buildUISchema();
   }
   execute() {
     this.weas.avr.currentFrame = this.currentFrame, this.weas.selectionManager.selectedObjects = this.selectedObjects, this.weas.avr.translateSelectedAtoms({ translateVector: this.vector, indices: this.selectedAtomsIndices }), this.weas.objectManager.translateSelectedObjects({ translateVector: this.vector }), this.weas.selectionManager.refreshAxisLine();
@@ -4571,7 +4572,7 @@ class TranslateOperation extends BaseOperation {
       return;
     }
     if (this.constraintType === "normal") {
-      this.normalizeAxis(this.normal, new THREE$1.Vector3(0, 0, 1)), this.distance = this.vector.dot(this.normal);
+      this.normalizeAxis(this.normal, new THREE.Vector3(0, 0, 1)), this.distance = this.vector.dot(this.normal);
       return;
     }
     if (this.constraintType === "plane") {
@@ -4585,19 +4586,19 @@ class TranslateOperation extends BaseOperation {
       return;
     }
     if (this.constraintType === "normal") {
-      this.normalizeAxis(this.normal, new THREE$1.Vector3(0, 0, 1)), this.vector.copy(this.normal).multiplyScalar(this.distance || 0);
+      this.normalizeAxis(this.normal, new THREE.Vector3(0, 0, 1)), this.vector.copy(this.normal).multiplyScalar(this.distance || 0);
       return;
     }
     this.constraintType === "plane" && (this.ensurePlaneBasis(), this.vector.copy(this.planeU).multiplyScalar(this.uDistance || 0).add(this.planeV.clone().multiplyScalar(this.vDistance || 0)));
   }
-  normalizeAxis(e, t = new THREE$1.Vector3(1, 0, 0)) {
+  normalizeAxis(e, t = new THREE.Vector3(1, 0, 0)) {
     (!e || e.lengthSq() === 0) && e.copy(t), e.normalize();
   }
   ensurePlaneBasis() {
-    this.normalizeAxis(this.planeNormal, new THREE$1.Vector3(0, 0, 1));
-    const e = this.planeNormal, t = Math.abs(e.x) < 0.9 ? new THREE$1.Vector3(1, 0, 0) : new THREE$1.Vector3(0, 1, 0), s = new THREE$1.Vector3().crossVectors(e, t);
-    s.lengthSq() === 0 && s.crossVectors(e, new THREE$1.Vector3(0, 0, 1)), s.normalize();
-    const i = new THREE$1.Vector3().crossVectors(e, s).normalize();
+    this.normalizeAxis(this.planeNormal, new THREE.Vector3(0, 0, 1));
+    const e = this.planeNormal, t = Math.abs(e.x) < 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0), s = new THREE.Vector3().crossVectors(e, t);
+    s.lengthSq() === 0 && s.crossVectors(e, new THREE.Vector3(0, 0, 1)), s.normalize();
+    const i = new THREE.Vector3().crossVectors(e, s).normalize();
     this.planeU.copy(s), this.planeV.copy(i);
   }
 }
@@ -4614,7 +4615,7 @@ class RotateOperation extends BaseOperation {
     }
   };
   constructor({ weas: e, axis: t, angle: s, centroid: i = null }) {
-    super(e), this.currentFrame = e.avr.currentFrame, this.selectedAtomsIndices = Array.from(this.stateGet("viewer.selectedAtomsIndices", []) || []), this.selectedObjects = e.selectionManager.selectedObjects, Array.isArray(t) && (t = new THREE$1.Vector3(t[0], t[1], t[2])), this.axis = t, this.angle = s, this.centroid = i;
+    super(e), this.currentFrame = e.avr.currentFrame, this.selectedAtomsIndices = Array.from(this.stateGet("viewer.selectedAtomsIndices", []) || []), this.selectedObjects = e.selectionManager.selectedObjects, Array.isArray(t) && (t = new THREE.Vector3(t[0], t[1], t[2])), this.axis = t, this.angle = s, this.centroid = i;
   }
   execute() {
     this.weas.avr.currentFrame = this.currentFrame, this.weas.selectionManager.selectedObjects = this.selectedObjects, this.weas.avr.rotateSelectedAtoms({ cameraDirection: this.axis, rotationAngle: this.angle, indices: this.selectedAtomsIndices, centroid: this.centroid }), this.weas.objectManager.rotateSelectedObjects({ rotationAxis: this.axis, rotationAngle: this.angle }), this.weas.selectionManager.refreshAxisLine();
@@ -4639,15 +4640,15 @@ class ScaleOperation extends BaseOperation {
       z: { type: "number", min: 1e-3, max: 10, step: 0.01, path: "scale.z" }
     }
   };
-  constructor({ weas: e, scale: t = new THREE$1.Vector3() }) {
-    super(e), this.currentFrame = e.avr.currentFrame, this.selectedAtomsIndices = Array.from(this.stateGet("viewer.selectedAtomsIndices", []) || []), this.selectedObjects = e.selectionManager.selectedObjects, Array.isArray(t) && (t = new THREE$1.Vector3(t[0], t[1], t[2])), this.scale = t.clone();
+  constructor({ weas: e, scale: t = new THREE.Vector3() }) {
+    super(e), this.currentFrame = e.avr.currentFrame, this.selectedAtomsIndices = Array.from(this.stateGet("viewer.selectedAtomsIndices", []) || []), this.selectedObjects = e.selectionManager.selectedObjects, Array.isArray(t) && (t = new THREE.Vector3(t[0], t[1], t[2])), this.scale = t.clone();
   }
   execute() {
     this.weas.avr.currentFrame = this.currentFrame, this.weas.selectionManager.selectedObjects = this.selectedObjects, this.weas.objectManager.scaleSelectedObjects({ scale: this.scale });
   }
   undo() {
     this.weas.avr.currentFrame = this.currentFrame, this.weas.selectionManager.selectedObjects = this.selectedObjects;
-    const e = new THREE$1.Vector3(1 / this.scale.x, 1 / this.scale.y, 1 / this.scale.z);
+    const e = new THREE.Vector3(1 / this.scale.x, 1 / this.scale.y, 1 / this.scale.z);
     this.weas.objectManager.scaleSelectedObjects({ scale: e });
   }
   adjust(e) {
@@ -4667,7 +4668,7 @@ class TransformControls {
     this.weas = e, this.eventHandler = t, this.tjs = e.tjs, this.objectMode = "edit", this.mode = null, this.init();
   }
   init() {
-    this.translatePlane = new THREE$1.Plane(new THREE$1.Vector3(0, 0, 1), 0), this.translateVector = new THREE$1.Vector3(), this.translateAxisLock = null, this.translateAxis = new THREE$1.Vector3(), this.translateConstraintType = null, this.translatePlaneNormal = new THREE$1.Vector3(), this.translatePlaneOrigin = new THREE$1.Vector3(), this.translatePlanePending = !1, this.rotationAxisLock = null, this.rotationAxis = new THREE$1.Vector3(), this.rotationAxisLockKey = null, this.rotationMatrix = new THREE$1.Matrix4(), this.centroid = new THREE$1.Vector3(), this.centroidNDC = new THREE$1.Vector2(), this.rotationAxis = new THREE$1.Vector3(), this.rotationCentroid = new THREE$1.Vector3(), this.initialAtomPositions = /* @__PURE__ */ new Map(), this.initialObjectState = /* @__PURE__ */ new Map(), this.cameraDirection = new THREE$1.Vector3(0, 0, -1);
+    this.translatePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), this.translateVector = new THREE.Vector3(), this.translateAxisLock = null, this.translateAxis = new THREE.Vector3(), this.translateConstraintType = null, this.translatePlaneNormal = new THREE.Vector3(), this.translatePlaneOrigin = new THREE.Vector3(), this.translatePlanePending = !1, this.rotationAxisLock = null, this.rotationAxis = new THREE.Vector3(), this.rotationAxisLockKey = null, this.rotationMatrix = new THREE.Matrix4(), this.centroid = new THREE.Vector3(), this.centroidNDC = new THREE.Vector2(), this.rotationAxis = new THREE.Vector3(), this.rotationCentroid = new THREE.Vector3(), this.initialAtomPositions = /* @__PURE__ */ new Map(), this.initialObjectState = /* @__PURE__ */ new Map(), this.cameraDirection = new THREE.Vector3(0, 0, -1);
   }
   attach(e) {
     this.controls.attach(e);
@@ -4680,7 +4681,7 @@ class TransformControls {
       this.mode = null, this.weas.selectionManager.hideAxisVisuals(), this.weas.selectionManager.setModeHint("Select atoms (or objects) first");
       return;
     }
-    if (this.cameraDirection = new THREE$1.Vector3(0, 0, -1), this.cameraDirection.applyQuaternion(this.tjs.camera.quaternion), this.mode === "translate")
+    if (this.cameraDirection = new THREE.Vector3(0, 0, -1), this.cameraDirection.applyQuaternion(this.tjs.camera.quaternion), this.mode === "translate")
       this.translatePlane.normal.copy(this.cameraDirection), this.translateAxisLock = null, this.translateConstraintType = null, this.translatePlanePending = !1, this.weas.selectionManager.hideTranslateAxisLine(), this.weas.selectionManager.setModeHint("Translate mode: move mouse to translate, press A to set axis, X/Y/Z to lock"), this.weas.selectionManager.axisAtomIndices?.length === 3 ? this.setTranslatePlaneFromAtoms() : this.weas.selectionManager.axisAtomIndices?.length === 2 && this.setTranslateAxisFromAtoms();
     else if (this.mode === "rotate") {
       if (this.weas.selectionManager.showAxisVisuals(), this.rotationAxisLock = null, this.rotationAxisLockKey = null, this.weas.selectionManager.hideRotateAxisLine(), this.refreshRotationPivot(), !this.mode) {
@@ -4728,11 +4729,11 @@ class TransformControls {
   }
   getCentroidNDC(e = null) {
     if (this.weas.avr.selectedAtomsIndices.length > 0)
-      e || (e = new THREE$1.Vector3(0, 0, 0), this.weas.avr.selectedAtomsIndices.forEach((s) => {
-        e.add(new THREE$1.Vector3(...this.weas.avr.atoms.positions[s]));
+      e || (e = new THREE.Vector3(0, 0, 0), this.weas.avr.selectedAtomsIndices.forEach((s) => {
+        e.add(new THREE.Vector3(...this.weas.avr.atoms.positions[s]));
       }), e.divideScalar(this.weas.avr.selectedAtomsIndices.length));
     else if (this.weas.selectionManager.selectedObjects.length > 0)
-      e || (e = new THREE$1.Vector3(0, 0, 0), this.weas.selectionManager.selectedObjects.forEach((s) => {
+      e || (e = new THREE.Vector3(0, 0, 0), this.weas.selectionManager.selectedObjects.forEach((s) => {
         e.add(s.position);
       }), e.divideScalar(this.weas.selectionManager.selectedObjects.length));
     else {
@@ -4740,7 +4741,7 @@ class TransformControls {
       return;
     }
     const t = e.clone().project(this.tjs.camera);
-    this.centroidNDC = new THREE$1.Vector2(t.x, t.y);
+    this.centroidNDC = new THREE.Vector2(t.x, t.y);
   }
   refreshRotationPivot() {
     this.updateRotationReference(), this.getCentroidNDC(this.rotationCentroid);
@@ -4756,7 +4757,7 @@ class TransformControls {
     if (e.length === 3) {
       const s = this.weas?.avr?.atoms?.positions;
       if (s && s[e[0]] && s[e[1]] && s[e[2]]) {
-        const i = new THREE$1.Vector3(...s[e[0]]), n = new THREE$1.Vector3(...s[e[1]]), r = new THREE$1.Vector3(...s[e[2]]), a = n.clone().sub(i).cross(r.clone().sub(i));
+        const i = new THREE.Vector3(...s[e[0]]), n = new THREE.Vector3(...s[e[1]]), r = new THREE.Vector3(...s[e[2]]), a = n.clone().sub(i).cross(r.clone().sub(i));
         if (a.lengthSq() > 0) {
           const l = a.normalize();
           l.dot(this.cameraDirection) < 0 && l.negate(), this.rotationAxis.copy(l), this.rotationCentroid.copy(
@@ -4766,19 +4767,19 @@ class TransformControls {
         }
       }
     } else if (e.length === 2) {
-      const s = new THREE$1.Vector3(...this.weas.avr.atoms.positions[e[0]]), i = new THREE$1.Vector3(...this.weas.avr.atoms.positions[e[1]]), n = i.clone().sub(s);
+      const s = new THREE.Vector3(...this.weas.avr.atoms.positions[e[0]]), i = new THREE.Vector3(...this.weas.avr.atoms.positions[e[1]]), n = i.clone().sub(s);
       if (n.lengthSq() > 0) {
         this.rotationAxis.copy(n.normalize()), this.rotationCentroid.copy(s.clone().add(i).multiplyScalar(0.5));
         return;
       }
     } else if (e.length === 1) {
-      this.rotationCentroid.copy(new THREE$1.Vector3(...this.weas.avr.atoms.positions[e[0]]));
+      this.rotationCentroid.copy(new THREE.Vector3(...this.weas.avr.atoms.positions[e[0]]));
       return;
     }
     if (t.length === 3) {
       const s = this.weas?.avr?.atoms?.positions;
       if (s && s[t[0]] && s[t[1]] && s[t[2]]) {
-        const i = new THREE$1.Vector3(...s[t[0]]), n = new THREE$1.Vector3(...s[t[1]]), r = new THREE$1.Vector3(...s[t[2]]), a = n.clone().sub(i).cross(r.clone().sub(i));
+        const i = new THREE.Vector3(...s[t[0]]), n = new THREE.Vector3(...s[t[1]]), r = new THREE.Vector3(...s[t[2]]), a = n.clone().sub(i).cross(r.clone().sub(i));
         if (a.lengthSq() > 0) {
           const l = a.normalize();
           l.dot(this.cameraDirection) < 0 && l.negate(), this.rotationAxis.copy(l), this.rotationCentroid.copy(
@@ -4789,17 +4790,17 @@ class TransformControls {
       }
     }
     t.length > 0 ? (t.forEach((s) => {
-      this.rotationCentroid.add(new THREE$1.Vector3(...this.weas.avr.atoms.positions[s]));
+      this.rotationCentroid.add(new THREE.Vector3(...this.weas.avr.atoms.positions[s]));
     }), this.rotationCentroid.divideScalar(t.length)) : this.weas.selectionManager.selectedObjects.length > 0 && (this.weas.selectionManager.selectedObjects.forEach((s) => {
       this.rotationCentroid.add(s.position);
     }), this.rotationCentroid.divideScalar(this.weas.selectionManager.selectedObjects.length));
   }
   storeInitialObjectState() {
     this.weas.avr.selectedAtomsIndices.forEach((e) => {
-      const t = new THREE$1.Matrix4();
+      const t = new THREE.Matrix4();
       this.weas.avr.atomManager.meshes.atom.getMatrixAt(e, t);
-      const s = new THREE$1.Vector3();
-      t.decompose(s, new THREE$1.Quaternion(), new THREE$1.Vector3()), this.initialAtomPositions.set(e, s.clone());
+      const s = new THREE.Vector3();
+      t.decompose(s, new THREE.Quaternion(), new THREE.Vector3()), this.initialAtomPositions.set(e, s.clone());
     }), this.weas.selectionManager.selectedObjects.forEach((e) => {
       this.initialObjectState.set(e.uuid, {
         position: e.position.clone(),
@@ -4813,12 +4814,12 @@ class TransformControls {
     this.weas.avr.translateSelectedAtoms({ translateVector: t }), this.weas.objectManager.translateSelectedObjects({ translateVector: t }), this.weas.selectionManager.refreshAxisLine();
   }
   getNDC(e) {
-    return new THREE$1.Vector2((e.x - this.tjs.viewerRect.left) / this.tjs.viewerRect.width * 2 - 1, -((e.y - this.tjs.viewerRect.top) / this.tjs.viewerRect.height) * 2 + 1);
+    return new THREE.Vector2((e.x - this.tjs.viewerRect.left) / this.tjs.viewerRect.width * 2 - 1, -((e.y - this.tjs.viewerRect.top) / this.tjs.viewerRect.height) * 2 + 1);
   }
   getTranslateVector(e, t) {
     const s = this.getNDC(e), i = getWorldPositionFromScreen(this.tjs.camera, s, this.translatePlane), n = this.getNDC(t), r = getWorldPositionFromScreen(this.tjs.camera, n, this.translatePlane), a = i.sub(r);
     if (this.translatePlanePending)
-      return new THREE$1.Vector3(0, 0, 0);
+      return new THREE.Vector3(0, 0, 0);
     if (!this.translateConstraintType)
       return a;
     if (this.translateConstraintType === "axis")
@@ -4857,7 +4858,7 @@ class TransformControls {
     const t = this.weas?.avr?.atoms?.positions;
     if (!t || !t[e[0]] || !t[e[1]])
       return !1;
-    const s = new THREE$1.Vector3(...t[e[0]]), n = new THREE$1.Vector3(...t[e[1]]).clone().sub(s);
+    const s = new THREE.Vector3(...t[e[0]]), n = new THREE.Vector3(...t[e[1]]).clone().sub(s);
     return n.lengthSq() === 0 ? !1 : (this.translateAxis.copy(n.normalize()), this.translateAxisLock = "axis", this.translateConstraintType = "axis", this.translatePlaneNormal.set(0, 0, 0), this.translatePlaneOrigin.set(0, 0, 0), this.translatePlanePending = !1, this.weas.selectionManager.hideTranslatePlane(), this.weas.selectionManager.hideTranslateAxisLine(), this.weas.selectionManager.showAxisVisuals(), this.weas.selectionManager.setModeHint("Translate mode: locked to atom axis"), !0);
   }
   setTranslatePlaneFromAtoms() {
@@ -4867,7 +4868,7 @@ class TransformControls {
     const t = this.weas?.avr?.atoms?.positions;
     if (!t || !t[e[0]] || !t[e[1]] || !t[e[2]])
       return !1;
-    const s = new THREE$1.Vector3(...t[e[0]]), i = new THREE$1.Vector3(...t[e[1]]), n = new THREE$1.Vector3(...t[e[2]]), r = i.clone().sub(s).cross(n.clone().sub(s));
+    const s = new THREE.Vector3(...t[e[0]]), i = new THREE.Vector3(...t[e[1]]), n = new THREE.Vector3(...t[e[2]]), r = i.clone().sub(s).cross(n.clone().sub(s));
     return r.lengthSq() === 0 ? !1 : (this.translatePlaneNormal.copy(r.normalize()), this.translatePlaneOrigin.copy(
       s.clone().add(i).add(n).multiplyScalar(1 / 3)
     ), this.translateConstraintType = null, this.translateAxisLock = null, this.translatePlanePending = !0, this.weas.selectionManager.hideTranslateAxisLine(), this.weas.selectionManager.showAxisVisuals(), this.weas.selectionManager.showTranslatePlane(this.translatePlaneOrigin, this.translatePlaneNormal), this.weas.selectionManager.setModeHint("Translate mode: choose plane (P) or normal (N)"), !0);
@@ -4880,14 +4881,14 @@ class TransformControls {
       this.rotationAxisLock = null, this.rotationAxisLockKey = null, this.weas.selectionManager.hideRotateAxisLine(), this.weas.selectionManager.setModeHint("Rotate mode: move mouse to rotate, press A to set axis, X/Y/Z to lock"), this.refreshRotationPivot(), this.eventHandler?.currentMousePosition && (this.initialMousePosition = this.eventHandler.currentMousePosition.clone());
       return;
     }
-    this.rotationAxisLockKey = e, e === "x" ? this.rotationAxisLock = new THREE$1.Vector3(1, 0, 0) : e === "y" ? this.rotationAxisLock = new THREE$1.Vector3(0, 1, 0) : this.rotationAxisLock = new THREE$1.Vector3(0, 0, 1);
+    this.rotationAxisLockKey = e, e === "x" ? this.rotationAxisLock = new THREE.Vector3(1, 0, 0) : e === "y" ? this.rotationAxisLock = new THREE.Vector3(0, 1, 0) : this.rotationAxisLock = new THREE.Vector3(0, 0, 1);
     const t = this.getSelectionCentroid();
     this.weas.selectionManager.showRotateAxisLine(t, this.rotationAxisLock), this.weas.selectionManager.setModeHint(`Rotate mode: locked to ${e.toUpperCase()} axis`), this.refreshRotationPivot(), this.eventHandler?.currentMousePosition && (this.initialMousePosition = this.eventHandler.currentMousePosition.clone());
   }
   getSelectionCentroid() {
-    const e = new THREE$1.Vector3(0, 0, 0);
+    const e = new THREE.Vector3(0, 0, 0);
     return this.weas.avr.selectedAtomsIndices.length > 0 ? (this.weas.avr.selectedAtomsIndices.forEach((t) => {
-      e.add(new THREE$1.Vector3(...this.weas.avr.atoms.positions[t]));
+      e.add(new THREE.Vector3(...this.weas.avr.atoms.positions[t]));
     }), e.divideScalar(this.weas.avr.selectedAtomsIndices.length), e) : (this.weas.selectionManager.selectedObjects.length > 0 && (this.weas.selectionManager.selectedObjects.forEach((t) => {
       e.add(t.position);
     }), e.divideScalar(this.weas.selectionManager.selectedObjects.length)), e);
@@ -4896,18 +4897,18 @@ class TransformControls {
     const s = this.getNDC(t), i = this.getNDC(e);
     if (s.equals(i))
       return;
-    const n = new THREE$1.Vector2().subVectors(s, this.centroidNDC);
-    let a = new THREE$1.Vector2().subVectors(i, this.centroidNDC).length() / n.length();
-    return new THREE$1.Vector3(a, a, a);
+    const n = new THREE.Vector2().subVectors(s, this.centroidNDC);
+    let a = new THREE.Vector2().subVectors(i, this.centroidNDC).length() / n.length();
+    return new THREE.Vector3(a, a, a);
   }
   getRotationAngle(e, t) {
     const s = this.getNDC(t), i = this.getNDC(e);
     if (s.equals(i))
       return;
-    const n = new THREE$1.Vector2().subVectors(s, this.centroidNDC), r = new THREE$1.Vector2().subVectors(i, this.centroidNDC);
+    const n = new THREE.Vector2().subVectors(s, this.centroidNDC), r = new THREE.Vector2().subVectors(i, this.centroidNDC);
     n.normalize(), r.normalize();
     let a = Math.acos(n.dot(r));
-    return n.x * r.y - n.y * r.x < 0 && (a = -a), a = THREE$1.MathUtils.radToDeg(a), a;
+    return n.x * r.y - n.y * r.x < 0 && (a = -a), a = THREE.MathUtils.radToDeg(a), a;
   }
 }
 function matchKey$1(o, e) {
@@ -4956,7 +4957,7 @@ class EventHandlers {
     this.weas = e, this.tjs = e.tjs, this.init(), this.transformControls = new TransformControls(e, this), this.setupEventListeners(), this.keybindConfig = e.keybindConfig || defaultKeyBindConfig;
   }
   init() {
-    this.isMouseDown = !1, this.mouseDownPosition = new THREE$1.Vector2(), this.mouseUpPosition = new THREE$1.Vector2(), this.currentMousePosition = new THREE$1.Vector2(), this.previousMousePosition = new THREE$1.Vector2(), this.boxselect = !1, this.dragMode = null, this.isDragging = !1;
+    this.isMouseDown = !1, this.mouseDownPosition = new THREE.Vector2(), this.mouseUpPosition = new THREE.Vector2(), this.currentMousePosition = new THREE.Vector2(), this.previousMousePosition = new THREE.Vector2(), this.boxselect = !1, this.dragMode = null, this.isDragging = !1;
   }
   setupEventListeners() {
     const e = this.weas.tjs.containerElement;
@@ -5038,7 +5039,7 @@ class EventHandlers {
   }
   // Call this method after updating atoms
   dispatchAtomsUpdated() {
-    this.weas.avr.trajectory.uuid = THREE$1.MathUtils.generateUUID();
+    this.weas.avr.trajectory.uuid = THREE.MathUtils.generateUUID();
     const e = new CustomEvent("atomsUpdated", { detail: this.weas.avr.trajectory });
     this.tjs.containerElement.dispatchEvent(e);
   }
@@ -5061,7 +5062,7 @@ class ObjectManager {
   }
   rotateSelectedObjects(e, t, s = null) {
     let i = e;
-    e && typeof e == "object" && Object.prototype.hasOwnProperty.call(e, "rotationAxis") && ({ rotationAxis: i, rotationAngle: t, selectedObjects: s = null } = e), s === null && (s = this.selectionManager.selectedObjects), i = i.normalize(), t = THREE$1.MathUtils.degToRad(t), s.forEach((n) => {
+    e && typeof e == "object" && Object.prototype.hasOwnProperty.call(e, "rotationAxis") && ({ rotationAxis: i, rotationAngle: t, selectedObjects: s = null } = e), s === null && (s = this.selectionManager.selectedObjects), i = i.normalize(), t = THREE.MathUtils.degToRad(t), s.forEach((n) => {
       n.rotateOnAxis(i, -t);
     });
   }
@@ -5080,7 +5081,7 @@ class ObjectManager {
     const e = [];
     return this.selectionManager.selectedObjects.forEach((t) => {
       const s = t.clone();
-      s.position.add(new THREE$1.Vector3(1, 1, 1)), this.scene.add(s), e.push(s);
+      s.position.add(new THREE.Vector3(1, 1, 1)), this.scene.add(s), e.push(s);
     }), this.selectionManager.selectedObjects = e, e;
   }
   enterMode(e) {
@@ -5088,20 +5089,20 @@ class ObjectManager {
   }
 }
 function createOutline(o, e = 1.1) {
-  const t = new THREE$1.MeshBasicMaterial({ color: 16776960, side: THREE$1.BackSide, transparent: !0, opacity: 0.8 }), s = new THREE$1.Mesh(o.geometry, t);
+  const t = new THREE.MeshBasicMaterial({ color: 16776960, side: THREE.BackSide, transparent: !0, opacity: 0.8 }), s = new THREE.Mesh(o.geometry, t);
   s.scale.multiplyScalar(e), s.layers.set(1), o.add(s), o.userData.outlineMesh = s;
 }
 function removeOutline(o) {
   o.userData.outlineMesh && (o.remove(o.userData.outlineMesh), o.userData.outlineMesh = void 0);
 }
 function initVertexIndicators(o) {
-  const e = o.geometry.attributes.position, t = e.count, s = new THREE$1.PointsMaterial({ vertexColors: !0, size: 5, sizeAttenuation: !1 }), i = new THREE$1.BufferGeometry();
+  const e = o.geometry.attributes.position, t = e.count, s = new THREE.PointsMaterial({ vertexColors: !0, size: 5, sizeAttenuation: !1 }), i = new THREE.BufferGeometry();
   i.setAttribute("position", e);
   const n = new Float32Array(t * 3);
   for (let a = 0; a < t; a++)
     n[a * 3] = 0, n[a * 3 + 1] = 0, n[a * 3 + 2] = 0;
-  i.setAttribute("color", new THREE$1.BufferAttribute(n, 3));
-  const r = new THREE$1.Points(i, s);
+  i.setAttribute("color", new THREE.BufferAttribute(n, 3));
+  const r = new THREE.Points(i, s);
   o.add(r), r.layers.set(1), o.userData.vertexPoints = r;
 }
 const _frustum = new Frustum(), _center = new Vector3(), _tmpPoint = new Vector3(), _vecNear = new Vector3(), _vecTopLeft = new Vector3(), _vecTopRight = new Vector3(), _vecDownRight = new Vector3(), _vecDownLeft = new Vector3(), _vecFarTopLeft = new Vector3(), _vecFarTopRight = new Vector3(), _vecFarDownRight = new Vector3(), _vecFarDownLeft = new Vector3(), _vectemp1 = new Vector3(), _vectemp2 = new Vector3(), _vectemp3 = new Vector3(), _matrix = new Matrix4(), _quaternion = new Quaternion(), _scale = new Vector3();
@@ -5201,7 +5202,7 @@ class LassoHelper {
 }
 class SelectionManager {
   constructor(e) {
-    this.weas = e, this.tjs = e.tjs, this._selectedObjects = [], this.selectedInstances = {}, this.lassoPoints = [], this.isLassoing = !1, this.oldSelectedAtomsIndices = [], this.oldSelectedObjects = [], this.axisAtomIndices = [], this.axisLineExtendFactor = 3, this.axisLine = null, this.isAxisPicking = !1, this.axisPickMode = null, this.axisVisible = !1, this.modeHint = null, this.translateAxisLine = null, this.translateAxisLength = 20, this.translatePlaneMesh = null, this.translateNormalLine = null, this.translatePlaneSize = 30, this.rotateAxisLine = null, this.rotateAxisLength = 20, this.rotatePlaneMesh = null, this.rotateNormalLine = null, this.rotatePlaneSize = 30, this.raycaster = new THREE$1.Raycaster(), this.raycaster.layers.set(0), this.mouse = new THREE$1.Vector2(), this.init();
+    this.weas = e, this.tjs = e.tjs, this._selectedObjects = [], this.selectedInstances = {}, this.lassoPoints = [], this.isLassoing = !1, this.oldSelectedAtomsIndices = [], this.oldSelectedObjects = [], this.axisAtomIndices = [], this.axisLineExtendFactor = 3, this.axisLine = null, this.isAxisPicking = !1, this.axisPickMode = null, this.axisVisible = !1, this.modeHint = null, this.translateAxisLine = null, this.translateAxisLength = 20, this.translatePlaneMesh = null, this.translateNormalLine = null, this.translatePlaneSize = 30, this.rotateAxisLine = null, this.rotateAxisLength = 20, this.rotatePlaneMesh = null, this.rotateNormalLine = null, this.rotatePlaneSize = 30, this.raycaster = new THREE.Raycaster(), this.raycaster.layers.set(0), this.mouse = new THREE.Vector2(), this.init();
   }
   init() {
     this.selectionBox = new SelectionBox(this.tjs.camera, this.tjs.scene), this.helper = new SelectionHelper(this.tjs.renderers.MainRenderer.renderer, "selectBox"), this.lassoHelper = new LassoHelper(this.tjs.renderers.MainRenderer.renderer, "lassoSelect"), this.initModeHint(), window.addEventListener("pointerdown", this.onMouseDown.bind(this), !1);
@@ -5315,7 +5316,7 @@ class SelectionManager {
         r[a * 3] = 0, r[a * 3 + 1] = 0, r[a * 3 + 2] = 0;
       i.forEach((a) => {
         r[a * 3] = 1, r[a * 3 + 1] = 0, r[a * 3 + 2] = 0;
-      }), s.geometry.setAttribute("color", new THREE$1.BufferAttribute(r, 3)), s.geometry.attributes.color.needsUpdate = !0;
+      }), s.geometry.setAttribute("color", new THREE.BufferAttribute(r, 3)), s.geometry.attributes.color.needsUpdate = !0;
     });
   }
   highlightSelectedObjects() {
@@ -5400,15 +5401,15 @@ class SelectionManager {
     const t = this.axisAtomIndices[0], s = this.axisAtomIndices[1];
     if (!e[t] || !e[s])
       return;
-    const i = new THREE$1.Vector3(...e[t]), n = new THREE$1.Vector3(...e[s]), r = n.clone().sub(i), a = r.length();
+    const i = new THREE.Vector3(...e[t]), n = new THREE.Vector3(...e[s]), r = n.clone().sub(i), a = r.length();
     if (a === 0)
       return;
     const l = r.normalize(), c = i.clone().add(n).multiplyScalar(0.5), h = a * this.axisLineExtendFactor, d = c.clone().addScaledVector(l, -h), u = c.clone().addScaledVector(l, h);
     if (this.axisLine)
       this.axisLine.geometry.setFromPoints([d, u]), this.axisLine.geometry.attributes.position.needsUpdate = !0, this.axisLine.geometry.computeBoundingSphere();
     else {
-      const p = new THREE$1.BufferGeometry().setFromPoints([d, u]), m = new THREE$1.LineBasicMaterial({ color: 16746496, transparent: !0, opacity: 0.9, depthTest: !1 });
-      this.axisLine = new THREE$1.Line(p, m), this.axisLine.userData.notSelectable = !0, this.axisLine.layers.set(1), this.axisLine.renderOrder = 999, this.tjs.scene.add(this.axisLine);
+      const p = new THREE.BufferGeometry().setFromPoints([d, u]), m = new THREE.LineBasicMaterial({ color: 16746496, transparent: !0, opacity: 0.9, depthTest: !1 });
+      this.axisLine = new THREE.Line(p, m), this.axisLine.userData.notSelectable = !0, this.axisLine.layers.set(1), this.axisLine.renderOrder = 999, this.tjs.scene.add(this.axisLine);
     }
   }
   refreshAxisLine() {
@@ -5478,7 +5479,7 @@ class SelectionManager {
       });
       return;
     }
-    const n = new THREE$1.Vector3(...e[t]), r = new THREE$1.Vector3(...e[s]), a = new THREE$1.Vector3(...e[i]), l = r.clone().sub(n).cross(a.clone().sub(n));
+    const n = new THREE.Vector3(...e[t]), r = new THREE.Vector3(...e[s]), a = new THREE.Vector3(...e[i]), l = r.clone().sub(n).cross(a.clone().sub(n));
     if (l.lengthSq() === 0) {
       this.hidePlaneWithNormal({
         meshKey: "rotatePlaneMesh",
@@ -5510,22 +5511,22 @@ class SelectionManager {
     if (l.lengthSq() === 0)
       return;
     if (!this[r]) {
-      const u = new THREE$1.PlaneGeometry(s, s), p = new THREE$1.MeshBasicMaterial({
+      const u = new THREE.PlaneGeometry(s, s), p = new THREE.MeshBasicMaterial({
         color: i,
         transparent: !0,
         opacity: 0.15,
-        side: THREE$1.DoubleSide,
+        side: THREE.DoubleSide,
         depthTest: !1
       });
-      this[r] = new THREE$1.Mesh(u, p), this[r].userData.notSelectable = !0, this[r].layers.set(1), this[r].renderOrder = 998, this.tjs.scene.add(this[r]);
+      this[r] = new THREE.Mesh(u, p), this[r].userData.notSelectable = !0, this[r].layers.set(1), this[r].renderOrder = 998, this.tjs.scene.add(this[r]);
     }
-    const c = new THREE$1.Quaternion().setFromUnitVectors(new THREE$1.Vector3(0, 0, 1), l);
+    const c = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), l);
     this[r].position.copy(e), this[r].quaternion.copy(c);
     const h = e.clone(), d = e.clone().addScaledVector(l, n);
     if (this[a])
       this[a].geometry.setFromPoints([h, d]), this[a].geometry.attributes.position.needsUpdate = !0, this[a].geometry.computeBoundingSphere(), this[a].computeLineDistances();
     else {
-      const u = new THREE$1.BufferGeometry().setFromPoints([h, d]), p = new THREE$1.LineDashedMaterial({
+      const u = new THREE.BufferGeometry().setFromPoints([h, d]), p = new THREE.LineDashedMaterial({
         color: i,
         dashSize: 0.6,
         gapSize: 0.4,
@@ -5533,7 +5534,7 @@ class SelectionManager {
         opacity: 0.9,
         depthTest: !1
       });
-      this[a] = new THREE$1.Line(u, p), this[a].computeLineDistances(), this[a].userData.notSelectable = !0, this[a].layers.set(1), this[a].renderOrder = 999, this.tjs.scene.add(this[a]);
+      this[a] = new THREE.Line(u, p), this[a].computeLineDistances(), this[a].userData.notSelectable = !0, this[a].layers.set(1), this[a].renderOrder = 999, this.tjs.scene.add(this[a]);
     }
     this.weas?.avr?.requestRedraw?.("render");
   }
@@ -5550,7 +5551,7 @@ class SelectionManager {
     if (this[n])
       this[n].geometry.setFromPoints([a, l]), this[n].geometry.attributes.position.needsUpdate = !0, this[n].geometry.computeBoundingSphere(), this[n].computeLineDistances();
     else {
-      const c = new THREE$1.BufferGeometry().setFromPoints([a, l]), h = new THREE$1.LineDashedMaterial({
+      const c = new THREE.BufferGeometry().setFromPoints([a, l]), h = new THREE.LineDashedMaterial({
         color: i,
         dashSize: 0.6,
         gapSize: 0.4,
@@ -5558,7 +5559,7 @@ class SelectionManager {
         opacity: 0.9,
         depthTest: !1
       });
-      this[n] = new THREE$1.Line(c, h), this[n].computeLineDistances(), this[n].userData.notSelectable = !0, this[n].layers.set(1), this[n].renderOrder = 999, this.tjs.scene.add(this[n]);
+      this[n] = new THREE.Line(c, h), this[n].computeLineDistances(), this[n].userData.notSelectable = !0, this[n].layers.set(1), this[n].renderOrder = 999, this.tjs.scene.add(this[n]);
     }
     this.weas?.avr?.requestRedraw?.("render");
   }
@@ -5586,7 +5587,7 @@ class SelectionManager {
     const t = this.weas.avr.atoms;
     if (!t || !Array.isArray(t.positions))
       return [];
-    const s = this.tjs.updateViewerRect(), i = this.tjs.camera, n = [], r = new THREE$1.Vector3();
+    const s = this.tjs.updateViewerRect(), i = this.tjs.camera, n = [], r = new THREE.Vector3();
     for (let a = 0; a < t.positions.length; a++) {
       if (r.set(...t.positions[a]).project(i), r.z < -1 || r.z > 1)
         continue;
@@ -5597,7 +5598,7 @@ class SelectionManager {
   }
 }
 function getClosestVertex(o, e, t) {
-  const s = o.geometry.getAttribute("position"), i = new THREE$1.Vector3(), n = new THREE$1.Vector3(), r = new THREE$1.Vector3();
+  const s = o.geometry.getAttribute("position"), i = new THREE.Vector3(), n = new THREE.Vector3(), r = new THREE.Vector3();
   return i.fromBufferAttribute(s, e.a).applyMatrix4(o.matrixWorld), n.fromBufferAttribute(s, e.b).applyMatrix4(o.matrixWorld), r.fromBufferAttribute(s, e.c).applyMatrix4(o.matrixWorld), [
     { vertexId: e.a, distance: i.distanceTo(t) },
     { vertexId: e.b, distance: n.distanceTo(t) },
@@ -6136,10 +6137,10 @@ const atoms = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.definePropert
   ReplaceOperation
 }, Symbol.toStringTag, { value: "Module" }));
 function pointsInsideMesh(o, e) {
-  let t = new THREE$1.Raycaster(), s = new THREE$1.Vector3(0.23184, 0.413, 0.879), i;
+  let t = new THREE.Raycaster(), s = new THREE.Vector3(0.23184, 0.413, 0.879), i;
   const n = [];
   for (let r = 0; r < o.length; r++)
-    i = new THREE$1.Vector3(...o[r]), t.set(i, s), t.intersectObject(e).length % 2 === 1 && n.push(r);
+    i = new THREE.Vector3(...o[r]), t.set(i, s), t.intersectObject(e).length % 2 === 1 && n.push(r);
   return n;
 }
 class SelectAll extends BaseOperation {
@@ -6635,16 +6636,16 @@ class InstancedMeshPrimitive {
     this.clearMeshes(), this.settings.forEach((e) => {
       const t = this.getGeometry(e), s = e.materialType || "Standard", i = this.materialsRegistry.getMaterial(s, !0);
       i.transparent = !0, i.opacity = e.opacity || 1;
-      const n = new THREE$1.InstancedMesh(t, i, e.instances.length);
+      const n = new THREE.InstancedMesh(t, i, e.instances.length);
       i.opacity < 1 && (n.renderOrder = 2), e.instances.forEach((r, a) => {
-        const l = new THREE$1.Object3D(), c = new THREE$1.Vector3(...r.position);
+        const l = new THREE.Object3D(), c = new THREE.Vector3(...r.position);
         l.position.copy(c);
         const h = r.scale || [1, 1, 1];
         l.scale.set(...h);
         const d = r.rotation || [0, 0, 0];
         l.rotation.set(...d), l.updateMatrix(), n.setMatrixAt(a, l.matrix);
         const u = r.color || "#bd0d87";
-        n.setColorAt(a, new THREE$1.Color(u));
+        n.setColorAt(a, new THREE.Color(u));
       }), n.instanceMatrix.needsUpdate = !0, n.instanceColor.needsUpdate = !0, this.meshes.push(n), this.scene.add(n);
     }), this.viewer.requestRedraw?.("render");
   }
@@ -6652,25 +6653,25 @@ class InstancedMeshPrimitive {
     let t, s, i;
     switch (e.type) {
       case "cube":
-        s = { width: 1, height: 1, depth: 1 }, i = { ...s, ...e.shape }, t = new THREE$1.BoxGeometry(i.width, i.height, i.depth);
+        s = { width: 1, height: 1, depth: 1 }, i = { ...s, ...e.shape }, t = new THREE.BoxGeometry(i.width, i.height, i.depth);
         break;
       case "cylinder":
-        s = { radiusTop: 1, radiusBottom: 1, height: 1, radialSegments: 8, heightSegments: 1, openEnded: !1 }, i = { ...s, ...e.shape }, t = new THREE$1.CylinderGeometry(i.radiusTop, i.radiusBottom, i.height, i.radialSegments, i.heightSegments, i.openEnded);
+        s = { radiusTop: 1, radiusBottom: 1, height: 1, radialSegments: 8, heightSegments: 1, openEnded: !1 }, i = { ...s, ...e.shape }, t = new THREE.CylinderGeometry(i.radiusTop, i.radiusBottom, i.height, i.radialSegments, i.heightSegments, i.openEnded);
         break;
       case "icosahedron":
-        s = { radius: 1, detail: 0 }, i = { ...s, ...e.shape }, t = new THREE$1.IcosahedronGeometry(i.radius, i.detail);
+        s = { radius: 1, detail: 0 }, i = { ...s, ...e.shape }, t = new THREE.IcosahedronGeometry(i.radius, i.detail);
         break;
       case "cone":
-        s = { radius: 1, height: 1, radialSegments: 8, heightSegments: 1, openEnded: !1 }, i = { ...s, ...e.shape }, t = new THREE$1.ConeGeometry(i.radius, i.height, i.radialSegments, i.heightSegments, i.openEnded);
+        s = { radius: 1, height: 1, radialSegments: 8, heightSegments: 1, openEnded: !1 }, i = { ...s, ...e.shape }, t = new THREE.ConeGeometry(i.radius, i.height, i.radialSegments, i.heightSegments, i.openEnded);
         break;
       case "plane":
-        s = { width: 1, height: 1 }, i = { ...s, ...e.shape }, t = new THREE$1.PlaneGeometry(i.width, i.height);
+        s = { width: 1, height: 1 }, i = { ...s, ...e.shape }, t = new THREE.PlaneGeometry(i.width, i.height);
         break;
       case "sphere":
-        s = { radius: 1, widthSegments: 8, heightSegments: 6, phiStart: 0, phiLength: Math.PI * 2, thetaStart: 0, thetaLength: Math.PI }, i = { ...s, ...e.shape }, t = new THREE$1.SphereGeometry(i.radius, i.widthSegments, i.heightSegments, i.phiStart, i.phiLength, i.thetaStart, i.thetaLength);
+        s = { radius: 1, widthSegments: 8, heightSegments: 6, phiStart: 0, phiLength: Math.PI * 2, thetaStart: 0, thetaLength: Math.PI }, i = { ...s, ...e.shape }, t = new THREE.SphereGeometry(i.radius, i.widthSegments, i.heightSegments, i.phiStart, i.phiLength, i.thetaStart, i.thetaLength);
         break;
       case "torus":
-        s = { radius: 1, tube: 0.4, radialSegments: 8, tubularSegments: 6, arc: Math.PI * 2 }, i = { ...s, ...e.shape }, t = new THREE$1.TorusGeometry(i.radius, i.tube, i.radialSegments, i.tubularSegments, i.arc);
+        s = { radius: 1, tube: 0.4, radialSegments: 8, tubularSegments: 6, arc: Math.PI * 2 }, i = { ...s, ...e.shape }, t = new THREE.TorusGeometry(i.radius, i.tube, i.radialSegments, i.tubularSegments, i.arc);
         break;
       default:
         console.error("Unknown setting type: ", type);
@@ -6810,8 +6811,8 @@ function mergeVertices(o, e = 1e-4) {
         for (let j = 0; j < A; j++) {
           const R = d[j], P = u[j];
           if (_[P](r, v[R](b)), C)
-            for (let $ = 0, G = C.length; $ < G; $++)
-              L[$][P](r, C[$][R](b));
+            for (let F = 0, $ = C.length; F < $; F++)
+              L[F][P](r, C[F][R](b));
         }
       }
       t[x] = r, h.push(r), r++;
@@ -6935,28 +6936,28 @@ class AnyMesh {
     this.clearMeshes(), this.settings.forEach((e) => {
       e.clearDepth && this.viewer?.tjs?.renderer?.clearDepth && this.viewer.tjs.renderer.clearDepth();
       const t = e.materialType || "Standard", s = this.materialsRegistry.getMaterial(t, !0);
-      Array.isArray(e.color) ? s.color.setRGB(e.color[0], e.color[1], e.color[2]) : s.color = new THREE$1.Color(e.color);
+      Array.isArray(e.color) ? s.color.setRGB(e.color[0], e.color[1], e.color[2]) : s.color = new THREE.Color(e.color);
       const i = e.opacity ?? 1;
       s.transparent = !0, s.opacity = i;
       const n = {
-        FrontSide: THREE$1.FrontSide,
-        BackSide: THREE$1.BackSide,
-        DoubleSide: THREE$1.DoubleSide
+        FrontSide: THREE.FrontSide,
+        BackSide: THREE.BackSide,
+        DoubleSide: THREE.DoubleSide
       };
-      s.side = n[e.side] ?? THREE$1.DoubleSide, s.depthWrite = e.depthWrite ?? !0, s.depthTest = e.depthTest ?? !0;
-      const r = new THREE$1.BufferGeometry(), a = new Float32Array(e.vertices);
-      r.setAttribute("position", new THREE$1.BufferAttribute(a, 3));
+      s.side = n[e.side] ?? THREE.DoubleSide, s.depthWrite = e.depthWrite ?? !0, s.depthTest = e.depthTest ?? !0;
+      const r = new THREE.BufferGeometry(), a = new Float32Array(e.vertices);
+      r.setAttribute("position", new THREE.BufferAttribute(a, 3));
       const l = new Uint32Array(e.faces);
-      r.setIndex(new THREE$1.BufferAttribute(l, 1));
+      r.setIndex(new THREE.BufferAttribute(l, 1));
       let c = r;
       c = mergeVertices(r, e.mergeVerticesTolerance), e.mergeVerticesTolerance, (e.smoothNormals ?? !0) && c.computeVertexNormals();
-      const h = new THREE$1.Mesh(c, s), d = e.selectable ?? !0, u = typeof e.layer == "number" ? e.layer : d ? 0 : 1;
+      const h = new THREE.Mesh(c, s), d = e.selectable ?? !0, u = typeof e.layer == "number" ? e.layer : d ? 0 : 1;
       if (h.userData.anyMeshName = e.name, h.userData.type = "anyMesh", h.userData.uuid = this.viewer.uuid, h.userData.notSelectable = !d, e.userData && typeof e.userData == "object" && Object.assign(h.userData, e.userData), h.layers.set(u), h.visible = e.visible ?? !0, h.position.set(e.position[0], e.position[1], e.position[2]), typeof e.renderOrder == "number" && (h.renderOrder = e.renderOrder), this.meshes.push(h), this.scene.add(h), e.showEdges) {
-        const p = e.edgeColor || [0, 0, 0, 1], m = p.length === 4 ? p[3] : 1, g = new THREE$1.LineBasicMaterial({
-          color: new THREE$1.Color(p[0], p[1], p[2]),
+        const p = e.edgeColor || [0, 0, 0, 1], m = p.length === 4 ? p[3] : 1, g = new THREE.LineBasicMaterial({
+          color: new THREE.Color(p[0], p[1], p[2]),
           transparent: m < 1,
           opacity: m
-        }), y = new THREE$1.EdgesGeometry(c), f = new THREE$1.LineSegments(y, g);
+        }), y = new THREE.EdgesGeometry(c), f = new THREE.LineSegments(y, g);
         f.userData.anyMeshName = e.name, f.userData.type = "anyMesh", f.userData.uuid = this.viewer.uuid, f.userData.notSelectable = !d, e.userData && typeof e.userData == "object" && Object.assign(f.userData, e.userData), f.layers.set(u), f.visible = e.visible ?? !0, f.position.set(0, 0, 0), f.renderOrder = (h.renderOrder ?? 0) + 0.1, this.meshes.push(f), h.add(f);
       }
     }), this.updateLegend(), this.viewer.requestRedraw?.("render");
@@ -7020,7 +7021,7 @@ class AnyMesh {
   }
 }
 function resolveLegendColor(o) {
-  const e = new THREE$1.Color();
+  const e = new THREE.Color();
   return Array.isArray(o) ? e.setRGB(o[0] ?? 1, o[1] ?? 0, o[2] ?? 0) : o ? e.set(o) : e.setRGB(1, 0, 0), `#${e.getHexString()}`;
 }
 let Setting$9 = class {
@@ -7064,9 +7065,9 @@ class TextManager {
       const t = resolveOrigins(this.getAtoms(), e);
       if (!t.length)
         return;
-      const s = new THREE$1.Vector3(...e.shift), i = Array.isArray(e.texts) ? e.texts : null, n = normalizeFontSize$1(e.fontSize), r = e.className || "text-label text-label-cross", a = e.renderMode || "glyph";
+      const s = new THREE.Vector3(...e.shift), i = Array.isArray(e.texts) ? e.texts : null, n = normalizeFontSize$1(e.fontSize), r = e.className || "text-label text-label-cross", a = e.renderMode || "glyph";
       t.forEach((l, c) => {
-        const h = new THREE$1.Vector3(...l).add(s), d = i ? i[c] ?? "" : e.texts, { label: u } = this.createTextLabel(h, d, e.color, n, r, a);
+        const h = new THREE.Vector3(...l).add(s), d = i ? i[c] ?? "" : e.texts, { label: u } = this.createTextLabel(h, d, e.color, n, r, a);
         this.scene.add(u), this.labels.push(u);
       });
     }), this.weas?.requestRedraw?.("render");
@@ -7146,12 +7147,12 @@ class CellManager {
       console.warn("Invalid or missing unit cell data");
       return;
     }
-    const t = new THREE$1.LineBasicMaterial({
+    const t = new THREE.LineBasicMaterial({
       color: this.settings.cellColor,
       linewidth: this.settings.cellLineWidth
-    }), s = [], i = new THREE$1.Vector3(0, 0, 0), n = new THREE$1.Vector3(...e[0]), r = new THREE$1.Vector3(...e[1]), a = new THREE$1.Vector3().addVectors(n, r), l = new THREE$1.Vector3(...e[2]), c = new THREE$1.Vector3().addVectors(n, l), h = new THREE$1.Vector3().addVectors(r, l), d = new THREE$1.Vector3().addVectors(a, l);
+    }), s = [], i = new THREE.Vector3(0, 0, 0), n = new THREE.Vector3(...e[0]), r = new THREE.Vector3(...e[1]), a = new THREE.Vector3().addVectors(n, r), l = new THREE.Vector3(...e[2]), c = new THREE.Vector3().addVectors(n, l), h = new THREE.Vector3().addVectors(r, l), d = new THREE.Vector3().addVectors(a, l);
     s.push(i, n, n, a, a, r, r, i), s.push(l, c, c, d, d, h, h, l), s.push(i, l, n, c, r, h, a, d);
-    const u = new THREE$1.BufferGeometry().setFromPoints(s), p = new THREE$1.LineSegments(u, t);
+    const u = new THREE.BufferGeometry().setFromPoints(s), p = new THREE.LineSegments(u, t);
     return p.userData = {
       type: "cell",
       uuid: this.viewer.uuid,
@@ -7160,15 +7161,15 @@ class CellManager {
     }, p.layers.set(1), this.viewer.tjs.scene.add(p), p.visible = this.showCell, p;
   }
   drawUnitCellVectors() {
-    const e = new THREE$1.Vector3(0, 0, 0), t = this.viewer.originalCell, s = 1.5;
+    const e = new THREE.Vector3(0, 0, 0), t = this.viewer.originalCell, s = 1.5;
     if (!t || t.length !== 3) {
       console.warn("Invalid or missing unit cell data for vectors");
       return;
     }
     if (!this.viewer.tjs.hud.miniScenes.get("coord")) return;
-    const n = this.viewer.tjs.hud.coordAxesGroup, r = new THREE$1.Group(), a = ["a", "b", "c"], l = this.settings.axisColors, c = 0.5;
+    const n = this.viewer.tjs.hud.coordAxesGroup, r = new THREE.Group(), a = ["a", "b", "c"], l = this.settings.axisColors, c = 0.5;
     return t.forEach((h, d) => {
-      const m = new THREE$1.Vector3(...h).clone().normalize().clone().multiplyScalar(s), g = this.shapeRegistry.create("Arrow", {
+      const m = new THREE.Vector3(...h).clone().normalize().clone().multiplyScalar(s), g = this.shapeRegistry.create("Arrow", {
         color: l[a[d]],
         start: e.clone(),
         end: m.clone(),
@@ -7203,20 +7204,20 @@ class CellManager {
       )
     )) {
       if (this.cellMesh) {
-        const s = new THREE$1.LineBasicMaterial({
+        const s = new THREE.LineBasicMaterial({
           color: this.settings.cellColor,
           linewidth: this.settings.cellLineWidth
-        }), i = [], n = new THREE$1.Vector3(0, 0, 0), r = new THREE$1.Vector3(...e[0]), a = new THREE$1.Vector3(...e[1]), l = new THREE$1.Vector3().addVectors(r, a), c = new THREE$1.Vector3(...e[2]), h = new THREE$1.Vector3().addVectors(r, c), d = new THREE$1.Vector3().addVectors(a, c), u = new THREE$1.Vector3().addVectors(l, c);
+        }), i = [], n = new THREE.Vector3(0, 0, 0), r = new THREE.Vector3(...e[0]), a = new THREE.Vector3(...e[1]), l = new THREE.Vector3().addVectors(r, a), c = new THREE.Vector3(...e[2]), h = new THREE.Vector3().addVectors(r, c), d = new THREE.Vector3().addVectors(a, c), u = new THREE.Vector3().addVectors(l, c);
         i.push(n, r, r, l, l, a, a, n), i.push(c, h, h, u, u, d, d, c), i.push(n, c, r, h, a, d, l, u), this.cellMesh.geometry.setFromPoints(i), this.cellMesh.material = s;
       }
       if (this.cellVectors) {
         const s = [
-          new THREE$1.Vector3(...e[0]).normalize(),
-          new THREE$1.Vector3(...e[1]).normalize(),
-          new THREE$1.Vector3(...e[2]).normalize()
-        ], i = new THREE$1.Vector3(0, 1, 0);
+          new THREE.Vector3(...e[0]).normalize(),
+          new THREE.Vector3(...e[1]).normalize(),
+          new THREE.Vector3(...e[2]).normalize()
+        ], i = new THREE.Vector3(0, 1, 0);
         for (let r = 0; r < 3; r++) {
-          const a = new THREE$1.Quaternion().setFromUnitVectors(
+          const a = new THREE.Quaternion().setFromUnitVectors(
             i,
             s[r]
           );
@@ -7239,9 +7240,9 @@ function createSpriteLabel(o, e, t, s) {
   n.width = 128, n.height = 128;
   const r = n.getContext("2d");
   r.font = `${parseInt(s) * (128 / 180)}px Arial`, r.fillStyle = t, r.textAlign = "center", r.textBaseline = "middle", r.fillText(e, n.width / 2, n.height / 2);
-  const a = new THREE$1.CanvasTexture(n);
-  a.minFilter = THREE$1.LinearFilter, a.generateMipmaps = !1, a.encoding = THREE$1.sRGBEncoding, a.anisotropy = 16;
-  const l = new THREE$1.Sprite(new THREE$1.SpriteMaterial({ map: a }));
+  const a = new THREE.CanvasTexture(n);
+  a.minFilter = THREE.LinearFilter, a.generateMipmaps = !1, a.encoding = THREE.sRGBEncoding, a.anisotropy = 16;
+  const l = new THREE.Sprite(new THREE.SpriteMaterial({ map: a }));
   l.position.copy(o);
   const c = 2.25;
   return l.scale.set(c, c, 1), l;
@@ -7250,11 +7251,11 @@ function getAtomColors(o, e, t) {
   let s = [], i;
   if (e === "Random")
     s = [], o.symbols.forEach((n, r) => {
-      i = new THREE$1.Color(Math.random() * 16777215), s.push(i);
+      i = new THREE.Color(Math.random() * 16777215), s.push(i);
     });
   else if (e === "Uniform")
     s = [], o.symbols.forEach((n, r) => {
-      i = new THREE$1.Color(t.colorRamp[0]), s.push(i);
+      i = new THREE.Color(t.colorRamp[0]), s.push(i);
     });
   else if (e === "Index") {
     s = [];
@@ -7273,7 +7274,7 @@ function getAtomColors(o, e, t) {
 function getColorsFromArray(o, e) {
   const t = [], s = Math.min(...o), n = Math.max(...o) - s, r = e.length - 1;
   return o.forEach((a) => {
-    const l = (a - s) / n, c = Math.min(Math.floor(l * r), r - 1), h = (l - c / r) * r, d = new THREE$1.Color(e[c]), u = new THREE$1.Color(e[c + 1]), p = new THREE$1.Color(d.r, d.g, d.b).lerp(u, h);
+    const l = (a - s) / n, c = Math.min(Math.floor(l * r), r - 1), h = (l - c / r) * r, d = new THREE.Color(e[c]), u = new THREE.Color(e[c + 1]), p = new THREE.Color(d.r, d.g, d.b).lerp(u, h);
     t.push(p);
   }), t;
 }
@@ -7367,7 +7368,7 @@ function repeatPositions(o, e) {
   return t;
 }
 function convertColor$1(o) {
-  return Array.isArray(o) ? o = new THREE$1.Color(...o) : o = new THREE$1.Color(o), o;
+  return Array.isArray(o) ? o = new THREE.Color(...o) : o = new THREE.Color(o), o;
 }
 function drawAtoms({
   atoms: o,
@@ -7386,26 +7387,26 @@ function drawAtoms({
     [100, 32]
   ].find(([b]) => o.symbols.length > b)?.[1] ?? 32, h = a.create(n, { materialType: i, widthSegments: c, heightSegments: c });
   let d, u;
-  if (h instanceof THREE$1.Mesh)
+  if (h instanceof THREE.Mesh)
     d = h.geometry.clone(), u = h.material.clone();
-  else if (h instanceof THREE$1.Group) {
-    const b = h.children.find((x) => x instanceof THREE$1.Mesh);
+  else if (h instanceof THREE.Group) {
+    const b = h.children.find((x) => x instanceof THREE.Mesh);
     if (!b) throw new Error("Shape group has no meshes");
     d = b.geometry.clone(), u = b.material.clone();
   } else
     throw new Error("Unsupported shape type for instancing");
-  u = u.clone(), u.color.set(16777215), u.transparent = !0, u.side = THREE$1.DoubleSide;
-  const p = o.symbols.length, m = new THREE$1.InstancedMesh(d, u, p);
-  m.instanceColor = new THREE$1.InstancedBufferAttribute(
+  u = u.clone(), u.color.set(16777215), u.transparent = !0, u.side = THREE.DoubleSide;
+  const p = o.symbols.length, m = new THREE.InstancedMesh(d, u, p);
+  m.instanceColor = new THREE.InstancedBufferAttribute(
     new Float32Array(p * 3),
     3
   );
-  const g = new THREE$1.Vector3(), y = new THREE$1.Quaternion(), f = new THREE$1.Vector3(), w = new THREE$1.Matrix4();
+  const g = new THREE.Vector3(), y = new THREE.Quaternion(), f = new THREE.Vector3(), w = new THREE.Matrix4();
   return o.symbols.forEach((b, x) => {
     g.set(...o.positions[x]);
     const M = (b in t ? t[b].radius : 1) * e[x];
     f.set(M, M, M), w.compose(g, y, f), m.setMatrixAt(x, w);
-    const E = s[x] instanceof THREE$1.Color ? s[x] : new THREE$1.Color(s[x]);
+    const E = s[x] instanceof THREE.Color ? s[x] : new THREE.Color(s[x]);
     m.setColorAt(x, E);
   }), m.instanceMatrix.needsUpdate = !0, m.instanceColor.needsUpdate = !0, m.userData = {
     type: r,
@@ -7443,7 +7444,7 @@ class AtomManager {
     const e = [];
     this.viewer.atoms.symbols.forEach((t, s) => {
       this.settings[t] || (this.settings[t] = this.getDefaultSetting(t, this.viewer.atoms.species[t]?.element || t));
-      const i = new THREE$1.Color(this.settings[t].color);
+      const i = new THREE.Color(this.settings[t].color);
       e.push(i);
     }), this.viewer.atomColors = e, this.viewer.colorBy !== "Element" && (this.viewer.atomColors = getAtomColors(this.viewer.atoms, this.viewer.colorBy, { colorType: this.viewer.colorType, colorRamp: this.viewer._colorRamp }));
   }
@@ -7501,9 +7502,9 @@ class AtomManager {
       const n = this.viewer.imageAtomsList.map(([a]) => {
         const l = this.viewer.atomColors?.[a];
         if (l)
-          return typeof l.clone == "function" ? l.clone() : new THREE$1.Color(l);
+          return typeof l.clone == "function" ? l.clone() : new THREE.Color(l);
         const c = this.viewer.atoms.symbols[a];
-        return this.settings[c] || (this.settings[c] = this.getDefaultSetting(c, s.species[c]?.element || c)), new THREE$1.Color(this.settings[c].color);
+        return this.settings[c] || (this.settings[c] = this.getDefaultSetting(c, s.species[c]?.element || c)), new THREE.Color(this.settings[c].color);
       }), r = drawAtoms({
         scene: this.scene,
         atoms: s,
@@ -7519,15 +7520,15 @@ class AtomManager {
     return this.meshes.atom = e, e;
   }
   updateAtomMesh(e = null, t = null) {
-    var s = new THREE$1.Matrix4();
+    var s = new THREE.Matrix4();
     for (let i = 0; i < t.positions.length; i++)
-      this.meshes.atom.getMatrixAt(i, s), s.setPosition(new THREE$1.Vector3(...t.positions[i])), this.meshes.atom.setMatrixAt(i, s), this.updateImageAtomsMesh(i);
+      this.meshes.atom.getMatrixAt(i, s), s.setPosition(new THREE.Vector3(...t.positions[i])), this.meshes.atom.setMatrixAt(i, s), this.updateImageAtomsMesh(i);
     this.meshes.atom.instanceMatrix.needsUpdate = !0, this.meshes.image && (this.meshes.image.instanceMatrix.needsUpdate = !0);
   }
   updateImageAtomsMesh(e) {
     this.viewer.imageAtomsList.length > 0 && this.imageAtomMap[e] && this.imageAtomMap[e].forEach((s) => {
-      const i = s.index, n = this.viewer.atoms.positions[e].map((a, l) => a + calculateCartesianCoordinates(this.viewer.atoms.cell, s.offset)[l]), r = new THREE$1.Matrix4();
-      this.meshes.image.getMatrixAt(i, r), r.setPosition(new THREE$1.Vector3(...n)), this.meshes.image.setMatrixAt(i, r);
+      const i = s.index, n = this.viewer.atoms.positions[e].map((a, l) => a + calculateCartesianCoordinates(this.viewer.atoms.cell, s.offset)[l]), r = new THREE.Matrix4();
+      this.meshes.image.getMatrixAt(i, r), r.setPosition(new THREE.Vector3(...n)), this.meshes.image.setMatrixAt(i, r);
     });
   }
   // Method to update the scale of atoms
@@ -7544,9 +7545,9 @@ class AtomManager {
     this.viewer.requestRedraw?.("render");
   }
   updateMeshScale(e, t, s, i) {
-    const n = new THREE$1.Vector3(), r = new THREE$1.Quaternion(), a = new THREE$1.Vector3();
+    const n = new THREE.Vector3(), r = new THREE.Quaternion(), a = new THREE.Vector3();
     t.forEach((l) => {
-      const c = new THREE$1.Matrix4(), h = this.settings[s[l]].radius || 1;
+      const c = new THREE.Matrix4(), h = this.settings[s[l]].radius || 1;
       e.getMatrixAt(l, c), c.decompose(n, r, a), a.set(h * i, h * i, h * i), c.compose(n, r, a), e.setMatrixAt(l, c);
     }), e.instanceMatrix.needsUpdate = !0;
   }
@@ -7797,7 +7798,7 @@ class BondManager {
   }
   drawBonds() {
     this.reset();
-    const e = new THREE$1.Group(), t = [];
+    const e = new THREE.Group(), t = [];
     for (let h = 0; h < this.viewer.modelSticks.length; h++)
       this.viewer.modelSticks[h] !== 0 && t.push([h, [0, 0, 0]]);
     const s = this.viewer.boundaryList || [];
@@ -7872,17 +7873,17 @@ class BondManager {
     r.forEach((a) => {
       const l = this.bondList[this.bondMap[n][a]], c = l[0], h = l[1], d = l[2], u = l[3];
       let p = t.positions[c].map((E, v) => E + calculateCartesianCoordinates(t.cell, d)[v]), m = t.positions[h].map((E, v) => E + calculateCartesianCoordinates(t.cell, u)[v]);
-      p = new THREE$1.Vector3(...p), m = new THREE$1.Vector3(...m);
-      const g = new THREE$1.Vector3().lerpVectors(p, m, 0.25), y = t.symbols[c] + "-" + t.symbols[h];
+      p = new THREE.Vector3(...p), m = new THREE.Vector3(...m);
+      const g = new THREE.Vector3().lerpVectors(p, m, 0.25), y = t.symbols[c] + "-" + t.symbols[h];
       if (!this.viewer.cutoffs[y])
         return;
-      const f = this.viewer.cutoffs[y].max, w = calculateQuaternion(p, m), b = calculateScale(p, m, this.bondRadius, f, this.hideLongBonds), x = new THREE$1.Matrix4().compose(g, w, b);
+      const f = this.viewer.cutoffs[y].max, w = calculateQuaternion(p, m), b = calculateScale(p, m, this.bondRadius, f, this.hideLongBonds), x = new THREE.Matrix4().compose(g, w, b);
       s.setMatrixAt(a * 2, x);
-      const S = new THREE$1.Vector3().lerpVectors(p, m, 0.75), M = new THREE$1.Matrix4().compose(S, w, b);
+      const S = new THREE.Vector3().lerpVectors(p, m, 0.75), M = new THREE.Matrix4().compose(S, w, b);
       if (s.setMatrixAt(a * 2 + 1, M), i) {
-        const E = new THREE$1.Vector3(this.bondRadius, this.bondRadius, this.bondRadius), v = new THREE$1.Matrix4().compose(p, new THREE$1.Quaternion(), E);
+        const E = new THREE.Vector3(this.bondRadius, this.bondRadius, this.bondRadius), v = new THREE.Matrix4().compose(p, new THREE.Quaternion(), E);
         i.setMatrixAt(a * 2, v);
-        const C = new THREE$1.Matrix4().compose(m, new THREE$1.Quaternion(), E);
+        const C = new THREE.Matrix4().compose(m, new THREE.Quaternion(), E);
         i.setMatrixAt(a * 2 + 1, C);
       }
     }), s.instanceMatrix.needsUpdate = !0, i && (i.instanceMatrix.needsUpdate = !0);
@@ -7906,7 +7907,7 @@ class BondManager {
       const y = t.symbols[h] + "-" + t.symbols[d];
       if (!this.settings[y])
         return;
-      m = new THREE$1.Vector3(...m), g = new THREE$1.Vector3(...g);
+      m = new THREE.Vector3(...m), g = new THREE.Vector3(...g);
       const f = m.distanceTo(g);
       f > this.settings[y].max | f < this.settings[y].min && g.copy(m), a[l * 6] = m.x, a[l * 6 + 1] = m.y, a[l * 6 + 2] = m.z, a[l * 6 + 3] = g.x, a[l * 6 + 4] = g.y, a[l * 6 + 5] = g.z;
     }), r.needsUpdate = !0, s.geometry.computeBoundingBox(), s.geometry.computeBoundingSphere();
@@ -7934,36 +7935,36 @@ function drawStick({
     segments: d
   }), p = a ? c.create("Sphere", { materialType: n }) : null;
   let m;
-  if (u instanceof THREE$1.Mesh)
+  if (u instanceof THREE.Mesh)
     m = u.geometry.clone(), u.material.clone();
   else
     throw new Error("Cylinder shape must be a mesh");
   let g;
   if (p)
-    if (p instanceof THREE$1.Mesh)
+    if (p instanceof THREE.Mesh)
       g = p.geometry.clone();
     else
       throw new Error("Sphere shape must be a mesh");
   const y = u.material.clone();
   y.color.set(16777215), y.transparent = !0;
-  const f = performance.now(), w = new THREE$1.InstancedMesh(
+  const f = performance.now(), w = new THREE.InstancedMesh(
     m,
     y,
     t.length * 2
-  ), b = a ? new THREE$1.InstancedMesh(g, y, t.length * 2) : null, x = new THREE$1.Vector3(), S = new THREE$1.Vector3(), M = new THREE$1.Vector3(), E = new THREE$1.Vector3(), v = new THREE$1.Matrix4();
+  ), b = a ? new THREE.InstancedMesh(g, y, t.length * 2) : null, x = new THREE.Vector3(), S = new THREE.Vector3(), M = new THREE.Vector3(), E = new THREE.Vector3(), v = new THREE.Matrix4();
   for (let A = 0; A < t.length; A++) {
     const [_, L, j, R] = e[t[A]], P = o.positions[_].map((T, B) => T + calculateCartesianCoordinates(o.cell, j)[B]);
     x.set(...P);
-    const $ = o.positions[L].map((T, B) => T + calculateCartesianCoordinates(o.cell, R)[B]);
-    S.set(...$);
-    const G = o.symbols[_] + "-" + o.symbols[L], k = r ? r[_] : s[G].color1, Z = r ? r[L] : s[G].color2;
+    const F = o.positions[L].map((T, B) => T + calculateCartesianCoordinates(o.cell, R)[B]);
+    S.set(...F);
+    const $ = o.symbols[_] + "-" + o.symbols[L], z = r ? r[_] : s[$].color1, Z = r ? r[L] : s[$].color2;
     M.lerpVectors(x, S, 0.25), E.lerpVectors(x, S, 0.75);
-    const N = calculateQuaternion(x, S), z = calculateScale(x, S, i);
-    if (v.compose(M, N, z), w.setMatrixAt(A * 2, v), w.setColorAt(A * 2, k), v.compose(E, N, z), w.setMatrixAt(A * 2 + 1, v), w.setColorAt(A * 2 + 1, Z), a) {
-      const T = new THREE$1.Vector3(i, i, i), B = new THREE$1.Matrix4().compose(x, new THREE$1.Quaternion(), T);
-      b.setMatrixAt(A * 2, B), b.setColorAt(A * 2, k);
-      const U = new THREE$1.Matrix4().compose(S, new THREE$1.Quaternion(), T);
-      b.setMatrixAt(A * 2 + 1, U), b.setColorAt(A * 2 + 1, Z);
+    const k = calculateQuaternion(x, S), U = calculateScale(x, S, i);
+    if (v.compose(M, k, U), w.setMatrixAt(A * 2, v), w.setColorAt(A * 2, z), v.compose(E, k, U), w.setMatrixAt(A * 2 + 1, v), w.setColorAt(A * 2 + 1, Z), a) {
+      const T = new THREE.Vector3(i, i, i), B = new THREE.Matrix4().compose(x, new THREE.Quaternion(), T);
+      b.setMatrixAt(A * 2, B), b.setColorAt(A * 2, z);
+      const G = new THREE.Matrix4().compose(S, new THREE.Quaternion(), T);
+      b.setMatrixAt(A * 2 + 1, G), b.setColorAt(A * 2 + 1, Z);
     }
   }
   w.userData.type = "bond", w.userData.uuid = o.uuid, w.userData.objectMode = "edit", b && (b.userData.type = "bond", b.userData.uuid = o.uuid, b.userData.objectMode = "edit");
@@ -7977,16 +7978,16 @@ function drawLine(o, e, t, s, i = "dashed", n = null) {
   t.forEach((d) => {
     const u = e[d], [p, m, g, y] = u;
     var f = o.positions[p].map((M, E) => M + calculateCartesianCoordinates(o.cell, g)[E]);
-    f = new THREE$1.Vector3(...f);
+    f = new THREE.Vector3(...f);
     var w = o.positions[m].map((M, E) => M + calculateCartesianCoordinates(o.cell, y)[E]);
-    w = new THREE$1.Vector3(...w), r.push(f.x, f.y, f.z), r.push(w.x, w.y, w.z);
+    w = new THREE.Vector3(...w), r.push(f.x, f.y, f.z), r.push(w.x, w.y, w.z);
     const b = o.symbols[p] + "-" + o.symbols[m], x = s[b].color1, S = s[b].color2;
     a.push(x.r, x.g, x.b), a.push(S.r, S.g, S.b);
   });
-  const l = new THREE$1.BufferGeometry();
-  l.setAttribute("position", new THREE$1.Float32BufferAttribute(r, 3)), l.setAttribute("color", new THREE$1.Float32BufferAttribute(a, 3));
+  const l = new THREE.BufferGeometry();
+  l.setAttribute("position", new THREE.Float32BufferAttribute(r, 3)), l.setAttribute("color", new THREE.Float32BufferAttribute(a, 3));
   let c;
-  i === "dashed" ? c = new THREE$1.LineDashedMaterial({
+  i === "dashed" ? c = new THREE.LineDashedMaterial({
     color: 16777215,
     // Set a default color if needed, but we'll use vertex colors
     vertexColors: !0,
@@ -7997,7 +7998,7 @@ function drawLine(o, e, t, s, i = "dashed", n = null) {
     // Length of each gap
     linewidth: 3
     // Optional: adjust line thickness (supported in WebGL2 contexts)
-  }) : c = new THREE$1.LineBasicMaterial({
+  }) : c = new THREE.LineBasicMaterial({
     color: 16777215,
     // Set a default color if needed, but we'll use vertex colors
     vertexColors: !0,
@@ -8005,12 +8006,12 @@ function drawLine(o, e, t, s, i = "dashed", n = null) {
     linewidth: 3
     // Optional: adjust line thickness (supported in WebGL2 contexts)
   });
-  const h = new THREE$1.LineSegments(l, c);
+  const h = new THREE.LineSegments(l, c);
   return h.computeLineDistances(), h.userData.type = "bond", h.userData.uuid = o.uuid, h.userData.objectMode = "edit", h;
 }
 function calculateScale(o, e, t, s = null, i = !0) {
   const n = o.distanceTo(e);
-  return i && s !== null && n > s && (t = 0), new THREE$1.Vector3(t, n / 2, t);
+  return i && s !== null && n > s && (t = 0), new THREE.Vector3(t, n / 2, t);
 }
 function searchBondedAtoms(o, e, t, s) {
   let i = [], n = [];
@@ -8120,8 +8121,8 @@ function findNeighbors(o, e, t = !1, s = !0, i = console) {
       if (!e[_]) return;
       const L = u[v], j = calculateDistance(x, L);
       if (j < e[_].max && j > e[_].min) {
-        const R = C.map((P, $) => P - f[$]);
-        c.push([y, A, R]), h[y] ? h[y].some(([P, $]) => P === A && $.every((G, k) => G === R[k])) || h[y].push([A, R]) : h[y] = [[A, R]];
+        const R = C.map((P, F) => P - f[F]);
+        c.push([y, A, R]), h[y] ? h[y].some(([P, F]) => P === A && F.every(($, z) => $ === R[z])) || h[y].push([A, R]) : h[y] = [[A, R]];
       }
     });
   });
@@ -8561,7 +8562,7 @@ class PolyhedraManager {
         else
           var h = f[0], d = f[2];
         g = e.positions[h].map((b, x) => b + calculateCartesianCoordinates(e.cell, d)[x]);
-        const w = new THREE$1.Vector3(...g);
+        const w = new THREE.Vector3(...g);
         w.atomIndex = h, w.offset = d, m.push(w);
       }
       if (m.length < 4) {
@@ -8571,7 +8572,7 @@ class PolyhedraManager {
       try {
         const { hull: y, vertices: f, normals: w, indices: b, offsets: x } = calculateConvexHull(m);
         r.push(...f), a.push(...w);
-        const S = e.symbols[p.atomIndex], M = elementColors[i][S] || defaultColor, E = new THREE$1.Color(M);
+        const S = e.symbols[p.atomIndex], M = elementColors[i][S] || defaultColor, E = new THREE.Color(M);
         for (let v = 0; v < f.length / 3; v++)
           l.push(E.r, E.g, E.b);
         b.forEach((v, C) => {
@@ -8587,10 +8588,10 @@ class PolyhedraManager {
   }
   drawPolyhedraMesh(e, t = "standard") {
     const s = this.materialsRegistry.getMaterial(t, !0);
-    s.transparent = !0, s.opacity = 0.5, s.vertexColors = !0, s.side = THREE$1.DoubleSide, s.depthWrite = !1, s.depthTest = !0;
-    const i = new THREE$1.BufferGeometry();
-    i.setAttribute("position", new THREE$1.Float32BufferAttribute(this.allVertices, 3)), i.setAttribute("normal", new THREE$1.Float32BufferAttribute(this.allNormals, 3)), i.setAttribute("color", new THREE$1.Float32BufferAttribute(this.allColors, 3));
-    const n = new THREE$1.Mesh(i, s);
+    s.transparent = !0, s.opacity = 0.5, s.vertexColors = !0, s.side = THREE.DoubleSide, s.depthWrite = !1, s.depthTest = !0;
+    const i = new THREE.BufferGeometry();
+    i.setAttribute("position", new THREE.Float32BufferAttribute(this.allVertices, 3)), i.setAttribute("normal", new THREE.Float32BufferAttribute(this.allNormals, 3)), i.setAttribute("color", new THREE.Float32BufferAttribute(this.allColors, 3));
+    const n = new THREE.Mesh(i, s);
     return n.userData.type = "polyhedra", n.userData.uuid = e.uuid, n.userData.objectMode = "edit", n.userData.notSelectable = !0, n.layers.set(1), n.renderOrder = 400, n;
   }
   updatePolyhedraMesh(e = null, t = null) {
@@ -8601,7 +8602,7 @@ class PolyhedraManager {
         const l = t.positions[i].map((c, h) => c + calculateCartesianCoordinates(t.cell, a)[h]);
         this.allVertices[r * 3] = l[0], this.allVertices[r * 3 + 1] = l[1], this.allVertices[r * 3 + 2] = l[2];
       });
-    }), this.mesh.geometry.setAttribute("position", new THREE$1.Float32BufferAttribute(this.allVertices, 3)), this.mesh.geometry.attributes.position.needsUpdate = !0, this.mesh.geometry.computeVertexNormals();
+    }), this.mesh.geometry.setAttribute("position", new THREE.Float32BufferAttribute(this.allVertices, 3)), this.mesh.geometry.attributes.position.needsUpdate = !0, this.mesh.geometry.computeVertexNormals();
   }
 }
 function filterBondMap(o, e, t, s) {
@@ -8702,7 +8703,7 @@ class AtomLabelManager {
     if (!s || !this.labels || this.labels.length === 0)
       return;
     this.scene.updateMatrixWorld(!0);
-    const n = new THREE$1.Vector3();
+    const n = new THREE.Vector3();
     this.labels.forEach((r) => {
       const a = r.element;
       if (!a)
@@ -8710,11 +8711,11 @@ class AtomLabelManager {
       if (a.dataset?.cross === "true" && i) {
         const p = r.userData?.atomIndex, m = this.getAtomRadius(p);
         if (m) {
-          const g = i.getSize(new THREE$1.Vector2()), y = new THREE$1.Vector3(), f = new THREE$1.Vector3(), w = new THREE$1.Vector3();
+          const g = i.getSize(new THREE.Vector2()), y = new THREE.Vector3(), f = new THREE.Vector3(), w = new THREE.Vector3();
           s.matrixWorld.extractBasis(y, f, w);
           const b = this.viewer.atoms.positions[p];
           if (b) {
-            const x = new THREE$1.Vector3(...b), S = x.clone().add(y.clone().multiplyScalar(m)), M = x.project(s), E = S.project(s), v = (E.x - M.x) * g.x * 0.5, C = (E.y - M.y) * g.y * 0.5, A = Math.sqrt(v * v + C * C), _ = Math.max(1, Math.round(A * 2));
+            const x = new THREE.Vector3(...b), S = x.clone().add(y.clone().multiplyScalar(m)), M = x.project(s), E = S.project(s), v = (E.x - M.x) * g.x * 0.5, C = (E.y - M.y) * g.y * 0.5, A = Math.sqrt(v * v + C * C), _ = Math.max(1, Math.round(A * 2));
             a.style.setProperty("--cross-size", `${_}px`), a.style.fontSize = `${_}px`;
             return;
           }
@@ -8750,7 +8751,7 @@ class AtomLabelManager {
     const t = this.viewer.atomManager?.meshes?.atom;
     if (!t || typeof t.getMatrixAt != "function")
       return null;
-    const s = new THREE$1.Matrix4(), i = new THREE$1.Vector3(), n = new THREE$1.Quaternion(), r = new THREE$1.Vector3();
+    const s = new THREE.Matrix4(), i = new THREE.Vector3(), n = new THREE.Quaternion(), r = new THREE.Vector3();
     return t.getMatrixAt(e, s), s.decompose(i, n, r), r.x || r.y || r.z || null;
   }
 }
@@ -8762,7 +8763,7 @@ function clearLabels(o, e) {
 function drawAtomLabels(o, e, t, s, i = [], n, r = "atom-label", a = "glyph") {
   const l = [], c = normalizeFontSize(t), h = getBaseFontPx(c);
   for (let d = 0; d < o.length; d++) {
-    const u = new THREE$1.Vector3(...o[d]), p = e[d], m = n(u, p, s, c, r, a), g = m && m.label ? m.label : m;
+    const u = new THREE.Vector3(...o[d]), p = e[d], m = n(u, p, s, c, r, a), g = m && m.label ? m.label : m;
     g.userData.baseFontPx = h, g.userData.atomIndex = Array.isArray(i) ? i[d] : null, l.push(g);
   }
   return l;
@@ -9330,10 +9331,10 @@ function clipTrianglesAgainstPlane(o, e, t, s, i) {
       continue;
     const E = w, v = [b, x, S], C = [];
     for (let _ = 0; _ < 3; _++) {
-      const L = E[_], j = v[_], R = E[(_ + 1) % 3], P = v[(_ + 1) % 3], $ = j <= i, G = P <= i;
-      if ($ && C.push(L), $ !== G) {
-        const k = j / (j - P);
-        C.push([L[0] + k * (R[0] - L[0]), L[1] + k * (R[1] - L[1]), L[2] + k * (R[2] - L[2])]);
+      const L = E[_], j = v[_], R = E[(_ + 1) % 3], P = v[(_ + 1) % 3], F = j <= i, $ = P <= i;
+      if (F && C.push(L), F !== $) {
+        const z = j / (j - P);
+        C.push([L[0] + z * (R[0] - L[0]), L[1] + z * (R[1] - L[1]), L[2] + z * (R[2] - L[2])]);
       }
     }
     if (C.length < 3) continue;
@@ -9395,11 +9396,11 @@ function marchingCubes(o, e, t, s, i = 1, n = null) {
             continue;
           }
           g[v] = d.length;
-          const A = [0, 0, 0], _ = edgeIndex[v], L = cubeVerts[_[0]], j = cubeVerts[_[1]], R = m[_[0]], P = m[_[1]], $ = P - R, k = 1e-12 * Math.max(1, Math.abs(R), Math.abs(P), Math.abs(s)), Z = Math.abs($) > k ? (s - R) / $ : 0.5, N = [0, 0, 0];
-          let z = !1;
+          const A = [0, 0, 0], _ = edgeIndex[v], L = cubeVerts[_[0]], j = cubeVerts[_[1]], R = m[_[0]], P = m[_[1]], F = P - R, z = 1e-12 * Math.max(1, Math.abs(R), Math.abs(P), Math.abs(s)), Z = Math.abs(F) > z ? (s - R) / F : 0.5, k = [0, 0, 0];
+          let U = !1;
           for (let T = 0; T < 3; ++T)
-            N[T] = y[T] + L[T] * i + Z * (j[T] - L[T]) * i, l && (N[T] <= 0 && (N[T] = 0, z = !0), N[T] >= o[T] - 1 && (N[T] = o[T] - 1, z = !0)), A[T] = c[T] * N[T] + h[T];
-          d.push(A), f.push(z), w.set(C, { index: g[v], onBoundary: z });
+            k[T] = y[T] + L[T] * i + Z * (j[T] - L[T]) * i, l && (k[T] <= 0 && (k[T] = 0, U = !0), k[T] >= o[T] - 1 && (k[T] = o[T] - 1, U = !0)), A[T] = c[T] * k[T] + h[T];
+          d.push(A), f.push(U), w.set(C, { index: g[v], onBoundary: U });
         }
         const E = triTable[S];
         for (let v = 0; v < E.length; v += 3) {
@@ -9413,7 +9414,7 @@ function marchingCubes(o, e, t, s, i = 1, n = null) {
   return { positions: d, cells: u, faceMaterials: l ? p : [] };
 }
 function normalizeHexColor(o) {
-  return "#" + (o instanceof THREE$1.Color ? o : new THREE$1.Color(o)).getHexString();
+  return "#" + (o instanceof THREE.Color ? o : new THREE.Color(o)).getHexString();
 }
 let Setting$3 = class {
   constructor({ isovalue: e = null, color: t = "#3d82ed", mode: s = 1, step_size: i = 1, opacity: n = 0.8 }) {
@@ -9794,24 +9795,24 @@ class FermiSurface {
           if (v = tileVolume(y, b, x), a.clipToBZ && e.bzMesh && e.bzMesh.vertices) {
             const T = invert3x3(f);
             if (T) {
-              let B = [1 / 0, 1 / 0, 1 / 0], U = [-1 / 0, -1 / 0, -1 / 0];
+              let B = [1 / 0, 1 / 0, 1 / 0], G = [-1 / 0, -1 / 0, -1 / 0];
               const W = e.bzMesh.vertices;
               for (let H = 0; H < W.length; H += 3) {
-                const D = mulMatVec(T, [W[H], W[H + 1], W[H + 2]]);
-                for (let I = 0; I < 3; I++)
-                  D[I] < B[I] && (B[I] = D[I]), D[I] > U[I] && (U[I] = D[I]);
+                const N = mulMatVec(T, [W[H], W[H + 1], W[H + 2]]);
+                for (let D = 0; D < 3; D++)
+                  N[D] < B[D] && (B[D] = N[D]), N[D] > G[D] && (G[D] = N[D]);
               }
               const q = a.bzCropMargin || 1, V = [0, 0, 0], O = [0, 0, 0];
               for (let H = 0; H < 3; H++) {
-                const D = Math.floor((B[H] + x / 2) * b[H]) - q, I = Math.ceil((U[H] + x / 2) * b[H]) + q;
-                V[H] = clamp(D, 0, S[H] - 1), O[H] = clamp(I, 0, S[H] - 1);
+                const N = Math.floor((B[H] + x / 2) * b[H]) - q, D = Math.ceil((G[H] + x / 2) * b[H]) + q;
+                V[H] = clamp(N, 0, S[H] - 1), O[H] = clamp(D, 0, S[H] - 1);
               }
               if (C = [V[0], V[1], V[2]], A = [O[0] - V[0] + 1, O[1] - V[1] + 1, O[2] - V[2] + 1], A[0] > 0 && A[1] > 0 && A[2] > 0) {
                 const H = new Array(A[0] * A[1] * A[2]);
-                for (let D = 0; D < A[0]; D++)
-                  for (let I = 0; I < A[1]; I++)
+                for (let N = 0; N < A[0]; N++)
+                  for (let D = 0; D < A[1]; D++)
                     for (let Y = 0; Y < A[2]; Y++) {
-                      const K = D + C[0], F = I + C[1], X = Y + C[2], J = (K * S[1] + F) * S[2] + X, Q = (D * A[1] + I) * A[2] + Y;
+                      const K = N + C[0], I = D + C[1], X = Y + C[2], J = (K * S[1] + I) * S[2] + X, Q = (N * A[1] + D) * A[2] + Y;
                       H[Q] = v[J];
                     }
                 v = H;
@@ -9830,14 +9831,14 @@ class FermiSurface {
             (B[2] + C[2]) / b[2] - x / 2
           ]);
           for (let B = 0; B < j.length; B += 3) {
-            const U = j[B], W = j[B + 1], q = j[B + 2], V = T[U], O = T[W].slice(), H = T[q].slice();
-            for (let F = 0; F < 3; F++) {
-              let X = O[F] - V[F];
-              X > 0.5 ? O[F] -= 1 : X < -0.5 && (O[F] += 1);
-              let J = H[F] - V[F];
-              J > 0.5 ? H[F] -= 1 : J < -0.5 && (H[F] += 1);
+            const G = j[B], W = j[B + 1], q = j[B + 2], V = T[G], O = T[W].slice(), H = T[q].slice();
+            for (let I = 0; I < 3; I++) {
+              let X = O[I] - V[I];
+              X > 0.5 ? O[I] -= 1 : X < -0.5 && (O[I] += 1);
+              let J = H[I] - V[I];
+              J > 0.5 ? H[I] -= 1 : J < -0.5 && (H[I] += 1);
             }
-            const D = R.length, I = [
+            const N = R.length, D = [
               V[0] * f[0][0] + V[1] * f[1][0] + V[2] * f[2][0] + w[0],
               V[0] * f[0][1] + V[1] * f[1][1] + V[2] * f[2][1] + w[1],
               V[0] * f[0][2] + V[1] * f[1][2] + V[2] * f[2][2] + w[2]
@@ -9850,43 +9851,43 @@ class FermiSurface {
               H[0] * f[0][1] + H[1] * f[1][1] + H[2] * f[2][1] + w[1],
               H[0] * f[0][2] + H[1] * f[1][2] + H[2] * f[2][2] + w[2]
             ];
-            R.push(I, Y, K), P.push(D, D + 1, D + 2);
+            R.push(D, Y, K), P.push(N, N + 1, N + 2);
           }
         } else
           R = L.positions.map((T) => {
-            const B = (T[0] + C[0]) / b[0] - x / 2, U = (T[1] + C[1]) / b[1] - x / 2, W = (T[2] + C[2]) / b[2] - x / 2, q = B * f[0][0] + U * f[1][0] + W * f[2][0] + w[0], V = B * f[0][1] + U * f[1][1] + W * f[2][1] + w[1], O = B * f[0][2] + U * f[1][2] + W * f[2][2] + w[2];
+            const B = (T[0] + C[0]) / b[0] - x / 2, G = (T[1] + C[1]) / b[1] - x / 2, W = (T[2] + C[2]) / b[2] - x / 2, q = B * f[0][0] + G * f[1][0] + W * f[2][0] + w[0], V = B * f[0][1] + G * f[1][1] + W * f[2][1] + w[1], O = B * f[0][2] + G * f[1][2] + W * f[2][2] + w[2];
             return [q, V, O];
           }), P = j;
-        const $ = Math.max(1, Math.floor(typeof a.tile == "number" ? a.tile : 1)), G = $, k = $, Z = $;
-        let N = R, z = P;
-        if (G > 1 || k > 1 || Z > 1) {
-          N = [], z = [];
-          const T = [], B = -Math.floor(G / 2), U = -Math.floor(k / 2), W = -Math.floor(Z / 2);
-          for (let V = B; V < B + G; V++)
-            for (let O = U; O < U + k; O++)
+        const F = Math.max(1, Math.floor(typeof a.tile == "number" ? a.tile : 1)), $ = F, z = F, Z = F;
+        let k = R, U = P;
+        if ($ > 1 || z > 1 || Z > 1) {
+          k = [], U = [];
+          const T = [], B = -Math.floor($ / 2), G = -Math.floor(z / 2), W = -Math.floor(Z / 2);
+          for (let V = B; V < B + $; V++)
+            for (let O = G; O < G + z; O++)
               for (let H = W; H < W + Z; H++)
                 T.push([V, O, H]);
           let q = 0;
           for (let V = 0; V < T.length; V++) {
-            const [O, H, D] = T[V], I = O * f[0][0] + H * f[1][0] + D * f[2][0], Y = O * f[0][1] + H * f[1][1] + D * f[2][1], K = O * f[0][2] + H * f[1][2] + D * f[2][2];
-            for (let F = 0; F < R.length; F++) {
-              const X = R[F];
-              N.push([X[0] + I, X[1] + Y, X[2] + K]);
+            const [O, H, N] = T[V], D = O * f[0][0] + H * f[1][0] + N * f[2][0], Y = O * f[0][1] + H * f[1][1] + N * f[2][1], K = O * f[0][2] + H * f[1][2] + N * f[2][2];
+            for (let I = 0; I < R.length; I++) {
+              const X = R[I];
+              k.push([X[0] + D, X[1] + Y, X[2] + K]);
             }
-            for (let F = 0; F < P.length; F += 3)
-              z.push(P[F] + q, P[F + 1] + q, P[F + 2] + q);
+            for (let I = 0; I < P.length; I += 3)
+              U.push(P[I] + q, P[I + 1] + q, P[I + 2] + q);
             q += R.length;
           }
         }
         if (a.clipToBZ) {
           const T = a.clipPlanes || m.bzPlanes || e.bzPlanes || null;
-          if (T && T.length && z.length) {
-            const B = clipMeshToPlanes(N, z, T, a.clipEps);
+          if (T && T.length && U.length) {
+            const B = clipMeshToPlanes(k, U, T, a.clipEps);
             R = B.positions, P = B.faces;
           } else
-            R = N, P = z;
+            R = k, P = U;
         } else
-          R = N, P = z;
+          R = k, P = U;
         if (R.length && P.length) {
           for (let T = 0; T < R.length; T++)
             c.push(R[T]);
@@ -9995,13 +9996,13 @@ class VolumeSlice {
       return;
     }
     this.viewer.logger.debug("drawSlices"), this.clearSlices();
-    const e = this.viewer.volumetricData, t = e.values, s = e.dims, i = e.cell, n = new THREE$1.Vector3(...e.origin);
+    const e = this.viewer.volumetricData, t = e.values, s = e.dims, i = e.cell, n = new THREE.Vector3(...e.origin);
     Object.entries(this.settings).forEach(([r, a]) => {
       let l, c;
       if (a.method === "miller")
         l = computePlaneNormalFromMillerIndices(a.h, a.k, a.l, i), c = l.clone().multiplyScalar(a.distance).add(n);
       else if (a.method === "bestFit") {
-        const v = a.selectedAtomIndices.map((A) => new THREE$1.Vector3(...this.viewer.atoms.positions[A])), C = computeBestFitPlane(v);
+        const v = a.selectedAtomIndices.map((A) => new THREE.Vector3(...this.viewer.atoms.positions[A])), C = computeBestFitPlane(v);
         l = C.normal, c = C.point;
       } else {
         this.viewer.logger.error(`Unknown method: ${a.method}`);
@@ -10018,13 +10019,13 @@ class VolumeSlice {
   }
 }
 function computePlaneNormalFromMillerIndices(o, e, t, s) {
-  const i = new THREE$1.Vector3(...s[0]), n = new THREE$1.Vector3(...s[1]), r = new THREE$1.Vector3(...s[2]), a = i.dot(n.clone().cross(r)), l = n.clone().cross(r).multiplyScalar(2 * Math.PI / a), c = r.clone().cross(i).multiplyScalar(2 * Math.PI / a), h = i.clone().cross(n).multiplyScalar(2 * Math.PI / a);
+  const i = new THREE.Vector3(...s[0]), n = new THREE.Vector3(...s[1]), r = new THREE.Vector3(...s[2]), a = i.dot(n.clone().cross(r)), l = n.clone().cross(r).multiplyScalar(2 * Math.PI / a), c = r.clone().cross(i).multiplyScalar(2 * Math.PI / a), h = i.clone().cross(n).multiplyScalar(2 * Math.PI / a);
   return l.clone().multiplyScalar(o).add(c.clone().multiplyScalar(e)).add(h.clone().multiplyScalar(t)).normalize();
 }
 function computeBestFitPlane(o) {
   if (o.length < 3)
     throw new Error("At least three points are required to define a plane.");
-  const e = new THREE$1.Vector3(0, 0, 0);
+  const e = new THREE.Vector3(0, 0, 0);
   o.forEach((m) => {
     e.add(m);
   }), e.divideScalar(o.length);
@@ -10038,7 +10039,7 @@ function computeBestFitPlane(o) {
     [s, n, r],
     [i, r, a]
   ], { eigenvalues: c, eigenvectors: h } = computeEigenvaluesAndEigenvectors(l), d = c.findIndex((m) => m === Math.min(...c)), u = h[d];
-  return { normal: new THREE$1.Vector3(...u).normalize(), point: e };
+  return { normal: new THREE.Vector3(...u).normalize(), point: e };
 }
 function extractSliceArbitrary(o, e, t, s, i, n, r) {
   const a = computePlaneUnitCellIntersections(t, s, i, n);
@@ -10046,7 +10047,7 @@ function extractSliceArbitrary(o, e, t, s, i, n, r) {
     return null;
   const l = computePlaneBasis(i), c = a.map((S) => {
     const M = S.clone().sub(n), E = M.dot(l.u), v = M.dot(l.v);
-    return new THREE$1.Vector2(E, v);
+    return new THREE.Vector2(E, v);
   }), h = computeConvexHull(c);
   let d = 1 / 0, u = 1 / 0, p = -1 / 0, m = -1 / 0;
   h.forEach((S) => {
@@ -10056,7 +10057,7 @@ function extractSliceArbitrary(o, e, t, s, i, n, r) {
   for (let S = 0; S < b; S++) {
     const M = [];
     for (let E = 0; E < w; E++) {
-      const v = d + E * r, C = u + S * r, A = new THREE$1.Vector2(v, C);
+      const v = d + E * r, C = u + S * r, A = new THREE.Vector2(v, C);
       let _ = 0;
       if (pointInPolygon(A, h)) {
         const j = n.clone().add(l.u.clone().multiplyScalar(v)).add(l.v.clone().multiplyScalar(C)).clone().sub(s), R = cellToGridCoordinates(j, t, e);
@@ -10069,7 +10070,7 @@ function extractSliceArbitrary(o, e, t, s, i, n, r) {
   return { sliceData: x, width: w, height: b, minX: d, maxX: p, minY: u, maxY: m, projectedPoints: h };
 }
 function cellToGridCoordinates(o, e, t) {
-  const s = new THREE$1.Vector3(...e[0]), i = new THREE$1.Vector3(...e[1]), n = new THREE$1.Vector3(...e[2]), r = new THREE$1.Matrix3();
+  const s = new THREE.Vector3(...e[0]), i = new THREE.Vector3(...e[1]), n = new THREE.Vector3(...e[2]), r = new THREE.Matrix3();
   r.set(s.x, i.x, n.x, s.y, i.y, n.y, s.z, i.z, n.z);
   const a = r.clone().invert(), l = o.clone().applyMatrix3(a), c = l.x * t[0], h = l.y * t[1], d = l.z * t[2];
   return { x: c, y: h, z: d };
@@ -10093,25 +10094,25 @@ function createTextureFromSlice(o, e, t, s) {
       const p = (o[h][d] - e) / (t - e), [m, g, y] = a(p);
       r[l++] = m * 255, r[l++] = g * 255, r[l++] = y * 255, r[l++] = 255;
     }
-  const c = new THREE$1.DataTexture(r, i, n, THREE$1.RGBAFormat);
-  return c.needsUpdate = !0, c.minFilter = THREE$1.LinearFilter, c.magFilter = THREE$1.LinearFilter, c;
+  const c = new THREE.DataTexture(r, i, n, THREE.RGBAFormat);
+  return c.needsUpdate = !0, c.minFilter = THREE.LinearFilter, c.magFilter = THREE.LinearFilter, c;
 }
 function createSlicePlaneArbitrary(o, e, t, s, i, n, r, a, l) {
-  const c = computePlaneBasis(e), h = new THREE$1.Shape(o), d = new THREE$1.ShapeGeometry(h);
-  d.setAttribute("uv", new THREE$1.BufferAttribute(new Float32Array(d.attributes.position.count * 2), 2));
+  const c = computePlaneBasis(e), h = new THREE.Shape(o), d = new THREE.ShapeGeometry(h);
+  d.setAttribute("uv", new THREE.BufferAttribute(new Float32Array(d.attributes.position.count * 2), 2));
   for (let w = 0; w < d.attributes.position.count; w++) {
     const b = d.attributes.position.getX(w), x = d.attributes.position.getY(w), S = (b - n) / (r - n), M = (x - a) / (l - a);
     d.attributes.uv.setXY(w, S, M);
   }
-  const u = new THREE$1.Matrix4(), p = c.u, m = c.v, g = e;
+  const u = new THREE.Matrix4(), p = c.u, m = c.v, g = e;
   u.makeBasis(p, m, g), u.setPosition(t), d.applyMatrix4(u);
-  const y = new THREE$1.MeshBasicMaterial({
+  const y = new THREE.MeshBasicMaterial({
     map: s,
-    side: THREE$1.DoubleSide,
+    side: THREE.DoubleSide,
     transparent: i < 1,
     opacity: i
   });
-  return new THREE$1.Mesh(d, y);
+  return new THREE.Mesh(d, y);
 }
 function getColorMapFunction(o) {
   return o === "grayscale" ? function(e) {
@@ -10139,7 +10140,7 @@ function viridisColorMap(o) {
   return [n[0] + (r[0] - n[0]) * i, n[1] + (r[1] - n[1]) * i, n[2] + (r[2] - n[2]) * i];
 }
 function getUnitCellVertices(o, e) {
-  const t = new THREE$1.Vector3(...o[0]), s = new THREE$1.Vector3(...o[1]), i = new THREE$1.Vector3(...o[2]), n = e.clone(), r = e.clone().add(t), a = e.clone().add(s), l = e.clone().add(i), c = e.clone().add(t).add(s), h = e.clone().add(t).add(i), d = e.clone().add(s).add(i), u = e.clone().add(t).add(s).add(i);
+  const t = new THREE.Vector3(...o[0]), s = new THREE.Vector3(...o[1]), i = new THREE.Vector3(...o[2]), n = e.clone(), r = e.clone().add(t), a = e.clone().add(s), l = e.clone().add(i), c = e.clone().add(t).add(s), h = e.clone().add(t).add(i), d = e.clone().add(s).add(i), u = e.clone().add(t).add(s).add(i);
   return [n, r, a, l, c, h, d, u];
 }
 function getUnitCellEdges(o) {
@@ -10180,7 +10181,7 @@ function computePlaneUnitCellIntersections(o, e, t, s) {
   }), a;
 }
 function computePlaneBasis(o) {
-  let e = new THREE$1.Vector3();
+  let e = new THREE.Vector3();
   Math.abs(o.z) > Math.abs(o.x) ? e.set(1, 0, 0).cross(o).normalize() : e.set(0, 0, 1).cross(o).normalize();
   const t = o.clone().cross(e).normalize();
   return { u: e, v: t };
@@ -10323,13 +10324,13 @@ class VectorField {
       if (!a) return;
       const l = n.length;
       (e !== null ? [e] : [...Array(l).keys()]).forEach((h) => {
-        const d = new THREE$1.Vector3(...n[h]), u = new THREE$1.Vector3(...r[h]).multiplyScalar(
+        const d = new THREE.Vector3(...n[h]), u = new THREE.Vector3(...r[h]).multiplyScalar(
           i.factor
-        ), p = d.clone().add(u), m = new THREE$1.Vector3().lerpVectors(d, p, 0), g = calculateQuaternion(d, p), y = new THREE$1.Vector3(
+        ), p = d.clone().add(u), m = new THREE.Vector3().lerpVectors(d, p, 0), g = calculateQuaternion(d, p), y = new THREE.Vector3(
           10 * i.radius,
           d.distanceTo(p),
           10 * i.radius
-        ), f = new THREE$1.Matrix4().compose(m, g, y);
+        ), f = new THREE.Matrix4().compose(m, g, y);
         a.setMatrixAt(h, f);
       }), a.instanceMatrix.needsUpdate = !0;
     });
@@ -10342,11 +10343,11 @@ function drawAtomArrows({
   shapeRegistry: s
 }) {
   const i = s.create("Arrow", { materialType: t });
-  if (!(i instanceof THREE$1.Mesh))
+  if (!(i instanceof THREE.Mesh))
     throw new Error("Arrow must return a THREE.Mesh");
   const n = i.geometry.clone(), r = i.material.clone();
   r.color.set(e);
-  const a = new THREE$1.InstancedMesh(n, r, o);
+  const a = new THREE.InstancedMesh(n, r, o);
   return a.userData.type = "arrow", a;
 }
 let Setting$1 = class {
@@ -10405,33 +10406,33 @@ class Measurement {
     s.length === 1 ? this.showPosition(e, s) : s.length === 2 ? this.showDistance(e, s) : s.length === 3 ? this.showAngle(e, s) : s.length === 4 && this.showDihedralAngle(e, s), this.viewer.requestRedraw?.("render");
   }
   showPosition(e, t) {
-    const s = t[0], i = this.viewer.atoms.positions[s], r = `${this.viewer.atoms.symbols[s]} [${i[0].toFixed(3)}, ${i[1].toFixed(3)}, ${i[2].toFixed(3)}]`, a = createLabel(new THREE$1.Vector3(...i).add(new THREE$1.Vector3(1, 0, 0)), r, "black", "18px");
+    const s = t[0], i = this.viewer.atoms.positions[s], r = `${this.viewer.atoms.symbols[s]} [${i[0].toFixed(3)}, ${i[1].toFixed(3)}, ${i[2].toFixed(3)}]`, a = createLabel(new THREE.Vector3(...i).add(new THREE.Vector3(1, 0, 0)), r, "black", "18px");
     this.scene.add(a), this.meshes[e] = [a];
   }
   showDistance(e, t) {
-    const s = new THREE$1.Vector3(...this.viewer.atoms.positions[t[0]]), i = new THREE$1.Vector3(...this.viewer.atoms.positions[t[1]]), n = s.distanceTo(i), r = [s, i], a = new THREE$1.LineBasicMaterial({ color: 255 }), l = new THREE$1.BufferGeometry().setFromPoints(r), c = new THREE$1.LineSegments(l, a);
+    const s = new THREE.Vector3(...this.viewer.atoms.positions[t[0]]), i = new THREE.Vector3(...this.viewer.atoms.positions[t[1]]), n = s.distanceTo(i), r = [s, i], a = new THREE.LineBasicMaterial({ color: 255 }), l = new THREE.BufferGeometry().setFromPoints(r), c = new THREE.LineSegments(l, a);
     this.scene.add(c);
     const h = createLabel(s.add(i).multiplyScalar(0.5), n.toFixed(3), "black", "18px");
     this.scene.add(h), this.meshes[e] = [c, h];
   }
   showAngle(e, t) {
-    const s = new THREE$1.Vector3(...this.viewer.atoms.positions[t[0]]), i = new THREE$1.Vector3(...this.viewer.atoms.positions[t[1]]), n = new THREE$1.Vector3(...this.viewer.atoms.positions[t[2]]), r = s.clone().sub(i).normalize(), a = n.clone().sub(i).normalize(), l = r.angleTo(a) * 180 / Math.PI, c = new THREE$1.LineBasicMaterial({ color: 255 }), h = new THREE$1.BufferGeometry().setFromPoints([s, i]), d = new THREE$1.LineSegments(h, c);
+    const s = new THREE.Vector3(...this.viewer.atoms.positions[t[0]]), i = new THREE.Vector3(...this.viewer.atoms.positions[t[1]]), n = new THREE.Vector3(...this.viewer.atoms.positions[t[2]]), r = s.clone().sub(i).normalize(), a = n.clone().sub(i).normalize(), l = r.angleTo(a) * 180 / Math.PI, c = new THREE.LineBasicMaterial({ color: 255 }), h = new THREE.BufferGeometry().setFromPoints([s, i]), d = new THREE.LineSegments(h, c);
     this.scene.add(d);
-    const u = new THREE$1.BufferGeometry().setFromPoints([i, n]), p = new THREE$1.LineSegments(u, c);
+    const u = new THREE.BufferGeometry().setFromPoints([i, n]), p = new THREE.LineSegments(u, c);
     this.scene.add(p);
     const m = i.add(r.add(a).multiplyScalar(0.3)), g = createLabel(m, l.toFixed(3), "black", "18px");
     this.scene.add(g), this.meshes[e] = [d, p, g];
   }
   showDihedralAngle(e, t) {
-    const s = new THREE$1.Vector3(...this.viewer.atoms.positions[t[0]]), i = new THREE$1.Vector3(...this.viewer.atoms.positions[t[1]]), n = new THREE$1.Vector3(...this.viewer.atoms.positions[t[2]]), r = new THREE$1.Vector3(...this.viewer.atoms.positions[t[3]]), a = s.clone().sub(i).normalize(), l = n.clone().sub(i).normalize(), c = r.clone().sub(n).normalize(), h = a.clone().cross(l).normalize(), d = l.clone().cross(c).normalize(), u = Math.acos(h.dot(d)), p = new THREE$1.BufferGeometry(), m = [];
-    m.push(s.x, s.y, s.z), m.push(i.x, i.y, i.z), m.push(n.x, n.y, n.z), m.push(i.x, i.y, i.z), m.push(n.x, n.y, n.z), m.push(r.x, r.y, r.z), p.setAttribute("position", new THREE$1.Float32BufferAttribute(m, 3)), p.setIndex([0, 1, 2, 3, 4, 5]);
-    const g = new THREE$1.MeshBasicMaterial({
+    const s = new THREE.Vector3(...this.viewer.atoms.positions[t[0]]), i = new THREE.Vector3(...this.viewer.atoms.positions[t[1]]), n = new THREE.Vector3(...this.viewer.atoms.positions[t[2]]), r = new THREE.Vector3(...this.viewer.atoms.positions[t[3]]), a = s.clone().sub(i).normalize(), l = n.clone().sub(i).normalize(), c = r.clone().sub(n).normalize(), h = a.clone().cross(l).normalize(), d = l.clone().cross(c).normalize(), u = Math.acos(h.dot(d)), p = new THREE.BufferGeometry(), m = [];
+    m.push(s.x, s.y, s.z), m.push(i.x, i.y, i.z), m.push(n.x, n.y, n.z), m.push(i.x, i.y, i.z), m.push(n.x, n.y, n.z), m.push(r.x, r.y, r.z), p.setAttribute("position", new THREE.Float32BufferAttribute(m, 3)), p.setIndex([0, 1, 2, 3, 4, 5]);
+    const g = new THREE.MeshBasicMaterial({
       color: 255,
       opacity: 0.9,
-      side: THREE$1.DoubleSide,
+      side: THREE.DoubleSide,
       // Render both sides
       transparent: !0
-    }), y = new THREE$1.Mesh(p, g);
+    }), y = new THREE.Mesh(p, g);
     this.scene.add(y);
     const f = i.add(n).multiplyScalar(0.3).sub(h.add(d).multiplyScalar(0.3)), w = createLabel(f, u.toFixed(3), "black", "18px");
     this.scene.add(w), this.meshes[e] = [y, w];
@@ -10469,7 +10470,7 @@ class Setting {
 }
 class HighlightManager {
   constructor(e) {
-    this.viewer = e, this.settings = {}, this.meshes = {}, this._tmpCenter = new THREE$1.Vector3(), this._tmpBillboardScale = new THREE$1.Vector3(), this._tmpBillboardScale2 = new THREE$1.Vector3(), this._tmpBillboardMatrix = new THREE$1.Matrix4(), this._tmpBillboardQuat = new THREE$1.Quaternion(), this._tmpBillboardZero = new THREE$1.Vector3(0, 0, 0), this._tmpBillboardAtomMatrix = new THREE$1.Matrix4(), this._tmpDecomposeQuat = new THREE$1.Quaternion(), this._tmpCameraDir = new THREE$1.Vector3(), this._tmpCameraPos = new THREE$1.Vector3(), this._tmpToCameraDir = new THREE$1.Vector3(), this._crossViewThicknessDefault = 0.05, this._crossViewSettings = {}, this._crossViewIndices = /* @__PURE__ */ new Set(), this._crossViewNeedsUpdate = !1, this._cameraSignature = new Float32Array(32), this._hasCameraSignature = !1, this.init();
+    this.viewer = e, this.settings = {}, this.meshes = {}, this._tmpCenter = new THREE.Vector3(), this._tmpBillboardScale = new THREE.Vector3(), this._tmpBillboardScale2 = new THREE.Vector3(), this._tmpBillboardMatrix = new THREE.Matrix4(), this._tmpBillboardQuat = new THREE.Quaternion(), this._tmpBillboardZero = new THREE.Vector3(0, 0, 0), this._tmpBillboardAtomMatrix = new THREE.Matrix4(), this._tmpDecomposeQuat = new THREE.Quaternion(), this._tmpCameraDir = new THREE.Vector3(), this._tmpCameraPos = new THREE.Vector3(), this._tmpToCameraDir = new THREE.Vector3(), this._crossViewThicknessDefault = 0.05, this._crossViewSettings = {}, this._crossViewIndices = /* @__PURE__ */ new Set(), this._crossViewNeedsUpdate = !1, this._cameraSignature = new Float32Array(32), this._hasCameraSignature = !1, this.init();
     const t = this.viewer.state.get("plugins.highlight");
     t && t.settings && (this.applySettings(t.settings), this.drawHighlightAtoms()), this.viewer.state.subscribe("plugins.highlight", (s) => {
       !s || !s.settings || (this.applySettings(s.settings), !this.viewer._initializingState && this.drawHighlightAtoms());
@@ -10506,30 +10507,30 @@ class HighlightManager {
   drawHighlightAtoms() {
     if (this.clearMeshes(), !this.viewer.atomManager.meshes.atom)
       return;
-    const t = new THREE$1.MeshBasicMaterial({
+    const t = new THREE.MeshBasicMaterial({
       color: "yellow",
       opacity: 0.6,
       transparent: !0
     });
     t.depthWrite = !1, t.depthTest = !0;
-    const s = new THREE$1.SphereGeometry(1, 16, 16);
+    const s = new THREE.SphereGeometry(1, 16, 16);
     this.drawHighlightMesh("sphere", s, t);
     const i = t.clone();
     i.color = "green";
-    const n = new THREE$1.BoxGeometry(2, 2, 2);
+    const n = new THREE.BoxGeometry(2, 2, 2);
     this.drawHighlightMesh("box", n, i);
-    const r = new THREE$1.MeshBasicMaterial({
+    const r = new THREE.MeshBasicMaterial({
       color: 16777215,
       opacity: 1,
       transparent: !0,
       vertexColors: !0
     }), a = this.createCrossGeometry(1);
     this.drawHighlightMesh("cross", a, r);
-    const l = new THREE$1.MeshBasicMaterial({
+    const l = new THREE.MeshBasicMaterial({
       color: 16777215,
       opacity: 1,
       transparent: !0,
-      side: THREE$1.DoubleSide,
+      side: THREE.DoubleSide,
       depthWrite: !1,
       vertexColors: !0
     }), c = this.createCrossBillboardBarGeometry(), h = c.clone();
@@ -10539,7 +10540,7 @@ class HighlightManager {
     const i = this.viewer.atomManager.meshes.atom;
     if (!i)
       return;
-    const n = new THREE$1.InstancedMesh(t, s, i.count), r = new THREE$1.Vector3(), a = new THREE$1.Quaternion(), l = new THREE$1.Vector3(), c = new THREE$1.Matrix4(), h = new THREE$1.Matrix4();
+    const n = new THREE.InstancedMesh(t, s, i.count), r = new THREE.Vector3(), a = new THREE.Quaternion(), l = new THREE.Vector3(), c = new THREE.Matrix4(), h = new THREE.Matrix4();
     for (let d = 0; d < i.count; d++)
       i.getMatrixAt(d, c), c.decompose(r, a, l), l.multiplyScalar(0), h.compose(r, a, l), n.setMatrixAt(d, h);
     n.instanceMatrix.needsUpdate = !0, i.add(n), n.layers.set(1), this.meshes[e] = n, Object.values(this.settings).forEach((d) => {
@@ -10547,13 +10548,13 @@ class HighlightManager {
     });
   }
   createCrossGeometry(e = 1) {
-    const t = new THREE$1.TorusGeometry(e, 0.1, 16, 20), s = new THREE$1.TorusGeometry(e, 0.1, 16, 20);
+    const t = new THREE.TorusGeometry(e, 0.1, 16, 20), s = new THREE.TorusGeometry(e, 0.1, 16, 20);
     s.rotateX(Math.PI / 2);
-    const i = new THREE$1.TorusGeometry(e, 0.1, 16, 20);
+    const i = new THREE.TorusGeometry(e, 0.1, 16, 20);
     return i.rotateY(Math.PI / 2), mergeGeometries([t, s, i]);
   }
   createCrossBillboardBarGeometry() {
-    return new THREE$1.PlaneGeometry(2, 1);
+    return new THREE.PlaneGeometry(2, 1);
   }
   updateHighlightAtomsMesh({ indices: e = [], scale: t = 1.1, color: s = "yellow", type: i = "sphere", opacity: n = null, occlude: r = !0, offset: a = 1.0005, thickness: l = null }, c = null) {
     if (i === "crossView") {
@@ -10566,9 +10567,9 @@ class HighlightManager {
         const p = this.meshes[i].material;
         p && (p.transparent = !0, p.opacity = n, p.needsUpdate = !0);
       }
-      const h = new THREE$1.Vector3(), d = new THREE$1.Quaternion(), u = new THREE$1.Vector3();
+      const h = new THREE.Vector3(), d = new THREE.Quaternion(), u = new THREE.Vector3();
       e.forEach((p) => {
-        const m = new THREE$1.Matrix4();
+        const m = new THREE.Matrix4();
         this.viewer.atomManager.meshes.atom.getMatrixAt(p, m), m.decompose(h, d, u), u.multiplyScalar(t), m.compose(h, d, u), this.meshes[i].setMatrixAt(p, m), this.meshes[i].setColorAt(p, convertColor$1(s));
       }), this.meshes[i].instanceMatrix.needsUpdate = !0;
     }
@@ -11013,9 +11014,9 @@ class Logger {
 }
 class AtomsViewer {
   constructor({ weas: e, atoms: t = [new Atoms()], viewerConfig: s = {} }) {
-    this.uuid = THREE$1.MathUtils.generateUUID(), this.weas = e, this.tjs = e.tjs, this.state = e.state;
+    this.uuid = THREE.MathUtils.generateUUID(), this.weas = e, this.tjs = e.tjs, this.state = e.state;
     const i = { ...defaultViewerSettings, ...s };
-    this._ready = !1, this._modelStyle = i.modelStyle, this._colorBy = i.colorBy, this._colorType = i.colorType, this._colorRamp = i.colorRamp, this._radiusType = i.radiusType, this._materialType = i.materialType, this._atomLabelType = i.atomLabelType, this._showBondedAtoms = i.showBondedAtoms, this._boundary = i.boundary, this._atomScale = i.atomScale, this._wrapOnMove = i.wrapOnMove, this._backgroundColor = i.backgroundColor, this.tjs.scene.background = new THREE$1.Color(this._backgroundColor), this._selectedAtomsIndices = new Array(), this.baseAtomLabelSettings = [], this.debug = i.debug, this._continuousUpdate = i.continuousUpdate, this._autoResetCameraOnAtomsUpdate = i.autoResetCameraOnAtomsUpdate, this._hasInitializedCamera = !1, this._currentFrame = 0, this._updateDepth = 0, this._pendingRedraw = null, this._syncingState = !1, this._initializingState = !1, this._atomScales = [], this._modelSticks = [], this._modelPolyhedras = [], this.logger = new Logger(i.logLevel || "warn"), this.trajectory = [new Atoms()], this.isPlaying = !1, this.frameDuration = 100, this.atomManager = new AtomManager(this), this.cellManager = new CellManager(this, i.cellSettings), this.highlightManager = new HighlightManager(this), this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui, this.weas.guiManager.guiConfig), this.bondManager = new BondManager(this, i.bondSettings), this.boundaryManager = new BoundaryManager(this), this.polyhedraManager = new PolyhedraManager(this), this.isosurfaceManager = new Isosurface(this), this.fermiSurfaceManager = new FermiSurface(this), this.volumeSliceManager = new VolumeSlice(this), this.ALManager = new AtomLabelManager(this), this.Measurement = new Measurement(this), this.VFManager = new VectorField(this), this.animate = this.animate.bind(this), this._atoms = null, this._cell = null, this._frameSignature = null, this.init(t), this.initializeStateStore(i), this.setupStateSubscriptions();
+    this._ready = !1, this._modelStyle = i.modelStyle, this._colorBy = i.colorBy, this._colorType = i.colorType, this._colorRamp = i.colorRamp, this._radiusType = i.radiusType, this._materialType = i.materialType, this._atomLabelType = i.atomLabelType, this._showBondedAtoms = i.showBondedAtoms, this._boundary = i.boundary, this._atomScale = i.atomScale, this._wrapOnMove = i.wrapOnMove, this._backgroundColor = i.backgroundColor, this.tjs.scene.background = new THREE.Color(this._backgroundColor), this._selectedAtomsIndices = new Array(), this.baseAtomLabelSettings = [], this.debug = i.debug, this._continuousUpdate = i.continuousUpdate, this._autoResetCameraOnAtomsUpdate = i.autoResetCameraOnAtomsUpdate, this._hasInitializedCamera = !1, this._currentFrame = 0, this._updateDepth = 0, this._pendingRedraw = null, this._syncingState = !1, this._initializingState = !1, this._atomScales = [], this._modelSticks = [], this._modelPolyhedras = [], this.logger = new Logger(i.logLevel || "warn"), this.trajectory = [new Atoms()], this.isPlaying = !1, this.frameDuration = 100, this.atomManager = new AtomManager(this), this.cellManager = new CellManager(this, i.cellSettings), this.highlightManager = new HighlightManager(this), this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui, this.weas.guiManager.guiConfig), this.bondManager = new BondManager(this, i.bondSettings), this.boundaryManager = new BoundaryManager(this), this.polyhedraManager = new PolyhedraManager(this), this.isosurfaceManager = new Isosurface(this), this.fermiSurfaceManager = new FermiSurface(this), this.volumeSliceManager = new VolumeSlice(this), this.ALManager = new AtomLabelManager(this), this.Measurement = new Measurement(this), this.VFManager = new VectorField(this), this.animate = this.animate.bind(this), this._atoms = null, this._cell = null, this._frameSignature = null, this.init(t), this.initializeStateStore(i), this.setupStateSubscriptions();
   }
   initializeStateStore(e) {
     this.state.transaction(() => {
@@ -11398,7 +11399,7 @@ class AtomsViewer {
         }
         if (this[a] = c, a === "radiusType" && (this.atomManager.init(), this.bondManager.init(), this.polyhedraManager.init()), a === "colorBy" && (this.atomManager.init(), this.bondManager.init(), this.polyhedraManager.init()), a === "colorType" && (this.atomManager.init(), this.guiManager.updateLegend(), this.bondManager.init(), this.polyhedraManager.init()), a === "atomScale" && (this.atomManager.updateAtomScale(l), Object.values(this.highlightManager.settings || {}).forEach((h) => {
           this.highlightManager.updateHighlightAtomsMesh(h);
-        })), a === "backgroundColor" && (this.tjs.scene.background = new THREE$1.Color(l)), a === "atomLabelType" && (this.baseAtomLabelSettings = this.getAtomLabelSettingsFromType(l), this.updateAtomLabels()), a === "modelStyle" && r && this.updateModelStyles(c), i) {
+        })), a === "backgroundColor" && (this.tjs.scene.background = new THREE.Color(l)), a === "atomLabelType" && (this.baseAtomLabelSettings = this.getAtomLabelSettingsFromType(l), this.updateAtomLabels()), a === "modelStyle" && r && this.updateModelStyles(c), i) {
           const h = this.getRedrawEffectForKey(a);
           h && this.requestRedraw(h);
         }
@@ -11490,7 +11491,7 @@ class AtomsViewer {
     this.logger.debug("copied_atoms: ", t), this.atoms.add({ otherAtoms: t }), this.logger.debug("atoms: ", this.atoms), this.atomScales = this.atomScales.concat(e.map((s) => this.atomScales[s])), this.modelSticks = this.modelSticks.concat(e.map((s) => this.modelSticks[s])), this.modelPolyhedras = this.modelPolyhedras.concat(e.map((s) => this.modelPolyhedras[s])), this.drawModels(), this.selectedAtomsIndices = Array.from({ length: t.getAtomsCount() }, (s, i) => i + this.atoms.getAtomsCount() - t.getAtomsCount());
   }
   setAtomPosition({ index: e, position: t }) {
-    const s = this.wrapPositionIfNeeded(t), i = new THREE$1.Matrix4();
+    const s = this.wrapPositionIfNeeded(t), i = new THREE.Matrix4();
     this.atomManager.meshes.atom.getMatrixAt(e, i), i.setPosition(s), this.atomManager.meshes.atom.setMatrixAt(e, i), this.atoms.positions[e] = [s.x, s.y, s.z], this.atomManager.updateImageAtomsMesh(e), this.bondManager.updateBondMesh(e), this.polyhedraManager.updatePolyhedraMesh(e);
   }
   wrapPositionIfNeeded(e) {
@@ -11511,7 +11512,7 @@ class AtomsViewer {
       if (!r)
         return e;
       const a = calculateCartesianCoordinates(t, n);
-      return new THREE$1.Vector3(a[0], a[1], a[2]);
+      return new THREE.Vector3(a[0], a[1], a[2]);
     } catch (s) {
       return this.logger.debug("wrapPositionIfNeeded failed:", s), e;
     }
@@ -11525,17 +11526,17 @@ class AtomsViewer {
   }
   translateSelectedAtoms({ translateVector: e, indices: t = null }) {
     t === null && (t = this.selectedAtomsIndices), t = toIndexArray(t), t.length !== 0 && (e = toVector3(e, "translateVector"), t.forEach((s) => {
-      const n = new THREE$1.Vector3(...this.atoms.positions[s]).clone().add(e);
+      const n = new THREE.Vector3(...this.atoms.positions[s]).clone().add(e);
       this.setAtomPosition({ index: s, position: n });
     }), this.atomManager.meshes.atom.instanceMatrix.needsUpdate = !0, this.atomManager.meshes.image && (this.atomManager.meshes.image.instanceMatrix.needsUpdate = !0), this.bondManager.bondMesh && (this.bondManager.bondMesh.instanceMatrix.needsUpdate = !0));
   }
   rotateSelectedAtoms({ cameraDirection: e, rotationAngle: t, indices: s = null, centroid: i = null }) {
-    e = toVector3(e, "cameraDirection"), e = e.normalize(), t = THREE$1.MathUtils.degToRad(t);
-    const n = new THREE$1.Matrix4().makeRotationAxis(e, -t);
-    s === null && (s = this.selectedAtomsIndices), s = toIndexArray(s), s.length !== 0 && (i === null && (i = new THREE$1.Vector3(0, 0, 0), s.forEach((r) => {
-      i.add(new THREE$1.Vector3(...this.atoms.positions[r]));
+    e = toVector3(e, "cameraDirection"), e = e.normalize(), t = THREE.MathUtils.degToRad(t);
+    const n = new THREE.Matrix4().makeRotationAxis(e, -t);
+    s === null && (s = this.selectedAtomsIndices), s = toIndexArray(s), s.length !== 0 && (i === null && (i = new THREE.Vector3(0, 0, 0), s.forEach((r) => {
+      i.add(new THREE.Vector3(...this.atoms.positions[r]));
     }), i.divideScalar(s.length)), i = toVector3(i, "centroid"), s.forEach((r) => {
-      const a = new THREE$1.Vector3(...this.atoms.positions[r]);
+      const a = new THREE.Vector3(...this.atoms.positions[r]);
       a.sub(i).applyMatrix4(n).add(i), this.setAtomPosition({ index: r, position: a });
     }), this.atomManager.meshes.atom.instanceMatrix.needsUpdate = !0, this.atomManager.meshes.image && (this.atomManager.meshes.image.instanceMatrix.needsUpdate = !0));
   }
@@ -11705,16 +11706,16 @@ function fromWidgetSnapshot(o) {
 class MaterialsRegistry {
   constructor() {
     this._builtIn = /* @__PURE__ */ new Set(["Standard", "Phong", "Basic"]), this.materials = {
-      Standard: new THREE$1.MeshStandardMaterial({
+      Standard: new THREE.MeshStandardMaterial({
         metalness: 0.2,
         roughness: 0.5
       }),
-      Phong: new THREE$1.MeshPhongMaterial({
+      Phong: new THREE.MeshPhongMaterial({
         specular: 2236962,
         shininess: 100,
         reflectivity: 0.9
       }),
-      Basic: new THREE$1.MeshBasicMaterial({ color: 16776960 })
+      Basic: new THREE.MeshBasicMaterial({ color: 16776960 })
     }, this.materialSchemas = {
       MeshStandardMaterial: {
         metalness: {
@@ -11830,60 +11831,60 @@ class ShapeRegistry {
     wireframe: r = !1
   } = {}) {
     const a = e.getMaterial(s, !0);
-    return "color" in a && (a.color = new THREE$1.Color(i)), a.transparent = !0, a.opacity = n, a.side = THREE$1.DoubleSide, a.wireframe = r, n < 1 && (a.depthWrite = !1), new THREE$1.Mesh(t, a);
+    return "color" in a && (a.color = new THREE.Color(i)), a.transparent = !0, a.opacity = n, a.side = THREE.DoubleSide, a.wireframe = r, n < 1 && (a.depthWrite = !1), new THREE.Mesh(t, a);
   }
   _registerBuiltIns() {
     this.register(
       "Cube",
       (t, s) => this._createBaseMesh(
         t,
-        new THREE$1.BoxGeometry(2, 2, 2),
+        new THREE.BoxGeometry(2, 2, 2),
         s
       )
     ), this.register("Sphere", (t, s) => {
       const i = s.widthSegments ?? 32, n = s.heightSegments ?? 32;
       return this._createBaseMesh(
         t,
-        new THREE$1.SphereGeometry(1, i, n),
+        new THREE.SphereGeometry(1, i, n),
         s
       );
     }), this.register(
       "Plane",
       (t, s) => this._createBaseMesh(
         t,
-        new THREE$1.PlaneGeometry(2, 2),
+        new THREE.PlaneGeometry(2, 2),
         s
       )
     ), this.register("Cylinder", (t, s) => {
       const i = s.segments ?? 24;
       return this._createBaseMesh(
         t,
-        new THREE$1.CylinderGeometry(1, 1, 1, i),
+        new THREE.CylinderGeometry(1, 1, 1, i),
         s
       );
     }), this.register(
       "Cone",
       (t, s) => this._createBaseMesh(
         t,
-        new THREE$1.ConeGeometry(1, 2, 16),
+        new THREE.ConeGeometry(1, 2, 16),
         s
       )
     ), this.register(
       "Torus",
       (t, s) => this._createBaseMesh(
         t,
-        new THREE$1.TorusGeometry(1 * 0.75, 1 * 0.25, 16, 32),
+        new THREE.TorusGeometry(1 * 0.75, 1 * 0.25, 16, 32),
         s
       )
     ), this.register("Arrow", (t, s) => {
-      const i = s.shaftRatio ?? 0.75, n = s.length ?? 1, r = n * i, a = n - r, l = (s.shaftRadius ?? 0.075) * n, c = (s.headRadius ?? 0.15) * n, h = new THREE$1.CylinderGeometry(
+      const i = s.shaftRatio ?? 0.75, n = s.length ?? 1, r = n * i, a = n - r, l = (s.shaftRadius ?? 0.075) * n, c = (s.headRadius ?? 0.15) * n, h = new THREE.CylinderGeometry(
         l,
         l,
         r,
         s.segments ?? 12
       );
       h.translate(0, r / 2, 0);
-      const d = new THREE$1.ConeGeometry(
+      const d = new THREE.ConeGeometry(
         c,
         a,
         s.segments ?? 12
@@ -11891,20 +11892,20 @@ class ShapeRegistry {
       d.translate(0, r + a / 2, 0);
       const u = mergeGeometries([h, d], !1), p = this._createBaseMesh(t, u, s);
       if (s.start && s.end) {
-        const m = new THREE$1.Vector3(...s.start), g = new THREE$1.Vector3(...s.end), y = new THREE$1.Vector3().subVectors(g, m), f = y.length();
+        const m = new THREE.Vector3(...s.start), g = new THREE.Vector3(...s.end), y = new THREE.Vector3().subVectors(g, m), f = y.length();
         y.normalize(), p.scale.set(1, f / n, 1);
-        const w = new THREE$1.Vector3(0, 1, 0).cross(y), b = Math.acos(new THREE$1.Vector3(0, 1, 0).dot(y));
+        const w = new THREE.Vector3(0, 1, 0).cross(y), b = Math.acos(new THREE.Vector3(0, 1, 0).dot(y));
         w.lengthSq() > 0 && p.quaternion.setFromAxisAngle(w.normalize(), b), p.position.copy(m);
       }
       return p;
     }), this.register("Line", (t, s) => {
-      const i = s.color || "#000000", n = s.start || [0, 0, 0], r = s.end || [0, 1, 0], a = [new THREE$1.Vector3(...n), new THREE$1.Vector3(...r)], l = new THREE$1.BufferGeometry().setFromPoints(a), c = new THREE$1.LineBasicMaterial({ color: i }), h = new THREE$1.Line(l, c);
+      const i = s.color || "#000000", n = s.start || [0, 0, 0], r = s.end || [0, 1, 0], a = [new THREE.Vector3(...n), new THREE.Vector3(...r)], l = new THREE.BufferGeometry().setFromPoints(a), c = new THREE.LineBasicMaterial({ color: i }), h = new THREE.Line(l, c);
       if (s.position && h.position.set(...s.position), s.scale && h.scale.set(...s.scale), s.rotation) {
         const [d, u, p] = s.rotation;
         h.rotation.set(
-          THREE$1.MathUtils.degToRad(d),
-          THREE$1.MathUtils.degToRad(u),
-          THREE$1.MathUtils.degToRad(p)
+          THREE.MathUtils.degToRad(d),
+          THREE.MathUtils.degToRad(u),
+          THREE.MathUtils.degToRad(p)
         );
       }
       return s.notSelectable && (h.userData.notSelectable = !0), s.type && (h.userData.type = s.type), h;
@@ -11919,12 +11920,12 @@ class ShapeRegistry {
     const s = this.shapes[e];
     if (!s) throw new Error(`Shape "${e}" not registered`);
     const i = s(this.materials, t);
-    if (i instanceof THREE$1.Object3D && (t.position && i.position.set(...t.position), t.scale && i.scale.set(...t.scale), t.rotation)) {
+    if (i instanceof THREE.Object3D && (t.position && i.position.set(...t.position), t.scale && i.scale.set(...t.scale), t.rotation)) {
       const [n, r, a] = t.rotation;
       i.rotation.set(
-        THREE$1.MathUtils.degToRad(n),
-        THREE$1.MathUtils.degToRad(r),
-        THREE$1.MathUtils.degToRad(a)
+        THREE.MathUtils.degToRad(n),
+        THREE.MathUtils.degToRad(r),
+        THREE.MathUtils.degToRad(a)
       );
     }
     return t.notSelectable && (i.userData.notSelectable = !0), t.type && (i.userData.type = t.type), t.customData && Object.entries(t.customData).forEach(
@@ -11944,7 +11945,7 @@ class WEAS {
     tjsConfig: n = null,
     keybindConfig: r = null
   }) {
-    this.uuid = THREE$1.MathUtils.generateUUID(), this.tjsConfig = n, this.tjs = new BlendJS(e, this), this.keybindConfig = r, this.materialsRegistry = new MaterialsRegistry(), this.shapeRegistry = new ShapeRegistry(this.materialsRegistry), this.tjs.requestRedraw = this.requestRedraw.bind(this), this.guiManager = new GUIManager(this, i), this.eventHandlers = new EventHandlers(this), this.ops = new OperationManager(this), this.selectionManager = new SelectionManager(this), this.objectManager = new ObjectManager(this), this.state = new StateStore(createDefaultState()), this.textManager = new TextManager(this), this.avr = new AtomsViewer({
+    this.uuid = THREE.MathUtils.generateUUID(), this.tjsConfig = n, this.tjs = new BlendJS(e, this), this.keybindConfig = r, this.materialsRegistry = new MaterialsRegistry(), this.shapeRegistry = new ShapeRegistry(this.materialsRegistry), this.tjs.requestRedraw = this.requestRedraw.bind(this), this.guiManager = new GUIManager(this, i), this.eventHandlers = new EventHandlers(this), this.ops = new OperationManager(this), this.selectionManager = new SelectionManager(this), this.objectManager = new ObjectManager(this), this.state = new StateStore(createDefaultState()), this.textManager = new TextManager(this), this.avr = new AtomsViewer({
       weas: this,
       atoms: t,
       viewerConfig: s

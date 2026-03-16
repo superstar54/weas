@@ -151,6 +151,11 @@ export class BlendJS {
       renderer.domElement,
     );
 
+    // auto pass changes to the controller
+    this.cameraController.onChange(() => {
+      this.render();
+    });
+
     this.updateViewerRect();
     this.observeContainerResize();
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
@@ -308,6 +313,8 @@ export class BlendJS {
   // it also presumes the existence of avr, which is suggests a two-way binding
   // TODO - move this away and right some sort of hook pattern
   render() {
+    this.cameraController.update();
+
     this.renderers["MainRenderer"].renderer.clear();
     this.weas?.textManager?.updateLabelSizes?.(
       this.camera,

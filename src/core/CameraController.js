@@ -160,7 +160,6 @@ class CameraController extends TrackballControls {
     this.update();
   }
 
-  // --- Save a view
   view(name) {
     const v = this._views[name];
     if (!v) return;
