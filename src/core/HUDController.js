@@ -39,8 +39,7 @@ export default class HUDController {
     ];
   }
 
-  // defines space cartesian axis
-  // Todo fix why this doesnt work when rotating across the poles
+  // defines space cartesian axis, -- useful for rotational overlays
   initCoordScene() {
     const scene = new THREE.Scene();
     scene.add(new THREE.AmbientLight(0xffffff, 2.0));
@@ -50,13 +49,13 @@ export default class HUDController {
     scene.add(directionalLight);
 
     // Axes helper inside a group for rotation
-    const axes = new THREE.AxesHelper(1.5);
+    const axes = new THREE.AxesHelper(1.0);
     const axesGroup = new THREE.Group();
     axesGroup.add(axes);
     scene.add(axesGroup);
 
     // Fixed mini camera
-    const camera = new THREE.OrthographicCamera(-2, 2, 2, -2, 0.1, 100);
+    const camera = new THREE.OrthographicCamera(-2.5, 2.5, 2.5, -2.5, 0.1, 100);
     camera.position.set(0, 0, 5);
     camera.lookAt(0, 0, 0);
 
@@ -67,7 +66,7 @@ export default class HUDController {
       "coord",
       scene,
       camera,
-      { width: 100, height: 100 },
+      { width: 200, height: 200 },
       { bottom: 10, left: 10 },
       true,
       true,
@@ -80,7 +79,7 @@ export default class HUDController {
     camera,
     size = { width: 150, height: 150 },
     position = { top: 10, left: 10 },
-    rotation = false,
+    rotation = false, // whether to rotate with the main camera.
     visible = true,
   ) {
     const canvas = document.createElement("canvas");

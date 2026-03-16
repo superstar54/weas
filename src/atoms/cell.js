@@ -5,7 +5,7 @@ export class CellManager {
     this.viewer = viewer;
     this.cellMesh = null;
     this.cellVectors = null;
-    this.shapeRegistry = viewer.weas.shapeRegistry
+    this.shapeRegistry = viewer.weas.shapeRegistry;
 
     // Default settings with user overrides
     this.settings = {
@@ -13,7 +13,11 @@ export class CellManager {
       showAxes: settings.showAxes ?? true,
       cellColor: settings.cellColor ?? 0x000000, // Default black
       cellLineWidth: settings.cellLineWidth ?? 2, // Default width
-      axisColors: settings.axisColors ?? { a: 0xff0000, b: 0x00ff00, c: 0x0000ff }, // RGB
+      axisColors: settings.axisColors ?? {
+        a: 0xff0000,
+        b: 0x00ff00,
+        c: 0x0000ff,
+      }, // RGB
     };
 
     this._showCell = this.settings.showCell;
@@ -32,7 +36,11 @@ export class CellManager {
         return;
       }
       const prevState = prev || {};
-      const { showCell: nextShowCell, showAxes: nextShowAxes, ...nextSettings } = next;
+      const {
+        showCell: nextShowCell,
+        showAxes: nextShowAxes,
+        ...nextSettings
+      } = next;
       const prevSettings = { ...prevState };
       delete prevSettings.showCell;
       delete prevSettings.showAxes;
@@ -43,7 +51,8 @@ export class CellManager {
       if (nextShowAxes !== undefined) {
         this.showAxes = nextShowAxes;
       }
-      const settingsChanged = JSON.stringify(nextSettings) !== JSON.stringify(prevSettings);
+      const settingsChanged =
+        JSON.stringify(nextSettings) !== JSON.stringify(prevSettings);
       if (settingsChanged) {
         this.draw();
         this.viewer.requestRedraw?.("render");
@@ -87,7 +96,9 @@ export class CellManager {
 
   draw() {
     this.clear();
-    if (!this.viewer.originalCell.some((row) => row.every((cell) => cell === 0))) {
+    if (
+      !this.viewer.originalCell.some((row) => row.every((cell) => cell === 0))
+    ) {
       this.currentCell = this.viewer.originalCell.map((row) => row.slice());
       this.cellMesh = this.drawUnitCell();
       this.cellVectors = this.drawUnitCellVectors();
@@ -127,7 +138,12 @@ export class CellManager {
 
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const line = new THREE.LineSegments(geometry, material);
-    line.userData = { type: "cell", uuid: this.viewer.uuid, objectMode: "edit", notSelectable: true };
+    line.userData = {
+      type: "cell",
+      uuid: this.viewer.uuid,
+      objectMode: "edit",
+      notSelectable: true,
+    };
     line.layers.set(1);
     this.viewer.tjs.scene.add(line);
     line.visible = this.showCell;
@@ -137,51 +153,55 @@ export class CellManager {
   drawUnitCellVectors() {
     const origin = new THREE.Vector3(0, 0, 0);
     const cell = this.viewer.originalCell;
+    const arrowLength = 1.5;
 
     if (!cell || cell.length !== 3) {
       console.warn("Invalid or missing unit cell data for vectors");
       return;
     }
 
+    // draw it ontop of the weas coord scene
+    const coordMini = this.viewer.tjs.hud.miniScenes.get("coord");
+    if (!coordMini) return;
+    const axesGroup = this.viewer.tjs.hud.coordAxesGroup;
+
     const unitCellGroup = new THREE.Group();
     const axisNames = ["a", "b", "c"];
     const axisColors = this.settings.axisColors;
     const offset = 0.5;
 
-    cell.forEach((vec, i) => {
-      const end = new THREE.Vector3(...vec);
+    // Target arrow length in mini scene units
 
-    // Create directional arrow using start/end
+    cell.forEach((vec, i) => {
+      const rawVec = new THREE.Vector3(...vec);
+      const dir = rawVec.clone().normalize(); // direction
+      const end = dir.clone().multiplyScalar(arrowLength); // normalized length
+
       const arrow = this.shapeRegistry.create("Arrow", {
         color: axisColors[axisNames[i]],
         start: origin.clone(),
         end: end.clone(),
-        shaftRadius: 0.2,
-        headRadius: 0.5,
+        shaftRadius: 0.06,
+        headRadius: 0.12,
         shaftRatio: 0.75,
       });
       unitCellGroup.add(arrow);
 
-      // Add axis label slightly beyond the tip
-      const labelPos = end.clone().multiplyScalar(1 + offset / end.length());
+      // Label slightly beyond tip
+      const labelPos = end.clone().multiplyScalar(1 + offset / arrowLength);
       unitCellGroup.add(
-        createSpriteLabel(labelPos, axisNames[i], "black", "150px")
+        createSpriteLabel(labelPos, axisNames[i], "black", "36px"),
       );
 
       const sphere = this.shapeRegistry.create("Sphere", {
         color: "grey",
         position: origin.clone(),
-        scale: [
-          this.settings.axisSphereRadius,
-          this.settings.axisSphereRadius,
-          this.settings.axisSphereRadius,
-        ],
+        scale: [0.22, 0.22, 0.22],
       });
       unitCellGroup.add(sphere);
-    
     });
 
-    this.viewer.tjs.coordScene.add(unitCellGroup);
+    axesGroup.add(unitCellGroup);
     unitCellGroup.visible = this.showCell;
 
     return unitCellGroup;
@@ -196,7 +216,13 @@ export class CellManager {
     if (!this.cellMesh && !this.currentCell) return;
 
     const eps = 1e-5;
-    if (cell.every((row, i) => row.every((cellValue, j) => Math.abs(cellValue - this.currentCell[i][j]) < eps))) {
+    if (
+      cell.every((row, i) =>
+        row.every(
+          (cellValue, j) => Math.abs(cellValue - this.currentCell[i][j]) < eps,
+        ),
+      )
+    ) {
       return;
     }
 
@@ -225,18 +251,31 @@ export class CellManager {
     }
 
     if (this.cellVectors) {
-      const directions = [new THREE.Vector3(...cell[0]).normalize(), new THREE.Vector3(...cell[1]).normalize(), new THREE.Vector3(...cell[2]).normalize()];
+      const directions = [
+        new THREE.Vector3(...cell[0]).normalize(),
+        new THREE.Vector3(...cell[1]).normalize(),
+        new THREE.Vector3(...cell[2]).normalize(),
+      ];
 
       const axis = new THREE.Vector3(0, 1, 0);
       for (let i = 0; i < 3; i++) {
-        const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, directions[i]);
+        const quaternion = new THREE.Quaternion().setFromUnitVectors(
+          axis,
+          directions[i],
+        );
         this.cellVectors.children[i].setRotationFromQuaternion(quaternion);
       }
 
       const offset = 3.3;
-      this.cellVectors.children[3].position.copy(directions[0].multiplyScalar(offset));
-      this.cellVectors.children[4].position.copy(directions[1].multiplyScalar(offset));
-      this.cellVectors.children[5].position.copy(directions[2].multiplyScalar(offset));
+      this.cellVectors.children[3].position.copy(
+        directions[0].multiplyScalar(offset),
+      );
+      this.cellVectors.children[4].position.copy(
+        directions[1].multiplyScalar(offset),
+      );
+      this.cellVectors.children[5].position.copy(
+        directions[2].multiplyScalar(offset),
+      );
     }
   }
 }
