@@ -279,6 +279,7 @@ class GUIManager {
   }
 
   // TODO - move this into the HUD Controller in a similar pattern to Camera
+  // The GUI shouldn't know about hte details of the HUDController
   addHUDSettingsFolder() {
     const folder = this.gui.addFolder("HUD Settings");
     const hud = this.weas.tjs.hud;
