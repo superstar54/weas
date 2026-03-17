@@ -25,7 +25,6 @@ class CameraController extends TrackballControls {
         max: 5,
         step: 0.01,
         default: 2.5,
-        gui: true,
       },
       zoomSpeed: {
         type: "number",
@@ -34,7 +33,6 @@ class CameraController extends TrackballControls {
         max: 5,
         step: 0.01,
         default: 1.2,
-        gui: true,
       },
       panSpeed: {
         type: "number",
@@ -43,13 +41,11 @@ class CameraController extends TrackballControls {
         max: 50,
         step: 0.05,
         default: 15,
-        gui: true,
       },
       staticMoving: {
         type: "boolean",
         label: "Static moving",
         default: true,
-        gui: false,
       },
       minDistance: {
         type: "number",
@@ -57,7 +53,7 @@ class CameraController extends TrackballControls {
         min: 0,
         max: 1000,
         step: 0.1,
-        default: 100,
+        default: 0.1,
         gui: false,
       },
       maxDistance: {
@@ -66,7 +62,7 @@ class CameraController extends TrackballControls {
         min: 0,
         max: 5000,
         step: 0.1,
-        default: 100,
+        default: 2500,
         gui: false,
       },
     };

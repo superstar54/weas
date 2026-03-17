@@ -8,87 +8,91 @@ function applyStyle(el, styleObj) {
 
 // TODO - investigate bad alignment due to svgs
 class LegendHUD {
-  static schema = {
-    fontFamily: { type: "string", default: "sans-serif", label: "Font Family" },
-    fontSize: {
-      type: "number",
-      min: 8,
-      max: 36,
-      step: 1,
-      default: 20,
-      label: "Label Font Size",
-    },
-    headingFontSize: {
-      type: "number",
-      min: 10,
-      max: 48,
-      step: 1,
-      default: 24,
-      label: "Heading Font Size",
-    },
-    iconSize: {
-      type: "number",
-      min: 4,
-      max: 48,
-      step: 1,
-      default: 16,
-      label: "Icon Size",
-    },
-    rowGap: {
-      type: "number",
-      min: 0,
-      max: 20,
-      step: 1,
-      default: 6,
-      label: "Row Gap",
-    },
-    columnGap: {
-      type: "number",
-      min: 0,
-      max: 30,
-      step: 1,
-      default: 10,
-      label: "Column Gap",
-    },
-    panelPadding: {
-      type: "number",
-      min: 0,
-      max: 20,
-      step: 1,
-      default: 6,
-      label: "Panel Padding",
-    },
-    panelBackground: {
-      type: "color",
-      default: "rgba(0,0,0,0.1)",
-      label: "Color",
-    },
-    panelBorderRadius: {
-      type: "number",
-      min: 0,
-      max: 20,
-      step: 1,
-      default: 5,
-      label: "Panel Border Radius",
-    },
-    heading: { type: "string", default: "Legend", label: "Heading Text" },
-  };
-
   constructor(hudController, config = {}) {
     this.hud = hudController;
 
-    // Merge default schema values with user-provided settings
-    this.settings = {};
-    for (const [key, meta] of Object.entries(LegendHUD.schema)) {
-      this.settings[key] =
-        (config.settings && config.settings[key]) ?? meta.default;
-    }
+    this.paramsSchema = {
+      fontFamily: {
+        type: "string",
+        default: "sans-serif",
+        label: "Font Family",
+      },
+      fontSize: {
+        type: "number",
+        min: 8,
+        max: 36,
+        step: 1,
+        default: 20,
+        label: "Label Font Size",
+      },
+      headingFontSize: {
+        type: "number",
+        min: 10,
+        max: 48,
+        step: 1,
+        default: 24,
+        label: "Heading Font Size",
+      },
+      iconSize: {
+        type: "number",
+        min: 4,
+        max: 48,
+        step: 1,
+        default: 16,
+        label: "Icon Size",
+      },
+      rowGap: {
+        type: "number",
+        min: 0,
+        max: 20,
+        step: 1,
+        default: 6,
+        label: "Row Gap",
+      },
+      columnGap: {
+        type: "number",
+        min: 0,
+        max: 30,
+        step: 1,
+        default: 10,
+        label: "Column Gap",
+      },
+      panelPadding: {
+        type: "number",
+        min: 0,
+        max: 20,
+        step: 1,
+        default: 6,
+        label: "Panel Padding",
+      },
+      panelBackground: {
+        type: "color",
+        default: "rgba(0,0,0,0.1)",
+        label: "Background",
+      },
+      panelBorderRadius: {
+        type: "number",
+        min: 0,
+        max: 20,
+        step: 1,
+        default: 5,
+        label: "Border radius",
+      },
+      heading: {
+        type: "string",
+        default: "Legend",
+        label: "Heading Text",
+      },
+    };
+
+    // --- initialize defaults
+    this.initDefaults();
+
+    // Merge user settings
+    if (config.settings) this.setParams(config.settings);
 
     this.config = Object.assign(
-      {
-        position: "bottom-right",
-        panelKey: "legend",
-      },
+      { position: "bottom-right", panelKey: "legend" },
       config,
     );
 
@@ -111,6 +115,27 @@ class LegendHUD {
       anchor: this.config.position,
       offset: { x: 0, y: 0 },
     });
+  }
+
+  // --- initialize defaults from paramsSchema
+  initDefaults() {
+    this.settings = {};
+    for (const [key, meta] of Object.entries(this.paramsSchema)) {
+      this.settings[key] = meta.default;
+    }
+  }
+
+  setParams(params = {}) {
+    Object.assign(this.settings, params);
+    this.updateSettings({});
+  }
+
+  getParams() {
+    const params = {};
+    for (const key of Object.keys(this.paramsSchema)) {
+      params[key] = this.settings[key];
+    }
+    return params;
   }
 
   _applyContainerStyle() {
@@ -206,12 +231,16 @@ class LegendHUD {
       }
     });
 
-    if (this.headingEl)
+    if (this.headingEl) {
       this.headingEl.style.fontSize = `${this.settings.headingFontSize}px`;
+      if ("heading" in newSettings) {
+        this.headingEl.textContent = this.settings.heading;
+      }
+    }
   }
 
   getSchema() {
-    return LegendHUD.schema;
+    return this.paramsSchema;
   }
 }
 
