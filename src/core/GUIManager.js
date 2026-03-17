@@ -263,30 +263,19 @@ class GUIManager {
     const controller = this.weas.tjs.cameraController;
     if (!controller) return;
 
-    const refreshCameraFolder = () => {
-      while (folder.__controllers.length)
-        folder.remove(folder.__controllers[0]);
+    // Add all GUI-able params from the schema
+    this.addFolderFromSchema(
+      folder,
+      controller,
+      controller.paramSchema,
+      (key, value) => {
+        controller[key] = value;
+        controller.update();
+        controller._emitChange();
+      },
+    );
 
-      for (const [key, info] of Object.entries(controller.paramSchema)) {
-        if (!info.gui) continue;
-
-        if (info.type === "select") {
-          folder.add(controller, key, info.options).onChange((v) => {
-            if (typeof controller.setCameraType === "function")
-              controller.setCameraType(v);
-          });
-        } else if (typeof controller[key] === "boolean") {
-          folder.add(controller, key);
-        } else {
-          folder.add(controller, key, info.min, info.max, info.step);
-        }
-      }
-
-      folder.add({ reset: () => controller.resetSettings() }, "reset");
-    };
-
-    controller.onChange(refreshCameraFolder);
-    refreshCameraFolder();
+    folder.add({ reset: () => controller.resetSettings() }, "reset");
   }
 
   // TODO - move this into the HUD Controller in a similar pattern to Camera
@@ -375,6 +364,9 @@ class GUIManager {
   // a callback function (if updates are required)
   addFolderFromSchema(folder, settingsObj, schema, onChange) {
     for (const [key, meta] of Object.entries(schema)) {
+      // Skip anything that shouldn't appear in the GUI
+      if (meta.gui === false) continue;
+
       let controller;
 
       switch (meta.type) {
@@ -393,13 +385,19 @@ class GUIManager {
         case "string":
           controller = folder.add(settingsObj, key);
           break;
+        case "boolean":
+          controller = folder.add(settingsObj, key);
+          break;
+        case "select":
+          if (meta.options)
+            controller = folder.add(settingsObj, key, meta.options);
+          break;
         default:
           continue;
       }
 
       const displayName = meta.label ?? key;
 
-      // Only call onChange if it’s a function
       if (typeof onChange === "function") {
         controller?.name(displayName).onChange(() => {
           onChange(key, settingsObj[key]);

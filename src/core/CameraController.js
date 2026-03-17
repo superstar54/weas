@@ -18,16 +18,55 @@ class CameraController extends TrackballControls {
 
     // initialise a s.o.t schema - this 'can' be overridden and will be respected by reset
     this.paramSchema = {
-      rotateSpeed: { min: 0, max: 5, step: 0.01, default: 2.5, gui: true },
-      zoomSpeed: { min: 0, max: 5, step: 0.01, default: 1.2, gui: true },
-      panSpeed: { min: 0, max: 50, step: 0.05, default: 15, gui: true },
-      staticMoving: { default: true, gui: false },
-      minDistance: { min: 0, max: 1000, step: 0.1, default: 0, gui: false },
+      rotateSpeed: {
+        type: "number",
+        label: "Rotation speed",
+        min: 0,
+        max: 5,
+        step: 0.01,
+        default: 2.5,
+        gui: true,
+      },
+      zoomSpeed: {
+        type: "number",
+        label: "Zoom speed",
+        min: 0,
+        max: 5,
+        step: 0.01,
+        default: 1.2,
+        gui: true,
+      },
+      panSpeed: {
+        type: "number",
+        label: "Pan speed",
+        min: 0,
+        max: 50,
+        step: 0.05,
+        default: 15,
+        gui: true,
+      },
+      staticMoving: {
+        type: "boolean",
+        label: "Static moving",
+        default: true,
+        gui: false,
+      },
+      minDistance: {
+        type: "number",
+        label: "Min Distance",
+        min: 0,
+        max: 1000,
+        step: 0.1,
+        default: 100,
+        gui: false,
+      },
       maxDistance: {
+        type: "number",
+        label: "Max Distance",
         min: 0,
         max: 5000,
         step: 0.1,
-        default: Infinity,
+        default: 100,
         gui: false,
       },
     };
@@ -36,6 +75,10 @@ class CameraController extends TrackballControls {
     for (const [key, info] of Object.entries(this.paramSchema)) {
       this[key] = info.default;
     }
+
+    camera.near = -this.minDistance;
+    camera.far = this.maxDistance;
+    camera.updateProjectionMatrix();
 
     // TODO - move this to be controlled by keybinds
     // disable rotation on shift held.
