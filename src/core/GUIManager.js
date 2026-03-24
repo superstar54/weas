@@ -130,9 +130,11 @@ class GUIManager {
         if (expanded.includes(displayName)) subFolder.open();
 
         // Use reusable schema-based folder builder
-        this.addFolderFromSchema(subFolder, mat, registry.getSchema(name), {
-          lockBuiltIn: mat.__builtIn,
-        });
+        this.addFolderFromSchema(subFolder, mat, registry.getSchema(name), {});
+
+        if (mat.__builtIn) {
+          Object.values(subFolder.__controllers).forEach(lockController);
+        }
 
         // Copy button
         subFolder
@@ -275,7 +277,19 @@ class GUIManager {
       },
     );
 
-    folder.add({ reset: () => controller.resetSettings() }, "reset");
+    folder.add(
+      {
+        reset: () => {
+          controller.resetSettings();
+
+          folder.__controllers.forEach((c) => c.updateDisplay());
+          Object.values(folder.__folders).forEach((f) =>
+            f.__controllers.forEach((c) => c.updateDisplay()),
+          );
+        },
+      },
+      "reset",
+    );
   }
 
   // TODO - move this into the HUD Controller in a similar pattern to Camera
@@ -289,6 +303,11 @@ class GUIManager {
       // remove old controllers
       while (folder.__controllers.length)
         folder.remove(folder.__controllers[0]);
+
+      // remove old subfolders
+      for (const f in folder.__folders) {
+        folder.removeFolder(folder.__folders[f]);
+      }
 
       hud.miniScenes.forEach((mini, key) => {
         const sceneFolder = folder.addFolder(key);
