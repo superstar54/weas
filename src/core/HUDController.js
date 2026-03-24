@@ -9,6 +9,8 @@ import { ToolbarHUD } from "./ui/ToolbarHUD";
  */
 export default class HUDController {
   constructor(weas, container, mainRenderer) {
+    this._listeners = new Set();
+
     this.weas = weas;
     this.container = document.createElement("div");
     this.container.style.position = "absolute";
@@ -39,6 +41,14 @@ export default class HUDController {
       "bottom-right",
       "center",
     ];
+  }
+
+  onChange(cb) {
+    this._listeners.add(cb);
+  }
+
+  _emitChange() {
+    this._listeners.forEach((cb) => cb());
   }
 
   // defines space cartesian axis, -- useful for rotational overlays
@@ -134,6 +144,7 @@ export default class HUDController {
     });
 
     this._updateHTMLPosition(key);
+    this._emitChange();
   }
 
   addPanel(key, element, position) {

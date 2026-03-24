@@ -109,6 +109,8 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.modelStyle = 1;
       editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
       editor.avr.atoms = atomsList;
+
+      editor.tjs.cameraController.view("front")
       break;
     case "urea.cif":
       editor.clear();
@@ -281,6 +283,8 @@ async function updateAtoms(filename, fileContent = null) {
         [-0.05, 1.05],
       ];
       editor.avr.drawModels();
+      editor.tjs.cameraController.view("front");
+
       break;
     case "h2o-homo.cube":
       editor.clear();
@@ -288,12 +292,16 @@ async function updateAtoms(filename, fileContent = null) {
       let cubeData = parseCube(structureData);
       editor.avr.atoms = cubeData.atoms;
       editor.avr.volumetricData = cubeData.volumetricData;
+
       editor.avr.isosurfaceManager.setSettings({
-        positive: { isovalue: 0.00002, mode: 1, step_size: 1 },
-        negative: { isovalue: -0.00002, color: "#ff0000", mode: 1 },
+        positive: { isovalue: 0.02, mode: 1, step_size: 1 },
+        negative: { isovalue: -0.02, color: "#ff0000", mode: 1 },
       });
       editor.avr.isosurfaceManager.drawIsosurfaces();
       editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
+
+      editor.tjs.cameraController.view("front");
+
       break;
     case "2d-slice":
       editor.clear();
@@ -505,9 +513,9 @@ async function drawAtoms(filename, fileContent) {
   }
 }
 
-updateAtoms("molecule");
+// updateAtoms("molecule");
 // updateAtoms("catio3.cif");
 // updateAtoms("au.cif");
 // updateAtoms("c2h6so.xyz");
-// updateAtoms("h2o-homo.cube");
+updateAtoms("h2o-homo.cube");
 // updateAtoms("phonon")

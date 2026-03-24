@@ -3,7 +3,6 @@ import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils";
 import { clearObject } from "../utils";
 import { cloneValue } from "../state/store";
 
-// TODO - add this to the HUD
 class Setting {
   constructor({
     name,
@@ -55,14 +54,14 @@ class Setting {
 export class AnyMesh {
   constructor(viewer) {
     this.viewer = viewer;
+    this.hud = this.viewer.tjs.hud;
     this.scene = this.viewer.tjs.scene;
     this.settings = [];
     this.meshes = [];
     this.guiFolder = null;
     this.legendContainer = null;
-    this.meshLegendConfig = this.getMeshLegendConfig();
-    this.materialsRegistry = this.viewer.materialsRegistry
-    this.createGui();
+    this.materialsRegistry = this.viewer.materialsRegistry;
+    // this.createGui();
 
     const pluginState = this.viewer.state.get("plugins.anyMesh");
     if (pluginState && Array.isArray(pluginState.settings)) {
@@ -76,10 +75,13 @@ export class AnyMesh {
       this.applySettings(next.settings);
       this.drawMesh();
     });
+    this.legendEntries = {}; // store meshes as legendEntries
   }
 
   setSettings(settings) {
-    this.viewer.state.set({ plugins: { anyMesh: { settings: cloneValue(settings) } } });
+    this.viewer.state.set({
+      plugins: { anyMesh: { settings: cloneValue(settings) } },
+    });
   }
 
   applySettings(settings) {
@@ -162,7 +164,11 @@ export class AnyMesh {
       const materialType = setting.materialType || "Standard";
       const material = this.materialsRegistry.getMaterial(materialType, true);
       if (Array.isArray(setting.color)) {
-        material.color.setRGB(setting.color[0], setting.color[1], setting.color[2]);
+        material.color.setRGB(
+          setting.color[0],
+          setting.color[1],
+          setting.color[2],
+        );
       } else {
         material.color = new THREE.Color(setting.color);
       }
@@ -191,7 +197,8 @@ export class AnyMesh {
       }
       const object = new THREE.Mesh(finalGeometry, material);
       const selectable = setting.selectable ?? true;
-      const layer = typeof setting.layer === "number" ? setting.layer : selectable ? 0 : 1;
+      const layer =
+        typeof setting.layer === "number" ? setting.layer : selectable ? 0 : 1;
       object.userData.anyMeshName = setting.name;
       object.userData.type = "anyMesh";
       object.userData.uuid = this.viewer.uuid;
@@ -202,7 +209,11 @@ export class AnyMesh {
       object.layers.set(layer);
       object.visible = setting.visible ?? true;
       // set position
-      object.position.set(setting.position[0], setting.position[1], setting.position[2]);
+      object.position.set(
+        setting.position[0],
+        setting.position[1],
+        setting.position[2],
+      );
       if (typeof setting.renderOrder === "number") {
         object.renderOrder = setting.renderOrder;
       }
@@ -238,70 +249,36 @@ export class AnyMesh {
     this.viewer.requestRedraw?.("render");
   }
 
-  getMeshLegendConfig() {
-    if (!this.viewer?.guiManager?.guiConfig) {
-      return { enabled: false, position: "bottom-left" };
-    }
-    if (!this.viewer.guiManager.guiConfig.meshLegend) {
-      this.viewer.guiManager.guiConfig.meshLegend = { enabled: false, position: "bottom-left" };
-    }
-    return this.viewer.guiManager.guiConfig.meshLegend;
-  }
-
-  createGui() {
-    const guiConfig = this.viewer?.guiManager?.guiConfig;
-    if (!this.viewer?.guiManager?.gui || this.guiFolder) {
-      return;
-    }
-    if (guiConfig && guiConfig.controls && guiConfig.controls.meshControls === false) {
-      return;
-    }
-    this.guiFolder = this.viewer.guiManager.gui.addFolder("Meshes");
-    this.legendToggleController = this.guiFolder
-      .add(this.meshLegendConfig, "enabled")
-      .name("Show Mesh Legend")
-      .onChange((value) => {
-        this.meshLegendConfig.enabled = value;
-        this.updateLegend();
-      });
-  }
-
-  removeGui() {
-    if (!this.guiFolder || !this.viewer?.guiManager?.gui) {
-      return;
-    }
-    this.viewer.guiManager.gui.removeFolder(this.guiFolder);
-    this.guiFolder = null;
-  }
-
+  // TODO - clean this up, most of this styling is overkills.
   addLegend() {
-    this.removeLegend();
-    if (this.settings.length === 0) {
-      return;
-    }
+    if (this.settings.length === 0) return;
+    if (this.legendContainer) return;
+
     const legendContainer = document.createElement("div");
     legendContainer.id = "mesh-legend-container";
-    legendContainer.style.position = "absolute";
-    legendContainer.style.backgroundColor = "rgba(255, 255, 255, 0.85)";
     legendContainer.style.padding = "8px 10px";
-    legendContainer.style.borderRadius = "6px";
-    legendContainer.style.zIndex = "1000";
     legendContainer.style.display = "flex";
     legendContainer.style.flexDirection = "column";
     legendContainer.style.gap = "6px";
-    this.setLegendPosition(legendContainer);
+    legendContainer.style.backgroundColor = "rgba(255, 255, 255, 0.85)";
+    legendContainer.style.borderRadius = "6px";
 
     const stopPropagation = (event) => event.stopPropagation();
-    ["click", "mousedown", "mouseup", "pointerdown", "pointerup"].forEach((eventType) => {
-      legendContainer.addEventListener(eventType, stopPropagation, false);
-    });
+    ["click", "mousedown", "mouseup", "pointerdown", "pointerup"].forEach(
+      (eventType) => {
+        legendContainer.addEventListener(eventType, stopPropagation, false);
+      },
+    );
 
+     // use a fragment to avoid repainting
+    const fragment = document.createDocumentFragment();
     this.settings.forEach((setting) => {
       const legendEntry = document.createElement("div");
       legendEntry.style.display = "flex";
       legendEntry.style.alignItems = "center";
       legendEntry.style.cursor = "pointer";
       legendEntry.style.gap = "6px";
+
       const isVisible = setting.visible ?? true;
       legendEntry.style.opacity = isVisible ? "1" : "0.45";
       legendEntry.style.textDecoration = isVisible ? "none" : "line-through";
@@ -311,58 +288,74 @@ export class AnyMesh {
       swatch.style.height = "12px";
       swatch.style.borderRadius = "3px";
       swatch.style.backgroundColor = resolveLegendColor(setting.color);
-      swatch.style.border = "1px solid rgba(0, 0, 0, 0.2)";
+      swatch.style.border = "1px solid rgba(0,0,0,0.2)";
+
       legendEntry.appendChild(swatch);
 
       const label = document.createElement("span");
       label.textContent = setting.name || "mesh";
+      label.style.userSelect = "none";
       label.style.fontSize = "12px";
-      label.style.color = "#1f2933";
+      label.style.color = "#0d0d0d";
       legendEntry.appendChild(label);
 
-      legendEntry.addEventListener("click", () => this.toggleMeshVisibility(setting.name));
-      legendContainer.appendChild(legendEntry);
+      this.legendEntries[setting.name] = legendEntry;
+
+      legendEntry.addEventListener("click", () =>
+        this.toggleMeshVisibility(setting.name),
+      );
+        fragment.appendChild(legendEntry);
+
+    });
+    // append the fragment to the container
+    legendContainer.appendChild(fragment);
+
+
+    const panelKey = "AnyMeshLegend";
+    this.hud.addHTMLPanel(panelKey, legendContainer, {
+      anchor: "top-right",
+      offset: { x: 0, y: 0 },
+      visible: true,
     });
 
+    this.panelKey = panelKey;
     this.legendContainer = legendContainer;
     this.viewer.tjs.containerElement.appendChild(legendContainer);
   }
 
   removeLegend() {
-    const existingLegend = this.viewer.tjs.containerElement.querySelector("#mesh-legend-container");
+    const existingLegend = this.viewer.tjs.containerElement.querySelector(
+      "#mesh-legend-container",
+    );
     if (existingLegend) {
       existingLegend.remove();
     }
     this.legendContainer = null;
   }
 
+  // FIXME: this is probably inefficient but it works
   updateLegend() {
-    if (!this.meshLegendConfig?.enabled) {
-      this.removeLegend();
-      return;
-    }
+    this.removeLegend();
     this.addLegend();
   }
 
-  setLegendPosition(legendContainer) {
-    const position = this.meshLegendConfig.position || "bottom-left";
-    legendContainer.style.top = position.includes("top") ? "10px" : "";
-    legendContainer.style.bottom = position.includes("bottom") ? "10px" : "";
-    legendContainer.style.left = position.includes("left") ? "10px" : "";
-    legendContainer.style.right = position.includes("right") ? "10px" : "";
-  }
-
   toggleMeshVisibility(name) {
-    if (!name) {
-      return;
-    }
+    if (!name) return;
+
     const nextSettings = this.settings.map((setting) => {
-      if (setting.name !== name) {
-        return { ...setting };
-      }
+      if (setting.name !== name) return { ...setting };
+
       const currentVisible = setting.visible ?? true;
-      return { ...setting, visible: !currentVisible };
+      const updated = { ...setting, visible: !currentVisible };
+      // Update legend entry style
+      const entry = this.legendEntries[name];
+      if (entry) {
+        entry.style.opacity = updated.visible ? "1" : "0.45";
+        entry.style.textDecoration = updated.visible ? "none" : "line-through";
+      }
+      return updated;
     });
+
     this.setSettings(nextSettings);
   }
 }
