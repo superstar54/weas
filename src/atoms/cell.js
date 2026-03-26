@@ -1,6 +1,5 @@
 import * as THREE from "three";
 
-
 // TODO - investigate whether this is being cleaned up properly between swapping of structures etc.
 export class CellManager {
   constructor(viewer, settings = {}) {
@@ -118,41 +117,38 @@ export class CellManager {
       return;
     }
 
-    const material = new THREE.LineBasicMaterial({
+    const [a, b, c] = cell;
+    const o = [0, 0, 0];
+
+    const corners = [
+      o,
+      a,
+      b,
+      c,
+      [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+      [a[0] + c[0], a[1] + c[1], a[2] + c[2]],
+      [b[0] + c[0], b[1] + c[1], b[2] + c[2]],
+      [a[0] + b[0] + c[0], a[1] + b[1] + c[1], a[2] + b[2] + c[2]],
+    ];
+
+    // make a unitcell using the weas builtin in the shapeRegistry
+    const unitcell = this.shapeRegistry.create("ConvexShape", {
+      corners,
+      edges: true,
       color: this.settings.cellColor,
-      linewidth: this.settings.cellLineWidth,
     });
 
-    const points = [];
-
-    const origin = new THREE.Vector3(0, 0, 0);
-    const v1 = new THREE.Vector3(...cell[0]);
-    const v2 = new THREE.Vector3(...cell[1]);
-    const v3 = new THREE.Vector3().addVectors(v1, v2);
-    const v4 = new THREE.Vector3(...cell[2]);
-    const v5 = new THREE.Vector3().addVectors(v1, v4);
-    const v6 = new THREE.Vector3().addVectors(v2, v4);
-    const v7 = new THREE.Vector3().addVectors(v3, v4);
-
-    // Base
-    points.push(origin, v1, v1, v3, v3, v2, v2, origin);
-    // Top
-    points.push(v4, v5, v5, v7, v7, v6, v6, v4);
-    // Sides
-    points.push(origin, v4, v1, v5, v2, v6, v3, v7);
-
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.LineSegments(geometry, material);
-    line.userData = {
+    unitcell.userData = {
       type: "cell",
       uuid: this.viewer.uuid,
       objectMode: "edit",
       notSelectable: true,
     };
-    line.layers.set(1);
-    this.viewer.tjs.scene.add(line);
-    line.visible = this.showCell;
-    return line;
+    unitcell.layers.set(1);
+    unitcell.visible = this.showCell;
+
+    this.viewer.tjs.scene.add(unitcell);
+    return unitcell;
   }
 
   drawUnitCellVectors() {
@@ -212,76 +208,31 @@ export class CellManager {
     return unitCellGroup;
   }
 
-  // This seems unused - perhaps in a clean up we can consider removing this.
   updateCellMesh(cell) {
-    if (!cell || cell.length !== 3) {
-      console.warn("Invalid cell data for updating cell mesh");
-      return;
-    }
-    if (!this.cellMesh && !this.currentCell) return;
+    const CHANGE_TOL = 1e-5;
+    if (!cell || cell.length !== 3) return;
+    if (!this.cellMesh || !this.currentCell) return;
 
-    const eps = 1e-5;
-    if (
-      cell.every((row, i) =>
-        row.every(
-          (cellValue, j) => Math.abs(cellValue - this.currentCell[i][j]) < eps,
-        ),
-      )
-    ) {
-      return;
-    }
+    const unchanged = cell.every((row, i) =>
+      row.every((v, j) => Math.abs(v - this.currentCell[i][j]) < CHANGE_TOL),
+    );
+    if (unchanged) return;
 
-    if (this.cellMesh) {
-      const material = new THREE.LineBasicMaterial({
-        color: this.settings.cellColor,
-        linewidth: this.settings.cellLineWidth,
-      });
+    this.currentCell = cell.map((row) => row.slice());
+    const [a, b, c] = cell;
+    const o = [0, 0, 0];
+    const add = (x, y) => [x[0] + y[0], x[1] + y[1], x[2] + y[2]];
 
-      const points = [];
-      const origin = new THREE.Vector3(0, 0, 0);
-      const v1 = new THREE.Vector3(...cell[0]);
-      const v2 = new THREE.Vector3(...cell[1]);
-      const v3 = new THREE.Vector3().addVectors(v1, v2);
-      const v4 = new THREE.Vector3(...cell[2]);
-      const v5 = new THREE.Vector3().addVectors(v1, v4);
-      const v6 = new THREE.Vector3().addVectors(v2, v4);
-      const v7 = new THREE.Vector3().addVectors(v3, v4);
-
-      points.push(origin, v1, v1, v3, v3, v2, v2, origin);
-      points.push(v4, v5, v5, v7, v7, v6, v6, v4);
-      points.push(origin, v4, v1, v5, v2, v6, v3, v7);
-
-      this.cellMesh.geometry.setFromPoints(points);
-      this.cellMesh.material = material;
-    }
-
-    if (this.cellVectors) {
-      const directions = [
-        new THREE.Vector3(...cell[0]).normalize(),
-        new THREE.Vector3(...cell[1]).normalize(),
-        new THREE.Vector3(...cell[2]).normalize(),
-      ];
-
-      const axis = new THREE.Vector3(0, 1, 0);
-      for (let i = 0; i < 3; i++) {
-        const quaternion = new THREE.Quaternion().setFromUnitVectors(
-          axis,
-          directions[i],
-        );
-        this.cellVectors.children[i].setRotationFromQuaternion(quaternion);
-      }
-
-      const offset = 3.3;
-      this.cellVectors.children[3].position.copy(
-        directions[0].multiplyScalar(offset),
-      );
-      this.cellVectors.children[4].position.copy(
-        directions[1].multiplyScalar(offset),
-      );
-      this.cellVectors.children[5].position.copy(
-        directions[2].multiplyScalar(offset),
-      );
-    }
+    this.cellMesh.updateCorners([
+      o,
+      a,
+      b,
+      c,
+      add(a, b),
+      add(a, c),
+      add(b, c),
+      add(add(a, b), c),
+    ]);
   }
 }
 

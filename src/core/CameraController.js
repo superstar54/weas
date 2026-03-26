@@ -201,7 +201,7 @@ class CameraController extends TrackballControls {
     this.update();
   }
 
-  // todo move this to the keybind manager
+  // TODO: move this to the keybind manager
   _updateShiftState() {
     const shiftPressed = window.event ? window.event.shiftKey : false;
     if (shiftPressed && !this._shiftDown) {

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
+import { ConvexGeometry } from "three/addons/geometries/ConvexGeometry.js";
 
 /**
  * ShapeRegistry manages a collection of reusable 3D shapes for the scene.
@@ -112,6 +113,36 @@ export default class ShapeRegistry {
       ),
     );
 
+    this.register("Line", (materials, options) => {
+      const color = options.color || "#000000";
+      // accepts start and end as simple directions
+      const start = options.start || [0, 0, 0];
+      const end = options.end || [0, 1, 0]; // default to 'up'
+
+      const points = [new THREE.Vector3(...start), new THREE.Vector3(...end)];
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({ color });
+
+      const line = new THREE.Line(geometry, material);
+
+      // scale and position
+      if (options.position) line.position.set(...options.position);
+      if (options.scale) line.scale.set(...options.scale);
+      if (options.rotation) {
+        const [rx, ry, rz] = options.rotation;
+        line.rotation.set(
+          THREE.MathUtils.degToRad(rx),
+          THREE.MathUtils.degToRad(ry),
+          THREE.MathUtils.degToRad(rz),
+        );
+      }
+      // FIXME: - investigate highlighting lines well.
+      if (options.notSelectable) line.userData.notSelectable = true;
+      if (options.type) line.userData.type = options.type;
+      return line;
+    });
+
+    // --- Somewhat complex built in shapes that require a little bit of thought to use well
     this.register("Arrow", (materials, options) => {
       const shaftRatio = options.shaftRatio ?? 0.75;
       const totalLength = options.length ?? 1;
@@ -165,33 +196,43 @@ export default class ShapeRegistry {
       return arrow;
     });
 
-    this.register("Line", (materials, options) => {
-      const color = options.color || "#000000";
-      // accepts start and end as simple directions
-      const start = options.start || [0, 0, 0];
-      const end = options.end || [0, 1, 0]; // default to 'up'
+    // draw a generic Convex Shape
+    this.register("ConvexShape", (materials, options) => {
+      const corners = options.corners.map((c) =>
+        c.isVector3 ? c : new THREE.Vector3(...c),
+      );
+      const geometry = new ConvexGeometry(corners);
 
-      const points = [new THREE.Vector3(...start), new THREE.Vector3(...end)];
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const material = new THREE.LineBasicMaterial({ color });
+      if (options.edges) {
+        const edges = new THREE.EdgesGeometry(geometry);
+        const mat = new THREE.LineBasicMaterial({
+          color: options.color ?? 0xffffff,
+        });
+        const mesh = new THREE.LineSegments(edges, mat);
 
-      const line = new THREE.Line(geometry, material);
+        // attach updater directly to the object
+        mesh.updateCorners = (newCorners) => {
+          const verts = newCorners.map((c) =>
+            c.isVector3 ? c : new THREE.Vector3(...c),
+          );
+          const newGeo = new ConvexGeometry(verts);
+          mesh.geometry.dispose();
+          mesh.geometry = new THREE.EdgesGeometry(newGeo);
+        };
 
-      // scale and position
-      if (options.position) line.position.set(...options.position);
-      if (options.scale) line.scale.set(...options.scale);
-      if (options.rotation) {
-        const [rx, ry, rz] = options.rotation;
-        line.rotation.set(
-          THREE.MathUtils.degToRad(rx),
-          THREE.MathUtils.degToRad(ry),
-          THREE.MathUtils.degToRad(rz),
-        );
+        return mesh;
       }
 
-      if (options.notSelectable) line.userData.notSelectable = true;
-      if (options.type) line.userData.type = options.type;
-      return line;
+      // solid case
+      const mesh = this._createBaseMesh(materials, geometry, options);
+      mesh.updateCorners = (newCorners) => {
+        const verts = newCorners.map((c) =>
+          c.isVector3 ? c : new THREE.Vector3(...c),
+        );
+        mesh.geometry.dispose();
+        mesh.geometry = new ConvexGeometry(verts);
+      };
+      return mesh;
     });
   }
 

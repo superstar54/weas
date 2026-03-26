@@ -228,20 +228,16 @@ class GUIManager {
     const cameraController = this.weas.tjs.cameraController;
 
     const refreshViews = () => {
-      // Remove old controllers
       while (folder.__controllers.length > 0) {
         folder.remove(folder.__controllers[0]);
       }
 
       cameraController.list().forEach((viewName) => {
-        const isBuiltIn = cameraController._builtInViews.has(viewName);
-
         folder
           .add({ load: () => cameraController.view(viewName) }, "load")
           .name(`View ${viewName}`);
       });
 
-      // Button to save current camera state
       folder
         .add(
           {
@@ -249,7 +245,6 @@ class GUIManager {
               const name = prompt("Name of new camera view:");
               if (!name) return;
               cameraController.saveView(name);
-              refreshViews();
             },
           },
           "save",
@@ -257,7 +252,10 @@ class GUIManager {
         .name("Save Current View");
     };
 
+    // initial render
     refreshViews();
+    // listen for changes
+    cameraController.onChange(refreshViews);
   }
 
   addCameraSettingsFolder() {
