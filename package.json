@@ -49,5 +49,8 @@
     "atoms",
     "threejs",
     "visualization"
-  ]
+  ],
+  "dependencies": {
+    "lodash.merge": "^4.6.2"
+  }
 }
