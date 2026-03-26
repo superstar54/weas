@@ -410,10 +410,16 @@ class AtomsViewer {
       this.drawModels();
       if (this._autoResetCameraOnAtomsUpdate || !this._hasInitializedCamera) {
         // update camera position and target position based on the atoms
-        this.tjs.updateCameraAndControls({ direction: [0, 0, 100] });
         // only set to true if the atoms is not an empty Atoms object
         if (this.atoms && this.atoms.getAtomsCount() > 0) {
           this._hasInitializedCamera = true;
+
+          // FIXME: this function currently doesnt seem to respect periodic boundaries
+          //  and thus the centering is not perfect
+          const focusPoint = this.atoms.getCenterOfGeometry();
+          // initialise the focus point here
+          editor.tjs.cameraController.view("front", { focus: focusPoint });
+          editor.tjs.cameraController.saveView("avr:center-front") // save it to the cameraController
         }
       }
       this.logger.debug("Set atoms successfullly");

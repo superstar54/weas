@@ -283,7 +283,6 @@ async function updateAtoms(filename, fileContent = null) {
         [-0.05, 1.05],
       ];
       editor.avr.drawModels();
-      editor.tjs.cameraController.view("front");
 
       break;
     case "h2o-homo.cube":
@@ -299,8 +298,6 @@ async function updateAtoms(filename, fileContent = null) {
       });
       editor.avr.isosurfaceManager.drawIsosurfaces();
       editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
-
-      editor.tjs.cameraController.view("front");
 
       break;
     case "2d-slice":
