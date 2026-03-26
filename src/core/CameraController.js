@@ -1,8 +1,8 @@
 import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
 import { Vector3 } from "three";
 
-// TODO - make the hotkeys refire a reset so that you dont have to click to see snapping to position
 // TODO - re-add perspective camera as i've bonked this in the migration of methods.
+
 class CameraController extends TrackballControls {
   constructor(camera, domElement, params = {}) {
     super(camera, domElement);
@@ -114,6 +114,8 @@ class CameraController extends TrackballControls {
     this.cameras.set(name, camera);
   }
 
+  // swap active camera to a new one.
+  // TODO: test if this actually has the desired effect
   setCamera(name) {
     const newCam = this.cameras.get(name);
     if (!newCam || newCam === this.object) return;
@@ -141,7 +143,7 @@ class CameraController extends TrackballControls {
     return [...this.cameras.keys()];
   }
 
-  // --- Parameter management
+  // --- Parameter management --- //
   setParams(params = {}) {
     Object.assign(this, params);
   }
@@ -199,6 +201,7 @@ class CameraController extends TrackballControls {
     this.update();
   }
 
+  // todo move this to the keybind manager
   _updateShiftState() {
     const shiftPressed = window.event ? window.event.shiftKey : false;
     if (shiftPressed && !this._shiftDown) {
@@ -216,21 +219,37 @@ class CameraController extends TrackballControls {
     super.update(...args);
   }
 
-  view(name) {
+  view(name, options = {}) {
     const v = this._views[name];
     if (!v) return;
 
     this.object.position.copy(v.position);
     this.object.quaternion.copy(v.quaternion);
-    this.target.copy(v.target);
     this.object.up.copy(v.up);
     if (this.object.isOrthographicCamera) this.object.zoom = v.zoom;
     else this.object.fov = v.zoom;
 
+    // If a focus point is provided, translate the camera so it orbits
+    // around that point instead of the origin, preserving the view direction.
+    if (options.focus) {
+      const focus = new Vector3(...options.focus);
+      const offset = this.object.position.clone().sub(v.target);
+      this.object.position.copy(focus.clone().add(offset));
+      this.target.copy(focus);
+    } else {
+      this.target.copy(v.target);
+    }
+
+    if (options.zoom !== undefined) {
+      this.object.zoom = options.zoom;
+    }
+
+    this.object.updateProjectionMatrix();
     this.update();
     this._emitChange();
   }
 
+  // save a given view - useful for restoring a camera state nicely
   saveView(name, builtIn = false) {
     this._views[name] = {
       position: this.object.position.clone(),
