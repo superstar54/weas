@@ -385,7 +385,7 @@ async function updateAtoms(filename, fileContent = null) {
       editor.clear();
       const registry = editor.shapeRegistry;
       const baseScale = [0.5, 0.5, 0.5];
-      const spacing = 2.2; // distance between shapes
+      const spacing = 1.5; // distance between shapes
       const gridCols = 4; // shapes per row
       const opacities = [0.25, 0.75, 1.0]; // different opacity levels
 

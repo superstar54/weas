@@ -200,6 +200,7 @@ class GUIManager {
 
       // Add a button per shape
       for (const shapeName of registry.list()) {
+        if (!registry.isGUIVisible(shapeName)) continue; // hide shapes designed to be hidden
         folder
           .add(
             {
