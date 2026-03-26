@@ -175,7 +175,6 @@ export class VectorField {
     this.viewer.requestRedraw?.("render");
   }
 
-
   updateArrowMesh(atomIndex = null, atoms = null) {
     if (atoms === null) atoms = this.viewer.atoms;
 
@@ -199,7 +198,14 @@ export class VectorField {
         const mid = new THREE.Vector3().lerpVectors(start, end, 0.0);
         const quaternion = calculateQuaternion(start, end);
 
-        // Uniform scale in X/Z, length along Y
+        // somehow arrow geometry is pointing completely the wrong way?
+        // using a flipQuart we can fix this.
+        const flipQuat = new THREE.Quaternion().setFromAxisAngle(
+          new THREE.Vector3(1, 0, 0),
+          Math.PI,
+        );
+        quaternion.multiply(flipQuat);
+
         const scale = new THREE.Vector3(
           10 * setting.radius,
           start.distanceTo(end),
@@ -215,8 +221,7 @@ export class VectorField {
   }
 }
 
-
-// basic creat arrow wrapper
+// basic create arrow wrapper
 export function drawAtomArrows({
   length = 0,
   color = 0x000000,
@@ -233,7 +238,7 @@ export function drawAtomArrows({
   const geometry = baseArrow.geometry.clone();
   const material = baseArrow.material.clone();
 
-  material.color.set(color)
+  material.color.set(color);
 
   const instanced = new THREE.InstancedMesh(geometry, material, length);
   instanced.userData.type = "arrow";
