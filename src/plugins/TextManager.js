@@ -3,7 +3,15 @@ import { createLabel } from "../utils";
 import { cloneValue } from "../state/store";
 
 class Setting {
-  constructor({ positions = [], texts = "+", color = "#111111", fontSize = "16px", className = "text-label text-label-cross", renderMode = "glyph", shift = [0, 0, 0] }) {
+  constructor({
+    positions = [],
+    texts = "+",
+    color = "#111111",
+    fontSize = "16px",
+    className = "text-label text-label-cross",
+    renderMode = "glyph",
+    shift = [0, 0, 0],
+  }) {
     this.positions = positions;
     this.texts = texts;
     this.color = color;
@@ -11,6 +19,75 @@ class Setting {
     this.className = className;
     this.renderMode = renderMode;
     this.shift = shift;
+  }
+}
+
+export const DEFAULT_TEXT_SETTINGS = {
+  text: "",
+  position: [0, 0, 0],
+  color: "#000000",
+  fontSize: "14px",
+  className: "text-label",
+  renderMode: "glyph",
+};
+
+export class TextMng {
+  constructor(weas, { sceneName = "MainScene" } = {}) {
+    if (!weas) throw new Error("A WEAS instance is required");
+    this.weas = weas;
+    this.scene = weas.tjs?.scenes?.[sceneName] || weas.tjs?.scene;
+    if (!this.scene) throw new Error(`Scene "${sceneName}" not found`);
+    this.labels = [];
+
+    this._updateHooks = [];
+  }
+
+  // Hook registration
+  onUpdate(callback) {
+    if (typeof callback === "function") this._updateHooks.push(callback);
+  }
+
+  _fireUpdate() {
+    this._updateHooks.forEach((fn) => fn(this.labels));
+  }
+
+  addLabel(options = {}) {
+    const { text, position, color, fontSize, className, renderMode } = {
+      ...DEFAULT_TEXT_SETTINGS,
+      ...options,
+    };
+    const posVec = new THREE.Vector3(...position);
+    const label = createLabel(posVec, text, color, fontSize, className);
+    this.scene.add(label);
+    this.labels.push(label);
+    return label;
+  }
+
+  removeLabel(label) {
+    if (!label) return;
+    this.scene.remove(label);
+    label.remove?.(); // remove HTML element if present
+    this.labels = this.labels.filter((l) => l !== label);
+  }
+
+  clearLabels() {
+    this.labels.forEach((label) => {
+      this.scene.remove(label);
+      label.remove?.();
+    });
+    this.labels = [];
+  }
+
+  updateLabelPosition(label, newPosition) {
+    if (!label || !newPosition) return;
+    label.position.set(...newPosition);
+  }
+
+  updateLabelText(label, newText) {
+    if (!label || newText === undefined) return;
+    if (label.element) {
+      label.element.textContent = newText;
+    }
   }
 }
 
@@ -54,8 +131,24 @@ export class TextManager {
     });
   }
 
-  addSetting({ positions, texts = "+", color = "#111111", fontSize = "16px", className, renderMode = "glyph", shift = [0, 0, 0] }) {
-    const setting = new Setting({ positions, texts, color, fontSize, className, renderMode, shift });
+  addSetting({
+    positions,
+    texts = "+",
+    color = "#111111",
+    fontSize = "16px",
+    className,
+    renderMode = "glyph",
+    shift = [0, 0, 0],
+  }) {
+    const setting = new Setting({
+      positions,
+      texts,
+      color,
+      fontSize,
+      className,
+      renderMode,
+      shift,
+    });
     this.settings.push(setting);
   }
 
@@ -86,7 +179,14 @@ export class TextManager {
       origins.forEach((origin, index) => {
         const position = new THREE.Vector3(...origin).add(shift);
         const text = texts ? (texts[index] ?? "") : setting.texts;
-        const { label } = this.createTextLabel(position, text, setting.color, fontSize, className, renderMode);
+        const { label } = this.createTextLabel(
+          position,
+          text,
+          setting.color,
+          fontSize,
+          className,
+          renderMode,
+        );
         this.scene.add(label);
         this.labels.push(label);
       });
@@ -94,11 +194,30 @@ export class TextManager {
     this.weas?.requestRedraw?.("render");
   }
 
-  createTextLabel(position, text, color, fontSize, className, renderMode = "glyph") {
+  createTextLabel(
+    position,
+    text,
+    color,
+    fontSize,
+    className,
+    renderMode = "glyph",
+  ) {
     const wantsCross = text === "+";
-    const normalizedClassName = wantsCross && !className.includes("text-label-cross") ? `${className} text-label-cross` : className;
-    const label = createLabel(position, text, color, fontSize, normalizedClassName);
-    const isCross = wantsCross && normalizedClassName.includes("text-label-cross") && renderMode === "shape";
+    const normalizedClassName =
+      wantsCross && !className.includes("text-label-cross")
+        ? `${className} text-label-cross`
+        : className;
+    const label = createLabel(
+      position,
+      text,
+      color,
+      fontSize,
+      normalizedClassName,
+    );
+    const isCross =
+      wantsCross &&
+      normalizedClassName.includes("text-label-cross") &&
+      renderMode === "shape";
     if (isCross) {
       label.element.textContent = "";
       label.element.dataset.cross = "true";

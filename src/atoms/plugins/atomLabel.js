@@ -1,20 +1,22 @@
 import * as THREE from "three";
 import { cloneValue } from "../../state/store";
 
-class Setting {
-  constructor({ origins = [], texts = [], selection = null, color = "#000000ff", fontSize = 0.05, className = "atom-label", renderMode = "glyph", shift = false }) {
-    /* A class to store label settings */
+import merge from "lodash.merge";
 
-    this.origins = origins;
-    this.texts = texts;
-    this.selection = selection;
-    this.color = color;
-    this.fontSize = fontSize;
-    this.className = className;
-    this.renderMode = renderMode;
-    this.shift = shift;
-  }
-}
+const DEFAULT_LABEL_SETTING = {
+  origins: [],
+  texts: [],
+  selection: null,
+  color: "#000000ff",
+  fontSize: 0.05,
+  className: "atom-label",
+  renderMode: "glyph",
+  shift: [0, 0, 0],
+};
+
+
+// TODO: think whether a central LabelManager 
+// would be a nicer way to manage labels in general
 
 export class AtomLabelManager {
   constructor(viewer) {
@@ -67,21 +69,12 @@ export class AtomLabelManager {
     });
   }
 
-  // Modify addSetting to accept a single object parameter
-  addSetting({ origins, texts, selection = null, color = "#000000ff", fontSize = 0.05, className = "atom-label", renderMode = "glyph", shift = [0, 0, 0] }) {
-    /* Add a new setting to the label */
-    if (typeof origins === "string") {
-      if (!this.viewer.atoms.getAttribute(origins)) {
-        throw new Error(`Attribute '${origins}' is not defined. The available attributes are: ${Object.keys(this.viewer.atoms.attributes["atom"])}`);
-      }
-    }
-    const setting = new Setting({ origins, texts, selection, color, fontSize, className, renderMode, shift });
-    this.settings.push(setting);
+  addSetting(options) {
+    this.settings.push(merge({}, DEFAULT_LABEL_SETTING, options));
   }
 
-  addOverlaySetting({ origins, texts, selection = null, color = "#000000ff", fontSize = 0.05, className = "atom-label", shift = [0, 0, 0] }) {
-    const setting = new Setting({ origins, texts, selection, color, fontSize, className, shift });
-    this.overlaySettings.push(setting);
+  addOverlaySetting(options) {
+    this.overlaySettings.push(merge({}, DEFAULT_LABEL_SETTING, options));
   }
 
   clearLabels() {
@@ -122,7 +115,16 @@ export class AtomLabelManager {
       if (!labelFactory) {
         throw new Error("TextManager is not available for atom label rendering.");
       }
-      const labels = drawAtomLabels(origins, texts, setting.fontSize, setting.color, indices, labelFactory, setting.className, setting.renderMode);
+      const labels = drawAtomLabels({
+        origins,
+        texts,
+        fontSize: setting.fontSize,
+        color: setting.color,
+        indices,
+        labelFactory,
+        className: setting.className,
+        renderMode: setting.renderMode,
+      });
       // Add mesh to the scene
       for (let i = 0; i < labels.length; i++) {
         this.scene.add(labels[i]);
@@ -134,6 +136,7 @@ export class AtomLabelManager {
     this.viewer.requestRedraw?.("render");
   }
 
+  // TODO: Currently fully unused - perhaps we need to write this...?
   updateLabel(atomIndex = null, atoms = null) {
     /* When the atom is moved, the label created from the atom attribute will be updated.
     if atomIndex is null, update all bonds
@@ -259,7 +262,7 @@ function clearLabels(scene, labels) {
   });
 }
 
-export function drawAtomLabels(origins, texts, fontSize, color, indices = [], labelFactory, className = "atom-label", renderMode = "glyph") {
+export function drawAtomLabels({origins, texts, fontSize, color, indices = [], labelFactory, className = "atom-label", renderMode = "glyph"}) {
   const labels = [];
   const normalizedFontSize = normalizeFontSize(fontSize);
   const baseFontPx = getBaseFontPx(normalizedFontSize);
@@ -279,9 +282,6 @@ export function drawAtomLabels(origins, texts, fontSize, color, indices = [], la
 
 function normalizeFontSize(fontSize) {
   if (typeof fontSize === "number") {
-    if (fontSize <= 1) {
-      return "14px";
-    }
     return `${fontSize}px`;
   }
   if (typeof fontSize === "string" && fontSize.trim() !== "") {

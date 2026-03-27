@@ -1,5 +1,9 @@
+
+import { inv, multiply} from "mathjs"
+
 import { marchingCubes, clipMeshToPlanes } from "../../geometry/marchingCubes";
 import { cloneValue } from "../../state/store";
+
 
 class FermiSurfaceSetting {
   constructor({
@@ -93,33 +97,6 @@ function tileVolume(values, dims, sc) {
     }
   }
   return out;
-}
-
-function invert3x3(m) {
-  const a00 = m[0][0],
-    a01 = m[0][1],
-    a02 = m[0][2];
-  const a10 = m[1][0],
-    a11 = m[1][1],
-    a12 = m[1][2];
-  const a20 = m[2][0],
-    a21 = m[2][1],
-    a22 = m[2][2];
-  const b01 = a22 * a11 - a12 * a21;
-  const b11 = -a22 * a10 + a12 * a20;
-  const b21 = a21 * a10 - a11 * a20;
-  let det = a00 * b01 + a01 * b11 + a02 * b21;
-  if (!det) return null;
-  det = 1.0 / det;
-  return [
-    [b01 * det, (-a22 * a01 + a02 * a21) * det, (a12 * a01 - a02 * a11) * det],
-    [b11 * det, (a22 * a00 - a02 * a20) * det, (-a12 * a00 + a02 * a10) * det],
-    [b21 * det, (-a21 * a00 + a01 * a20) * det, (a11 * a00 - a01 * a10) * det],
-  ];
-}
-
-function mulMatVec(m, v) {
-  return [m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2], m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2], m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2]];
 }
 
 function clamp(v, lo, hi) {
@@ -384,13 +361,13 @@ export class FermiSurface {
           valuesMC = tileVolume(values, baseDims, supercell);
 
           if (setting.clipToBZ && data.bzMesh && data.bzMesh.vertices) {
-            const inv = invert3x3(cell);
-            if (inv) {
+            const invCell = inv(cell);
+            if (invCell) {
               let minF = [Infinity, Infinity, Infinity];
               let maxF = [-Infinity, -Infinity, -Infinity];
               const verts = data.bzMesh.vertices;
               for (let i = 0; i < verts.length; i += 3) {
-                const f = mulMatVec(inv, [verts[i], verts[i + 1], verts[i + 2]]);
+                const f = multiply(invCell, [verts[i], verts[i + 1], verts[i + 2]]);
                 for (let a = 0; a < 3; a++) {
                   if (f[a] < minF[a]) minF[a] = f[a];
                   if (f[a] > maxF[a]) maxF[a] = f[a];

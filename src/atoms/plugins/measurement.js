@@ -1,60 +1,80 @@
-import * as THREE from "three";
-import { clearObject, createLabel } from "../../utils";
 import { cloneValue } from "../../state/store";
 
-class Setting {
-  constructor({ indices = [], color = "black", fontSize = 16 }) {
-    /* A class to store label settings.
-    indices: the indices of the atoms to measure
-      no atoms: clear the previous measurements
-      single atom: xyz position and atomic symbol
-      two atoms: interatomic distance
-      three atoms: the angle between bonds 12 and 23
-      four atoms: the dihedral angle between bonds 12 and 34
-    */
+import {
+  getPosition,
+  getDistance,
+  getAngle,
+  getDihedral,
+} from "../../geometry/geometryMath";
 
-    this.indices = indices;
-    this.color = color;
-    this.fontSize = fontSize;
-  }
+import merge from "lodash.merge";
 
-  toDict() {
-    return {
-      indices: this.indices,
-      color: this.color,
-      fontSize: this.fontSize,
-    };
-  }
-}
+// TODO: Think if this even belongs here?
+// I feel like measuring the distance between two objects
+// might be a useful method to have at the weas core and hide alot of this logic away
 
+// TODO: I think in retrospect a measurement is a fundamental feature of THREE objects.
+// We should provide a nice set of utilities that allow this and this should become as thin as possible
+
+
+/**
+ * Default settings for the Measurement plugin.
+ *
+ * Structure:
+ * - global defaults (color, fontSize, visibility)
+ * - measurements: individual measurement entries keyed by name
+ */
+export const DEFAULT_MEASUREMENT_SETTINGS = {
+  enabled: true,
+  // global style defaults (used unless overridden per measurement)
+  color: "black",
+  fontSize: 16,
+
+  // rendering options
+  lineColor: 0x0000ff,
+  lineWidth: 1,
+  opacity: 0.9,
+  measurements: {},
+
+  showLabels: true,
+  showLines: true,
+};
+
+/**
+ * Measurement plugin for visualizing distances, angles, and dihedral angles
+ * between atoms in a molecular viewer.
+ */
 export class Measurement {
-  constructor(viewer) {
+  /**
+   * @param {Object} viewer - The molecular viewer instance.
+   * @param {Object} [settings={}] - Optional initial settings to override defaults.
+   */
+  constructor(viewer, settings = {}) {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
-    this.settings = {};
+
+    this.textManager = this.viewer.weas.textManager2;
+    this.shapeRegistry = this.viewer.weas.shapeRegistry;
+
     this.meshes = {};
 
-    const pluginState = this.viewer.state.get("plugins.measurement");
-    if (pluginState && pluginState.settings) {
-      this.applySettings(pluginState.settings);
-      this.drawMeasurements();
-    }
-    this.viewer.state.subscribe("plugins.measurement", (next) => {
-      if (!next) {
-        return;
-      }
-      if (this.viewer._initializingState) {
-        return;
-      }
-      if (!next.settings) {
-        this.reset();
-        return;
-      }
-      this.applySettings(next.settings);
-      this.drawMeasurements();
+    // defaults → constructor overrides → state
+    this.settings = merge({}, DEFAULT_MEASUREMENT_SETTINGS, settings);
+
+    const pluginState = this.viewer.state.get("plugins.measurement") || {};
+    merge(this.settings, pluginState);
+
+    this._rebuild();
+
+    this.viewer.state.subscribe("plugins.measurement", (next, prev) => {
+      if (!next || this.viewer._initializingState) return;
+      this._onStateChange(next, prev);
     });
   }
 
+  /**
+   * Reset all measurements and clear the scene.
+   */
   reset() {
     /* Reset the measurements */
     this.clearMeshes();
@@ -62,24 +82,49 @@ export class Measurement {
     this.viewer.requestRedraw?.("render");
   }
 
-  measure(indices = null) {
-    /* Measures the distance, angle, or dihedral angle between atoms.*/
-    const selection = Array.isArray(indices) ? indices : [];
-    if (selection.length === 0) {
-      this.viewer.state.set({ plugins: { measurement: { settings: null } } });
-    } else {
-      const settings = { ...(this.viewer.state.get("plugins.measurement")?.settings || {}) };
-      const name = `measurement-${Object.keys(settings).length}`;
-      const setting = new Setting({ indices: selection });
-      settings[name] = setting.toDict();
-      this.viewer.state.set({ plugins: { measurement: { settings } } });
+  /**
+   * Add a new measurement for a given selection of atoms.
+   * @param {number[]} indices - Array of atom indices (1-4 atoms).
+   */
+  measure(indices = []) {
+    if (!indices.length) {
+      this.viewer.state.set({ plugins: { measurement: null } });
+      return;
     }
+
+    const current = this.viewer.state.get("plugins.measurement") || {};
+    const measurements = { ...(current.measurements || {}) };
+
+    // deterministic name: e.g., "measurement-1-2-3"
+    const name = `measurement-${indices.join("-")}`;
+
+    // assign or overwrite the measurement for these indices
+    measurements[name] = { indices };
+
+    this.viewer.state.set({
+      plugins: {
+        measurement: {
+          ...current,
+          measurements,
+        },
+      },
+    });
   }
 
+  /**
+   * Update global or per-measurement settings.
+   * @param {Object} settings - Settings to apply.
+   */
   setSettings(settings) {
-    this.viewer.state.set({ plugins: { measurement: { settings: cloneValue(settings) } } });
+    this.viewer.state.set({
+      plugins: { measurement: { settings: cloneValue(settings) } },
+    });
   }
 
+  /**
+   * Apply per-measurement settings from an object.
+   * @param {Object} settings - Measurements keyed by name.
+   */
   applySettings(settings) {
     /* Set measurement settings */
     this.settings = {};
@@ -89,131 +134,297 @@ export class Measurement {
     });
   }
 
+  /**
+   * Draw all current measurements in the scene.
+   */
   drawMeasurements() {
-    this.clearMeshes();
-    Object.entries(this.settings).forEach(([name, setting]) => {
+    const measurements = this.settings.measurements || {};
+
+    Object.entries(measurements).forEach(([name, setting]) => {
       this.drawMeasurement(name, setting);
     });
   }
 
+  /**
+   * Draw a single measurement based on the number of atoms.
+   * @param {string} name - Name of the measurement.
+   * @param {Object} setting - Measurement settings, including indices, color, fontSize.
+   */
   drawMeasurement(name, setting) {
-    /* Draw the measurements */
+    // remove old measurement if it exists
     const indices = setting.indices;
-    if (indices.length === 1) {
-      this.showPosition(name, indices);
-    } else if (indices.length === 2) {
-      this.showDistance(name, indices);
-    } else if (indices.length === 3) {
-      this.showAngle(name, indices);
-    } else if (indices.length === 4) {
-      this.showDihedralAngle(name, indices);
-    } else {
-    }
-    // call the render function to update the scene
+    if (indices.length === 1) this.showPosition(name, indices, setting);
+    else if (indices.length === 2) this.showDistance(name, indices, setting);
+    else if (indices.length === 3) this.showAngle(name, indices, setting);
+    else if (indices.length === 4)
+      this.showDihedralAngle(name, indices, setting);
+
     this.viewer.requestRedraw?.("render");
   }
 
-  showPosition(name, indices) {
+  /**
+   * Remove a single measurement (lines + labels) from the scene.
+   */
+  removeMeasurement(name) {
+    const objects = this.meshes[name];
+    if (!objects) return;
+
+    objects.forEach((obj) => {
+      // try removing from textManager; if fails, remove from scene
+      try {
+        this.textManager.removeLabel(obj);
+      } catch {
+        this.scene.remove(obj);
+      }
+    });
+
+    delete this.meshes[name];
+  }
+
+  /**
+   * Display a single atom's position as a label using the textManager.
+   * @param {string} name - Measurement name.
+   * @param {number[]} indices - Atom indices (length 1).
+   * @param {Object} setting - Measurement style settings.
+   */
+  showPosition(name, indices, setting) {
+    const color = setting.color || this.settings.color;
+    const fontSize = setting.fontSize || this.settings.fontSize;
+
     const atomIndex = indices[0];
-    const position = this.viewer.atoms.positions[atomIndex];
+    const positionArray = getPosition({
+      site1: this.viewer.atoms.positions[atomIndex],
+    });
+
     const symbol = this.viewer.atoms.symbols[atomIndex];
-    // Construct and return the formatted string
-    const text = `${symbol} [${position[0].toFixed(3)}, ${position[1].toFixed(3)}, ${position[2].toFixed(3)}]`;
-    // lable shift by 1.0 in x direction
-    const label = createLabel(new THREE.Vector3(...position).add(new THREE.Vector3(1, 0, 0)), text, "black", "18px");
-    this.scene.add(label);
+    const text = `${symbol} [${positionArray.map((v) => v.toFixed(3)).join(", ")}]`;
+
+    // Shift the label slightly in x for visibility
+    const shiftedPosition = [
+      positionArray[0] + 0.5,
+      positionArray[1],
+      positionArray[2],
+    ];
+
+    // Use textManager to render and manage the label
+    const label = this.textManager.addLabel({
+      position: shiftedPosition,
+      text,
+      color,
+      fontSize,
+    });
+
+    // Store the label for future removal
     this.meshes[name] = [label];
   }
-  showDistance(name, indices) {
-    const position1 = new THREE.Vector3(...this.viewer.atoms.positions[indices[0]]);
-    const position2 = new THREE.Vector3(...this.viewer.atoms.positions[indices[1]]);
-    const distance = position1.distanceTo(position2);
-    const points = [position1, position2];
-    // create a line between the two atoms, and display the distance
-    const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.LineSegments(geometry, material);
-    this.scene.add(line);
-    // add distance to the line
-    const label = createLabel(position1.add(position2).multiplyScalar(0.5), distance.toFixed(3), "black", "18px");
-    this.scene.add(label);
-    this.meshes[name] = [line, label];
+
+  /**
+   * Display the distance between two atoms using textManager.
+   * @param {string} name - Measurement name.
+   * @param {number[]} indices - Atom indices (length 2).
+   * @param {Object} setting - Measurement style settings.
+   */
+  showDistance(name, indices, setting) {
+    const color = setting.color || this.settings.color;
+    const fontSize = setting.fontSize || this.settings.fontSize;
+
+    // Get atom positions as plain arrays
+    const posA = getPosition({
+      site1: this.viewer.atoms.positions[indices[0]],
+    });
+    const posB = getPosition({
+      site1: this.viewer.atoms.positions[indices[1]],
+    });
+
+    const midpoint = [
+      (posA[0] + posB[0]) / 2,
+      (posA[1] + posB[1]) / 2,
+      (posA[2] + posB[2]) / 2,
+    ];
+
+    const distance = getDistance(posA, posB);
+    const lineShape = this.shapeRegistry.create("Line", {
+      start: posA,
+      end: posB,
+      color: 0x0000ff,
+      lineWidth: 1,
+    });
+
+    this.scene.add(lineShape);
+
+    const label = this.textManager.addLabel({
+      position: midpoint,
+      text: distance.toFixed(3),
+      color,
+      fontSize,
+    });
+
+    this.meshes[name] = [lineShape, label];
   }
-  showAngle(name, indices) {
-    const position1 = new THREE.Vector3(...this.viewer.atoms.positions[indices[0]]);
-    const position2 = new THREE.Vector3(...this.viewer.atoms.positions[indices[1]]);
-    const position3 = new THREE.Vector3(...this.viewer.atoms.positions[indices[2]]);
-    const vector1 = position1.clone().sub(position2).normalize();
-    const vector2 = position3.clone().sub(position2).normalize();
-    const angle = (vector1.angleTo(vector2) * 180) / Math.PI;
-    // create a line between the two atoms, and display the distance
-    const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
-    const geometry = new THREE.BufferGeometry().setFromPoints([position1, position2]);
-    const line1 = new THREE.LineSegments(geometry, material);
+
+  /**
+   * Display the angle between three atoms.
+   * @param {string} name - Measurement name.
+   * @param {number[]} indices - Atom indices (length 3).
+   * @param {Object} setting - Measurement style settings.
+   */
+  showAngle(name, indices, setting) {
+    const color = setting.color || this.settings.color;
+    const fontSize = setting.fontSize || this.settings.fontSize;
+
+    // get positions as plain arrays
+    const posA = getPosition({
+      site1: this.viewer.atoms.positions[indices[0]],
+    });
+    const posB = getPosition({
+      site1: this.viewer.atoms.positions[indices[1]],
+    });
+    const posC = getPosition({
+      site1: this.viewer.atoms.positions[indices[2]],
+    });
+    const angle = getAngle(posA, posB, posC);
+
+    const line1 = this.shapeRegistry.create("Line", {
+      start: posA,
+      end: posB,
+      color: 0x0000ff,
+      lineWidth: 1,
+    });
+    const line2 = this.shapeRegistry.create("Line", {
+      start: posB,
+      end: posC,
+      color: 0x0000ff,
+      lineWidth: 1,
+    });
+
     this.scene.add(line1);
-    const geometry2 = new THREE.BufferGeometry().setFromPoints([position2, position3]);
-    const line2 = new THREE.LineSegments(geometry2, material);
     this.scene.add(line2);
-    // add angle to the angle
-    const position = position2.add(vector1.add(vector2).multiplyScalar(0.3));
-    const label = createLabel(position, angle.toFixed(3), "black", "18px");
-    this.scene.add(label);
+
+    const midVec = [
+      posB[0] + (posA[0] - posB[0] + posC[0] - posB[0]) * 0.2,
+      posB[1] + (posA[1] - posB[1] + posC[1] - posB[1]) * 0.2,
+      posB[2] + (posA[2] - posB[2] + posC[2] - posB[2]) * 0.2,
+    ];
+
+    const label = this.textManager.addLabel({
+      position: midVec,
+      text: angle.toFixed(3),
+      color,
+      fontSize,
+    });
     this.meshes[name] = [line1, line2, label];
   }
-  showDihedralAngle(name, indices) {
-    const position1 = new THREE.Vector3(...this.viewer.atoms.positions[indices[0]]);
-    const position2 = new THREE.Vector3(...this.viewer.atoms.positions[indices[1]]);
-    const position3 = new THREE.Vector3(...this.viewer.atoms.positions[indices[2]]);
-    const position4 = new THREE.Vector3(...this.viewer.atoms.positions[indices[3]]);
-    const vector1 = position1.clone().sub(position2).normalize();
-    const vector2 = position3.clone().sub(position2).normalize();
-    const vector3 = position4.clone().sub(position3).normalize();
-    const normal1 = vector1.clone().cross(vector2).normalize();
-    const normal2 = vector2.clone().cross(vector3).normalize();
-    const angle = Math.acos(normal1.dot(normal2));
-    // create mesh with two planes and display the angle
-    const geometry = new THREE.BufferGeometry();
-    const vertices = [];
-    vertices.push(position1.x, position1.y, position1.z);
-    vertices.push(position2.x, position2.y, position2.z);
-    vertices.push(position3.x, position3.y, position3.z);
-    vertices.push(position2.x, position2.y, position2.z);
-    vertices.push(position3.x, position3.y, position3.z);
-    vertices.push(position4.x, position4.y, position4.z);
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-    geometry.setIndex([0, 1, 2, 3, 4, 5]);
-    const material = new THREE.MeshBasicMaterial({
+
+  /**
+   * Display the dihedral angle between four atoms.
+   * @param {string} name - Measurement name.
+   * @param {number[]} indices - Atom indices (length 4).
+   * @param {Object} setting - Measurement style settings.
+   */
+  showDihedralAngle(name, indices, setting) {
+    const color = setting.color || this.settings.color;
+    const fontSize = setting.fontSize || this.settings.fontSize;
+
+    // get positions as plain arrays
+    const posA = getPosition({
+      site1: this.viewer.atoms.positions[indices[0]],
+    });
+    const posB = getPosition({
+      site1: this.viewer.atoms.positions[indices[1]],
+    });
+    const posC = getPosition({
+      site1: this.viewer.atoms.positions[indices[2]],
+    });
+    const posD = getPosition({
+      site1: this.viewer.atoms.positions[indices[3]],
+    });
+
+    const angle = getDihedral(posA, posB, posC, posD);
+
+    // create connecting lines using shapeRegistry
+    const line1 = this.shapeRegistry.create("Line", {
+      start: posA,
+      end: posB,
       color: 0x0000ff,
-      opacity: 0.9,
-      side: THREE.DoubleSide, // Render both sides
-      transparent: true,
     });
-    const mesh = new THREE.Mesh(geometry, material);
-    this.scene.add(mesh);
-    const position = position2.add(position3).multiplyScalar(0.3).sub(normal1.add(normal2).multiplyScalar(0.3));
-    const label = createLabel(position, angle.toFixed(3), "black", "18px");
-    this.scene.add(label);
-    this.meshes[name] = [mesh, label];
+    const line2 = this.shapeRegistry.create("Line", {
+      start: posB,
+      end: posC,
+      color: 0x0000ff,
+    });
+    const line3 = this.shapeRegistry.create("Line", {
+      start: posC,
+      end: posD,
+      color: 0x0000ff,
+    });
+
+    this.scene.add(line1);
+    this.scene.add(line2);
+    this.scene.add(line3);
+
+    // compute label position (rough midpoint + offset)
+    const midVec = [
+      (posB[0] + posC[0]) * 0.3 - 0.3,
+      (posB[1] + posC[1]) * 0.3 - 0.3,
+      (posB[2] + posC[2]) * 0.3 - 0.3,
+    ];
+
+    // create label via textManager
+    const label = this.textManager.addLabel({
+      position: midVec,
+      text: angle.toFixed(3),
+      color,
+      fontSize,
+    });
+
+    // store all objects for removal later
+    this.meshes[name] = [line1, line2, line3, label];
   }
 
+  /**
+   * Remove all measurement meshes from the scene.
+   */
   clearMeshes() {
-    Object.entries(this.meshes).forEach(([name, data]) => {
-      data.forEach((mesh) => {
-        this.scene.remove(mesh);
-      });
-    });
-    this.meshes = {};
+    Object.keys(this.meshes).forEach((name) => this.removeMeasurement(name));
   }
 
-  addSetting(name, { indices = [], color = "black", fontSize = 16 }) {
-    this.settings[name] = new Setting({ indices, color, fontSize });
+  /**
+   * Add a measurement entry to the internal settings.
+   * @param {string} name - Measurement name.
+   * @param {Object} setting - Measurement settings (indices, color, fontSize).
+   */
+  addSetting(name, { indices = [], color, fontSize }) {
+    this.settings.measurements[name] = {
+      indices,
+      color: color || this.settings.color,
+      fontSize: fontSize || this.settings.fontSize,
+    };
   }
 
+  /**
+   * Return a plain object representation of current measurements.
+   * @returns {Object} Measurements keyed by name.
+   */
   toPlainSettings() {
-    const result = {};
-    Object.entries(this.settings).forEach(([name, setting]) => {
-      result[name] = setting instanceof Setting ? { indices: setting.indices, color: setting.color, fontSize: setting.fontSize } : setting;
-    });
-    return result;
+    return { ...this.settings.measurements };
+  }
+
+  /**
+   * Handle changes from viewer state subscription.
+   * @param {Object} next - New state to merge with defaults.
+   */
+  _onStateChange(next) {
+    this.settings = merge({}, DEFAULT_MEASUREMENT_SETTINGS, next);
+    this._rebuild();
+  }
+
+  /**
+   * Rebuild all measurements in the scene.
+   * Clears previous meshes and redraws.
+   */
+  _rebuild() {
+    this.clearMeshes();
+    this.drawMeasurements();
+    this.viewer.requestRedraw?.("render");
   }
 }
