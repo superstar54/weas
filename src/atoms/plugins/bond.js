@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { calculateCartesianCoordinates, calculateQuaternion } from "../../utils";
-import { elementsWithPolyhedra, covalentRadii, elementColors, default_bond_pairs } from "../atoms_data";
+import { elementsWithPolyhedra, covalentRadii, elementColors, default_bond_pairs } from "../data/atomsData";
 import { convertColor } from "../utils";
 import { kdTree } from "../../geometry/kdTree";
 import { searchBoundary } from "./boundary";

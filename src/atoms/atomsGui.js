@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { covalentRadii } from "./atoms_data";
+import { covalentRadii } from "./data/atomsData";
 import { ReplaceOperation, AddAtomOperation } from "../operation/atoms";
 import { MODEL_STYLE_MAP, colorTypes, colorBys, radiusTypes } from "../config";
 import AtomsLegend from "./plugins/AtomsLegend";

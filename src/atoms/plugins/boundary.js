@@ -1,5 +1,5 @@
 import { calculateCartesianCoordinates } from "../../utils";
-import { radiiData, elementColors } from "../atoms_data";
+import { radiiData, elementColors } from "../data/atomsData";
 import { Atoms } from "../atoms";
 
 class Setting {

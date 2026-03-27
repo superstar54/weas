@@ -1,5 +1,5 @@
 import { Atoms } from "../atoms/atoms";
-import { elementAtomicNumbers } from "../atoms/atoms_data";
+import { elementAtomicNumbers } from "../atoms/data/atomsData";
 
 const Bohr = 0.52917721092; // Bohr in Angstrom
 

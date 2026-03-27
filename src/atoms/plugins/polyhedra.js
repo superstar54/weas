@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { ConvexHull } from "three/examples/jsm/math/ConvexHull";
-import { elementColors, elementsWithPolyhedra } from "../atoms_data";
+import { elementColors, elementsWithPolyhedra } from "../data/atomsData";
 import { clearObject, calculateCartesianCoordinates } from "../../utils";
 import { convertColor } from "../utils";
 import { cloneValue } from "../../state/store";

@@ -1,14 +1,14 @@
-import ATOMIC_NUMBERS from "./data/ATOMIC_NUMBERS.json";
+import ATOMIC_NUMBERS from "./ATOMIC_NUMBERS.json";
 
-import COVALENT_RADII from "./data/COVALENT_RADII.json";
-import VDW_RADII from "./data/VDW_RADII.json";
+import COVALENT_RADII from "./COVALENT_RADII.json";
+import VDW_RADII from "./VDW_RADII.json";
 
-import DEFAULT_BOND_PAIRS from "./data/DEFAULT_BOND_PAIRS.json";
-import DEFAULT_POLYHEDRA_ATOMS from "./data/POLYHEDRA.json";
+import DEFAULT_BOND_PAIRS from "./DEFAULT_BOND_PAIRS.json";
+import DEFAULT_POLYHEDRA_ATOMS from "./POLYHEDRA.json";
 
-import VESTA_COLORS from "./data/colors/VESTA.json";
-import CPK_COLORS from "./data/colors/CPK.json";
-import JMOL_COLORS from "./data/colors/JMOL.json";
+import VESTA_COLORS from "./colors/VESTA.json";
+import CPK_COLORS from "./colors/CPK.json";
+import JMOL_COLORS from "./colors/JMOL.json";
 
 // map element symbols to atomic numbers
 export const elementAtomicNumbers = ATOMIC_NUMBERS;
@@ -28,7 +28,7 @@ export const elementsWithPolyhedra = DEFAULT_POLYHEDRA_ATOMS;
  *   - searchMode: 1 = search for bonds between the two elements
  *   - polyhedra:  1 = include in polyhedra rendering, 0 = exclude
  *   - type:       bond type identifier (0 = default, 1 = Hydrogen-bond)
- * 
+ *
  * @type {Object.<string, [number, number, number]>}
  */
 export const default_bond_pairs = DEFAULT_BOND_PAIRS;

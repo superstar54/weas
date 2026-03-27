@@ -5,7 +5,7 @@ import { parseXYZ } from "./io/parserXYZ";
 import { parseCIF } from "./io/parserCif";
 import { parseCube } from "./io/parserCube";
 import { parseXSF } from "./io/parserXsf";
-import { elementAtomicNumbers } from "./atoms/atoms_data";
+import { elementAtomicNumbers } from "./atoms/data/atomsData";
 import { fromWidgetSnapshot } from "./state/adapters";
 import { atomsToXYZ, atomsToCIF, parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "./io/structure";
 

@@ -1,4 +1,4 @@
-import { elementAtomicNumbers } from "./atoms_data";
+import { elementAtomicNumbers } from "./data/atomsData";
 import { convertToMatrixFromABCAlphaBetaGamma } from "../utils";
 import { inv } from "mathjs";
 

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { calculateCartesianCoordinates } from "../../utils";
-import { radiiData, elementColors } from "../atoms_data";
+import { radiiData, elementColors } from "../data/atomsData";
 import { getAtomColors } from "../color";
 import { getImageAtoms } from "./boundary";
 import { convertColor, drawAtoms } from "../utils";

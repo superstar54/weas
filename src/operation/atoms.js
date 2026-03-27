@@ -1,5 +1,5 @@
 import { BaseOperation } from "./baseOperation";
-import { elementAtomicNumbers } from "../atoms/atoms_data";
+import { elementAtomicNumbers } from "../atoms/data/atomsData";
 import { colorBys } from "../config";
 import { parseStructureText, applyStructurePayload, buildExportPayload, downloadText } from "../io/structure";
 
