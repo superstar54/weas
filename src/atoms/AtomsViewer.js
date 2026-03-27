@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { CellManager } from "./cell";
 import { AtomManager } from "./plugins/atom";
 import { BondManager, defaultBondRadius, searchBondedAtoms } from "./plugins/bond";
-import { clearObjects, clearObject, toIndexArray, toVector3, calculateCartesianCoordinates, calculateInverseMatrix, multiplyMatrixVector } from "../utils";
+import { clearObjects, clearObject, toIndexArray, toVector3, calculateCartesianCoordinates } from "../utils";
 import { PolyhedraManager } from "./plugins/polyhedra";
 import { BoundaryManager } from "./plugins/boundary";
 import { AtomLabelManager } from "./plugins/atomLabel";

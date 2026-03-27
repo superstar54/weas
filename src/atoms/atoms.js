@@ -1,5 +1,6 @@
 import { elementAtomicNumbers } from "./atoms_data";
-import { convertToMatrixFromABCAlphaBetaGamma, calculateInverseMatrix } from "../utils";
+import { convertToMatrixFromABCAlphaBetaGamma } from "../utils";
+import { inv } from "mathjs";
 
 class Specie {
   constructor(element) {
@@ -645,7 +646,7 @@ class Atoms {
     }
     let matrix = this.cell;
     matrix = matrix[0].map((_, colIndex) => matrix.map((row) => row[colIndex]));
-    const inverseCell = calculateInverseMatrix(matrix);
+    const inverseCell = inv(matrix);
     return this.positions.map((position) => {
       const fracX = inverseCell[0][0] * position[0] + inverseCell[0][1] * position[1] + inverseCell[0][2] * position[2];
       const fracY = inverseCell[1][0] * position[0] + inverseCell[1][1] * position[1] + inverseCell[1][2] * position[2];
