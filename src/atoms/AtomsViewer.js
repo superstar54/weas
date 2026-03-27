@@ -18,6 +18,8 @@ import { defaultViewerSettings, MODEL_STYLE_MAP } from "../config";
 import { Phonon } from "./plugins/phonon";
 import { Logger } from "../logger";
 
+import { inv, multiply } from "mathjs";
+
 class AtomsViewer {
   constructor({ weas, atoms = [new Atoms()], viewerConfig = {} }) {
     this.uuid = THREE.MathUtils.generateUUID();
@@ -1085,8 +1087,8 @@ class AtomsViewer {
     }
     try {
       const cellT = cell[0].map((_, i) => cell.map((row) => row[i]));
-      const invCellT = calculateInverseMatrix(cellT);
-      const fractional = multiplyMatrixVector(invCellT, [position.x, position.y, position.z]);
+      const invCellT = inv(cellT);
+      const fractional = multiply(invCellT, [position.x, position.y, position.z]);
       let changed = false;
       for (let i = 0; i < 3; i++) {
         if (!this.atoms.pbc[i]) {
