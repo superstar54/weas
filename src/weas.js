@@ -12,7 +12,7 @@ import { ObjectManager } from "./core/ObjectManager";
 import { OperationManager } from "./operation/operation";
 import { InstancedMeshPrimitive } from "./plugins/InstancedMeshPrimitive";
 import { AnyMesh } from "./plugins/AnyMesh";
-import { TextManager, TextMng } from "./plugins/TextManager";
+import { TextManager } from "./plugins/TextManager";
 import { AtomsViewer } from "./atoms/AtomsViewer";
 import { Atoms } from "./atoms/atoms";
 import { StateStore, cloneValue } from "./state/store";
@@ -52,9 +52,8 @@ class WEAS {
     this.selectionManager = new SelectionManager(this);
     this.objectManager = new ObjectManager(this);
     this.state = new StateStore(createDefaultState());
-    this.textManager = new TextManager(this);
 
-    this.textManager2 = new TextMng(this.tjs.scene);
+    this.textManager = new TextManager(this.tjs.scene);
 
     // Initialize AtomsViewer
     this.avr = new AtomsViewer({

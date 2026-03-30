@@ -2,26 +2,16 @@ import * as THREE from "three";
 import { createLabel } from "../utils";
 import { cloneValue } from "../state/store";
 
-class Setting {
-  constructor({
-    positions = [],
-    texts = "+",
-    color = "#111111",
-    fontSize = "16px",
-    className = "text-label text-label-cross",
-    renderMode = "glyph",
-    shift = [0, 0, 0],
-  }) {
-    this.positions = positions;
-    this.texts = texts;
-    this.color = color;
-    this.fontSize = fontSize;
-    this.className = className;
-    this.renderMode = renderMode;
-    this.shift = shift;
-  }
-}
-
+/**
+ * Default settings for text labels.
+ * @type {Object}
+ * @property {string} text - Label content.
+ * @property {number[]} position - 3D position [x, y, z].
+ * @property {string} color - CSS color string.
+ * @property {string|number} fontSize - Font size in px or numeric.
+ * @property {string} className - CSS class applied to label div.
+ * @property {string} renderMode - Rendering mode, e.g., "glyph".
+ */
 export const DEFAULT_TEXT_SETTINGS = {
   text: "",
   position: [0, 0, 0],
@@ -31,7 +21,15 @@ export const DEFAULT_TEXT_SETTINGS = {
   renderMode: "glyph",
 };
 
-export class TextMng {
+/**
+ * Manages CSS2D/3D text labels in a Three.js scene.
+ */
+export class TextManager {
+  /**
+   * @param {Object} weas - The WEAS instance.
+   * @param {Object} [options] - Optional parameters.
+   * @param {string} [options.sceneName="MainScene"] - Scene to attach labels to.
+   */
   constructor(weas, { sceneName = "MainScene" } = {}) {
     if (!weas) throw new Error("A WEAS instance is required");
     this.weas = weas;
@@ -42,218 +40,131 @@ export class TextMng {
     this._updateHooks = [];
   }
 
-  // Hook registration
-  onUpdate(callback) {
+  /**
+   * Registers a callback to be called whenever labels are updated.
+   * @param {Function} callback - Callback receiving the labels array.
+   */
+  onChange(callback) {
     if (typeof callback === "function") this._updateHooks.push(callback);
   }
 
-  _fireUpdate() {
+  /**
+   * Calls all registered update hooks.
+   * @private
+   */
+  _emitChange() {
     this._updateHooks.forEach((fn) => fn(this.labels));
   }
 
+  /**
+   * Adds a new label to the scene.
+   * @param {Object} options - Label options.
+   * @param {string} [options.text] - Label text.
+   * @param {number[]} [options.position] - Label position [x, y, z].
+   * @param {string} [options.color] - Label color.
+   * @param {string|number} [options.fontSize] - Label font size.
+   * @param {string} [options.className] - CSS class for the label.
+   * @param {string} [options.renderMode] - Rendering mode.
+   * @param {boolean} [options.clampFont=true] - Clamp font size to min/max.
+   * @returns {THREE.Object3D} The created label object.
+   */
   addLabel(options = {}) {
-    const { text, position, color, fontSize, className, renderMode } = {
+    const {
+      text,
+      position,
+      color,
+      fontSize,
+      className,
+      renderMode,
+      clampFont = true,
+    } = {
       ...DEFAULT_TEXT_SETTINGS,
       ...options,
     };
+
     const posVec = new THREE.Vector3(...position);
-    const label = createLabel(posVec, text, color, fontSize, className);
+    const fontSizeStr = normalizeFontSize(fontSize, clampFont);
+
+    const label = createLabel(posVec, text, color, fontSizeStr, className);
     this.scene.add(label);
     this.labels.push(label);
+    this._emitChange();
     return label;
   }
 
+  /**
+   * Removes a label from the scene.
+   * @param {THREE.Object3D} label - The label to remove.
+   */
   removeLabel(label) {
     if (!label) return;
     this.scene.remove(label);
-    label.remove?.(); // remove HTML element if present
+    label.remove?.();
     this.labels = this.labels.filter((l) => l !== label);
+    this._emitChange();
   }
 
+  /**
+   * Removes all labels from the scene.
+   */
   clearLabels() {
     this.labels.forEach((label) => {
       this.scene.remove(label);
       label.remove?.();
     });
     this.labels = [];
+    this._emitChange();
   }
 
+  /**
+   * Updates the position of a label.
+   * @param {THREE.Object3D} label - The label to update.
+   * @param {number[]} newPosition - New position [x, y, z].
+   */
   updateLabelPosition(label, newPosition) {
     if (!label || !newPosition) return;
     label.position.set(...newPosition);
+    this._emitChange();
   }
 
+  /**
+   * Updates the text content of a label.
+   * @param {THREE.Object3D} label - The label to update.
+   * @param {string} newText - New text content.
+   */
   updateLabelText(label, newText) {
     if (!label || newText === undefined) return;
     if (label.element) {
       label.element.textContent = newText;
     }
+    this._emitChange();
   }
 }
 
-export class TextManager {
-  constructor(target) {
-    this.weas = target?.weas ? target.weas : target;
-    this.viewer = target?.weas ? target : null;
-    this.scene = this.weas?.tjs?.scene;
-    this.state = this.weas?.state;
-    this.settings = [];
-    this.labels = [];
+/**
+ * Normalizes a font size value and optionally clamps it to min/max.
+ * Ensures the returned value is a valid CSS px string.
+ * @param {number|string} fontSize - Font size as number or string.
+ * @param {boolean} [clamp=true] - Whether to clamp the value.
+ * @param {number} [min=18] - Minimum font size.
+ * @param {number} [max=36] - Maximum font size.
+ * @returns {string} Font size string with "px" units.
+ */
+function normalizeFontSize(fontSize, clamp = true, min = 18, max = 36) {
+  let size;
 
-    const pluginState = this.state?.get("plugins.text");
-    if (pluginState && Array.isArray(pluginState.settings)) {
-      this.applySettings(pluginState.settings);
-      this.drawTextLabels();
-    }
-    this.state?.subscribe("plugins.text", (next) => {
-      if (!next) {
-        return;
-      }
-      const settings = Array.isArray(next.settings) ? next.settings : [];
-      this.applySettings(settings);
-      const viewer = this.getViewer();
-      if (viewer?._initializingState) {
-        return;
-      }
-      this.drawTextLabels();
-    });
-  }
-
-  setSettings(settings) {
-    this.state.set({ plugins: { text: { settings: cloneValue(settings) } } });
-  }
-
-  applySettings(settings) {
-    this.settings = [];
-    this.clearLabels();
-    settings.forEach((setting) => {
-      this.addSetting(setting);
-    });
-  }
-
-  addSetting({
-    positions,
-    texts = "+",
-    color = "#111111",
-    fontSize = "16px",
-    className,
-    renderMode = "glyph",
-    shift = [0, 0, 0],
-  }) {
-    const setting = new Setting({
-      positions,
-      texts,
-      color,
-      fontSize,
-      className,
-      renderMode,
-      shift,
-    });
-    this.settings.push(setting);
-  }
-
-  clearLabels() {
-    this.labels.forEach((label) => {
-      this.scene.remove(label);
-      label.remove();
-    });
-    this.labels = [];
-  }
-
-  redraw() {
-    this.drawTextLabels();
-  }
-
-  drawTextLabels() {
-    this.clearLabels();
-    this.settings.forEach((setting) => {
-      const origins = resolveOrigins(this.getAtoms(), setting);
-      if (!origins.length) {
-        return;
-      }
-      const shift = new THREE.Vector3(...setting.shift);
-      const texts = Array.isArray(setting.texts) ? setting.texts : null;
-      const fontSize = normalizeFontSize(setting.fontSize);
-      const className = setting.className || "text-label text-label-cross";
-      const renderMode = setting.renderMode || "glyph";
-      origins.forEach((origin, index) => {
-        const position = new THREE.Vector3(...origin).add(shift);
-        const text = texts ? (texts[index] ?? "") : setting.texts;
-        const { label } = this.createTextLabel(
-          position,
-          text,
-          setting.color,
-          fontSize,
-          className,
-          renderMode,
-        );
-        this.scene.add(label);
-        this.labels.push(label);
-      });
-    });
-    this.weas?.requestRedraw?.("render");
-  }
-
-  createTextLabel(
-    position,
-    text,
-    color,
-    fontSize,
-    className,
-    renderMode = "glyph",
-  ) {
-    const wantsCross = text === "+";
-    const normalizedClassName =
-      wantsCross && !className.includes("text-label-cross")
-        ? `${className} text-label-cross`
-        : className;
-    const label = createLabel(
-      position,
-      text,
-      color,
-      fontSize,
-      normalizedClassName,
-    );
-    const isCross =
-      wantsCross &&
-      normalizedClassName.includes("text-label-cross") &&
-      renderMode === "shape";
-    if (isCross) {
-      label.element.textContent = "";
-      label.element.dataset.cross = "true";
-      label.element.style.setProperty("--cross-size", fontSize);
-    }
-    return { label, isCross };
-  }
-
-  updateLabelSizes() {}
-
-  getAtoms() {
-    const viewer = this.getViewer();
-    if (viewer?.atoms) {
-      return viewer.atoms;
-    }
-    return null;
-  }
-
-  getViewer() {
-    return this.viewer || this.weas?.avr || null;
-  }
-}
-
-function resolveOrigins(atoms, setting) {
-  if (Array.isArray(setting.positions)) {
-    return setting.positions;
-  }
-  return [];
-}
-
-function normalizeFontSize(fontSize) {
   if (typeof fontSize === "number") {
-    return `${fontSize}px`;
+    size = fontSize;
+  } else if (typeof fontSize === "string") {
+    const parsed = parseFloat(fontSize);
+    size = Number.isFinite(parsed) ? parsed : min;
+  } else {
+    size = min;
   }
-  if (typeof fontSize === "string" && fontSize.trim() !== "") {
-    return fontSize;
+
+  if (clamp) {
+    size = Math.max(min, Math.min(max, size));
   }
-  return "14px";
+
+  return `${size}px`;
 }
