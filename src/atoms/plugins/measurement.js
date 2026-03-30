@@ -16,7 +16,6 @@ import merge from "lodash.merge";
 // TODO: I think in retrospect a measurement is a fundamental feature of THREE objects.
 // We should provide a nice set of utilities that allow this and this should become as thin as possible
 
-
 /**
  * Default settings for the Measurement plugin.
  *
@@ -192,9 +191,7 @@ export class Measurement {
     const fontSize = setting.fontSize || this.settings.fontSize;
 
     const atomIndex = indices[0];
-    const positionArray = getPosition({
-      site1: this.viewer.atoms.positions[atomIndex],
-    });
+    const positionArray = getPosition(this.viewer.atoms.positions[atomIndex]);
 
     const symbol = this.viewer.atoms.symbols[atomIndex];
     const text = `${symbol} [${positionArray.map((v) => v.toFixed(3)).join(", ")}]`;
@@ -229,12 +226,8 @@ export class Measurement {
     const fontSize = setting.fontSize || this.settings.fontSize;
 
     // Get atom positions as plain arrays
-    const posA = getPosition({
-      site1: this.viewer.atoms.positions[indices[0]],
-    });
-    const posB = getPosition({
-      site1: this.viewer.atoms.positions[indices[1]],
-    });
+    const posA = getPosition(this.viewer.atoms.positions[indices[0]]);
+    const posB = getPosition(this.viewer.atoms.positions[indices[1]]);
 
     const midpoint = [
       (posA[0] + posB[0]) / 2,
@@ -273,15 +266,11 @@ export class Measurement {
     const fontSize = setting.fontSize || this.settings.fontSize;
 
     // get positions as plain arrays
-    const posA = getPosition({
-      site1: this.viewer.atoms.positions[indices[0]],
-    });
-    const posB = getPosition({
-      site1: this.viewer.atoms.positions[indices[1]],
-    });
-    const posC = getPosition({
-      site1: this.viewer.atoms.positions[indices[2]],
-    });
+
+    const posA = getPosition(this.viewer.atoms.positions[indices[0]]);
+    const posB = getPosition(this.viewer.atoms.positions[indices[1]]);
+    const posC = getPosition(this.viewer.atoms.positions[indices[2]]);
+
     const angle = getAngle(posA, posB, posC);
 
     const line1 = this.shapeRegistry.create("Line", {
@@ -325,20 +314,12 @@ export class Measurement {
     const color = setting.color || this.settings.color;
     const fontSize = setting.fontSize || this.settings.fontSize;
 
-    // get positions as plain arrays
-    const posA = getPosition({
-      site1: this.viewer.atoms.positions[indices[0]],
-    });
-    const posB = getPosition({
-      site1: this.viewer.atoms.positions[indices[1]],
-    });
-    const posC = getPosition({
-      site1: this.viewer.atoms.positions[indices[2]],
-    });
-    const posD = getPosition({
-      site1: this.viewer.atoms.positions[indices[3]],
-    });
-
+    // get positions
+    const posA = getPosition(this.viewer.atoms.positions[indices[0]]);
+    const posB = getPosition(this.viewer.atoms.positions[indices[1]]);
+    const posC = getPosition(this.viewer.atoms.positions[indices[2]]);
+    const posD = getPosition(this.viewer.atoms.positions[indices[3]]);
+    
     const angle = getDihedral(posA, posB, posC, posD);
 
     // create connecting lines using shapeRegistry

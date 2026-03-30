@@ -5,8 +5,8 @@ import { sqrt, acos, dot, cross, norm, subtract, divide } from "mathjs";
  * @param {Object} options - { site1: [x,y,z] }
  * @returns {number[]}
  */
-export function getPosition({ site1 }) {
-  return site1.slice();
+export function getPosition(a) {
+  return a.slice();
 }
 
 /**
