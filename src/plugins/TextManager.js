@@ -23,6 +23,8 @@ export const DEFAULT_TEXT_SETTINGS = {
 
 /**
  * Manages CSS2D/3D text labels in a Three.js scene.
+ * @module plugins/TextManager
+ * @class
  */
 export class TextManager {
   /**

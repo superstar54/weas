@@ -1,11 +1,5 @@
 import { GUI } from "dat.gui";
 import { defaultGuiConfig } from "../config";
-import {
-  parseStructureText,
-  applyStructurePayload,
-  buildExportPayload,
-  downloadText,
-} from "../io/structure";
 
 function lockController(controller) {
   // Disable user input for the controller
@@ -13,12 +7,10 @@ function lockController(controller) {
   controller.__li.style.opacity = 0.95; // Gray it out visually
 }
 
-/*
-GUIManager that allows UI elements that can tune weas scene.
-Should in theory know NOTHING about individual folders, with tunable params being derived 
-from the schema of the controller
-
--- TODO: uphold the above statement
+/**
+GUIManager that allows registration of UI elements ontop of the weas scene
+ * @module GUIManager
+ * @class
 */
 class GUIManager {
   constructor(weas, guiConfig) {
@@ -95,7 +87,7 @@ class GUIManager {
     if (ul) ul.style.paddingTop = "25px";
 
     // Add to HUD using the panel system
-    hud.addPanel("controls", this.gui.domElement, {
+    hud.addHTMLPanel("controls", this.gui.domElement, {
       anchor: "top-left",
       offset: { x: 1, y: 1 }, // 1% offset from top left
     });

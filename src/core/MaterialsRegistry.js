@@ -1,9 +1,11 @@
 import * as THREE from "three";
 
 /**
- * Registry for materials with editable schemas.
+ * Registry for THREE.js materials.
  * Supports built-in and user-defined materials, cloning, renaming, copying,
  * and exposes editable properties for GUI generation.
+ * @module MaterialsRegistry
+ * @class
  */
 export default class MaterialsRegistry {
   constructor() {

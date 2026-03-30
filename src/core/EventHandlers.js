@@ -8,11 +8,10 @@ Object mode:
 - "object": select objects
 */
 
-
 // pattern to determine if a keycombo is being pressed
 function matchKey(event, combo) {
   const key = combo[combo.length - 1];
-  const modifiers = combo.slice(0, -1); 
+  const modifiers = combo.slice(0, -1);
   // Check main key
   if (event.key.toLowerCase() !== key.toLowerCase()) return false;
 
@@ -29,48 +28,48 @@ function matchKey(event, combo) {
   return true;
 }
 
+/**
+ * Core EventHandlers system that reads the keybind config
+ * @module EventHandlers
+ * @class
+ */
 class EventHandlers {
-    // map named actions to their respective operation.
-    // this could be moved to a private controller somewhere.
-    actionMap = {
-      exitMode: () => this.transformControls.exitMode(),
-      undo: () => this.weas.ops.undo(),
-      redo: () => this.weas.ops.redo(),
-      adjustLastOperation: () => this.weas.ops.updateAdjustLastOperationGUI(),
+  // map named actions to their respective operation.
+  // this could be moved to a private controller somewhere.
+  actionMap = {
+    exitMode: () => this.transformControls.exitMode(),
+    undo: () => this.weas.ops.undo(),
+    redo: () => this.weas.ops.redo(),
+    adjustLastOperation: () => this.weas.ops.updateAdjustLastOperationGUI(),
 
-      DeleteOperation: () => this.weas.ops.object.DeleteOperation(),
-      enterObjectMode: () => {this.weas.objectManager.enterMode("object");
-      },
-      enterEditMode: () => {this.weas.objectManager.enterMode("edit");
-      },
-      TranslateOperation: () =>
-        this.transformControls.enterMode(
-          "translate",
-          this.currentMousePosition,
-        ),
-      ScaleOperation: () =>
-        this.transformControls.enterMode("scale", this.currentMousePosition),
-      RotateOperation: () =>
-        this.transformControls.enterMode("rotate", this.currentMousePosition),
-      CopyOperation: () => {
-        this.weas.ops.object.CopyOperation();
-        this.transformControls.enterMode(
-          "translate",
-          this.currentMousePosition,
-        );
-      },      
-      ReplaceOperation: () => this.weas.ops.atoms.ReplaceOperation(),
-      measure: () =>
-        this.weas.avr.Measurement.measure(this.weas.avr.selectedAtomsIndices),
-      
-      camera1: () => this.weas.tjs.cameraController.view("top"),
-      camera3: () => this.weas.tjs.cameraController.view("front"),
-      camera2: () => this.weas.tjs.cameraController.view("left"),
-      camera4: () => this.weas.tjs.cameraController.view("bottom"),
-      camera5: () => this.weas.tjs.cameraController.view("right"),
-      camera6: () => this.weas.tjs.cameraController.view("back"),
+    DeleteOperation: () => this.weas.ops.object.DeleteOperation(),
+    enterObjectMode: () => {
+      this.weas.objectManager.enterMode("object");
+    },
+    enterEditMode: () => {
+      this.weas.objectManager.enterMode("edit");
+    },
+    TranslateOperation: () =>
+      this.transformControls.enterMode("translate", this.currentMousePosition),
+    ScaleOperation: () =>
+      this.transformControls.enterMode("scale", this.currentMousePosition),
+    RotateOperation: () =>
+      this.transformControls.enterMode("rotate", this.currentMousePosition),
+    CopyOperation: () => {
+      this.weas.ops.object.CopyOperation();
+      this.transformControls.enterMode("translate", this.currentMousePosition);
+    },
+    ReplaceOperation: () => this.weas.ops.atoms.ReplaceOperation(),
+    measure: () =>
+      this.weas.avr.Measurement.measure(this.weas.avr.selectedAtomsIndices),
 
-    };
+    camera1: () => this.weas.tjs.cameraController.view("top"),
+    camera3: () => this.weas.tjs.cameraController.view("front"),
+    camera2: () => this.weas.tjs.cameraController.view("left"),
+    camera4: () => this.weas.tjs.cameraController.view("bottom"),
+    camera5: () => this.weas.tjs.cameraController.view("right"),
+    camera6: () => this.weas.tjs.cameraController.view("back"),
+  };
 
   constructor(weas) {
     this.weas = weas;
@@ -78,7 +77,7 @@ class EventHandlers {
     this.init();
     this.transformControls = new TransformControls(weas, this);
     this.setupEventListeners();
-    this.keybindConfig = weas.keybindConfig || defaultKeyBindConfig
+    this.keybindConfig = weas.keybindConfig || defaultKeyBindConfig;
   }
 
   init() {
@@ -96,7 +95,11 @@ class EventHandlers {
   setupEventListeners() {
     const container = this.weas.tjs.containerElement;
 
-    container.addEventListener("pointerdown", this.onMouseDown.bind(this), false);
+    container.addEventListener(
+      "pointerdown",
+      this.onMouseDown.bind(this),
+      false,
+    );
     container.addEventListener("pointerup", this.onMouseUp.bind(this), false);
     container.addEventListener("click", this.onMouseClick.bind(this), false);
     container.addEventListener("mousemove", this.onMouseMove.bind(this), false);
@@ -108,7 +111,11 @@ class EventHandlers {
     // Implement the logic for mouse down events
     this.isMouseDown = true;
     this.mouseDownPosition.set(event.clientX, event.clientY);
-    if (event.shiftKey && event.altKey && this.transformControls.mode === null) {
+    if (
+      event.shiftKey &&
+      event.altKey &&
+      this.transformControls.mode === null
+    ) {
       this.weas.selectionManager.startLasso(event);
     }
   }
@@ -138,7 +145,11 @@ class EventHandlers {
     }
 
     if (this.transformControls.mode !== null) {
-      if ((this.transformControls.mode === "rotate" || this.transformControls.mode === "translate") && this.weas.selectionManager.isAxisPicking) {
+      if (
+        (this.transformControls.mode === "rotate" ||
+          this.transformControls.mode === "translate") &&
+        this.weas.selectionManager.isAxisPicking
+      ) {
         return;
       }
       this.transformControls.onMouseMove(event);
@@ -228,17 +239,27 @@ class EventHandlers {
 
   onMouseClick(event) {
     // Handle mouse click to confirm the operation and exit the current transform mode.
-    if (this.transformControls.mode === "rotate" && this.weas.selectionManager.isAxisPicking) {
+    if (
+      this.transformControls.mode === "rotate" &&
+      this.weas.selectionManager.isAxisPicking
+    ) {
       this.weas.selectionManager.pickAxisAtom(event);
       this.transformControls.refreshRotationPivot();
-      this.transformControls.initialMousePosition = this.currentMousePosition.clone();
+      this.transformControls.initialMousePosition =
+        this.currentMousePosition.clone();
       return;
     }
-    if (this.transformControls.mode === "translate" && this.weas.selectionManager.isAxisPicking) {
+    if (
+      this.transformControls.mode === "translate" &&
+      this.weas.selectionManager.isAxisPicking
+    ) {
       this.weas.selectionManager.pickAxisAtom(event);
       return;
     }
-    if (this.transformControls.mode === "translate" && this.transformControls.translatePlanePending) {
+    if (
+      this.transformControls.mode === "translate" &&
+      this.transformControls.translatePlanePending
+    ) {
       return;
     }
     if (this.transformControls.mode) {
@@ -261,7 +282,9 @@ class EventHandlers {
     //Every time the atoms are updated, a new UUID is generated, and the event is dispatched
     // Later we can compare the UUIDs to check if the atoms are the same or not
     this.weas.avr.trajectory.uuid = THREE.MathUtils.generateUUID();
-    const event = new CustomEvent("atomsUpdated", { detail: this.weas.avr.trajectory });
+    const event = new CustomEvent("atomsUpdated", {
+      detail: this.weas.avr.trajectory,
+    });
     this.tjs.containerElement.dispatchEvent(event);
   }
 

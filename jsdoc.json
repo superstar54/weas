@@ -1,0 +1,28 @@
+{
+  "source": {
+    "include": ["src"],
+    "includePattern": ".+\\.js$",
+    "excludePattern": "(node_modules|tests)"
+  },
+  "opts": {
+    "destination": "docs",
+    "recurse": true,
+    "template": "node_modules/docdash"
+  },
+  "templates": {
+    "cleverLinks": true,
+    "monospaceLinks": true,
+    "default": {
+      "outputSourceFiles": true
+    },
+    "docdash": {
+      "static": true,
+      "sort": true,
+      "collapse": true,
+      "search": true,
+      "wrap": true,
+      "menu": ["Modules"],
+      "exclude": ["Classes"]
+    }
+  }
+}

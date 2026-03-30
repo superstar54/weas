@@ -3,7 +3,6 @@ import merge from "lodash.merge";
 
 import { cloneValue } from "../../state/store";
 
-
 const DEFAULT_LABEL_SETTING = {
   origins: [],
   texts: [],
@@ -17,6 +16,8 @@ const DEFAULT_LABEL_SETTING = {
 
 /**
  * Manages labels attached to atoms in a molecular viewer.
+ * @module atoms/AtomLabelManager
+ * @class
  */
 export class AtomLabelManager {
   constructor(viewer) {

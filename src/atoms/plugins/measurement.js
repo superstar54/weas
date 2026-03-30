@@ -42,6 +42,8 @@ export const DEFAULT_MEASUREMENT_SETTINGS = {
 /**
  * Measurement plugin for visualizing distances, angles, and dihedral angles
  * between atoms in a molecular viewer.
+ * @module atoms/Measurement
+ * @class
  */
 export class Measurement {
   /**
@@ -319,7 +321,7 @@ export class Measurement {
     const posB = getPosition(this.viewer.atoms.positions[indices[1]]);
     const posC = getPosition(this.viewer.atoms.positions[indices[2]]);
     const posD = getPosition(this.viewer.atoms.positions[indices[3]]);
-    
+
     const angle = getDihedral(posA, posB, posC, posD);
 
     // create connecting lines using shapeRegistry

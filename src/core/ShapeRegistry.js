@@ -25,8 +25,13 @@ import { ConvexGeometry } from "three/addons/geometries/ConvexGeometry.js";
  *   // Programmatic-only shapes (not exposed in GUI):
  *   const cell = registry.create("ConvexShape", { corners: [...], edges: true, color: 0x00ffff });
  *   scene.add(cell);
+ * @module ShapeRegistry
+ * @class
  */
 export default class ShapeRegistry {
+  /**
+   * @param {MaterialsRegistry} materialRegistry - The material manager used for creating shapes.
+   */
   constructor(materialRegistry) {
     this.shapes = {};
     this.meta = {};
@@ -35,6 +40,10 @@ export default class ShapeRegistry {
     this._registerBuiltIns();
   }
 
+  /**
+   * Notify listeners that the registered shapes have changed.
+   * @private
+   */
   _emitChange() {
     this._callbacks.forEach((cb) => cb());
   }

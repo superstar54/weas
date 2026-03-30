@@ -4,14 +4,30 @@ import { LegendHUD } from "./ui/LegendHUD";
 import { ToolbarHUD } from "./ui/ToolbarHUD";
 
 /**
- * HUDController manages overlay elements and mini 3D scenes on top of a main Three.js renderer.
- * Allows arbitrary HTML overlays and mini-scenes
+ * Core HUD (Heads-Up Display) management for overlays and mini-scenes
+ * in a Three.js renderer.
+ *
+ * Provides:
+ *   * Arbitrary HTML overlays
+ *   * Mini 3D scenes (like coordinate axes or preview scenes)
+ *   * Automatic positioning and visibility handling
+ *
+ * Example usage:
+ * @example
+ * const hud = new HUDController(weas, container, mainRenderer);
+ * hud.addMiniScene("coord", scene, camera, { width: 200, height: 200 }, { bottom: 10, left: 10 });
+ * hud.addHTMLPanel("info", document.getElementById("infoPanel"));
+ *
+ * @module HUDController
+ * @class
  */
 export default class HUDController {
   constructor(weas, container, mainRenderer) {
+    /** @private @type {Set<Function>} */
     this._listeners = new Set();
 
     this.weas = weas;
+    /** @type {HTMLElement} */
     this.container = document.createElement("div");
     this.container.style.position = "absolute";
     this.container.style.top = "0";
@@ -22,18 +38,25 @@ export default class HUDController {
 
     container.appendChild(this.container);
 
+    /** @type {Map<string, HTMLElement>} */
     this.htmlElements = new Map();
+    /** @type {Map<string, Object>} */
     this.miniScenes = new Map();
+
+    /** @type {THREE.WebGLRenderer} */
     this.renderer = mainRenderer;
 
+    /** @type {LegendHUD} */
     this.legendHUD = new LegendHUD(this, { position: "bottom-right" });
 
+    /** @type {ToolbarHUD} */
     this.ToolbarHUD = new ToolbarHUD(this.weas, this, {
       position: "top-right",
     });
 
     window.addEventListener("resize", () => this.update());
 
+    /** @type {string[]} */
     this.ANCHORS = [
       "top-left",
       "top-right",
@@ -42,16 +65,22 @@ export default class HUDController {
       "center",
     ];
   }
-
+  /**
+   * Register a callback to be called whenever HUD state changes.
+   * @param {Function} cb - Callback function.
+   */
   onChange(cb) {
     this._listeners.add(cb);
   }
 
+  /** @private */
   _emitChange() {
     this._listeners.forEach((cb) => cb());
   }
 
-  // defines space cartesian axis, -- useful for rotational overlays
+  /**
+   * Initialize a coordinate axes mini-scene in the HUD.
+   */
   initCoordScene() {
     const scene = new THREE.Scene();
     scene.add(new THREE.AmbientLight(0xffffff, 2.0));
@@ -85,6 +114,16 @@ export default class HUDController {
     );
   }
 
+  /**
+   * Add a mini 3D scene to the HUD.
+   * @param {string} key - Unique identifier.
+   * @param {THREE.Scene} scene - Three.js scene.
+   * @param {THREE.Camera} camera - Camera for the mini-scene.
+   * @param {{width:number,height:number}} [size={width:150,height:150}]
+   * @param {{top?:number,left?:number}} [position={top:10,left:10}]
+   * @param {boolean} [rotation=false] - Whether to rotate with main camera.
+   * @param {boolean} [visible=true] - Initial visibility.
+   */
   addMiniScene(
     key,
     scene,
@@ -117,7 +156,17 @@ export default class HUDController {
     this.setMiniScenePosition(key, position);
   }
 
-  // HTML handling
+  /**
+   * Add an HTML overlay panel to the HUD.
+   * @param {string} key - Unique identifier.
+   * @param {HTMLElement} element - HTML element to add.
+   * @param {Object} [options={}] - Options for positioning and visibility.
+   * @param {string} [options.anchor='top-left'] - Anchor position.
+   * @param {{x:number,y:number}} [options.offset={x:0,y:0}] - Offset from anchor.
+   * @param {number} [options.width] - Optional width.
+   * @param {number} [options.height] - Optional height.
+   * @param {boolean} [options.visible=true] - Visibility.
+   */
   addHTMLPanel(key, element, options = {}) {
     const {
       width,
@@ -147,10 +196,12 @@ export default class HUDController {
     this._emitChange();
   }
 
-  addPanel(key, element, position) {
-    this.addHTMLPanel(key, element, position);
-  }
-
+  /**
+   * Compute preset positions like top-left or bottom-right.
+   * @param {string} preset - Preset name.
+   * @param {number} [padding=10] - Padding from edges.
+   * @returns {{top:number,left:number}}
+   */
   getPresetPosition(preset, padding = 10) {
     const cW = this.container.clientWidth;
     const cH = this.container.clientHeight;
@@ -223,14 +274,20 @@ export default class HUDController {
   // TODO, make this pass a refire feedback to main three JS
   update() {}
 
-  // List all mini-scenes and HTML elements by key
+  /**
+   * List all HUD elements by key.
+   * @returns {{miniScenes:string[],htmlElements:string[]}}
+   */
   list() {
     const miniScenes = Array.from(this.miniScenes.keys());
     const htmlElements = Array.from(this.htmlElements.keys());
     return { miniScenes, htmlElements };
   }
 
-  // Detailed info about each HUD element
+  /**
+   * Get detailed info for mini-scenes and HTML panels.
+   * @returns {Object}
+   */
   listDetails() {
     const miniScenes = {};
     this.miniScenes.forEach((value, key) => {
@@ -310,7 +367,6 @@ export default class HUDController {
     el.style.display = visible ? "" : "none";
   }
 
-  // Helper to apply CSS from position object
   _applyPosition(el, pos) {
     if (pos.top !== undefined) {
       el.style.top = pos.top + "px";
