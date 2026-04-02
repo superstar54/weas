@@ -54,7 +54,7 @@ export class Measurement {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
 
-    this.textManager = this.viewer.weas.textManager2;
+    this.textManager = this.viewer.weas.textManager;
     this.shapeRegistry = this.viewer.weas.shapeRegistry;
 
     this.meshes = {};
