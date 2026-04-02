@@ -420,8 +420,8 @@ class AtomsViewer {
           //  and thus the centering is not perfect
           const focusPoint = this.atoms.getCenterOfGeometry();
           // initialise the focus point here
-          editor.tjs.cameraController.view("front", { focus: focusPoint });
-          editor.tjs.cameraController.saveView("avr:center-front") // save it to the cameraController
+          this.weas.tjs.cameraController.view("front", { focus: focusPoint });
+          this.weas.tjs.cameraController.saveView("avr:center-front") // save it to the cameraController
         }
       }
       this.logger.debug("Set atoms successfullly");
