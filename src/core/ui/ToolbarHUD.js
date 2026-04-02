@@ -69,7 +69,7 @@ class ToolbarHUD {
       label: "Full",
       hint: "Toggle fullscreen",
       onClick: () => {
-        const el = weas;
+        const el = this.weas.tjs.containerElement;
 
         if (!el) return;
 
