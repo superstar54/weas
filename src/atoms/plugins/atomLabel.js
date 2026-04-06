@@ -163,7 +163,7 @@ export class AtomLabelManager {
           text: texts[i],
           position: origins[i],
           color: setting.color,
-          fontSize: fS * 50,
+          fontSize: fS * 30,
           className: setting.className,
           renderMode: setting.renderMode,
         });

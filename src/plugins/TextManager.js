@@ -152,7 +152,7 @@ export class TextManager {
  * @param {number} [max=36] - Maximum font size.
  * @returns {string} Font size string with "px" units.
  */
-function normalizeFontSize(fontSize, clamp = true, min = 18, max = 36) {
+function normalizeFontSize(fontSize, clamp = true, min = 14, max = 28) {
   let size;
 
   if (typeof fontSize === "number") {
