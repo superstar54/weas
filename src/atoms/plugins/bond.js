@@ -243,7 +243,7 @@ export class BondManager {
       bondList: this.bondList,
       bondIndices: this.bondMap["stickCaps"],
       settings: this.viewer.cutoffs,
-      raiuds: this.bondRadius,
+      radius: this.bondRadius,
       materialType: this.viewer._materialType,
       atomColors: atomColors,
       withCap: true,
