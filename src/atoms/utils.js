@@ -44,7 +44,10 @@ export function drawAtoms({
   ];
 
   const radiusSegments =
-    segmentThresholds.find(([limit]) => atoms.symbols.length > limit)?.[1] ??
+    segmentThresholds
+      .slice()
+      .reverse()
+      .find(([limit]) => atoms.symbols.length <= limit)?.[1] ??
     32;
 
   // Create prototype shape from the registry

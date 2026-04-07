@@ -459,7 +459,7 @@ export function drawStick({
     [100, 24],
   ];
   const segments =
-    cylinderSegmentThresholds.find(([limit]) => bondIndices.length > limit)?.[1] ??
+    cylinderSegmentThresholds.find(([limit]) => atoms.symbols.length > limit)?.[1] ??
     24;
 
   // Create prototypes from the shape Registry
