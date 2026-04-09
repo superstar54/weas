@@ -141,6 +141,48 @@ export class TextManager {
     }
     this._emitChange();
   }
+
+  /**
+   * Adds multiple labels at once, using the old API style.
+   *
+   * **Purpose:** This is a backward-compatible wrapper to mimic the
+   * previous `setSettings` behavior for batch label creation.
+   *
+   * @param {Array<Object>} settingsArray - Array of label configs.
+   * @param {Array<number[]>} settingsArray[].positions - List of 3D positions for the label(s).
+   * @param {string|Array<string>} settingsArray[].texts - Text content, either a single string
+   *     for all positions, or an array matching positions.
+   * @param {string} [settingsArray[].color] - Label color (CSS string).
+   * @param {string|number} [settingsArray[].fontSize] - Font size (px or number).
+   * @param {string} [settingsArray[].className] - CSS class for the label.
+   * @param {string} [settingsArray[].renderMode] - Rendering mode, e.g., "glyph".
+   *
+   * @example
+   * textManager.setSettings([
+   *   {
+   *     positions: [[0,0,0], [1,0,0]],
+   *     texts: ["A", "B"],
+   *     color: "#ff0000",
+   *     fontSize: "20px",
+   *   },
+   * ]);
+   *
+   * @see {@link TextManager#addLabel} for the underlying single-label API.
+   */ setSettings(settingsArray = []) {
+    this.clearLabels();
+
+    settingsArray.forEach((config) => {
+      const { positions = [], texts = "", ...rest } = config;
+
+      positions.forEach((pos, i) => {
+        this.addLabel({
+          position: pos,
+          text: Array.isArray(texts) ? texts[i] : texts,
+          ...rest,
+        });
+      });
+    });
+  }
 }
 
 /**
