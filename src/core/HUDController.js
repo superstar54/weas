@@ -25,6 +25,7 @@ export default class HUDController {
   constructor(weas, container, mainRenderer) {
     /** @private @type {Set<Function>} */
     this._listeners = new Set();
+    this._resizeListeners = new Set();
 
     this.weas = weas;
     /** @type {HTMLElement} */
@@ -54,7 +55,9 @@ export default class HUDController {
       position: "top-right",
     });
 
-    window.addEventListener("resize", () => this.update());
+    // Observe resize via ResizeObserver
+    this._resizeObserver = new ResizeObserver(() => this._onResize());
+    this._resizeObserver.observe(this.container);
 
     /** @type {string[]} */
     this.ANCHORS = [
@@ -423,5 +426,54 @@ export default class HUDController {
         element.style.transform = "translate(-50%, -50%)";
         break;
     }
+  }
+
+  /**
+   * Register a callback to be invoked whenever the HUD container resizes.
+   * The callback receives the current width and height of the HUD container.
+   * The callback is also invoked immediately with the current size.
+   * @param {(width: number, height: number) => void} cb - Resize callback
+   */
+  onHUDResize(cb) {
+    this._resizeListeners.add(cb);
+    cb(this.getCurrentHUDWidth(), this.getCurrentHUDHeight());
+  }
+
+  /**
+   * Unregister a previously registered HUD resize callback.
+   * @param {(width: number, height: number) => void} cb - Callback to remove
+   */
+  offHUDResize(cb) {
+    this._resizeListeners.delete(cb);
+  }
+
+  /**
+   * Get the current width of the HUD container.
+   * @returns {number} Width in pixels
+   */
+  getCurrentHUDWidth() {
+    return this.container.clientWidth;
+  }
+
+  /**
+   * Get the current height of the HUD container.
+   * @returns {number} Height in pixels
+   */
+  getCurrentHUDHeight() {
+    return this.container.clientHeight;
+  }
+
+  /**
+   * Internal method called whenever the HUD container changes size.
+   * Notifies all registered resize listeners with the updated width and height.
+   * Also triggers general HUD change listeners if needed.
+   * @private
+   */
+  _onResize() {
+    const width = this.getCurrentHUDWidth();
+    const height = this.getCurrentHUDHeight();
+
+    this._resizeListeners.forEach((cb) => cb(width, height));
+    this._emitChange();
   }
 }

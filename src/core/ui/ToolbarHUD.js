@@ -8,6 +8,15 @@ class ToolbarHUD {
     this.weas = weas;
     this.hud = hudController;
 
+    // Listen for HUD resize events
+    if (this.hud.onHUDResize) {
+      this.hud.onHUDResize((width, height) => {
+        console.log("ToolbarHUD detected HUD resize:", width, height);
+        // TODO: implement fine control of the HUD size here...
+
+      });
+    }
+
     this.settings = Object.assign(
       {
         height: 40,
@@ -16,8 +25,8 @@ class ToolbarHUD {
         gap: 6,
         paddingX: "0px",
         paddingY: "0px",
-        anchor: "top-right",
-        offset: { x: 50, y: 0 },
+        anchor: "center",
+        offset: { x: 0, y: -45 },
       },
       config.settings || {},
     );
