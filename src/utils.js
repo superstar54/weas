@@ -25,13 +25,26 @@ export function toVector3(value, name = "value") {
   if (Array.isArray(value) && value.length === 3) {
     return new THREE.Vector3(value[0], value[1], value[2]);
   }
-  if (value && typeof value === "object" && "length" in value && value.length === 3) {
+  if (
+    value &&
+    typeof value === "object" &&
+    "length" in value &&
+    value.length === 3
+  ) {
     return new THREE.Vector3(...value);
   }
-  if (value && typeof value === "object" && "x" in value && "y" in value && "z" in value) {
+  if (
+    value &&
+    typeof value === "object" &&
+    "x" in value &&
+    "y" in value &&
+    "z" in value
+  ) {
     return new THREE.Vector3(value.x, value.y, value.z);
   }
-  throw new Error(`${name} must be a THREE.Vector3, an [x,y,z] array, or an {x,y,z} object, got ${typeof value}`);
+  throw new Error(
+    `${name} must be a THREE.Vector3, an [x,y,z] array, or an {x,y,z} object, got ${typeof value}`,
+  );
 }
 
 /**
@@ -256,7 +269,10 @@ export function calculateQuaternion(position1, position2) {
   const quaternion = new THREE.Quaternion().setFromRotationMatrix(orientation);
 
   // Adjusting rotation to align with the bond direction
-  const adjustmentQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+  const adjustmentQuaternion = new THREE.Quaternion().setFromAxisAngle(
+    new THREE.Vector3(1, 0, 0),
+    Math.PI / 2,
+  );
   quaternion.multiply(adjustmentQuaternion);
   return quaternion;
 }
@@ -293,4 +309,28 @@ export function createLabel(
   label.position.copy(position);
 
   return label;
+}
+
+/**
+ * Computes a 32-bit FNV-1a hash for an array of values.
+ *
+ *
+ * @param {Array} arr - The array to hash. Elements can be strings, numbers, or nested arrays.
+ * @returns {number} - 32-bit unsigned hash value.
+ *
+ * @example
+ * const hash1 = fnv1aHash([1, 2, 3]); // returns a number
+ * const hash2 = fnv1aHash([["H", "O"], ["C", "O"]]); // nested arrays are handled
+ */
+export function fnv1aHash(arr) {
+  let hash = 2166136261;
+  for (let i = 0; i < arr.length; i++) {
+    const val = Array.isArray(arr[i]) ? arr[i].join(",") : arr[i];
+    for (let j = 0; j < val.length; j++) {
+      hash ^= val.charCodeAt(j);
+      hash +=
+        (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    }
+  }
+  return hash >>> 0;
 }

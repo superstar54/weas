@@ -9,7 +9,6 @@ export default class AtomsLegend {
     this.addLegend();
   }
 
-  // TODO - this seems to fire alot of times. figure out why and stop since it might be expensive
   addLegend() {
     if (!this.legendHUD) this.legendHUD = this.viewer.tjs.hud.legendHUD;
     const settings = this.viewer.atomManager.settings;

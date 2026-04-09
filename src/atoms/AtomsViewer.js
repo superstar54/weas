@@ -19,6 +19,7 @@ import { Phonon } from "./plugins/phonon";
 import { Logger } from "../logger";
 
 import { inv, multiply } from "mathjs";
+import { fnv1aHash } from "../utils";
 
 class AtomsViewer {
   constructor({ weas, atoms = [new Atoms()], viewerConfig = {} }) {
@@ -953,8 +954,27 @@ class AtomsViewer {
     this.VFManager.drawVectorFields();
     this.highlightManager.drawHighlightAtoms();
     this.ALManager.drawAtomLabels();
-    this.guiManager.updateLegend();
-    this.ready = true;
+
+    // --- Compute and store hashes
+    this._hashes = this._hashes || {};
+    this._hashes.speciesHash   = fnv1aHash(this.atoms.species);
+    this._hashes.positionsHash = fnv1aHash(this.atoms.positions.flat());
+    this._hashes.symbolsHash   = fnv1aHash(this.atoms.symbols);
+
+    // Decide whether to update legend based only on species
+    if (this._prevSpeciesHash !== this._hashes.speciesHash) {
+        this._atomsChanged = true;
+        this._prevSpeciesHash = this._hashes.speciesHash;
+        this.guiManager.updateLegend();
+    } else {
+        this._atomsChanged = false;
+    }
+
+    // Only update the legend if atoms have changed
+    if (this._atomsChanged) {
+        this.guiManager.updateLegend();
+    }
+        this.ready = true;
     this.requestRedraw("render");
   }
 

@@ -75,7 +75,7 @@ class LegendHUD {
         min: 0,
         max: 20,
         step: 1,
-        default: 5,
+        default: 3,
         label: "Border radius",
       },
       heading: {
@@ -184,6 +184,7 @@ class LegendHUD {
     switch (shape) {
       case "sphere":
         el.style.borderRadius = "50%";
+        el.style.border = "#00000030 solid 1px";
         el.style.background = `radial-gradient(circle at 30% 30%, #ffffffaa, ${color} 65%, #00000044)`;
         break;
       case "cube":
