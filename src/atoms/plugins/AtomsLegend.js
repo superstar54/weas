@@ -3,13 +3,13 @@
 export default class AtomsLegend {
   constructor(viewer, guiConfig) {
     this.viewer = viewer;
+    this.legendHUD = this.viewer.tjs.hud.legendHUD;
     this.guiConfig = guiConfig;
 
-    if (this.getLegendConfig().enabled) {
-      this.addLegend();
-    }
+    this.addLegend();
   }
 
+  // TODO - this seems to fire alot of times. figure out why and stop since it might be expensive
   addLegend() {
     if (!this.legendHUD) this.legendHUD = this.viewer.tjs.hud.legendHUD;
     const settings = this.viewer.atomManager.settings;
@@ -30,6 +30,7 @@ export default class AtomsLegend {
         size: this._radiusToLegendSize(setting.radius),
       });
     });
+
   }
 
   removeLegend() {
@@ -39,22 +40,18 @@ export default class AtomsLegend {
       .forEach((key) => this.legendHUD.removeEntry(key));
   }
 
+  // TODO wire in the abilty to disable the atoms from appearing in the legend
   updateLegend() {
-    if (this.getLegendConfig().enabled) {
-      this.removeLegend();
-      this.addLegend();
-    } else {
-      this.removeLegend();
-    }
+    this.removeLegend();
+    this.addLegend();
   }
 
   getLegendConfig() {
-    return (
-      this.guiConfig.atomLegend ||
-      this.guiConfig.legend || {
-        enabled: false,
-      }
-    );
+    return {
+      enabled: true,
+      ...this.guiConfig.legend,
+      ...this.guiConfig.atomLegend,
+    };
   }
 
   _radiusToLegendSize(radius) {

@@ -37,7 +37,8 @@ export function drawAtoms({
 }) {
   // quality dial
   const segmentThresholds = [
-    [100_000, 12],
+    [Infinity, 10], 
+    [20_000, 12],
     [10_000, 18],
     [1_000, 24],
     [100, 32],
@@ -70,8 +71,6 @@ export function drawAtoms({
   material = material.clone();
   // reset color to apply new colors properly
   material.color.set(0xffffff);
-  material.transparent = true;
-  material.side = THREE.DoubleSide;
 
   // Create instanced mesh
   const count = atoms.symbols.length;

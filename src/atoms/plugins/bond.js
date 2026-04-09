@@ -453,6 +453,7 @@ export function drawStick({
   */
 
   const cylinderSegmentThresholds = [
+    [Infinity, 3],
     [10_000, 6],
     [2_000, 12],
     [500, 18],
@@ -877,6 +878,8 @@ export function buildBondMap(bondList, atoms, settings, modelSticks) {
       bondMapWithOffset[key2]["stickCaps"].push([stickCaps.length - 1, false]);
     } else if (bondType === 4) {
       // line
+
+      console.log("You are here")
       solidLines.push(i);
       bondMap[index1]["solidLines"].push([solidLines.length - 1, true]);
       bondMap[index2]["solidLines"].push([solidLines.length - 1, false]);
@@ -887,6 +890,8 @@ export function buildBondMap(bondList, atoms, settings, modelSticks) {
   return { bondMap: bondMap, bondMapWithOffset: bondMapWithOffset, sticks, stickCaps, dashedLines, solidLines, springs };
 }
 
+// TODO: replace the distance checks with the squared distance to avoid calculating sqrt in a hot loop 
+// - should be a small performance improvement.
 export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true, logger = console) {
   /* Function to find neighbors within a certain cutoff
   Args:
