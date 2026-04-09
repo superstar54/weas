@@ -5,18 +5,70 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function snapshotName(testInfo, name) {
+  return `${testInfo.title.replace(/\s+/g, "-").toLowerCase()}${name}`;
+}
+
+test("simple camera keybinds", async ({ page }, testInfo) => {
+  await page.goto(`http://127.0.0.1:8080/tests/e2e/testDefault.html`);
+
+  const viewer = page.locator("#viewer");
+  await viewer.waitFor({ state: "visible" });
+
+  await viewer.focus();
+
+  for (const cameraView of ["1", "2", "3", "4", "5", "6"]) {
+    await page.keyboard.press(cameraView);
+    await page.waitForTimeout(50);
+    await expect(page).toHaveScreenshot(
+      snapshotName(testInfo, `view-${cameraView}.png`),
+    );
+  }
+});
+
+test("hide hud via hudcontroller", async ({ page }, testInfo) => {
+  await page.goto("http://127.0.0.1:8080/tests/e2e/testDefault.html");
+
+  const viewer = page.locator("#viewer");
+  await viewer.waitFor({ state: "visible" });
+
+  await page.waitForFunction(() => window.editor !== undefined);
+
+  await page.evaluate(() => {
+    const hud = window.editor.tjs.hud;
+
+    hud.htmlElements.forEach((panel, key) => {
+      hud.setHTMLPanelVisible(key, false);
+    });
+  });
+
+  await expect(page).toHaveScreenshot(snapshotName(testInfo, ".png"));
+});
+
+// Currently doesnt work anymore:
+// TODO: see if we can implement this logic nicely.
 test("Gui config", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testGui.html");
 
   await expect.soft(page).toHaveScreenshot();
 });
 
+// Close to ok - hiding hud due to alignment issues atm
 test("Atom label", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testAtomLabel.html");
+
+  await page.evaluate(() => {
+    const hud = window.editor.tjs.hud;
+
+    hud.htmlElements.forEach((panel, key) => {
+      hud.setHTMLPanelVisible(key, false);
+    });
+  });
 
   await expect.soft(page).toHaveScreenshot();
 });
 
+// Not good, needs to be coded in.
 test("Camera", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testCrystal.html");
   // open gui
@@ -26,11 +78,13 @@ test("Camera", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("Camera-perspective.png");
 });
 
+// Close to ok - hiding hud due to alignment issues atm
 test("Crystal", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testCrystal.html");
   await expect.soft(page).toHaveScreenshot();
 });
 
+// Bug with how the isosurface and shape primitives are interacting (flickering - doubleside)
 test("Isosurface", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testIsosurface.html");
   await expect.soft(page).toHaveScreenshot();
@@ -48,6 +102,8 @@ test("Isosurface", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("Isosurface-reset.png");
 });
 
+
+// Same bug as above and am using state to update camera position
 test("VolumeSlice", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testVolumeSlice.html");
   await expect.soft(page).toHaveScreenshot();
@@ -59,6 +115,7 @@ test("VolumeSlice", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("VolumeSlice-reset.png");
 });
 
+// fine however, am locked out of rotation?
 test("VectorField", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testVectorField.html");
   await expect.soft(page).toHaveScreenshot();
@@ -70,6 +127,7 @@ test("VectorField", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("VectorField-hide-vector.png");
 });
 
+// looks fine - however color in the legend does not update...
 test("ColorBy", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testColorBy.html");
   await expect.soft(page).toHaveScreenshot();
@@ -85,29 +143,42 @@ test("ColorBy", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("Color-species.png");
 });
 
+// Fix issue with Surface stacking... 
 test("Highlight Atoms", async ({ page }) => {
   // highlight selected atoms
   await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");
   await expect.soft(page).toHaveScreenshot();
   // add another highlight
   await page.evaluate(() => {
-    window.editor.avr.highlightManager.addSetting("sphere", { indices: [0, 1], color: "red", scale: 1.2 });
+    window.editor.avr.highlightManager.addSetting("sphere", {
+      indices: [0, 1],
+      color: "red",
+      scale: 1.2,
+    });
     window.editor.avr.drawModels();
   });
   await expect.soft(page).toHaveScreenshot("Highlight-sphere.png");
   // highlight using cross
   await page.evaluate(() => {
-    window.editor.avr.highlightManager.addSetting("sphere", { indices: [0, 1], color: "red", scale: 1.3, type: "cross" });
+    window.editor.avr.highlightManager.addSetting("sphere", {
+      indices: [0, 1],
+      color: "red",
+      scale: 1.3,
+      type: "cross",
+    });
     window.editor.avr.drawModels();
   });
   await expect.soft(page).toHaveScreenshot("Highlight-cross.png");
 });
 
+// Works completely fine.
 test("Highlight CrossView", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightCross2d.html");
   await expect.soft(page).toHaveScreenshot("Highlight-crossView.png");
 });
 
+// Seems fine but unclear - i imagine the use of mouse here means that zoom / centering effect rotation amount
+// Todo rewrite this test so that its not so convoluted...
 test("Transform Rotate Axis", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");
   await page.waitForFunction(() => window.editor);
@@ -165,6 +236,8 @@ test("Transform Rotate Axis", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("Transform-rotate-axis-lock.png");
 });
 
+// Seems fine but unclear - i imagine the use of mouse here means that zoom / centering effect rotation amount
+// Todo rewrite this test so that its not so convoluted...
 test("Transform Translate Axis", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testHighlightAtoms.html");
   await page.waitForFunction(() => window.editor);
@@ -231,6 +304,8 @@ test("Transform Translate Axis", async ({ page }) => {
   await expect(await page.evaluate(() => window.editor.eventHandlers.transformControls.translatePlanePending)).toBe(false);
 });
 
+
+// TODO: actually test if this is supporting wrapping...
 test("Wrap on move", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testCrystal.html");
   await page.waitForFunction(() => window.editor);
@@ -250,7 +325,7 @@ test("Wrap on move", async ({ page }) => {
     const editor = window.editor;
     editor.avr.selectedAtomsIndices = [1];
     editor.avr.wrapOnMove = true;
-    editor.eventHandlers.currentMousePosition.set(300, 200);
+    editor.eventHandlers.currentMousePosition.set(500, 500);
     editor.eventHandlers.transformControls.enterMode("translate", editor.eventHandlers.currentMousePosition);
     editor.tjs.render();
   });
@@ -259,6 +334,8 @@ test("Wrap on move", async ({ page }) => {
   await expect.soft(page).toHaveScreenshot("Wrap-on-move.png");
 });
 
+// TODO: actually test if this is supporting wrapping...
+// Works but only because i've implemented a backward comptability layer...
 test("Text Manager", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/tests/e2e/testTextManager.html");
   await expect.soft(page).toHaveScreenshot("TextManager.png");

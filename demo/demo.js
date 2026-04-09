@@ -135,18 +135,27 @@ async function updateAtoms(filename, fileContent = null) {
       atoms = atoms.multiply(8, 8, 8);
       editor.avr.modelStyle = 0;
       editor.avr.atoms = atoms;
-      editor.ops.mesh.AddSphereOperation({
-        position: [15, 15, 10],
-        scale: [8, 8, 8],
-        color: "#bd0d87",
-        opacity: 0.5,
-      });
+      console.log(editor.ops)
+      
+      // Create a sphere
+      editor.ops.Shapes.ShapeOperation({
+        shapeName: "Sphere",
+        options: {
+          scale: [8, 8, 8],
+          opacity: 0.5,
+          color: "#bd0d87",
+          wireframe: false,
+          position: [15, 15, 10],
+        }
+      }
+      );
+
       // select the last object in the scene
       editor.selectionManager.selectedObjects = [
         editor.tjs.scene.children[editor.tjs.scene.children.length - 1],
       ];
       // select atoms inside the sphere
-      // editor.ops.selection.InsideSelection();
+      editor.ops.selection.InsideSelection();
       editor.ops.hideGUI();
       break;
     case "highlight":

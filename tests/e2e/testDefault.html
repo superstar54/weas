@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WEAS Test</title>
+  </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../../node_modules/three/build/three.module.js",
+          "dat.gui": "../../node_modules/dat.gui/build/dat.gui.module.js",
+          "three/examples/jsm/renderers/CSS2DRenderer.js": "../../node_modules/three/examples/jsm/renderers/CSS2DRenderer.js",
+          "three/examples/jsm/geometries/ConvexGeometry.js": "../../node_modules/three/examples/jsm/geometries/ConvexGeometry.js",
+          "three/examples/jsm/math/ConvexHull.js": "../../node_modules/three/examples/jsm/math/ConvexHull.js",
+          "three/examples/jsm/interactive/SelectionBox.js": "../../node_modules/three/examples/jsm/interactive/SelectionBox.js",
+          "three/examples/jsm/interactive/SelectionHelper.js": "../../node_modules/three/examples/jsm/interactive/SelectionHelper.js",
+          "three/examples/jsm/utils/BufferGeometryUtils.js": "../../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js"
+        }
+      }
+    </script>
+
+    <div
+      id="viewer"
+      style="position: relative; width: 960px; height: 640px"
+    ></div>
+
+    <script type="module">
+      import * as weas from "../../dist/index.mjs";
+
+      async function fetchFile(filename) {
+        const response = await fetch(`../../demo/datas/${filename}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load file for structure: ${filename}`);
+        }
+        return await response.text();
+      }
+
+      let domElement = document.getElementById("viewer");
+
+      const filename = "c2h6so.xyz";
+      fetchFile(filename).then((fileContent) => {
+        const atoms = weas.parseXYZ(fileContent);
+
+        let editor = new weas.WEAS({ domElement });
+        editor.avr.atoms = atoms;
+        editor.avr.drawModels();
+        editor.render();
+        window.editor = editor;
+      });
+    </script>
+  </body>
+</html>

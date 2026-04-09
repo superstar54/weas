@@ -6,10 +6,13 @@
     <link rel="stylesheet" href="../../src/style.css" />
   </head>
   <body>
-    <div id="viewer" style="position: relative; width: 600px; height: 400px"></div>
+    <div
+      id="viewer"
+      style="position: relative; width: 960px; height: 640px"
+    ></div>
 
+    <script src="../../dist/index.iife.js"></script>
     <script type="module">
-      import * as weas from "../../dist/index.mjs";
 
       async function fetchFile(filename) {
         const response = await fetch(`../../demo/datas/${filename}`);

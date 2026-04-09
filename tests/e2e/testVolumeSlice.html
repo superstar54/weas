@@ -5,11 +5,14 @@
     <title>WEAS Test</title>
   </head>
   <body>
-    <div id="viewer" style="position: relative; width: 600px; height: 400px"></div>
+    <div
+      id="viewer"
+      style="position: relative; width: 960px; height: 640px"
+    ></div>
+
+    <script src="../../dist/index.iife.js"></script>
 
     <script type="module">
-      import * as weas from "../../dist/index.mjs";
-
       async function fetchFile(filename) {
         const response = await fetch(`../../demo/datas/${filename}`);
         if (!response.ok) {
@@ -27,10 +30,38 @@
         editor.avr.atoms = cubeData.atoms;
         editor.avr.volumetricData = cubeData.volumetricData;
         // editor.avr.isosurfaceManager.addSetting(0.0002);
-        editor.avr.volumeSliceManager.addSetting("Slice 1", { h: 0, k: 1, l: 0, distance: 5.5, colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
-        editor.avr.volumeSliceManager.addSetting("Slice 2", { h: 1, k: 1, l: 0, distance: 5.5, colorMap: "viridis", opacity: 0.8, samplingDistance: 0.1 });
+        editor.avr.volumeSliceManager.addSetting("Slice 1", {
+          h: 0,
+          k: 1,
+          l: 0,
+          distance: 5.5,
+          colorMap: "viridis",
+          opacity: 0.8,
+          samplingDistance: 0.1,
+        });
+        editor.avr.volumeSliceManager.addSetting("Slice 2", {
+          h: 1,
+          k: 1,
+          l: 0,
+          distance: 5.5,
+          colorMap: "viridis",
+          opacity: 0.8,
+          samplingDistance: 0.1,
+        });
         editor.avr.drawModels();
-        editor.avr.tjs.updateCameraAndControls({ direction: [0.5, 1, 2] });
+
+        // editor.avr.tjs.updateCameraAndControls({ direction: [0.5, 1, 2] });
+        // angle camera using state
+        const cameraState = {
+          type: "default",
+          position: [-15, 25, 100],
+          target: [5.0, 5.75, 5.2],
+          direction: [-0.2, 0.18, 0.96],
+          distance: 100,
+          zoom: 1,
+        };
+        editor.tjs.cameraController.importState(cameraState)
+
         editor.render();
         window.editor = editor;
       });
