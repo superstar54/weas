@@ -32,12 +32,13 @@ export class TextManager {
    * @param {Object} [options] - Optional parameters.
    * @param {string} [options.sceneName="MainScene"] - Scene to attach labels to.
    */
-  constructor(weas, { sceneName = "MainScene" } = {}) {
+  constructor(weas, { sceneName = "MainScene", maxLabels = 2000 } = {}) {
     if (!weas) throw new Error("A WEAS instance is required");
     this.weas = weas;
     this.scene = weas.tjs?.scenes?.[sceneName] || weas.tjs?.scene;
     if (!this.scene) throw new Error(`Scene "${sceneName}" not found`);
     this.labels = [];
+    this.maxLabels = maxLabels;
 
     this._updateHooks = [];
   }
@@ -71,6 +72,12 @@ export class TextManager {
    * @returns {THREE.Object3D} The created label object.
    */
   addLabel(options = {}) {
+    // Hard cap protection
+    if (this.labels.length >= this.maxLabels) {
+      console.warn(`TextManager: maxLabels (${this.maxLabels}) reached`);
+      return null;
+    }
+
     const {
       text,
       position,
@@ -93,6 +100,7 @@ export class TextManager {
     this._emitChange();
     return label;
   }
+  
 
   /**
    * Removes a label from the scene.
@@ -107,14 +115,37 @@ export class TextManager {
   }
 
   /**
-   * Removes all labels from the scene.
+   * Removes an array of labels from the scene, defaults to all labels
    */
-  clearLabels() {
-    this.labels.forEach((label) => {
-      this.scene.remove(label);
+  clearLabels(labels = this.labels) {
+    console.log("clearing");
+    if (!labels || labels.length === 0) return;
+
+    const scene = this.scene;
+
+    for (let i = 0; i < labels.length; i++) {
+      const label = labels[i];
+      if (!label) continue;
+
+      scene.remove(label);
+
+      const el = label.element;
+      if (el?.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+
       label.remove?.();
-    });
-    this.labels = [];
+
+      // 👇 IMPORTANT: keep registry consistent
+      const idx = this.labels.indexOf(label);
+      if (idx !== -1) this.labels.splice(idx, 1);
+    }
+
+    // safety reset if full clear
+    if (labels === this.labels) {
+      this.labels.length = 0;
+    }
+
     this._emitChange();
   }
 

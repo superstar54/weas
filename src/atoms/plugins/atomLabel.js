@@ -94,7 +94,7 @@ export class AtomLabelManager {
     /* Set the label settings */
     this.settings = [];
     this.overlaySettings = [];
-    clearLabels(this.scene, this.labels);
+    this.clearLabels(this.labels);
     // loop over settings to add each setting
     settings.forEach((setting) => {
       this.addSetting(setting);
@@ -124,7 +124,7 @@ export class AtomLabelManager {
    * Removes all labels from the scene.
    */
   clearLabels() {
-    clearLabels(this.scene, this.labels);
+    this.textManager.clearLabels(this.labels);
   }
 
   /**
@@ -218,18 +218,4 @@ export class AtomLabelManager {
     matrix.decompose(position, rotation, scale);
     return scale.x || scale.y || scale.z || null;
   }
-}
-
-/**
- * Clears labels from the scene and removes their DOM elements.
- * @param {THREE.Scene} scene
- * @param {Array<Object>} labels
- */
-function clearLabels(scene, labels) {
-  // Clear existing labels
-  labels.forEach((label) => {
-    scene.remove(label);
-    // Remove the HTML element
-    label.remove();
-  });
 }
