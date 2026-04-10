@@ -42,7 +42,7 @@ export const DEFAULT_MEASUREMENT_SETTINGS = {
 /**
  * Measurement plugin for visualizing distances, angles, and dihedral angles
  * between atoms in a molecular viewer.
- * @module atoms/Measurement
+ *  Measurement
  * @class
  */
 export class Measurement {

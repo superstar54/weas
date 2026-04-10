@@ -4,10 +4,10 @@ import * as THREE from "three";
  * Registry for THREE.js materials.
  * Supports built-in and user-defined materials, cloning, renaming, copying,
  * and exposes editable properties for GUI generation.
- * @module MaterialsRegistry
+ *  MaterialsRegistry
  * @class
  */
-export default class MaterialsRegistry {
+export class MaterialsRegistry {
   constructor() {
     // Built-in default names
     this._builtIn = new Set(["Standard", "Phong", "Basic"]);

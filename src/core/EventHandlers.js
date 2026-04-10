@@ -8,7 +8,14 @@ Object mode:
 - "object": select objects
 */
 
-// pattern to determine if a keycombo is being pressed
+/**
+ * Utility to match a keyboard event against a key combo definition.
+ * Combo format: ["ctrl", "shift", "a"] → modifiers + key
+ *
+ * @param {KeyboardEvent} event
+ * @param {string[]} combo
+ * @returns {boolean}
+ */
 function matchKey(event, combo) {
   const key = combo[combo.length - 1];
   const modifiers = combo.slice(0, -1);
@@ -29,13 +36,26 @@ function matchKey(event, combo) {
 }
 
 /**
- * Core EventHandlers system that reads the keybind config
- * @module EventHandlers
+ * Central input and interaction controller for the 3D viewer.
+ *
+ * Responsibilities:
+ * - Mouse interaction (selection, lasso, dragging)
+ * - Keyboard shortcuts and keybind routing
+ * - TransformControls integration (translate / rotate / scale)
+ * - SelectionManager interaction
+ * - Dispatching viewer-wide events
+ *
+ * Acts as the main bridge between UI input and engine operations.
+ *
  * @class
  */
 class EventHandlers {
-  // map named actions to their respective operation.
-  // this could be moved to a private controller somewhere.
+  /**
+   * Mapping of named actions to engine operations.
+   * These are triggered via keybind configuration.
+   *
+   * @type {Object<string, Function>}
+   */
   actionMap = {
     exitMode: () => this.transformControls.exitMode(),
     undo: () => this.weas.ops.undo(),
@@ -71,6 +91,9 @@ class EventHandlers {
     camera6: () => this.weas.tjs.cameraController.view("back"),
   };
 
+  /**
+   * @param {Object} weas
+   */
   constructor(weas) {
     this.weas = weas;
     this.tjs = weas.tjs;
@@ -80,6 +103,10 @@ class EventHandlers {
     this.keybindConfig = weas.keybindConfig || defaultKeyBindConfig;
   }
 
+  /**
+   * Initializes internal mouse and interaction state.
+   * @private
+   */
   init() {
     // Add mouse state tracking
     this.isMouseDown = false;
@@ -92,6 +119,10 @@ class EventHandlers {
     this.isDragging = false;
   }
 
+  /**
+   * Registers DOM event listeners for pointer, keyboard, and click input.
+   * @private
+   */
   setupEventListeners() {
     const container = this.weas.tjs.containerElement;
 
@@ -107,6 +138,10 @@ class EventHandlers {
     container.addEventListener("keydown", this.onKeyDown.bind(this), false);
   }
 
+  /**
+   * Pointer down handler (selection start / lasso start).
+   * @param {PointerEvent} event
+   */
   onMouseDown(event) {
     // Implement the logic for mouse down events
     this.isMouseDown = true;
@@ -120,6 +155,10 @@ class EventHandlers {
     }
   }
 
+  /**
+   * Pointer up handler (finalizes drag/lasso operations).
+   * @param {PointerEvent} event
+   */
   onMouseUp(event) {
     // Implement the logic for mouse up events
     this.isMouseDown = false;
@@ -128,6 +167,10 @@ class EventHandlers {
     this.weas.selectionManager.finishLasso();
   }
 
+  /**
+   * Pointer move handler (selection, transform updates, lasso updates).
+   * @param {PointerEvent} event
+   */
   onMouseMove(event) {
     // Implement the logic for mouse move events
     this.previousMousePosition.copy(this.currentMousePosition);
@@ -160,6 +203,12 @@ class EventHandlers {
     }
   }
 
+  /**
+   * Handles transform-mode-specific key interactions (X/Y/Z locking, axis picking).
+   *
+   * @param {KeyboardEvent} event
+   * @returns {boolean} whether event was handled
+   */
   handleTransformModeKeys(event) {
     const key = event.key.toLowerCase();
 
@@ -225,6 +274,10 @@ class EventHandlers {
     return false;
   }
 
+  /**
+   * Keyboard handler for keybinds and transform shortcuts.
+   * @param {KeyboardEvent} event
+   */
   onKeyDown(event) {
     if (this.handleTransformModeKeys(event)) return;
 
@@ -237,6 +290,10 @@ class EventHandlers {
     }
   }
 
+  /**
+   * Click handler for selection confirmation and transform finalization.
+   * @param {PointerEvent} event
+   */
   onMouseClick(event) {
     // Handle mouse click to confirm the operation and exit the current transform mode.
     if (
@@ -277,7 +334,10 @@ class EventHandlers {
     this.weas.selectionManager.pickSelection(event);
   }
 
-  // Call this method after updating atoms
+  /**
+   * Dispatch event after atom data changes.
+   * Used to synchronize external listeners.
+   */
   dispatchAtomsUpdated() {
     //Every time the atoms are updated, a new UUID is generated, and the event is dispatched
     // Later we can compare the UUIDs to check if the atoms are the same or not
@@ -288,7 +348,11 @@ class EventHandlers {
     this.tjs.containerElement.dispatchEvent(event);
   }
 
-  // Call this method after updating atoms
+  /**
+   * Dispatch event when viewer state updates.
+   *
+   * @param {any} data
+   */
   dispatchViewerUpdated(data) {
     // create a list of picked atoms from the selectedAtomsIndices set
     const event = new CustomEvent("viewerUpdated", { detail: data });

@@ -16,7 +16,7 @@ const DEFAULT_LABEL_SETTING = {
 
 /**
  * Manages labels attached to atoms in a molecular viewer.
- * @module atoms/AtomLabelManager
+ *  AtomLabelManager
  * @class
  */
 export class AtomLabelManager {

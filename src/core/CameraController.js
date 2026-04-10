@@ -3,7 +3,21 @@ import { Vector3 } from "three";
 
 // TODO - re-add perspective camera as i've bonked this in the migration of methods.
 
+/**
+ * Extended TrackballControls with:
+ * - Multi-camera support
+ * - Saved camera views
+ * - Parameter schema system
+ * - Fit-to-scene utilities
+ * - State serialization
+ *
+ * @class */
 class CameraController extends TrackballControls {
+  /**
+   * @param {THREE.Camera} camera - Initial active camera
+   * @param {HTMLElement} domElement - DOM element for input events
+   * @param {Object} [params={}] - Optional initial control parameters
+   */
   constructor(camera, domElement, params = {}) {
     super(camera, domElement);
     this.cameras = new Map();
@@ -105,17 +119,29 @@ class CameraController extends TrackballControls {
     return () => this._callbacks.delete(cb);
   }
 
+  /**
+   * Emits change event to subscribers.
+   * @private
+   */
   _emitChange() {
     this._callbacks.forEach((cb) => cb());
   }
 
-  // --- individual camera management
+  /**
+   * Registers an additional camera.
+   * @param {string} name
+   * @param {THREE.Camera} camera
+   */
   addCamera(name, camera) {
     this.cameras.set(name, camera);
   }
 
-  // swap active camera to a new one.
-  // TODO: test if this actually has the desired effect
+  /**
+   * Switch active camera.
+   * Copies transform state from current camera.
+   *
+   * @param {string} name
+   */
   setCamera(name) {
     const newCam = this.cameras.get(name);
     if (!newCam || newCam === this.object) return;
@@ -139,15 +165,29 @@ class CameraController extends TrackballControls {
     this._emitChange();
   }
 
+  /**
+   * @returns {string[]} List of registered camera names
+   */
   listCameras() {
     return [...this.cameras.keys()];
   }
 
-  // --- Parameter management --- //
+  /**
+   * Applies partial parameter overrides.
+   * Only updates known controller properties.
+   *
+   * @param {Object} params
+   */
   setParams(params = {}) {
     Object.assign(this, params);
   }
 
+  /**
+   * Returns current controller parameters
+   * based on schema defaults.
+   *
+   * @returns {Object}
+   */
   getParams() {
     const params = {};
     for (const [key, info] of Object.entries(this.paramSchema)) {
@@ -156,6 +196,9 @@ class CameraController extends TrackballControls {
     return params;
   }
 
+  /**
+   * Resets all parameters to schema defaults.
+   */
   resetSettings() {
     for (const [key, info] of Object.entries(this.paramSchema)) {
       this[key] = info.default;
@@ -164,7 +207,11 @@ class CameraController extends TrackballControls {
     this.update();
   }
 
-  // --- Built-in views
+  /**
+   * Initializes built-in orthographic views.
+   * Called once in constructor.
+   * @private
+   */
   _initDefaultViews() {
     const dist = this.object.position.distanceTo(this.target);
     const original = {
@@ -214,11 +261,27 @@ class CameraController extends TrackballControls {
     }
   }
 
+  /**
+   * Internal update loop.
+   * Handles shift-modified rotation locking.
+   *
+   * @param  {...any} args
+   */
   update(...args) {
     this._updateShiftState();
     super.update(...args);
   }
 
+  /**
+   * Applies a saved camera view.
+   *
+   * Supports optional focus override.
+   *
+   * @param {string} name
+   * @param {Object} [options]
+   * @param {Array<number>} [options.focus] - Override target focus point
+   * @param {number} [options.zoom] - Override zoom
+   */
   view(name, options = {}) {
     const v = this._views[name];
     if (!v) return;
@@ -249,7 +312,12 @@ class CameraController extends TrackballControls {
     this._emitChange();
   }
 
-  // save a given view - useful for restoring a camera state nicely
+  /**
+   * Saves current camera state as a named view.
+   *
+   * @param {string} name
+   * @param {boolean} [builtIn=false]
+   */
   saveView(name, builtIn = false) {
     this._views[name] = {
       position: this.object.position.clone(),
@@ -262,17 +330,30 @@ class CameraController extends TrackballControls {
     this._emitChange();
   }
 
+  /**
+   * Removes a user-defined view.
+   * Built-in views cannot be removed.
+   *
+   * @param {string} name
+   */
   removeView(name) {
     if (this._builtInViews.has(name)) return;
     delete this._views[name];
     this._emitChange();
   }
 
-  // --- GUI helpers
+  /**
+   * @returns {string[]} List of available view names
+   */
   list() {
     return Object.keys(this._views);
   }
 
+  /**
+   * Returns detailed view metadata.
+   *
+   * @returns {Array<Object>}
+   */
   listDetails() {
     return Object.entries(this._views).map(([name, v]) => ({
       name,
@@ -285,7 +366,17 @@ class CameraController extends TrackballControls {
     }));
   }
 
-  // --- Fit to scene
+  /**
+   * Fits camera to a scene bounding box.
+   *
+   * @param {THREE.Object3D} scene
+   * @param {Object} [options]
+   * @param {Array<number>} [options.lookAt]
+   * @param {Array<number>} [options.direction=[0,0,1]]
+   * @param {number} [options.zoom=1]
+   * @param {number} [options.fov]
+   * @param {number} [options.padding=10]
+   */
   fitToScene(scene, options = {}) {
     const {
       lookAt = null,
@@ -320,7 +411,11 @@ class CameraController extends TrackballControls {
     this.update();
   }
 
-  // --- Fit current camera positions
+  /**
+   * Fits camera to a list of positions.
+   *
+   * @param {Array<Array<number>>} positions
+   */
   fit(positions) {
     if (!positions || positions.length === 0) return;
 
@@ -381,8 +476,19 @@ class CameraController extends TrackballControls {
     if (this._views["default"]) this.view("default");
   }
 
-  // self contained state management
-  exportState() {
+  /**
+   * Serializes full camera state.
+   *
+   * Includes:
+   * - position
+   * - target
+   * - direction
+   * - zoom / fov
+   * - active camera type
+   * - controller params
+   *
+   * @returns {Object}
+   */ exportState() {
     const cam = this.object;
 
     const position = cam.position.toArray();
@@ -409,6 +515,11 @@ class CameraController extends TrackballControls {
     };
   }
 
+  /**
+   * Restores camera state from exportState().
+   *
+   * @param {Object} state
+   */
   importState(state) {
     if (!state) return;
 

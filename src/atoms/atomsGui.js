@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { covalentRadii } from "./data/atomsData";
 import { ReplaceOperation, AddAtomOperation } from "../operation/atoms";
 import { MODEL_STYLE_MAP, colorTypes, colorBys, radiusTypes } from "../config";
-import AtomsLegend from "./plugins/AtomsLegend";
+import { AtomsLegend }  from "./plugins/AtomsLegend";
 
 class AtomsGUI {
   constructor(viewer, gui, guiConfig) {

@@ -2,6 +2,9 @@ import * as THREE from "three";
 import { createLabel } from "../utils";
 import { cloneValue } from "../state/store";
 
+// TODO, switch to  batch updating addLabel -> addLabels for potential performance reasons
+// Also would require rewriting the createLabel util to be batched maybe
+
 /**
  * Default settings for text labels.
  * @type {Object}
@@ -23,7 +26,7 @@ export const DEFAULT_TEXT_SETTINGS = {
 
 /**
  * Manages CSS2D/3D text labels in a Three.js scene.
- * @module TextManager
+ *  TextManager
  * @class
  */
 export class TextManager {
@@ -100,7 +103,6 @@ export class TextManager {
     this._emitChange();
     return label;
   }
-  
 
   /**
    * Removes a label from the scene.

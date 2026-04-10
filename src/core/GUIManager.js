@@ -1,6 +1,12 @@
 import { GUI } from "dat.gui";
 import { defaultGuiConfig } from "../config";
 
+/**
+ * Disables interaction with a dat.GUI controller UI element.
+ *
+ * @param {import("dat.gui").GUIController} controller
+ * @private
+ */
 function lockController(controller) {
   // Disable user input for the controller
   controller.__li.style.pointerEvents = "none"; // Prevent any interaction
@@ -8,11 +14,24 @@ function lockController(controller) {
 }
 
 /**
-GUIManager that allows registration of UI elements ontop of the weas scene
- * @module GUIManager
+ * Central GUI system for the viewer engine.
+ *
+ * Responsibilities:
+ * - Builds dat.GUI interface
+ * - Syncs GUI with engine registries (materials, shapes, camera, HUD)
+ * - Provides runtime controls for engine subsystems
+ * - Bridges GUI state with HUD overlay system
+ *
+ * This class is tightly coupled to the Weas engine runtime and acts
+ * as a debugging + interaction layer for engine state.
+ *
  * @class
-*/
+ */
 class GUIManager {
+  /**
+   * @param {Object} weas - Main engine instance
+   * @param {Object} [guiConfig] - Optional GUI configuration overrides
+   */
   constructor(weas, guiConfig) {
     this.weas = weas;
     const mergedButtons = {
@@ -37,6 +56,11 @@ class GUIManager {
       ...defaultGuiConfig.buttonStyle,
       ...(guiConfig?.buttonStyle || {}),
     };
+
+    /**
+     * Final resolved GUI configuration.
+     * @type {Object}
+     */
     this.guiConfig = {
       ...defaultGuiConfig,
       ...guiConfig,
@@ -48,6 +72,8 @@ class GUIManager {
       meshLegend: mergedMeshLegend,
       buttonStyle: mergedButtonStyle,
     };
+
+    /** @type {import("dat.gui").GUI} */
     this.gui = new GUI();
     this.gui.closed = true;
     if (!this.guiConfig.controls.enabled) {
@@ -57,6 +83,10 @@ class GUIManager {
     }
   }
 
+  /**
+   * Initializes all GUI folders and binds them to engine systems.
+   * @private
+   */
   initGUI() {
     this.createGUIContainer();
 
@@ -72,6 +102,11 @@ class GUIManager {
     }
   }
 
+  /**
+   * Mounts the dat.GUI panel into the HUD overlay system.
+   * Also prevents input propagation to the 3D scene.
+   * @private
+   */
   createGUIContainer() {
     const hud = this.weas.tjs.hud;
 
@@ -99,7 +134,10 @@ class GUIManager {
     });
   }
 
-  /* ---------------- Materials Folder ---------------- */
+  /**
+   * Materials GUI section (registry-driven material editing).
+   * @private
+   */
   addMaterialsFolder() {
     const folder = this.gui.addFolder("Materials");
     const registry = this.weas.materialsRegistry;
@@ -179,7 +217,10 @@ class GUIManager {
     this.refreshMaterials();
   }
 
-  /* ---------------- Shapes Folder (Operation-based) ---------------- */
+  /**
+   * Shape creation UI (operation-based shape system).
+   * @private
+   */
   addShapeOperationsFolder() {
     const folder = this.gui.addFolder("Shapes");
     const registry = this.weas.shapeRegistry;
@@ -215,7 +256,10 @@ class GUIManager {
     this.refreshShapeOperations();
   }
 
-  /* ---------------- Camera Folder (Camera-manager based) ---------------- */
+  /**
+   * Camera view management GUI.
+   * @private
+   */
   addCameraControlsFolder() {
     const folder = this.gui.addFolder("Camera Views");
     const cameraController = this.weas.tjs.cameraController;
@@ -251,6 +295,10 @@ class GUIManager {
     cameraController.onChange(refreshViews);
   }
 
+  /**
+   * Camera parameter tuning GUI.
+   * @private
+   */
   addCameraSettingsFolder() {
     const folder = this.gui.addFolder("Camera Settings");
     const controller = this.weas.tjs.cameraController;
@@ -285,6 +333,11 @@ class GUIManager {
 
   // TODO - move this into the HUD Controller in a similar pattern to Camera
   // The GUI shouldn't know about hte details of the HUDController
+
+  /**
+   * HUD debug controls (mini-scenes + HTML overlays).
+   * @private
+   */
   addHUDSettingsFolder() {
     const folder = this.gui.addFolder("HUD Settings");
     const hud = this.weas.tjs.hud;
@@ -358,6 +411,10 @@ class GUIManager {
     refreshHUDFolder();
   }
 
+  /**
+   * Legend appearance controls (atom / mesh visualization settings).
+   * @private
+   */
   addLegendHUDFolder() {
     const folder = this.gui.addFolder("Legend Appearance");
     const legendHUD = this.weas.tjs.hud.legendHUD;
@@ -371,8 +428,14 @@ class GUIManager {
     );
   }
 
-  // generic method to add a gui folder from a schema and
-  // a callback function (if updates are required)
+  /**
+   * Generic schema-driven GUI builder.
+   *
+   * @param {import("dat.gui").GUI} folder
+   * @param {Object} settingsObj
+   * @param {Object} schema
+   * @param {(key:string, value:any) => void} [onChange]
+   */
   addFolderFromSchema(folder, settingsObj, schema, onChange) {
     for (const [key, meta] of Object.entries(schema)) {
       // Skip anything that shouldn't appear in the GUI

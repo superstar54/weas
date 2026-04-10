@@ -18,11 +18,9 @@
     "docdash": {
       "static": true,
       "sort": true,
-      "collapse": true,
       "search": true,
       "wrap": true,
-      "menu": ["Modules"],
-      "exclude": ["Classes"]
+      "menu": ["Modules"]
     }
   }
 }

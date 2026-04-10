@@ -18,10 +18,9 @@ import { ToolbarHUD } from "./ui/ToolbarHUD";
  * hud.addMiniScene("coord", scene, camera, { width: 200, height: 200 }, { bottom: 10, left: 10 });
  * hud.addHTMLPanel("info", document.getElementById("infoPanel"));
  *
- * @module HUDController
  * @class
  */
-export default class HUDController {
+export class HUDController {
   constructor(weas, container, mainRenderer) {
     /** @private @type {Set<Function>} */
     this._listeners = new Set();

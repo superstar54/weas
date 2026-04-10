@@ -19,9 +19,8 @@ import { StateStore, cloneValue } from "./state/store";
 import { createDefaultState } from "./state/defaultState";
 import { fromWidgetSnapshot } from "./state/adapters";
 
-import MaterialsRegistry from "./core/MaterialsRegistry";
-import ShapeRegistry from "./core/ShapeRegistry";
-import HUDController from "./core/HUDController";
+import { MaterialsRegistry } from "./core/MaterialsRegistry";
+import { ShapeRegistry } from "./core/ShapeRegistry";
 
 class WEAS {
   constructor({

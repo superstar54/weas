@@ -36,7 +36,7 @@ const DEFAULT_CELL_SETTINGS = {
  *   const cellManager = new CellManager(viewer, { cellColor: 0xff0000 });
  *   cellManager.draw();
  *
- * @module atoms/CellManager
+ *  CellManager
  * @class
  */
 export class CellManager {

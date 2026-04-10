@@ -5,7 +5,7 @@ import { WeasScene } from "./SceneManager";
 import { OrthographicCamera } from "./Camera";
 import { defaultTjsConfig } from "../config";
 
-import HUDController from "./HUDController";
+import { HUDController } from "./HUDController";
 
 class BlendJSObject {
   constructor(name, geometry, material) {
