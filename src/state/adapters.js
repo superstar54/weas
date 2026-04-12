@@ -38,6 +38,7 @@ function fromWidgetSnapshot(snapshot) {
     "modelSticks",
     "modelPolyhedras",
     "continuousUpdate",
+    "enableAtomTooltip",
     "selectedAtomsIndices",
     "backgroundColor",
   ]);

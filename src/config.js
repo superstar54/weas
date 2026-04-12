@@ -35,6 +35,7 @@ const defaultViewerSettings = {
   logLevel: "warn", // Default log level
   continuousUpdate: true, // Default continuous update
   autoResetCameraOnAtomsUpdate: false, // Default to preserving view on atoms updates
+  enableAtomTooltip: true, // Show tooltip on atom hover
 };
 
 const defaultGuiConfig = {

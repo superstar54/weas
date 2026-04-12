@@ -137,3 +137,17 @@
   min-width: 1px;
   height: 100%;
 }
+
+.weas-atom-tooltip {
+  position: absolute;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.4;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 30;
+  user-select: none;
+  white-space: nowrap;
+}

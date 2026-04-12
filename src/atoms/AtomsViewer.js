@@ -13,6 +13,7 @@ import { VolumeSlice } from "./plugins/VolumeSlice.js";
 import { VectorField } from "./plugins/vectorField.js";
 import { Measurement } from "./plugins/measurement.js";
 import { HighlightManager } from "./plugins/highlight.js";
+import { AtomTooltipManager } from "./plugins/atomTooltip.js";
 import { AtomsGUI } from "./atomsGui.js";
 import { defaultViewerSettings, MODEL_STYLE_MAP } from "../config.js";
 import { Phonon } from "./plugins/phonon.js";
@@ -75,6 +76,8 @@ class AtomsViewer {
     this.ALManager = new AtomLabelManager(this);
     this.Measurement = new Measurement(this);
     this.VFManager = new VectorField(this);
+    this._enableAtomTooltip = viewerSettings.enableAtomTooltip !== false;
+    this.tooltipManager = new AtomTooltipManager(this, { enabled: this._enableAtomTooltip });
     this.animate = this.animate.bind(this); // Bind once in the constructor
     this._atoms = null;
     this._cell = null;
@@ -624,6 +627,23 @@ class AtomsViewer {
     this.applyState({ autoResetCameraOnAtomsUpdate: newValue }, { redraw: "render" });
   }
 
+  get enableAtomTooltip() {
+    return this._enableAtomTooltip;
+  }
+
+  set enableAtomTooltip(newValue) {
+    if (this._syncingState) {
+      this._enableAtomTooltip = newValue;
+      // Sync tooltip manager state
+      if (this.tooltipManager) {
+        this.tooltipManager.enabled = newValue;
+      }
+      this.weas.eventHandlers.dispatchViewerUpdated({ enableAtomTooltip: newValue });
+      return;
+    }
+    this.applyState({ enableAtomTooltip: newValue }, { redraw: "none" });
+  }
+
   get atomScale() {
     return this._atomScale;
   }
@@ -887,6 +907,7 @@ class AtomsViewer {
       atomScale: "render",
       selectedAtomsIndices: "render",
       backgroundColor: "render",
+      enableAtomTooltip: "none",
     };
     return effectMap[key] || null;
   }
@@ -961,6 +982,10 @@ class AtomsViewer {
     }
     if (this.atomManager.meshes["image"]) {
       this.atomManager.meshes["image"].dispose();
+    }
+    // Reset tooltip hover state without removing DOM (survives re-render)
+    if (this.tooltipManager) {
+      this.tooltipManager.reset();
     }
     // Remove the unit cell
     clearObjects(this.tjs.scene, this.uuid);

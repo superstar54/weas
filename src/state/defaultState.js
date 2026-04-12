@@ -21,6 +21,7 @@ function createDefaultState() {
       modelPolyhedras: [],
       backgroundColor: viewerDefaults.backgroundColor,
       continuousUpdate: viewerDefaults.continuousUpdate,
+      enableAtomTooltip: viewerDefaults.enableAtomTooltip,
       selectedAtomsIndices: [],
     },
     cell: cloneValue(viewerDefaults.cellSettings),
