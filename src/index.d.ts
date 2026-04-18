@@ -139,6 +139,8 @@ export declare class AtomsViewer {
   readonly Measurement: any;
   /** Vector-field helper */
   readonly VFManager: VectorField;
+  /** Manager for atom hover tooltip */
+  tooltipManager: AtomTooltipManager | null;
 
   /** The currently displayed Atoms object */
   atoms: Atoms;
@@ -177,6 +179,8 @@ export declare class AtomsViewer {
   continuousUpdate: boolean;
   /** Whether to auto-reset camera on atoms updates */
   autoResetCameraOnAtomsUpdate: boolean;
+  /** Whether atom hover tooltip is enabled */
+  enableAtomTooltip: boolean;
   /** Indices of selected atoms */
   selectedAtomsIndices: number[];
   /** Trajectory frames */
@@ -373,6 +377,29 @@ export declare class BoundaryManager {
 
   /** Initialize boundary rendering */
   init(): void;
+}
+
+/**
+ * Plugin for showing a tooltip when hovering over atoms.
+ * Not exported at package level — access via AtomsViewer.tooltipManager.
+ */
+declare class AtomTooltipManager {
+  constructor(viewer: AtomsViewer, options?: { enabled?: boolean });
+
+  /** Whether the tooltip is currently active */
+  enabled: boolean;
+
+  /** Enable the tooltip (lazily creates DOM and events) */
+  enable(): void;
+
+  /** Disable the tooltip (removes DOM and events, can be re-enabled) */
+  disable(): void;
+
+  /** Reset transient state (e.g. cached atom index) without tearing down DOM */
+  reset(): void;
+
+  /** Remove DOM elements and event listeners */
+  dispose(): void;
 }
 
 /**
