@@ -4,14 +4,42 @@ import { ReplaceOperation, AddAtomOperation } from "../operation/atoms";
 import { MODEL_STYLE_MAP, colorTypes, colorBys, radiusTypes } from "../config";
 import { AtomsLegend }  from "./plugins/AtomsLegend";
 
+// TODO: Really think about this and think of a nice way of solving the problems that it looks like this has nicely
+
+/**
+ * GUI layer for atom-level controls in the viewer.
+ *
+ * Responsible for:
+ * - Atom rendering style controls (model, radius, labels)
+ * - Material and coloring configuration
+ * - Atom operations (add/replace)
+ * - Boundary editing controls
+ * - Timeline playback controls
+ * - Legend integration
+ * - Syncing UI state with viewer state changes
+ *
+ * This class acts as a bridge between `dat.gui` controls and the
+ * underlying viewer state/operations system.
+ *
+ * @class
+ */
 class AtomsGUI {
+    /**
+   * @param {Object} viewer - Main viewer instance.
+   * @param {import("dat.gui").GUI} gui - dat.GUI root instance.
+   * @param {Object} guiConfig - Configuration for enabled controls and features.
+   */
   constructor(viewer, gui, guiConfig) {
     this.viewer = viewer;
     this.gui = gui;
     this.guiConfig = guiConfig;
+    /** @type {Object} */
     this.atomLegendConfig = this.getAtomLegendConfig();
+    /** Prevents feedback loops between UI and viewer state */
     this.isSyncing = false;
+    /** Local copy of boundary values for staged editing */
     this.tempBoundary = this.viewer.boundary.map((row) => row.slice());
+    /** Root DOM container for timeline / legend overlays */
     this.div = document.createElement("div");
     this.viewer.tjs.containerElement.appendChild(this.div);
 
@@ -39,18 +67,31 @@ class AtomsGUI {
     if (this.guiConfig.controls.colorControl) {
       this.addColorControl();
     }
-    // Initialize legend
+    /** Legend overlay controller */
     this.legend = new AtomsLegend(this.viewer, this.guiConfig);
   }
 
+  /**
+   * Enables UI→viewer sync lock.
+   */
   beginSync() {
     this.isSyncing = true;
   }
 
+  /**
+   * Disables UI→viewer sync lock.
+   */
   endSync() {
     this.isSyncing = false;
   }
 
+  // TODO MOVE THE TIMELINE TO BE MANAGED BY THE HUDCONTROLLER
+
+  /**
+   * Updates timeline state based on trajectory length.
+   *
+   * @param {Array} trajectory
+   */
   update(trajectory) {
     if (this.guiConfig.timeline.enabled && trajectory.length > 1) {
       this.addTimeline();
@@ -60,15 +101,27 @@ class AtomsGUI {
     }
   }
 
+
+  /**
+   * Creates atom control folder (model style, radius, labels, etc).
+   * @private
+   */
   addAtomsControl() {
     const atomsFolder = this.gui.addFolder("Atoms");
 
     // Model Style Control
     this.modelStyleController = atomsFolder
-      .add({ modelStyle: this.viewer.modelStyle }, "modelStyle", MODEL_STYLE_MAP)
+      .add(
+        { modelStyle: this.viewer.modelStyle },
+        "modelStyle",
+        MODEL_STYLE_MAP,
+      )
       .onChange((value) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.setState({ modelStyle: value }, { record: true, redraw: "full" });
+        this.viewer.setState(
+          { modelStyle: value },
+          { record: true, redraw: "full" },
+        );
       })
       .name("Model Style");
 
@@ -79,7 +132,10 @@ class AtomsGUI {
       .name("Radius Type")
       .onChange((value) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.setState({ radiusType: value }, { record: true, redraw: "full" });
+        this.viewer.setState(
+          { radiusType: value },
+          { record: true, redraw: "full" },
+        );
       });
 
     // Atom Label Control
@@ -88,7 +144,10 @@ class AtomsGUI {
       .add(atomLabelState, "atomLabelType", ["None", "Symbol", "Index"])
       .onChange((value) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.setState({ atomLabelType: value }, { record: true, redraw: "labels" });
+        this.viewer.setState(
+          { atomLabelType: value },
+          { record: true, redraw: "labels" },
+        );
       })
       .name("Atom Label");
 
@@ -98,7 +157,10 @@ class AtomsGUI {
       .add(materialTypeState, "materialType", ["Standard", "Phong", "Basic"])
       .onChange((value) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.setState({ materialType: value }, { record: true, redraw: "full" });
+        this.viewer.setState(
+          { materialType: value },
+          { record: true, redraw: "full" },
+        );
       })
       .name("Material Type");
 
@@ -109,7 +171,10 @@ class AtomsGUI {
       .name("Atom Scale")
       .onChange((value) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.setState({ atomScale: value }, { record: true, redraw: "render" });
+        this.viewer.setState(
+          { atomScale: value },
+          { record: true, redraw: "render" },
+        );
       });
 
     // Show Cell Control
@@ -138,7 +203,10 @@ class AtomsGUI {
       .name("Bonded Atoms")
       .onChange((value) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.setState({ showBondedAtoms: value }, { record: true, redraw: "full" });
+        this.viewer.setState(
+          { showBondedAtoms: value },
+          { record: true, redraw: "full" },
+        );
       });
 
     // Legend Toggle Control
@@ -150,14 +218,17 @@ class AtomsGUI {
         this.updateLegend(); // Toggle legend visibility
       });
 
-    // Replace Atom Folder
     this.addReplaceAtomControl(atomsFolder);
-    // Add Atom Folder
+
     this.addAddAtomControl(atomsFolder);
-    // Boundary Controls
+
     this.addBoundaryControl(atomsFolder);
   }
-
+  /**
+   * Adds atom replacement UI.
+   * @param {dat.GUI} atomsFolder
+   * @private
+  */
   addReplaceAtomControl(atomsFolder) {
     const replaceAtomFolder = atomsFolder.addFolder("Replace Atom");
     const newElementData = { symbol: "C" };
@@ -184,6 +255,11 @@ class AtomsGUI {
       .name("Replace Selected Atoms");
   }
 
+  /**
+   * Adds atom insertion UI.
+   * @param {dat.GUI} atomsFolder
+   * @private
+   */
   addAddAtomControl(atomsFolder) {
     const addAtomFolder = atomsFolder.addFolder("Add Atom");
     const addElementData = { symbol: "C" };
@@ -205,6 +281,11 @@ class AtomsGUI {
       .name("Add Selected Atoms");
   }
 
+  /**
+   * Boundary editing UI for simulation box.
+   * @param {dat.GUI} atomsFolder
+   * @private
+   */
   addBoundaryControl(atomsFolder) {
     const boundaryFolder = atomsFolder.addFolder("Boundary");
     this.boundaryControllers = [[], [], []];
@@ -233,6 +314,10 @@ class AtomsGUI {
       });
   }
 
+  /**
+   * Color configuration controls.
+   * @private
+   */
   addColorControl() {
     const colorFolder = this.gui.addFolder("Color");
     // Background Color Control
@@ -261,6 +346,10 @@ class AtomsGUI {
       .name("Color Type");
   }
 
+  /**
+   * Creates animation timeline controls.
+   * @private
+   */
   addTimeline() {
     if (this.div.querySelector("#animation-controls")) {
       return;
@@ -316,6 +405,11 @@ class AtomsGUI {
     });
   }
 
+
+  /**
+   * Removes animation timeline UI.
+   * @private
+   */
   removeTimeline() {
     const animation_div = this.div.querySelector("#animation-controls");
     if (animation_div) {
@@ -323,75 +417,50 @@ class AtomsGUI {
     }
   }
 
+  /**
+   * Updates internal boundary staging buffer.
+   *
+   * @param {number} dimension
+   * @param {number} index
+   * @param {number} value
+   * @private
+   */
   updateBoundaryValue(dimension, index, value) {
     this.tempBoundary[dimension][index] = parseFloat(value);
   }
 
+
+  /**
+   * Applies staged boundary changes to viewer state.
+   * @private
+   */
   applyBoundaryChanges() {
     if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
     this.viewer.setState({ boundary: this.tempBoundary }, { record: true, redraw: "full" });
   }
 
-  addLegend() {
-    // Remove existing legend if any
-    this.removeLegend();
 
-    // Create legend container
-    const legendContainer = document.createElement("div");
-    legendContainer.id = "legend-container";
-    legendContainer.style.position = "absolute";
-    legendContainer.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
-    legendContainer.style.padding = "10px";
-    legendContainer.style.borderRadius = "5px";
-    legendContainer.style.zIndex = "1000";
-    // Positioning based on configuration
-    this.setLegendPosition(legendContainer);
 
-    // Add entries for each unique element
-    Object.entries(this.viewer.atomManager.settings).forEach(([symbol, setting]) => {
-      const legendEntry = document.createElement("div");
-      legendEntry.style.display = "flex";
-      legendEntry.style.alignItems = "center";
-      legendEntry.style.marginBottom = "5px";
-
-      // Sphere representation
-      const sphereCanvas = document.createElement("canvas");
-      sphereCanvas.width = 20;
-      sphereCanvas.height = 20;
-      const context = sphereCanvas.getContext("2d");
-      context.fillStyle = `#${setting.color.getHexString()}`;
-      const radius = setting.radius * 10;
-      context.beginPath();
-      context.arc(10, 10, radius, 0, Math.PI * 2);
-      context.fill();
-
-      legendEntry.appendChild(sphereCanvas);
-
-      // Symbol label
-      const elementLabel = document.createElement("span");
-      elementLabel.textContent = ` ${symbol}`;
-      elementLabel.style.marginLeft = "5px";
-      elementLabel.style.fontSize = "14px";
-      legendEntry.appendChild(elementLabel);
-
-      legendContainer.appendChild(legendEntry);
-    });
-
-    // Append legend to viewer container
-    this.viewer.tjs.containerElement.appendChild(legendContainer);
-  }
-
+  /**
+   * Removes legend overlay.
+   * @private
+   */
   removeLegend() {
-    const existingLegend = this.viewer.tjs.containerElement.querySelector("#legend-container");
-    if (existingLegend) {
-      existingLegend.remove();
-    }
+    this.legend.removeLegend()
   }
 
+  /**
+   * Updates legend via legend plugin.
+   */
   updateLegend() {
     this.legend.updateLegend();
   }
 
+  /**
+   * Computes legend config fallback values.
+   * @returns {Object}
+   * @private
+   */
   getAtomLegendConfig() {
     if (!this.guiConfig.atomLegend && this.guiConfig.legend) {
       this.guiConfig.atomLegend = this.guiConfig.legend;
@@ -402,6 +471,12 @@ class AtomsGUI {
     return this.guiConfig.atomLegend;
   }
 
+  /**
+   * Positions legend DOM element.
+   *
+   * @param {HTMLElement} legendContainer
+   * @private
+   */
   setLegendPosition(legendContainer) {
     const position = this.getAtomLegendConfig().position || "top-right";
     legendContainer.style.top = position.includes("top") ? "10px" : "";
@@ -410,6 +485,12 @@ class AtomsGUI {
     legendContainer.style.right = position.includes("right") ? "10px" : "";
   }
 
+  /**
+   * Handles incoming viewer state updates and syncs GUI.
+   *
+   * @param {Object} detail
+   * @private
+   */
   updateViewerControl(detail) {
     // detail is a object containing the updated viewer properties
     // Update the GUI controls with the new values
@@ -464,6 +545,8 @@ class AtomsGUI {
     });
     this.isSyncing = false;
   }
+
+
   updateAtomScale(newValue) {
     if (this.atomScaleController && this.atomScaleController.getValue() !== newValue) {
       this.atomScaleController.setValue(newValue);
