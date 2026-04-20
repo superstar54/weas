@@ -26,32 +26,6 @@
   top: 0;
 }
 
-#animation-controls {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background-color: #ffffff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px;
-}
-
-#animation-controls button {
-  margin: 0 5px;
-  padding: 5px 10px;
-}
-
-#timeline {
-  margin: 0 10px;
-  width: 50%;
-}
-
-#current-frame {
-  margin-left: 10px;
-}
-
 .search-overlay {
   display: flex; /* Hidden by default */
   flex-direction: column;

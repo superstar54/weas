@@ -25,8 +25,7 @@ class ToolbarHUD {
         gap: 6,
         paddingX: "0px",
         paddingY: "0px",
-        anchor: "center",
-        offset: { x: 0, y: -45 },
+        anchor: "top-center",
       },
       config.settings || {},
     );

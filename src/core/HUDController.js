@@ -61,10 +61,14 @@ export class HUDController {
     /** @type {string[]} */
     this.ANCHORS = [
       "top-left",
+      "top-center",
       "top-right",
       "bottom-left",
+      "bottom-center",
       "bottom-right",
+      "center-left",
       "center",
+      "center-right",
     ];
   }
   /**
@@ -423,6 +427,29 @@ export class HUDController {
         element.style.top = `calc(50% + ${offset.y}%)`;
         element.style.left = `calc(50% + ${offset.x}%)`;
         element.style.transform = "translate(-50%, -50%)";
+        break;
+      case "top-center":
+        element.style.top = `${offset.y}%`;
+        element.style.left = "50%";
+        element.style.transform = "translateX(-50%)";
+        break;
+
+      case "bottom-center":
+        element.style.bottom = `${offset.y}%`;
+        element.style.left = "50%";
+        element.style.transform = "translateX(-50%)";
+        break;
+
+      case "center-left":
+        element.style.top = "50%";
+        element.style.left = `${offset.x}%`;
+        element.style.transform = "translateY(-50%)";
+        break;
+
+      case "center-right":
+        element.style.top = "50%";
+        element.style.right = `${offset.x}%`;
+        element.style.transform = "translateY(-50%)";
         break;
     }
   }

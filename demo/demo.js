@@ -519,9 +519,9 @@ async function drawAtoms(filename, fileContent) {
   }
 }
 
-updateAtoms("molecule");
+// updateAtoms("molecule");
 // updateAtoms("catio3.cif");
 // updateAtoms("au.cif");
 // updateAtoms("c2h6so.xyz");
 // updateAtoms("h2o-homo.cube");
-// updateAtoms("phonon")
+updateAtoms("phonon")

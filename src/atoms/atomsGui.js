@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { covalentRadii } from "./data/atomsData";
 import { ReplaceOperation, AddAtomOperation } from "../operation/atoms";
 import { MODEL_STYLE_MAP, colorTypes, colorBys, radiusTypes } from "../config";
-import { AtomsLegend }  from "./plugins/AtomsLegend";
+import { AtomsLegend } from "./plugins/AtomsLegend";
 
 // TODO: Really think about this and think of a nice way of solving the problems that it looks like this has nicely
 
@@ -24,7 +24,7 @@ import { AtomsLegend }  from "./plugins/AtomsLegend";
  * @class
  */
 class AtomsGUI {
-    /**
+  /**
    * @param {Object} viewer - Main viewer instance.
    * @param {import("dat.gui").GUI} gui - dat.GUI root instance.
    * @param {Object} guiConfig - Configuration for enabled controls and features.
@@ -44,9 +44,12 @@ class AtomsGUI {
     this.viewer.tjs.containerElement.appendChild(this.div);
 
     // Listen to viewer events
-    this.viewer.tjs.containerElement.addEventListener("viewerUpdated", (event) => {
-      this.updateViewerControl(event.detail);
-    });
+    this.viewer.tjs.containerElement.addEventListener(
+      "viewerUpdated",
+      (event) => {
+        this.updateViewerControl(event.detail);
+      },
+    );
     this.viewer.state.subscribe("cell", (next) => {
       if (!next) {
         return;
@@ -85,8 +88,6 @@ class AtomsGUI {
     this.isSyncing = false;
   }
 
-  // TODO MOVE THE TIMELINE TO BE MANAGED BY THE HUDCONTROLLER
-
   /**
    * Updates timeline state based on trajectory length.
    *
@@ -100,7 +101,6 @@ class AtomsGUI {
       this.removeTimeline();
     }
   }
-
 
   /**
    * Creates atom control folder (model style, radius, labels, etc).
@@ -228,17 +228,22 @@ class AtomsGUI {
    * Adds atom replacement UI.
    * @param {dat.GUI} atomsFolder
    * @private
-  */
+   */
   addReplaceAtomControl(atomsFolder) {
     const replaceAtomFolder = atomsFolder.addFolder("Replace Atom");
     const newElementData = { symbol: "C" };
-    this.replaceAtomController = replaceAtomFolder.add(newElementData, "symbol").name("New Element Symbol");
+    this.replaceAtomController = replaceAtomFolder
+      .add(newElementData, "symbol")
+      .name("New Element Symbol");
     replaceAtomFolder
       .add(
         {
           replaceSelectedAtoms: () => {
             const newElementSymbol = newElementData.symbol;
-            if (this.viewer.selectedAtomsIndices && this.viewer.selectedAtomsIndices.length > 0) {
+            if (
+              this.viewer.selectedAtomsIndices &&
+              this.viewer.selectedAtomsIndices.length > 0
+            ) {
               const replaceOperation = new ReplaceOperation({
                 weas: this.viewer.weas,
                 symbol: newElementSymbol,
@@ -263,7 +268,9 @@ class AtomsGUI {
   addAddAtomControl(atomsFolder) {
     const addAtomFolder = atomsFolder.addFolder("Add Atom");
     const addElementData = { symbol: "C" };
-    this.addAtomController = addAtomFolder.add(addElementData, "symbol").name("New Element Symbol");
+    this.addAtomController = addAtomFolder
+      .add(addElementData, "symbol")
+      .name("New Element Symbol");
     addAtomFolder
       .add(
         {
@@ -293,24 +300,39 @@ class AtomsGUI {
     dimensions.forEach((dim, i) => {
       this.boundaryControllers[i].push(
         boundaryFolder
-          .add({ [`min${dim}`]: this.viewer.boundary[i][0] }, `min${dim}`, -10.0, 10.0)
+          .add(
+            { [`min${dim}`]: this.viewer.boundary[i][0] },
+            `min${dim}`,
+            -10.0,
+            10.0,
+          )
           .onChange((newValue) => this.updateBoundaryValue(i, 0, newValue))
           .name(`Min ${dim}`),
       );
       this.boundaryControllers[i].push(
         boundaryFolder
-          .add({ [`max${dim}`]: this.viewer.boundary[i][1] }, `max${dim}`, -10.0, 10.0)
+          .add(
+            { [`max${dim}`]: this.viewer.boundary[i][1] },
+            `max${dim}`,
+            -10.0,
+            10.0,
+          )
           .onChange((newValue) => this.updateBoundaryValue(i, 1, newValue))
           .name(`Max ${dim}`),
       );
     });
-    boundaryFolder.add({ apply: () => this.applyBoundaryChanges() }, "apply").name("Apply Changes");
+    boundaryFolder
+      .add({ apply: () => this.applyBoundaryChanges() }, "apply")
+      .name("Apply Changes");
     this.wrapOnMoveController = boundaryFolder
       .add({ wrapOnMove: this.viewer.wrapOnMove }, "wrapOnMove")
       .name("Wrap On Move")
       .onChange((value) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.setState({ wrapOnMove: value }, { record: true, redraw: "none" });
+        this.viewer.setState(
+          { wrapOnMove: value },
+          { record: true, redraw: "none" },
+        );
       });
   }
 
@@ -326,14 +348,20 @@ class AtomsGUI {
       .name("Background")
       .onChange((color) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.setState({ backgroundColor: color }, { record: true, redraw: "render" });
+        this.viewer.setState(
+          { backgroundColor: color },
+          { record: true, redraw: "render" },
+        );
       });
     // Color By Control
     this.colorByController = colorFolder
       .add({ colorBy: this.viewer.colorBy }, "colorBy", colorBys)
       .onChange((value) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.setState({ colorBy: value }, { record: true, redraw: "full" });
+        this.viewer.setState(
+          { colorBy: value },
+          { record: true, redraw: "full" },
+        );
       })
       .name("Color By");
     // Color Type Control
@@ -341,45 +369,139 @@ class AtomsGUI {
       .add({ colorType: this.viewer.colorType }, "colorType", colorTypes)
       .onChange((value) => {
         if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-        this.viewer.setState({ colorType: value }, { record: true, redraw: "full" });
+        this.viewer.setState(
+          { colorType: value },
+          { record: true, redraw: "full" },
+        );
       })
       .name("Color Type");
   }
+
+  // TODO: The timeline may be easier to manage as a standalone class.
 
   /**
    * Creates animation timeline controls.
    * @private
    */
   addTimeline() {
-    if (this.div.querySelector("#animation-controls")) {
-      return;
-    }
+    if (this.timelineKey) return;
+
+    const stopPropagation = (event) => event.stopPropagation();
+
+    // --------------------
+    // Container
+    // --------------------
+
     const animation_div = document.createElement("div");
     animation_div.id = "animation-controls";
-    animation_div.style.backgroundColor = "transparent";
-    const stopPropagation = (event) => {
-      event.stopPropagation();
-    };
-    ["click", "pointerdown", "pointerup", "mousedown", "mouseup"].forEach((eventType) => {
-      animation_div.addEventListener(eventType, stopPropagation);
+
+    Object.assign(animation_div.style, {
+      pointerEvents: "auto",
+      fontFamily: "monospace",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "6px 8px",
+
+      background: "rgba(20, 20, 20, 0.6)",
+      borderRadius: "8px",
+
+      color: "#ffffff",
+      fontSize: "12px",
+
+      flex: "0 0 auto",
     });
 
-    animation_div.innerHTML =
-      '<button id="play-pause-btn">Play</button><button id="reset-btn">Reset</button><input type="range" id="timeline" min="0" max="100" value="0"><span id="current-frame">0</span>';
-    this.div.appendChild(animation_div);
+    ["click", "pointerdown", "pointerup", "mousedown", "mouseup"].forEach(
+      (e) => {
+        animation_div.addEventListener(e, stopPropagation);
+      },
+    );
 
-    this.playPauseBtn = this.div.querySelector("#play-pause-btn");
-    this.resetBtn = this.div.querySelector("#reset-btn");
-    this.timeline = this.div.querySelector("#timeline");
-    this.currentFrameDisplay = this.div.querySelector("#current-frame");
+    // --------------------
+    // Inner HTML
+    // --------------------
 
-    this.isPlaying = false;
-    const maxFrame = 100;
-    this.timeline.max = maxFrame;
+    animation_div.innerHTML = `
+      <button id="play-pause-btn">Play</button>
+      <button id="reset-btn">Reset</button>
+      <input type="range" id="timeline" min="0" max="100" value="0">
+      <span id="current-frame">0</span>
+    `;
+
+    this.timelineKey = "atoms:timeline-controls";
+
+    this.viewer.tjs.hud.addHTMLPanel(this.timelineKey, animation_div, {
+      anchor: "bottom-center",
+      visible: true,
+    });
+
+    // --------------------
+    // Cache elements
+    // --------------------
+
+    this.playPauseBtn = animation_div.querySelector("#play-pause-btn");
+    this.resetBtn = animation_div.querySelector("#reset-btn");
+    this.timeline = animation_div.querySelector("#timeline");
+    this.currentFrameDisplay = animation_div.querySelector("#current-frame");
+
+    // --------------------
+    // Button styling
+    // --------------------
+
+    const styleButton = (btn) => {
+      Object.assign(btn.style, {
+        background: "rgba(255,255,255,0.1)",
+        border: "1px solid rgba(197, 197, 197, 0.2)",
+        color: "#eee",
+        padding: "4px 8px",
+        borderRadius: "4px",
+        cursor: "pointer",
+        transition: "all 0.15s ease",
+        minWidth: "55px",
+        textAlign: "center",
+      });
+
+      btn.addEventListener("mouseenter", () => {
+        btn.style.background = "rgba(255,255,255,0.2)";
+      });
+
+      btn.addEventListener("mouseleave", () => {
+        btn.style.background = "rgba(255,255,255,0.1)";
+      });
+    };
+
+    styleButton(this.playPauseBtn);
+    styleButton(this.resetBtn);
+
+    // --------------------
+    // Slider + frame display
+    // --------------------
+
+    Object.assign(this.timeline.style, {
+      cursor: "pointer",
+      height: "4px",
+      accentColor: "#4cc9f0",
+      minWidth: "300px",
+      maxWidth: "800px",
+      maxHeight: "50px",
+    });
+
+    Object.assign(this.currentFrameDisplay.style, {
+      minWidth: "24px",
+      textAlign: "right",
+      opacity: "0.9",
+      fontVariantNumeric: "tabular-nums",
+    });
+
+    // --------------------
+    // Events
+    // --------------------
 
     this.playPauseBtn.addEventListener("click", () => {
       this.viewer.isPlaying = !this.viewer.isPlaying;
       this.playPauseBtn.textContent = this.viewer.isPlaying ? "Pause" : "Play";
+
       if (this.viewer.isPlaying) {
         this.viewer.play();
       }
@@ -390,31 +512,41 @@ class AtomsGUI {
     });
 
     this.timeline.addEventListener("input", () => {
-      // If dragging, prevent unnecessary redraws
-      if (this.viewer.weas.eventHandlers.isDragging & !this.viewer.continuousUpdate) {
+      const value = parseInt(this.timeline.value, 10);
+
+      if (
+        this.viewer.weas.eventHandlers.isDragging &&
+        !this.viewer.continuousUpdate
+      ) {
         this.timelineIsDragging = true;
       } else {
-        this.timelineIsDragging = false; // Allow full redraw
-        this.viewer.currentFrame = parseInt(this.timeline.value, 10);
+        this.timelineIsDragging = false;
+        this.viewer.currentFrame = value;
       }
+
+      this.currentFrameDisplay.textContent = value;
     });
-    // Ensure full redraw when mouse is released
+
     this.timeline.addEventListener("mouseup", () => {
-      this.timelineIsDragging = false; // Force full redraw
-      this.viewer.currentFrame = parseInt(this.timeline.value, 10); // Ensure last frame is applied
+      this.timelineIsDragging = false;
+      this.viewer.currentFrame = parseInt(this.timeline.value, 10);
     });
   }
-
 
   /**
    * Removes animation timeline UI.
    * @private
    */
   removeTimeline() {
-    const animation_div = this.div.querySelector("#animation-controls");
-    if (animation_div) {
-      animation_div.remove();
+    if (!this.timelineKey) return;
+
+    const panel = this.viewer.tjs.hud.htmlElements.get(this.timelineKey);
+    if (panel) {
+      panel.element.remove();
+      this.viewer.tjs.hud.htmlElements.delete(this.timelineKey);
     }
+
+    this.timelineKey = null;
   }
 
   /**
@@ -429,31 +561,35 @@ class AtomsGUI {
     this.tempBoundary[dimension][index] = parseFloat(value);
   }
 
-
   /**
    * Applies staged boundary changes to viewer state.
    * @private
    */
   applyBoundaryChanges() {
     if (this.isSyncing || this.viewer.weas.ops.isRestoring) return;
-    this.viewer.setState({ boundary: this.tempBoundary }, { record: true, redraw: "full" });
+    this.viewer.setState(
+      { boundary: this.tempBoundary },
+      { record: true, redraw: "full" },
+    );
   }
-
-
 
   /**
    * Removes legend overlay.
    * @private
    */
   removeLegend() {
-    this.legend.removeLegend()
+    this.legend.removeLegend();
   }
 
   /**
    * Updates legend via legend plugin.
    */
   updateLegend() {
-    this.legend.updateLegend();
+    if (this.atomLegendConfig.enabled) {
+      this.legend.updateLegend();
+    } else {
+      this.removeLegend();
+    }
   }
 
   /**
@@ -469,20 +605,6 @@ class AtomsGUI {
       this.guiConfig.atomLegend = { enabled: false, position: "bottom-right" };
     }
     return this.guiConfig.atomLegend;
-  }
-
-  /**
-   * Positions legend DOM element.
-   *
-   * @param {HTMLElement} legendContainer
-   * @private
-   */
-  setLegendPosition(legendContainer) {
-    const position = this.getAtomLegendConfig().position || "top-right";
-    legendContainer.style.top = position.includes("top") ? "10px" : "";
-    legendContainer.style.bottom = position.includes("bottom") ? "10px" : "";
-    legendContainer.style.left = position.includes("left") ? "10px" : "";
-    legendContainer.style.right = position.includes("right") ? "10px" : "";
   }
 
   /**
@@ -546,69 +668,101 @@ class AtomsGUI {
     this.isSyncing = false;
   }
 
-
   updateAtomScale(newValue) {
-    if (this.atomScaleController && this.atomScaleController.getValue() !== newValue) {
+    if (
+      this.atomScaleController &&
+      this.atomScaleController.getValue() !== newValue
+    ) {
       this.atomScaleController.setValue(newValue);
     }
   }
 
   updateAtomLabelType(newValue) {
-    if (this.atomLabelTypeController && this.atomLabelTypeController.getValue() !== newValue) {
+    if (
+      this.atomLabelTypeController &&
+      this.atomLabelTypeController.getValue() !== newValue
+    ) {
       this.atomLabelTypeController.setValue(newValue);
     }
   }
 
   updateMaterialType(newValue) {
-    if (this.materialTypeController && this.materialTypeController.getValue() !== newValue) {
+    if (
+      this.materialTypeController &&
+      this.materialTypeController.getValue() !== newValue
+    ) {
       this.materialTypeController.setValue(newValue);
     }
   }
 
   updateModelStyle(newValue) {
-    if (this.modelStyleController && this.modelStyleController.getValue() !== newValue) {
+    if (
+      this.modelStyleController &&
+      this.modelStyleController.getValue() !== newValue
+    ) {
       this.modelStyleController.setValue(newValue);
     }
   }
 
   updateRadiusType(newValue) {
-    if (this.radiusTypeController && this.radiusTypeController.getValue() !== newValue) {
+    if (
+      this.radiusTypeController &&
+      this.radiusTypeController.getValue() !== newValue
+    ) {
       this.radiusTypeController.setValue(newValue);
     }
   }
 
   updateShowBondedAtoms(newValue) {
-    if (this.showBondedAtomsController && this.showBondedAtomsController.getValue() !== newValue) {
+    if (
+      this.showBondedAtomsController &&
+      this.showBondedAtomsController.getValue() !== newValue
+    ) {
       this.showBondedAtomsController.setValue(newValue);
     }
   }
 
   updateShowCell(newValue) {
-    if (this.showCellController && this.showCellController.getValue() !== newValue) {
+    if (
+      this.showCellController &&
+      this.showCellController.getValue() !== newValue
+    ) {
       this.showCellController.setValue(newValue);
     }
   }
 
   updateShowAxes(newValue) {
-    if (this.showCellAxesController && this.showCellAxesController.getValue() !== newValue) {
+    if (
+      this.showCellAxesController &&
+      this.showCellAxesController.getValue() !== newValue
+    ) {
       this.showCellAxesController.setValue(newValue);
     }
   }
 
   updateColorBy(newValue) {
-    if (this.colorByController && this.colorByController.getValue() !== newValue) {
+    if (
+      this.colorByController &&
+      this.colorByController.getValue() !== newValue
+    ) {
       this.colorByController.setValue(newValue);
     }
   }
 
   updateColorType(newValue) {
-    if (this.colorTypeController && this.colorTypeController.getValue() !== newValue) {
+    if (
+      this.colorTypeController &&
+      this.colorTypeController.getValue() !== newValue
+    ) {
       this.colorTypeController.setValue(newValue);
     }
   }
 
   updateBackgroundColor(newValue) {
-    if (this.backgroundColorController && this.backgroundColorController.getValue() !== newValue) {
+    if (
+      this.backgroundColorController &&
+      this.backgroundColorController.getValue() !== newValue
+    ) {
       this.backgroundColorController.setValue(newValue);
     }
   }
@@ -629,7 +783,10 @@ class AtomsGUI {
   }
 
   updateWrapOnMove(newValue) {
-    if (this.wrapOnMoveController && this.wrapOnMoveController.getValue() !== newValue) {
+    if (
+      this.wrapOnMoveController &&
+      this.wrapOnMoveController.getValue() !== newValue
+    ) {
       this.wrapOnMoveController.setValue(newValue);
     }
   }
