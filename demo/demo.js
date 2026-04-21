@@ -110,7 +110,7 @@ async function updateAtoms(filename, fileContent = null) {
       editor.instancedMeshPrimitive.setSettings([]); // Clear mesh primitives
       editor.avr.atoms = atomsList;
 
-      editor.tjs.cameraController.view("front")
+      editor.tjs.cameraController.view("front");
       break;
     case "urea.cif":
       editor.clear();
@@ -135,8 +135,8 @@ async function updateAtoms(filename, fileContent = null) {
       atoms = atoms.multiply(8, 8, 8);
       editor.avr.modelStyle = 0;
       editor.avr.atoms = atoms;
-      console.log(editor.ops)
-      
+      console.log(editor.ops);
+
       // Create a sphere
       editor.ops.Shapes.ShapeOperation({
         shapeName: "Sphere",
@@ -146,9 +146,8 @@ async function updateAtoms(filename, fileContent = null) {
           color: "#bd0d87",
           wireframe: false,
           position: [15, 15, 10],
-        }
-      }
-      );
+        },
+      });
 
       // select the last object in the scene
       editor.selectionManager.selectedObjects = [
@@ -391,11 +390,16 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.modelStyle = 1;
       break;
     case "Shapes":
+      // demo of primitive shapes and their scaling.
       editor.clear();
       const registry = editor.shapeRegistry;
-      const baseScale = [0.5, 0.5, 0.5];
-      const spacing = 1.5; // distance between shapes
-      const gridCols = 4; // shapes per row
+      const scales = [
+        [0.25, 0.25, 0.25],
+        [0.3125, 0.375, 0.185],
+        [0.3125, 1, 0.185],
+      ];
+      const spacing = 0.75; // distance between shapes
+      const gridCols = 12; // shapes per row
       const opacities = [0.25, 0.75, 1.0]; // different opacity levels
 
       const randomColor = () =>
@@ -406,8 +410,34 @@ async function updateAtoms(filename, fileContent = null) {
       let index = 0; // overall index for grid positioning
 
       for (const shapeName of registry.list()) {
-        // Create normal solid versions with different opacities
-        for (const opacity of opacities) {
+        if (shapeName === "ConvexShape") {
+          return;
+        }
+
+        for (const baseScale of scales) {
+          // Create normal solid versions with different opacities
+          for (const opacity of opacities) {
+            const row = Math.floor(index / gridCols);
+            const col = index % gridCols;
+            const position = [
+              col * spacing - ((gridCols - 1) * spacing) / 2,
+              0,
+              row * spacing,
+            ];
+
+            editor.ops.Shapes.ShapeOperation({
+              shapeName,
+              options: {
+                scale: baseScale,
+                opacity,
+                color: randomColor(),
+                wireframe: false,
+                position,
+              },
+            });
+            index++;
+          }
+          // Add a single wireframe version per shape
           const row = Math.floor(index / gridCols);
           const col = index % gridCols;
           const position = [
@@ -415,39 +445,19 @@ async function updateAtoms(filename, fileContent = null) {
             0,
             row * spacing,
           ];
-
           editor.ops.Shapes.ShapeOperation({
             shapeName,
             options: {
               scale: baseScale,
-              opacity,
+              opacity: 1.0,
               color: randomColor(),
-              wireframe: false,
+              wireframe: true,
               position,
             },
           });
+
           index++;
         }
-        // Add a single wireframe version per shape
-        const row = Math.floor(index / gridCols);
-        const col = index % gridCols;
-        const position = [
-          col * spacing - ((gridCols - 1) * spacing) / 2,
-          0,
-          row * spacing,
-        ];
-        editor.ops.Shapes.ShapeOperation({
-          shapeName,
-          options: {
-            scale: baseScale,
-            opacity: 1.0,
-            color: randomColor(),
-            wireframe: true,
-            position,
-          },
-        });
-
-        index++;
       }
 
       editor.ops.hideGUI();
@@ -519,9 +529,9 @@ async function drawAtoms(filename, fileContent) {
   }
 }
 
-// updateAtoms("molecule");
+updateAtoms("molecule");
 // updateAtoms("catio3.cif");
 // updateAtoms("au.cif");
 // updateAtoms("c2h6so.xyz");
 // updateAtoms("h2o-homo.cube");
-updateAtoms("phonon")
+// updateAtoms("phonon")

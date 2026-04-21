@@ -168,6 +168,8 @@ export class HighlightManager {
     }
 
     const mesh = new THREE.InstancedMesh(geometry, material, baseMesh.count);
+    mesh.renderOrder = 10; // Important! Render above
+    
 
     const position = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
