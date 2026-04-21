@@ -325,6 +325,7 @@ class CameraController extends TrackballControls {
       target: this.target.clone(),
       up: this.object.up.clone(),
       zoom: this.object.zoom,
+      timestamp: builtIn ? undefined : Date.now(),
     };
     if (builtIn) this._builtInViews.add(name);
     this._emitChange();
@@ -539,6 +540,197 @@ class CameraController extends TrackballControls {
     this.update();
 
     if (state.params) this.setParams(state.params);
+  }
+
+  /**
+   * Serializes controller to minimal JSON representation.
+   * Exports:
+   * - All saved views (including current camera as a timestamped view)
+   * - Controller parameters
+   *
+   * @param {Object} [options]
+   * @param {boolean} [options.includeTimestamp=true] - Add timestamp to current view name
+   * @param {string} [options.timestampFormat="readable"] - "iso", "unix", or "readable"
+   * @returns {Object}
+   */
+  toJSON(options = {}) {
+    const { includeTimestamp = true, timestampFormat = "readable" } = options;
+
+    let currentViewName = "exported";
+
+    if (includeTimestamp) {
+      let timestamp;
+      switch (timestampFormat) {
+        case "unix":
+          timestamp = Date.now();
+          break;
+        case "readable":
+          timestamp = new Date().toLocaleString().replace(/[\/:, ]/g, "-");
+          break;
+        default: // "iso"
+          timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      }
+      currentViewName = `exported-${timestamp}`;
+    }
+
+    // Convert all existing views to array format
+    const views = {};
+    for (const [name, viewData] of Object.entries(this._views)) {
+      // Skip built-in views to save space
+      if (this._builtInViews.has(name)) continue;
+
+      views[name] = {
+        position: viewData.position.toArray(),
+        quaternion: viewData.quaternion.toArray(),
+        target: viewData.target.toArray(),
+        up: viewData.up.toArray(),
+        zoom: viewData.zoom,
+        timestamp: viewData.timestamp,
+      };
+    }
+
+    // Add current view as array format
+    views[currentViewName] = {
+      position: this.object.position.toArray(),
+      quaternion: this.object.quaternion.toArray(),
+      target: this.target.toArray(),
+      up: this.object.up.toArray(),
+      zoom: this.object.zoom,
+      timestamp: Date.now(),
+    };
+
+    return {
+      version: "1.0",
+      exported: Date.now(),
+      params: this.getParams(),
+      views: views,
+    };
+  }
+
+  /**
+   * Restores controller from JSON data.
+   *
+   * @param {Object} data - Output from toJSON()
+   * @param {Object} [options]
+   * @param {boolean} [options.keepExistingViews=false] - Merge with existing views
+   * @param {boolean} [options.restoreLatestView=true] - Restore the most recent timestamped view
+   * @param {string} [options.specificView=null] - Restore a specific view by name
+   */
+  fromJSON(data, options = {}) {
+    const {
+      keepExistingViews = false,
+      restoreLatestView = true,
+      specificView = null,
+    } = options;
+
+    if (!data) return;
+
+    // Restore parameters
+    if (data.params) {
+      this.setParams(data.params);
+    }
+
+    // Restore views
+    if (data.views) {
+      if (!keepExistingViews) {
+        // Clear all non-built-in views
+        for (const viewName of Object.keys(this._views)) {
+          if (!this._builtInViews.has(viewName)) {
+            delete this._views[viewName];
+          }
+        }
+      }
+
+      // Import saved views (all in array format)
+      for (const [name, viewData] of Object.entries(data.views)) {
+        this._views[name] = {
+          position: new Vector3().fromArray(viewData.position),
+          quaternion: new THREE.Quaternion().fromArray(viewData.quaternion),
+          target: new Vector3().fromArray(viewData.target),
+          up: new Vector3().fromArray(viewData.up),
+          zoom: viewData.zoom,
+          timestamp: viewData.timestamp,
+        };
+      }
+    }
+
+    // Determine which view to restore
+    let viewToRestore = null;
+
+    if (specificView) {
+      viewToRestore = specificView;
+    } else if (restoreLatestView && data.views) {
+      // Find the most recent timestamped view
+      const timestampedViews = Object.keys(data.views)
+        .filter((name) => data.views[name]?.timestamp)
+        .sort((a, b) => {
+          const timestampA = data.views[a].timestamp || 0;
+          const timestampB = data.views[b].timestamp || 0;
+          return timestampB - timestampA;
+        });
+
+      if (timestampedViews.length > 0) {
+        viewToRestore = timestampedViews[0];
+      }
+    }
+
+    if (viewToRestore && data.views && data.views[viewToRestore]) {
+      this.view(viewToRestore);
+    }
+
+    this._emitChange();
+  }
+
+  /**
+   * Helper method to manually save current state as a timestamped view
+   *
+   * @param {string} [prefix="snapshot"]
+   * @returns {string} The name of the saved view
+   */
+  saveTimestampedView(prefix = "snapshot") {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const viewName = `${prefix}_${timestamp}`;
+    this.saveView(viewName);
+    // Add timestamp metadata
+    if (this._views[viewName]) {
+      this._views[viewName].timestamp = Date.now();
+    }
+    return viewName;
+  }
+
+  /**
+   * Get all timestamped views sorted by time
+   *
+   * @returns {Array<Object>} Sorted list of timestamped views
+   */
+  getTimestampedViews() {
+    return Object.entries(this._views)
+      .filter(([_, view]) => view?.timestamp)
+      .map(([name, view]) => ({
+        name,
+        timestamp: view.timestamp,
+        date: new Date(view.timestamp),
+        view,
+      }))
+      .sort((a, b) => b.timestamp - a.timestamp);
+  }
+
+  /**
+   * Clean up old timestamped views, keeping only the most recent N
+   *
+   * @param {number} keepCount - Number of recent timestamped views to keep
+   */
+  pruneTimestampedViews(keepCount = 10) {
+    const timestamped = this.getTimestampedViews();
+
+    if (timestamped.length <= keepCount) return;
+
+    const toRemove = timestamped.slice(keepCount);
+    for (const { name } of toRemove) {
+      this.removeView(name);
+    }
+
+    this._emitChange();
   }
 }
 

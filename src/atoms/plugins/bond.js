@@ -890,8 +890,6 @@ export function buildBondMap(bondList, atoms, settings, modelSticks) {
   return { bondMap: bondMap, bondMapWithOffset: bondMapWithOffset, sticks, stickCaps, dashedLines, solidLines, springs };
 }
 
-// TODO: replace the distance checks with the squared distance to avoid calculating sqrt in a hot loop 
-// - should be a small performance improvement.
 export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true, logger = console) {
   /* Function to find neighbors within a certain cutoff
   Args:

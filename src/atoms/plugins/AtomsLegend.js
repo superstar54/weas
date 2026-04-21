@@ -1,5 +1,3 @@
-// TODO - think on the interface with Legend, maybe some controlled namespaces would be nice
-
 /**
  * Manages the atom legend displayed in the HUD.
  *
