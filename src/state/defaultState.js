@@ -34,6 +34,7 @@ function createDefaultState() {
       isosurface: { settings: {} },
       volumeSlice: { settings: {} },
       vectorField: { settings: {}, show: true },
+      tensorEllipsoid: { settings: {}, show: true },
       highlight: {
         settings: {
           selection: { indices: [], scale: 1.1, type: "sphere", color: "#ffff00" },

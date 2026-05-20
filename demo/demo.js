@@ -14,6 +14,74 @@ async function fetchFile(filename) {
   return await response.text();
 }
 
+const DEMO_SHIELDING_EIGENVALUES = [
+  [430, 382, 315],
+  [278, 214, 148],
+  [188, 156, 118],
+  [188, 156, 118],
+  [32.5, 29.0, 24.5],
+  [32.5, 29.0, 24.5],
+  [32.5, 29.0, 24.5],
+  [32.5, 29.0, 24.5],
+  [32.5, 29.0, 24.5],
+  [32.5, 29.0, 24.5],
+];
+
+// These principal axes were generated once from the local S=O, C-S, and C-H directions in demo/datas/c2h6so.xyz.
+// Each 3x3 matrix stores the three principal axes in its columns.
+const DEMO_SHIELDING_EIGENVECTORS = [
+  [
+    [0.000011920797992275902, 0.840352680866159, 0.5420400092418955],
+    [-0.000005140023100114701, -0.5420400092217575, 0.8403526809479798],
+    [0.9999999999157374, -0.000012803772720538078, -0.000002142117261768563],
+  ],
+  [
+    [-0.000011920797992275902, -0.840352680866159, -0.5420400092418955],
+    [0.7771639419796572, -0.34111258008333445, 0.5288273962225586],
+    [-0.629298186191995, -0.42124764624855815, 0.6530958684492767],
+  ],
+  [
+    [-0.7417439698627648, 0.5763618089319336, -0.34296202177053825],
+    [0.6258427178979323, 0.7786504885698446, -0.04499232272367818],
+    [0.2411156892994628, -0.2480130679110512, -0.9382711455219079],
+  ],
+  [
+    [0.7417569086077413, 0.5763449241806543, -0.3429624132523603],
+    [-0.6258243380553148, 0.7786654327488887, -0.04498935140244705],
+    [0.24112359160877223, 0.24800538746805822, 0.9382711449024235],
+  ],
+  [
+    [0.07658405307045604, 0.07994232048551549, -0.9938531622984821],
+    [0.8390463361220121, -0.5436574216113086, 0.020924955607389727],
+    [-0.5386428581681271, -0.8354913723805502, -0.10871079993329119],
+  ],
+  [
+    [0.8613409543321363, -0.45371029559773207, 0.22855793151589193],
+    [-0.5069558693684271, -0.7384224061763104, 0.4446662755029781],
+    [-0.03297736956015352, -0.49887805897374027, -0.8660445573822899],
+  ],
+  [
+    [0.032139935338037, 0.9007573546569445, 0.433131865126419],
+    [0.8212084762752347, -0.27081891190395974, 0.5022686088626904],
+    [0.5697224438708501, 0.33954867837554437, -0.7484136770284515],
+  ],
+  [
+    [-0.861350899444212, -0.4536918947766634, 0.2285569789803147],
+    [0.5069396543042697, -0.7384340171194242, 0.44466548016991103],
+    [-0.0329668761109482, 0.4988776072092543, 0.8660452171247496],
+  ],
+  [
+    [-0.03212163807856197, 0.9007584140211667, 0.4331310193662218],
+    [-0.8212143550138908, -0.2708015337620074, 0.5022683669426772],
+    [0.5697150019845618, -0.3395597280040978, 0.7484143288523503],
+  ],
+  [
+    [-0.07658223368545053, 0.079942331689931, -0.9938533015932102],
+    [-0.8390578984486379, -0.5436395464688754, 0.02092573931957464],
+    [-0.5386251057411847, 0.8355030024596517, 0.10870937561316922],
+  ],
+];
+
 const domElement = document.getElementById("weas");
 const viewerConfig = {
   _modelStyle: 1,
@@ -344,6 +412,37 @@ async function updateAtoms(filename, fileContent = null) {
       editor.avr.bondManager.init();
       editor.avr.drawModels();
       break;
+    case "tensor-ellipsoid": {
+      editor.clear();
+      filename = "c2h6so.xyz";
+      structureData = fileContent || (await fetchFile(filename));
+      const teAtoms = parseXYZ(structureData);
+      editor.avr.atoms = teAtoms;
+      editor.avr.modelStyle = 1;
+
+      editor.avr.tensorEllipsoidManager.setSettings({
+        "magnetic shielding (illustrative)": {
+          origins: "positions",
+          eigenvalues: DEMO_SHIELDING_EIGENVALUES,
+          eigenvectors: DEMO_SHIELDING_EIGENVECTORS,
+          // Normalize within this tensor set so scale controls the largest ellipsoid radius.
+          scaleMode: "setNormalized",
+          scale: 1.2,
+          color: "#ff6b35",
+          opacity: 0.45,
+          resolution: 32,
+          renderMode: "solid",
+          showPrincipalAxes: true,
+          principalAxisLength: 1.2,
+          principalAxisRadius: 0.02,
+        },
+      });
+
+      editor.avr.tensorEllipsoidManager.drawTensorEllipsoids();
+      editor.avr.tjs.updateCameraAndControls({ direction: [0, 1, 0] });
+      editor.avr.drawModels();
+      break;
+    }
   }
 }
 

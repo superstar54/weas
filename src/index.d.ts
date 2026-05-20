@@ -81,6 +81,7 @@ export declare class SetBondSettings {}
 export declare class SetIsosurfaceSettings {}
 export declare class SetVolumeSliceSettings {}
 export declare class SetVectorFieldSettings {}
+export declare class SetTensorEllipsoidSettings {}
 export declare class SetHighlightSettings {}
 
 /**
@@ -139,6 +140,8 @@ export declare class AtomsViewer {
   readonly Measurement: any;
   /** Vector-field helper */
   readonly VFManager: VectorField;
+  /** Tensor ellipsoid helper */
+  readonly tensorEllipsoidManager: TensorEllipsoid;
 
   /** The currently displayed Atoms object */
   atoms: Atoms;
@@ -321,6 +324,95 @@ export declare class VectorField {
 
   /** Initialize the vector‐field plugin */
   init(): void;
+}
+
+/**
+ * Plugin for drawing tensor ellipsoids in the viewer.
+ *
+ * A tensor ellipsoid visualizes a symmetric rank-2 tensor through its principal
+ * values and principal axes. The caller must diagonalize the tensor upstream
+ * and provide per-site eigenvalues and eigenvectors.
+ *
+ * Assumptions:
+ * - eigenvalues are supplied as [nSites][3] or, for trajectories,
+ *   [nFrames][nSites][3]
+ * - eigenvectors are supplied as [nSites][3][3] or
+ *   [nFrames][nSites][3][3], with the principal-axis vectors stored as the
+ *   columns of each 3x3 matrix and paired to the corresponding eigenvalues
+ * - eigenvectors are interpreted in Cartesian space; coordinateSystem only
+ *   affects origins
+ * - rendered radii are proportional to abs(eigenvalue) * scale in absolute
+ *   mode, or normalized by the largest abs(eigenvalue) in the setting before
+ *   applying scale in normalized mode, so sign is not encoded directly by the
+ *   ellipsoid geometry
+ *
+ * Common use cases include magnetic shielding tensors, electric field gradient
+ * tensors, and atomic polarizability tensors.
+ */
+export declare class TensorEllipsoid {
+  /**
+   * @param viewer  The AtomsViewer instance this plugin attaches to
+   */
+  constructor(viewer: AtomsViewer);
+
+  /** Back‐reference to the viewer */
+  readonly viewer: AtomsViewer;
+
+  /** Three.js scene where the ellipsoids are rendered */
+  readonly scene: any;
+
+  /** Internal “show” flag */
+  private _show: boolean;
+
+  /** Current settings keyed by name */
+  settings: Record<string, any>;
+
+  /** Active meshes keyed by name */
+  meshes: Record<string, any>;
+
+  /** Initialize the tensor ellipsoid plugin */
+  init(): void;
+
+  /**
+   * Replace all settings and redraw.
+   *
+   * Each named setting should contain origins plus eigenvalues/eigenvectors in
+   * principal-axis form.
+   */
+  setSettings(settings: Record<string, any>): void;
+
+  /** Apply settings without writing to state */
+  applySettings(settings: Record<string, any>): void;
+
+  /**
+   * Add or replace a single named setting.
+   *
+   * Minimal example:
+   * manager.addSetting("shielding", {
+   *   origins: "positions",
+   *   eigenvalues: shieldingEigenvalues,
+   *   eigenvectors: shieldingEigenvectors,
+  *   // Columns of each 3x3 matrix are the principal axes.
+   *   scaleMode: "setNormalized",
+   *   scale: 1.2,
+   * });
+   */
+  addSetting(name: string, setting: Record<string, any>): void;
+
+  /** Remove a named setting */
+  removeSetting(name: string): void;
+
+  /** Draw all tensor ellipsoid meshes for the current atoms/frame */
+  drawTensorEllipsoids(): void;
+
+  /** Update existing meshes for the current frame or a single atom index */
+  updateTensorMesh(atomIndex?: number | null, atoms?: any): void;
+
+  /** Remove all meshes from the scene */
+  clearMeshes(): void;
+
+  /** Dispose of all geometry and materials */
+  dispose(): void;
 }
 
 /**

@@ -2,6 +2,7 @@
 import { WEAS } from "./weas.js";
 import { Specie, Atom, Atoms } from "./atoms/atoms.js";
 import { AtomsViewer } from "./atoms/AtomsViewer.js";
+import { TensorEllipsoid } from "./atoms/plugins/tensorEllipsoid.js";
 import { parseXYZ } from "./io/parserXYZ.js";
 import { parseCIF } from "./io/parserCif.js";
 import { parseCube } from "./io/parserCube.js";
@@ -17,6 +18,7 @@ export {
   Atom,
   Atoms,
   AtomsViewer,
+  TensorEllipsoid,
   parseXYZ,
   parseCIF,
   parseCube,

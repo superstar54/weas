@@ -17,6 +17,7 @@ WEAS (Web Environments for Atomistic Structure) is a JavaScript library designed
    mesh_primitive
    any_mesh
    text_labels
+   tensor_ellipsoid
    development/index
    gallery
 
