@@ -113,6 +113,13 @@ export class TensorEllipsoid {
     this.settings = {};
     this.meshes = {};
     this.guiFolder = null;
+    // When true, the state subscription skips applySettings (GUI rebuild) and
+    // only redraws. Set while a GUI onChange/onFinishChange is routing a change
+    // through the operation system to avoid destroying the live GUI folder.
+    this._suppressGuiRebuild = false;
+    // True only while applySettings is iterating, so addSetting skips the
+    // state-store sync (the store is already correct in that code path).
+    this._isApplyingSettings = false;
     this.init();
 
     const pluginState = this.viewer.state.get("plugins.tensorEllipsoid");
@@ -127,8 +134,16 @@ export class TensorEllipsoid {
 
     this.viewer.state.subscribe("plugins.tensorEllipsoid", (next) => {
       if (!next) return;
+      // Skip redraws that fire while the viewer is building its initial state
+      // (mirrors the _initializingState guard used in AtomsViewer).
+      if (this.viewer._initializingState) return;
       if (next.settings) {
-        this.applySettings(next.settings);
+        if (!this._suppressGuiRebuild) {
+          // External change (undo/redo, importState, setSettings): rebuild the
+          // GUI and settings map from the new state.
+          this.applySettings(next.settings);
+        }
+        // Always redraw, regardless of whether the GUI was rebuilt.
         this.drawTensorEllipsoids();
       }
       if (next.show !== undefined) {
@@ -182,9 +197,14 @@ export class TensorEllipsoid {
     this.clearMeshes();
     this.removeGui();
     this.createGui();
-    Object.entries(settings).forEach(([name, setting]) => {
-      this.addSetting(name, setting);
-    });
+    this._isApplyingSettings = true;
+    try {
+      Object.entries(settings).forEach(([name, setting]) => {
+        this.addSetting(name, setting);
+      });
+    } finally {
+      this._isApplyingSettings = false;
+    }
   }
 
   addSetting(name, setting) {
@@ -211,41 +231,78 @@ export class TensorEllipsoid {
       color: hexColor,
     };
 
-    settingFolder.add(guiState, "visible").name("Visible").onChange((value) => {
-      s.visible = value;
+    // Discrete controls (boolean/dropdown): fire exactly once per interaction,
+    // so we record to the undo stack immediately in onChange.
+    const recordDiscreteChange = (mutate) => (value) => {
+      mutate(value);
+      this._recordGuiChange();
+    };
+    // Continuous controls (sliders, color picker): onChange fires many times
+    // during a drag for smooth live preview. We only push to the undo stack in
+    // onFinishChange, which fires once when the user releases.
+    const livePreview = (mutate) => (value) => {
+      mutate(value);
       this.drawTensorEllipsoids();
+    };
+    const recordContinuousChange = () => this._recordGuiChange();
+
+    settingFolder.add(guiState, "visible").name("Visible")
+      .onChange(recordDiscreteChange((v) => { s.visible = v; }));
+    settingFolder.add(guiState, "scale", 0.1, 5.0, 0.1).name("Scale")
+      .onChange(livePreview((v) => { s.scale = v; }))
+      .onFinishChange(recordContinuousChange);
+    settingFolder.add(guiState, "scaleMode", ["absolute", "setNormalized"]).name("Scale Mode")
+      .onChange(recordDiscreteChange((v) => { s.scaleMode = v; }));
+    settingFolder.add(guiState, "opacity", 0, 1, 0.01).name("Opacity")
+      .onChange(livePreview((v) => { s.opacity = v; }))
+      .onFinishChange(recordContinuousChange);
+    settingFolder.add(guiState, "renderMode", ["solid", "wireframe"]).name("Render Mode")
+      .onChange(recordDiscreteChange((v) => { s.renderMode = v; }));
+    settingFolder.addColor(guiState, "color").name("Color")
+      .onChange(livePreview((v) => { s.color = new THREE.Color(v); }))
+      .onFinishChange(recordContinuousChange);
+    settingFolder.add(guiState, "showPrincipalAxes").name("Show Axes")
+      .onChange(recordDiscreteChange((v) => { s.showPrincipalAxes = v; }));
+    settingFolder.add(guiState, "principalAxisLength", 0.1, 3.0, 0.1).name("Axis Length")
+      .onChange(livePreview((v) => { s.principalAxisLength = v; }))
+      .onFinishChange(recordContinuousChange);
+    settingFolder.add(guiState, "principalAxisRadius", 0.001, 0.1, 0.001).name("Axis Radius")
+      .onChange(livePreview((v) => { s.principalAxisRadius = v; }))
+      .onFinishChange(recordContinuousChange);
+
+    // Sync the state store so _recordGuiChange captures correct undo snapshots.
+    // Skipped during applySettings, where the store is already up-to-date.
+    if (!this._isApplyingSettings) {
+      this._syncStateStore();
+    }
+  }
+
+  // Run fn with _suppressGuiRebuild set, so the state-subscription skips
+  // applySettings and only redraws. The flag is cleared even if fn throws.
+  _withSuppressedRebuild(fn) {
+    this._suppressGuiRebuild = true;
+    try {
+      fn();
+    } finally {
+      this._suppressGuiRebuild = false;
+    }
+  }
+
+  // Sync the state store to match in-memory settings without touching the
+  // undo stack. This ensures captureStatePatch reads the correct "previous"
+  // value on the next _recordGuiChange call.
+  _syncStateStore() {
+    this._withSuppressedRebuild(() => {
+      this.viewer.state.set({
+        plugins: { tensorEllipsoid: { settings: this.toPlainSettings() } },
+      });
     });
-    settingFolder.add(guiState, "scale", 0.1, 5.0, 0.1).name("Scale").onChange((value) => {
-      s.scale = value;
-      this.drawTensorEllipsoids();
-    });
-    settingFolder.add(guiState, "scaleMode", ["absolute", "setNormalized"]).name("Scale Mode").onChange((value) => {
-      s.scaleMode = value;
-      this.drawTensorEllipsoids();
-    });
-    settingFolder.add(guiState, "opacity", 0, 1, 0.01).name("Opacity").onChange((value) => {
-      s.opacity = value;
-      this.drawTensorEllipsoids();
-    });
-    settingFolder.add(guiState, "renderMode", ["solid", "wireframe"]).name("Render Mode").onChange((value) => {
-      s.renderMode = value;
-      this.drawTensorEllipsoids();
-    });
-    settingFolder.addColor(guiState, "color").name("Color").onChange((value) => {
-      s.color = new THREE.Color(value);
-      this.drawTensorEllipsoids();
-    });
-    settingFolder.add(guiState, "showPrincipalAxes").name("Show Axes").onChange((value) => {
-      s.showPrincipalAxes = value;
-      this.drawTensorEllipsoids();
-    });
-    settingFolder.add(guiState, "principalAxisLength", 0.1, 3.0, 0.1).name("Axis Length").onChange((value) => {
-      s.principalAxisLength = value;
-      this.drawTensorEllipsoids();
-    });
-    settingFolder.add(guiState, "principalAxisRadius", 0.001, 0.1, 0.001).name("Axis Radius").onChange((value) => {
-      s.principalAxisRadius = value;
-      this.drawTensorEllipsoids();
+  }
+
+  // Push the current settings to the undo stack via the operation system.
+  _recordGuiChange() {
+    this._withSuppressedRebuild(() => {
+      this.viewer.weas.ops.settings.SetTensorEllipsoidSettings({ settings: this.toPlainSettings() });
     });
   }
 
@@ -386,7 +443,14 @@ export class TensorEllipsoid {
     if (setting.trajectory) {
       // When trajectory data is passed directly, distinguish [nSites][3] from
       // [nFrames][nSites][3] without forcing callers to wrap a separate type.
-      if (Array.isArray(eigenvalues) && Array.isArray(eigenvalues[0]) && Array.isArray(eigenvalues[0][0]) && typeof eigenvalues[0][0][0] === "number") {
+      // Guard against empty arrays before probing the nested structure.
+      const isNested3D =
+        eigenvalues.length > 0 &&
+        eigenvalues[0] != null &&
+        eigenvalues[0].length > 0 &&
+        Array.isArray(eigenvalues[0][0]) &&
+        typeof eigenvalues[0][0][0] === "number";
+      if (isNested3D) {
         // Expected trajectory shape: [nFrames][nSites][3]. Eigenvectors follow
         // the analogous [nFrames][nSites][3][3] layout.
         if (frameIndex < 0 || frameIndex >= eigenvalues.length) {
@@ -458,28 +522,62 @@ export class TensorEllipsoid {
     return vals.map((value) => Math.max(setting.minRadius, (Math.abs(value) / normalizer) * setting.scale));
   }
 
+  /**
+   * Extract and orthonormalize the three principal-axis vectors from the
+   * column-major eigenvector matrix supplied by the caller.
+   *
+   * Returns { a1, a2, a3 } if the basis is valid, or null if any vector is
+   * zero or non-finite (e.g. from a degenerate site).
+   * Emits debug warnings when the input vectors are not orthogonal, or when
+   * the frame is left-handed and a3 must be negated.
+   */
+  _buildOrthonormalBasis(vecs) {
+    // Columns of the 3×3 matrix are the principal axes.
+    const a1 = new THREE.Vector3(vecs[0][0], vecs[1][0], vecs[2][0]).normalize();
+    const a2 = new THREE.Vector3(vecs[0][1], vecs[1][1], vecs[2][1]).normalize();
+    const a3 = new THREE.Vector3(vecs[0][2], vecs[1][2], vecs[2][2]).normalize();
+
+    const isFiniteVec = (v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
+    if (!isFiniteVec(a1) || !isFiniteVec(a2) || !isFiniteVec(a3) ||
+        a1.lengthSq() === 0 || a2.lengthSq() === 0 || a3.lengthSq() === 0) {
+      return null;
+    }
+
+    // Warn when the input axes are not mutually orthogonal — this usually
+    // indicates an upstream diagonalization issue.
+    const dot12 = Math.abs(a1.dot(a2));
+    const dot13 = Math.abs(a1.dot(a3));
+    const dot23 = Math.abs(a2.dot(a3));
+    if (dot12 > 1e-4 || dot13 > 1e-4 || dot23 > 1e-4) {
+      this.viewer.logger.debug(
+        `TensorEllipsoid: eigenvectors are not orthogonal ` +
+        `(max |dot| = ${Math.max(dot12, dot13, dot23).toFixed(5)}); ` +
+        `check upstream diagonalization.`
+      );
+    }
+
+    // Repair left-handed frames: negate a3 to build a proper rotation matrix.
+    // Note: this changes the direction of the third principal axis — if you
+    // rely on its sign (e.g. for the EFG Vzz convention) pre-correct the frame
+    // before passing it to WEAS.
+    if (new THREE.Vector3().crossVectors(a1, a2).dot(a3) < 0) {
+      this.viewer.logger.debug(
+        "TensorEllipsoid: left-handed eigenvector frame detected; a3 has been negated to build a proper rotation matrix."
+      );
+      a3.negate();
+    }
+
+    return { a1, a2, a3 };
+  }
+
   _computeInstanceMatrix(setting, origin, vals, vecs, normalizer = 1) {
     const position = new THREE.Vector3(...origin);
     const [r0, r1, r2] = this._computeRadii(setting, vals, normalizer);
     const scale = new THREE.Vector3(r0, r1, r2);
 
-    let a1 = new THREE.Vector3(vecs[0][0], vecs[1][0], vecs[2][0]).normalize();
-    let a2 = new THREE.Vector3(vecs[0][1], vecs[1][1], vecs[2][1]).normalize();
-    let a3 = new THREE.Vector3(vecs[0][2], vecs[1][2], vecs[2][2]).normalize();
-
-    function isFiniteVec(v) {
-      return Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
-    }
-    if (!isFiniteVec(a1) || !isFiniteVec(a2) || !isFiniteVec(a3) || a1.lengthSq() === 0 || a2.lengthSq() === 0 || a3.lengthSq() === 0) {
-      return null;
-    }
-
-    // Repair left-handed principal-axis frames so the rotation matrix remains
-    // a proper basis even when the source diagonalization picked the opposite
-    // sign for one eigenvector.
-    if (new THREE.Vector3().crossVectors(a1, a2).dot(a3) < 0) {
-      a3.negate();
-    }
+    const basis3 = this._buildOrthonormalBasis(vecs);
+    if (!basis3) return null;
+    const { a1, a2, a3 } = basis3;
 
     const basis = new THREE.Matrix4();
     basis.set(
@@ -519,7 +617,10 @@ export class TensorEllipsoid {
         material.color = setting.color;
         material.transparent = true;
         material.opacity = setting.opacity;
-        material.depthWrite = false;
+        // Disable depth writes only for transparent objects. Keeping depthWrite
+        // enabled for near-opaque solids prevents painter's-order artifacts when
+        // multiple ellipsoids overlap.
+        material.depthWrite = setting.opacity >= 0.99;
         material.wireframe = setting.renderMode === "wireframe";
 
         const mesh = new THREE.InstancedMesh(geometry, material, instanceCount);
@@ -571,20 +672,9 @@ export class TensorEllipsoid {
     const position = new THREE.Vector3(...origin);
     const [r0, r1, r2] = this._computeRadii(setting, vals, normalizer);
 
-    let a1 = new THREE.Vector3(vecs[0][0], vecs[1][0], vecs[2][0]).normalize();
-    let a2 = new THREE.Vector3(vecs[0][1], vecs[1][1], vecs[2][1]).normalize();
-    let a3 = new THREE.Vector3(vecs[0][2], vecs[1][2], vecs[2][2]).normalize();
-
-    function isFiniteVec(v) {
-      return Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
-    }
-    if (!isFiniteVec(a1) || !isFiniteVec(a2) || !isFiniteVec(a3) || a1.lengthSq() === 0 || a2.lengthSq() === 0 || a3.lengthSq() === 0) {
-      return null;
-    }
-
-    if (new THREE.Vector3().crossVectors(a1, a2).dot(a3) < 0) {
-      a3.negate();
-    }
+    const basis3 = this._buildOrthonormalBasis(vecs);
+    if (!basis3) return null;
+    const { a1, a2, a3 } = basis3;
 
     const axes = [];
     const axisLength = setting.principalAxisLength;
@@ -651,7 +741,9 @@ export class TensorEllipsoid {
         const { eigenvalues, eigenvectors } = this._resolveTensorData(setting, frameIndex, atoms);
         const origins = this._resolveOrigins(setting, atoms);
         const nSites = atoms.getAtomsCount();
-        this._validateData({ eigenvalues, eigenvectors, origins, selection: setting.selection }, nSites);
+        // _validateData is intentionally omitted here: updateTensorMesh is the
+        // lightweight fast path (used during trajectory scrubbing). Full
+        // validation runs once in drawTensorEllipsoids when the layer is built.
 
         const indices = setting.selection !== null ? setting.selection : Array.from({ length: nSites }, (_, i) => i);
         const normalizer = this._getScaleNormalizer(setting, eigenvalues, indices);

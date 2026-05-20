@@ -142,7 +142,7 @@ Setting Fields
 
 ``minRadius``
   Lower bound (in Å) for each semi-axis length. Prevents degenerate
-  near-zero axes from becoming invisible. Default: ``0``.
+  near-zero axes from becoming invisible. Default: ``0.05``.
 
 ``coordinateSystem``
   ``"cartesian"`` (default) or ``"fractional"``. Applies only to ``origins``;
@@ -150,10 +150,10 @@ Setting Fields
 
 ``color``
   CSS colour string applied to all ellipsoids in this layer. Example:
-  ``"#ff6b35"``, ``"steelblue"``. Default: ``"#ffffff"``.
+  ``"#ff6b35"``, ``"steelblue"``. Default: ``"#4f81ff"``.
 
 ``opacity``
-  Number between ``0`` (transparent) and ``1`` (opaque). Default: ``1``.
+  Number between ``0`` (transparent) and ``1`` (opaque). Default: ``0.35``.
 
 ``renderMode``
   ``"solid"`` (default) or ``"wireframe"``.
@@ -282,6 +282,7 @@ through frames to avoid the cost of rebuilding every layer on each step.
    manager.drawTensorEllipsoids();
 
    // Later, when the frame changes:
+   // Pass null as atomIndex to refresh all sites for the new frame.
    viewer.onFrameChange = (frame, atoms) => {
-     manager.updateTensorMesh(frame, atoms);
+     manager.updateTensorMesh(null, atoms);
    };

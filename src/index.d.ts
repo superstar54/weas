@@ -81,7 +81,20 @@ export declare class SetBondSettings {}
 export declare class SetIsosurfaceSettings {}
 export declare class SetVolumeSliceSettings {}
 export declare class SetVectorFieldSettings {}
-export declare class SetTensorEllipsoidSettings {}
+
+/**
+ * Operation to update tensor-ellipsoid plugin settings with undo/redo support.
+ *
+ * @param options.weas      The WEAS instance
+ * @param options.settings  Map of layer name → setting object (see TensorEllipsoid.addSetting)
+ * @param options.show      Optional boolean to toggle all ellipsoid layers at once
+ */
+export declare class SetTensorEllipsoidSettings {
+  constructor(options: { weas: WEAS; settings?: Record<string, any>; show?: boolean });
+  execute(): void;
+  undo(): void;
+  redo(): void;
+}
 export declare class SetHighlightSettings {}
 
 /**

@@ -38,6 +38,9 @@ export class BaseOperation {
       }
     });
     Object.entries(fields).forEach(([key, field]) => {
+      if (state[key] === undefined) {
+        return;
+      }
       const options = resolveOptions(field.options, this);
       const controller = addController(guiFolder, state, key, field, options);
       if (!controller) {
