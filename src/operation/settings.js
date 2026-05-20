@@ -202,6 +202,42 @@ class SetVectorFieldSettings extends BaseOperation {
   }
 }
 
+class SetTensorEllipsoidSettings extends BaseOperation {
+  static description = "Tensor ellipsoid settings";
+  static category = "Viewer";
+  static ui = {
+    title: "Tensor ellipsoid",
+    fields: {
+      show: { type: "boolean" },
+    },
+  };
+
+  constructor({ weas, settings = {}, show = undefined }) {
+    super(weas);
+    this.affectsAtoms = false;
+    this.settings = cloneSettings(settings);
+    this.show = show;
+  }
+
+  execute() {
+    this.ensureStateStore();
+    const patch = {};
+    addSettings(patch, "settings", this.settings);
+    addDefined(patch, "show", this.show);
+    this.applyStatePatchWithHistory("plugins.tensorEllipsoid", patch, (key) => (key === "settings" ? this.weas.avr.tensorEllipsoidManager.settings : this.weas.avr.tensorEllipsoidManager.show));
+  }
+
+  undo() {
+    this.ensureStateStore();
+    this.undoStatePatch();
+  }
+
+  redo() {
+    this.ensureStateStore();
+    this.redoStatePatch();
+  }
+}
+
 class SetHighlightSettings extends BaseOperation {
   static description = "Highlight settings";
   static category = "Viewer";
@@ -228,4 +264,4 @@ class SetHighlightSettings extends BaseOperation {
   }
 }
 
-export { SetCellSettings, SetBondSettings, SetIsosurfaceSettings, SetVolumeSliceSettings, SetVectorFieldSettings, SetHighlightSettings };
+export { SetCellSettings, SetBondSettings, SetIsosurfaceSettings, SetVolumeSliceSettings, SetVectorFieldSettings, SetTensorEllipsoidSettings, SetHighlightSettings };

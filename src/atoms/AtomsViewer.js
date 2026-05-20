@@ -11,6 +11,7 @@ import { Isosurface } from "./plugins/isosurface.js";
 import { FermiSurface } from "./plugins/fermiSurface.js";
 import { VolumeSlice } from "./plugins/VolumeSlice.js";
 import { VectorField } from "./plugins/vectorField.js";
+import { TensorEllipsoid } from "./plugins/tensorEllipsoid.js";
 import { Measurement } from "./plugins/measurement.js";
 import { HighlightManager } from "./plugins/highlight.js";
 import { AtomsGUI } from "./atomsGui.js";
@@ -75,6 +76,7 @@ class AtomsViewer {
     this.ALManager = new AtomLabelManager(this);
     this.Measurement = new Measurement(this);
     this.VFManager = new VectorField(this);
+    this.tensorEllipsoidManager = new TensorEllipsoid(this);
     this.animate = this.animate.bind(this); // Bind once in the constructor
     this._atoms = null;
     this._cell = null;
@@ -239,6 +241,7 @@ class AtomsViewer {
     }
     // update vector fields related to the atoms attribute
     this.VFManager.updateArrowMesh(null, atoms);
+    this.tensorEllipsoidManager.updateTensorMesh(null, atoms);
     // update cell
     this.cellManager.updateCellMesh(this.originalCell);
     // update the atom labels
@@ -369,6 +372,7 @@ class AtomsViewer {
         }
       });
       this.VFManager.init();
+      this.tensorEllipsoidManager.init();
       // for other plugins, they need to be reset
       this.isosurfaceManager.reset();
       this.volumeSliceManager.reset();
@@ -943,6 +947,7 @@ class AtomsViewer {
     this.isosurfaceManager.drawIsosurfaces();
     this.volumeSliceManager.drawSlices();
     this.VFManager.drawVectorFields();
+    this.tensorEllipsoidManager.drawTensorEllipsoids();
     this.highlightManager.drawHighlightAtoms();
     this.ALManager.drawAtomLabels();
     this.guiManager.updateLegend();
@@ -1319,6 +1324,7 @@ class AtomsViewer {
     this.bondManager.init();
     this.polyhedraManager.init();
     this.VFManager.init();
+    this.tensorEllipsoidManager.init();
     this.isosurfaceManager.reset();
     this.volumeSliceManager.reset();
     this.Measurement.reset();
