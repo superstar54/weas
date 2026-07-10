@@ -1,21 +1,9 @@
 import { toolbarIcons } from "./Icons";
 
-// TODO / FIXME, build the buttons from the operations maybe,
-//  or at the very least improve the pattern for registration of buttons
-// This will not scale well and enforces two way coupling
 class ToolbarHUD {
   constructor(weas, hudController, config = {}) {
     this.weas = weas;
     this.hud = hudController;
-
-    // Listen for HUD resize events
-    if (this.hud.onHUDResize) {
-      this.hud.onHUDResize((width, height) => {
-        console.log("ToolbarHUD detected HUD resize:", width, height);
-        // TODO: implement fine control of the HUD size here...
-
-      });
-    }
 
     this.settings = Object.assign(
       {
@@ -52,8 +40,9 @@ class ToolbarHUD {
       offset: this.settings.offset,
     });
 
-    // ---- Default Buttons ----
-    this._initDefaultButtons();
+    if (config.defaultButtons !== false) {
+      this._initDefaultButtons();
+    }
   }
 
   _initDefaultButtons() {
@@ -104,15 +93,16 @@ class ToolbarHUD {
     });
   }
 
-  addButton(key, { label = "", hint = "", onClick } = {}) {
+  addButton(key, { label = "", hint = "", icon, onClick } = {}) {
     if (this.buttons.has(key)) this.removeButton(key);
 
     const btn = document.createElement("button");
     btn.classList.add("weas-toolbar-button");
 
-    if (toolbarIcons[key]) {
+    const iconSvg = icon || toolbarIcons[key];
+    if (iconSvg) {
       const wrapper = document.createElement("span");
-      wrapper.innerHTML = toolbarIcons[key];
+      wrapper.innerHTML = iconSvg;
       btn.appendChild(wrapper);
     } else {
       btn.textContent = label || key;
@@ -151,11 +141,13 @@ class ToolbarHUD {
 
     if (onClick) btn.addEventListener("click", onClick);
 
+    btn.addEventListener("click", (e) => e.stopPropagation());
     btn.addEventListener("pointerdown", (e) => e.stopPropagation());
     btn.addEventListener("pointerup", (e) => e.stopPropagation());
 
     this.container.appendChild(btn);
     this.buttons.set(key, btn);
+    return btn;
   }
 
   removeButton(key) {
