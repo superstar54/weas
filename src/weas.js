@@ -65,11 +65,9 @@ class WEAS {
     this.anyMesh = new AnyMesh(this);
 
     if (this.tjs.addRenderHook) {
-      this.tjs.addRenderHook((camera, renderer) => {
-        this.textManager?.updateLabelSizes?.(camera, renderer);
-        this.avr?.ALManager?.updateLabelSizes?.(camera, renderer);
-        this.avr?.highlightManager?.updateLabelSizes?.(camera, renderer);
-      });
+      this.tjs.addRenderHook((camera, renderer) =>
+        this.avr?.highlightManager?.updateLabelSizes?.(camera, renderer),
+      );
     }
 
     this._initCameraStateSync();

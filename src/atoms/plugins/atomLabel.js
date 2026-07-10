@@ -123,8 +123,10 @@ export class AtomLabelManager {
   /**
    * Removes all labels from the scene.
    */
-  clearLabels() {
-    this.textManager.clearLabels(this.labels);
+  clearLabels(labels) {
+    const target = labels || this.labels;
+    this.textManager.clearLabels(target);
+    this.labels = [];
   }
 
   /**
