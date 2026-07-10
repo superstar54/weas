@@ -1,3 +1,13 @@
+import {
+  addControllerFromSchema,
+  getByPath,
+  setByPath,
+  normalizeUISchema,
+  resolveOptions,
+  cloneValue,
+  buildStatePatch,
+} from "../core/schemaGUI";
+
 export class BaseOperation {
   constructor(weas) {
     this.weas = weas;
@@ -39,7 +49,7 @@ export class BaseOperation {
     });
     Object.entries(fields).forEach(([key, field]) => {
       const options = resolveOptions(field.options, this);
-      const controller = addController(guiFolder, state, key, field, options);
+      const controller = addControllerFromSchema(guiFolder, state, key, field, options);
       if (!controller) {
         return;
       }
@@ -191,85 +201,4 @@ export function renameFolder(folder, newName) {
   }
 }
 
-function normalizeUISchema(schema) {
-  if (schema.fields) {
-    return { title: schema.title || null, fields: schema.fields };
-  }
-  return { title: schema.title || null, fields: schema };
-}
 
-function resolveOptions(options, op) {
-  if (!options) {
-    return null;
-  }
-  if (typeof options === "function") {
-    return options(op);
-  }
-  return options;
-}
-
-function addController(guiFolder, state, key, field, options) {
-  if (field.type === "color") {
-    return guiFolder.addColor(state, key);
-  }
-  if (field.type === "boolean") {
-    return guiFolder.add(state, key);
-  }
-  if (field.type === "number" && field.min !== undefined && field.max !== undefined) {
-    return guiFolder.add(state, key, field.min, field.max);
-  }
-  if (field.type === "select" && options) {
-    return guiFolder.add(state, key, options);
-  }
-  if (options) {
-    return guiFolder.add(state, key, options);
-  }
-  return guiFolder.add(state, key);
-}
-
-function getByPath(target, path) {
-  const parts = path.split(".");
-  let current = target;
-  for (const part of parts) {
-    if (!current) {
-      return undefined;
-    }
-    current = current[part];
-  }
-  return current;
-}
-
-function setByPath(target, path, value) {
-  const parts = path.split(".");
-  let current = target;
-  for (let i = 0; i < parts.length - 1; i++) {
-    const part = parts[i];
-    if (!current[part]) {
-      current[part] = {};
-    }
-    current = current[part];
-  }
-  current[parts[parts.length - 1]] = value;
-}
-
-function cloneValue(value) {
-  if (value === undefined) {
-    return value;
-  }
-  return JSON.parse(JSON.stringify(value));
-}
-
-function buildStatePatch(path, patch) {
-  if (!path) {
-    return patch;
-  }
-  const parts = path.split(".");
-  const root = {};
-  let current = root;
-  for (let i = 0; i < parts.length - 1; i++) {
-    current[parts[i]] = {};
-    current = current[parts[i]];
-  }
-  current[parts[parts.length - 1]] = patch;
-  return root;
-}

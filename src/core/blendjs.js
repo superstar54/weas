@@ -56,6 +56,7 @@ export class BlendJS {
     this.meshes = {};
     this.lights = {};
     this.renderers = {}; // New property to store renderers
+    this._renderHooks = [];
     this._cameraType = "Orthographic"; //"Perspective"
     this.sceneView = { left: 0, bottom: 0, width: 1.0, height: 1.0 };
     this.init();
@@ -223,6 +224,15 @@ export class BlendJS {
     return this.viewerRect;
   }
 
+  addRenderHook(fn) {
+    this._renderHooks.push(fn);
+  }
+
+  removeRenderHook(fn) {
+    const idx = this._renderHooks.indexOf(fn);
+    if (idx !== -1) this._renderHooks.splice(idx, 1);
+  }
+
   addObject(name, geometry, material) {
     const object = new BlendJSObject(name, geometry, material);
     this.objects[name] = object;
@@ -319,25 +329,13 @@ export class BlendJS {
     renderer.render(scene, camera);
   }
 
-  // I think this is managing text, labels, selection and highlighting
-  // it also presumes the existence of avr, which is suggests a two-way binding
-  // TODO - move this away and right some sort of hook pattern
   render() {
     this.cameraController.update();
 
     this.renderers["MainRenderer"].renderer.clear();
-    this.weas?.textManager?.updateLabelSizes?.(
-      this.camera,
-      this.renderers["MainRenderer"].renderer,
-    );
-    this.weas?.avr?.ALManager?.updateLabelSizes?.(
-      this.camera,
-      this.renderers["MainRenderer"].renderer,
-    );
-    this.weas?.avr?.highlightManager?.updateLabelSizes?.(
-      this.camera,
-      this.renderers["MainRenderer"].renderer,
-    );
+    for (const hook of this._renderHooks) {
+      hook(this.camera, this.renderers["MainRenderer"].renderer);
+    }
     // loop through renderers to render the scene
     this.renderers["LabelRenderer"].renderer.render(this.scene, this.camera);
     this.renderSceneInfo(

@@ -1,5 +1,6 @@
 import { GUI } from "dat.gui";
 import { defaultGuiConfig } from "../config";
+import { createGUIFromSchema } from "./schemaGUI";
 
 /**
  * Disables interaction with a dat.GUI controller UI element.
@@ -437,49 +438,7 @@ class GUIManager {
    * @param {(key:string, value:any) => void} [onChange]
    */
   addFolderFromSchema(folder, settingsObj, schema, onChange) {
-    for (const [key, meta] of Object.entries(schema)) {
-      // Skip anything that shouldn't appear in the GUI
-      if (meta.gui === false) continue;
-
-      let controller;
-
-      switch (meta.type) {
-        case "number":
-          controller = folder.add(
-            settingsObj,
-            key,
-            meta.min,
-            meta.max,
-            meta.step,
-          );
-          break;
-        case "color":
-          controller = folder.addColor(settingsObj, key);
-          break;
-        case "string":
-          controller = folder.add(settingsObj, key);
-          break;
-        case "boolean":
-          controller = folder.add(settingsObj, key);
-          break;
-        case "select":
-          if (meta.options)
-            controller = folder.add(settingsObj, key, meta.options);
-          break;
-        default:
-          continue;
-      }
-
-      const displayName = meta.label ?? key;
-
-      if (typeof onChange === "function") {
-        controller?.name(displayName).onChange(() => {
-          onChange(key, settingsObj[key]);
-        });
-      } else {
-        controller?.name(displayName);
-      }
-    }
+    return createGUIFromSchema(folder, settingsObj, schema, onChange);
   }
 }
 

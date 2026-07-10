@@ -63,6 +63,15 @@ class WEAS {
     // Initialize other plugins
     this.instancedMeshPrimitive = new InstancedMeshPrimitive(this);
     this.anyMesh = new AnyMesh(this);
+
+    if (this.tjs.addRenderHook) {
+      this.tjs.addRenderHook((camera, renderer) => {
+        this.textManager?.updateLabelSizes?.(camera, renderer);
+        this.avr?.ALManager?.updateLabelSizes?.(camera, renderer);
+        this.avr?.highlightManager?.updateLabelSizes?.(camera, renderer);
+      });
+    }
+
     this._initCameraStateSync();
     this.initialize();
   }
@@ -205,6 +214,8 @@ class WEAS {
         };
       }
     }
+    state.materials = this.materialsRegistry?.toJSON?.() || null;
+
     return {
       version: "weas_state_v1",
       atoms,
@@ -233,6 +244,9 @@ class WEAS {
       this.state.transaction(() => {
         this.state.set(mergedState);
       });
+    }
+    if (normalized.state?.materials && this.materialsRegistry?.fromJSON) {
+      this.materialsRegistry.fromJSON(normalized.state.materials);
     }
     const cameraState = normalized.state?.camera || normalized.camera || {};
     this._applyCameraState(cameraState);

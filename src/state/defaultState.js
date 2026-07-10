@@ -47,6 +47,8 @@ function createDefaultState() {
       anyMesh: { settings: [] },
       instancedMeshPrimitive: { settings: [] },
     },
+    materials: null,
+    shapes: null,
     camera: {
       type: "Orthographic",
       position: null,
