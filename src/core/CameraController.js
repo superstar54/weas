@@ -1,7 +1,5 @@
 import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
-import { Vector3 } from "three";
-
-// TODO - re-add perspective camera as i've bonked this in the migration of methods.
+import { Vector3, Quaternion } from "three";
 
 /**
  * Extended TrackballControls with:

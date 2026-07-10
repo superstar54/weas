@@ -266,8 +266,7 @@ export class BondManager {
       this.bondList,
       this.bondMap["stickCaps"],
       this.viewer.cutoffs,
-      this.bondRadius,
-      this.viewer._materialType,
+      "solid",
       atomColors,
     );
     this.meshes = {stickBondMesh: stickBondMesh, stickCapBondMesh: bondMesh, stickCapBondCap: bondCap, dashedBondLine: dashedBondLine, solidBondLine: solidBondLine };
@@ -408,7 +407,7 @@ export class BondManager {
       // Calculate the bond length
       const bondLength = position1.distanceTo(position2);
       // If bond length exceeds the cutoff, hide the line by collapsing the points
-      if ((bondLength > this.settings[key].max) | (bondLength < this.settings[key].min)) {
+      if ((bondLength > this.settings[key].max) || (bondLength < this.settings[key].min)) {
         position2.copy(position1); // Collapse position2 to position1
       }
 
@@ -743,7 +742,7 @@ export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks, sho
       const offset1 = offsets[i][1];
       const neighborsList = neighbors[atomIndex1];
       // skip if the atom stick is 0, or atom has no neighbors
-      if ((modelSticks[atomIndex1] === 0) | (neighborsList === undefined)) {
+      if ((modelSticks[atomIndex1] === 0) || (neighborsList === undefined)) {
         continue;
       }
       for (let j = 0; j < neighborsList.length; j++) {
@@ -765,7 +764,7 @@ export function buildBonds(atoms, offsets, neighbors, boundary, modelSticks, sho
       const offset1 = offsets[i][1];
       const neighborsList = neighbors[atomIndex1];
       // skip if the atom stick is 0, or atom has no neighbors
-      if ((modelSticks[atomIndex1] === 0) | (neighborsList === undefined)) {
+      if ((modelSticks[atomIndex1] === 0) || (neighborsList === undefined)) {
         continue;
       }
       for (let j = 0; j < neighborsList.length; j++) {
@@ -879,7 +878,6 @@ export function buildBondMap(bondList, atoms, settings, modelSticks) {
     } else if (bondType === 4) {
       // line
 
-      console.log("You are here")
       solidLines.push(i);
       bondMap[index1]["solidLines"].push([solidLines.length - 1, true]);
       bondMap[index2]["solidLines"].push([solidLines.length - 1, false]);

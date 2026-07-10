@@ -21,7 +21,7 @@
     "build:iife": "vite build --mode iife",
     "dev": "vite",
     "sync-version": "node scripts/sync-version.cjs",
-    "test": "jest",
+    "test": "vitest run",
     "version": "node scripts/sync-version.cjs",
     "docs": "documentation build src/** -f html -o docs && npx serve docs"
   },

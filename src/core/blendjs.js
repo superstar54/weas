@@ -76,16 +76,16 @@ export class BlendJS {
 
   set cameraType(value) {
     this._cameraType = value;
-    this.cameraController = new CameraController(
-      this.camera,
-      this.renderers["MainRenderer"].renderer.domElement,
-    );
+    if (this.cameraController) {
+      this.cameraController.setCamera(value);
+    }
   }
 
   get camera() {
     if (this._cameraType === "Orthographic") {
       return this.orthographicCamera;
     }
+    return this.perspectiveCamera;
   }
 
   init() {
@@ -127,6 +127,15 @@ export class BlendJS {
       this,
     );
     this.orthographicCamera.layers.enable(1);
+
+    this.perspectiveCamera = new THREE.PerspectiveCamera(
+      50,
+      clientWidth / clientHeight,
+      1,
+      500,
+    );
+    this.perspectiveCamera.layers.enable(1);
+
     // Set initial camera position
     this.camera.position.set(0, -100, 0);
     this.camera.lookAt(0, 0, 0);
@@ -150,6 +159,7 @@ export class BlendJS {
       this.camera,
       renderer.domElement,
     );
+    this.cameraController.addCamera("Perspective", this.perspectiveCamera);
 
     // auto pass changes to the controller
     this.cameraController.onChange(() => {

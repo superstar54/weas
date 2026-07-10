@@ -417,9 +417,17 @@ class AtomsViewer {
         if (this.atoms && this.atoms.getAtomsCount() > 0) {
           this._hasInitializedCamera = true;
 
-          // FIXME: this function currently doesnt seem to respect periodic boundaries
-          //  and thus the centering is not perfect
-          const focusPoint = this.atoms.getCenterOfGeometry();
+          let focusPoint;
+          if (this.atoms.pbc && this.atoms.pbc.some(Boolean) && !this.atoms.isUndefinedCell()) {
+            const cell = this.atoms.cell;
+            focusPoint = [
+              (cell[0][0] + cell[1][0] + cell[2][0]) / 2,
+              (cell[0][1] + cell[1][1] + cell[2][1]) / 2,
+              (cell[0][2] + cell[1][2] + cell[2][2]) / 2,
+            ];
+          } else {
+            focusPoint = this.atoms.getCenterOfGeometry();
+          }
           // initialise the focus point here
           this.weas.tjs.cameraController.view("front", { focus: focusPoint });
           this.weas.tjs.cameraController.saveView("avr:center-front") // save it to the cameraController

@@ -207,7 +207,7 @@ class GUIManager {
 
     this.refreshMaterials = () => {
       refreshMaterials();
-      if (this.refreshShapes) this.refreshShapes();
+      if (this.refreshShapeOperations) this.refreshShapeOperations();
     };
 
     // Hook into registry updates

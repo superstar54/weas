@@ -165,9 +165,15 @@ class WEAS {
   }
 
   _exportCameraState() {
-    const controls = this.tjs.controls;
+    const controls = this.tjs.cameraController;
     if (!controls) return null;
     return controls.exportState();
+  }
+
+  _applyCameraState(state) {
+    const controls = this.tjs.cameraController;
+    if (!controls || !state) return;
+    controls.importState(state);
   }
 
   exportState() {
