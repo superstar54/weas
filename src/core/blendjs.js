@@ -160,6 +160,8 @@ export class BlendJS {
       this.camera,
       renderer.domElement,
     );
+    this.cameraController.weas = this.weas;
+    this.cameraController._registerKeybinds();
     this.cameraController.addCamera("Perspective", this.perspectiveCamera);
 
     // auto pass changes to the controller

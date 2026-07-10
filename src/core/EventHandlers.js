@@ -1,39 +1,11 @@
 import * as THREE from "three";
 import { TransformControls } from "../controls/TransformControls";
-import { defaultKeyBindConfig } from "../config";
 
 /*
 Object mode:
 - "edit": select vertex
 - "object": select objects
 */
-
-/**
- * Utility to match a keyboard event against a key combo definition.
- * Combo format: ["ctrl", "shift", "a"] → modifiers + key
- *
- * @param {KeyboardEvent} event
- * @param {string[]} combo
- * @returns {boolean}
- */
-function matchKey(event, combo) {
-  const key = combo[combo.length - 1];
-  const modifiers = combo.slice(0, -1);
-  // Check main key
-  if (event.key.toLowerCase() !== key.toLowerCase()) return false;
-
-  // Check modifiers
-  const ctrl = modifiers.includes("ctrl");
-  const shift = modifiers.includes("shift");
-  const alt = modifiers.includes("alt");
-  const meta = modifiers.includes("meta");
-
-  if (ctrl !== event.ctrlKey) return false;
-  if (shift !== event.shiftKey) return false;
-  if (alt !== event.altKey) return false;
-  if (meta !== event.metaKey) return false;
-  return true;
-}
 
 /**
  * Central input and interaction controller for the 3D viewer.
@@ -100,7 +72,19 @@ class EventHandlers {
     this.init();
     this.transformControls = new TransformControls(weas, this);
     this.setupEventListeners();
-    this.keybindConfig = weas.keybindConfig || defaultKeyBindConfig;
+    this._registerKeybinds();
+  }
+
+  _registerKeybinds() {
+    const km = this.weas.keybindManager;
+    if (!km) return;
+
+    km.beforeDispatch = (event) => this.handleTransformModeKeys(event);
+
+    const config = km.getConfig();
+    for (const [action, handler] of Object.entries(this.actionMap)) {
+      km.register(action, handler, config[action] || null);
+    }
   }
 
   /**
@@ -134,8 +118,7 @@ class EventHandlers {
     container.addEventListener("pointerup", this.onMouseUp.bind(this), false);
     container.addEventListener("click", this.onMouseClick.bind(this), false);
     container.addEventListener("mousemove", this.onMouseMove.bind(this), false);
-    container.setAttribute("tabindex", "0"); // '0' means it can be focused
-    container.addEventListener("keydown", this.onKeyDown.bind(this), false);
+    container.setAttribute("tabindex", "0");
   }
 
   /**
@@ -272,22 +255,6 @@ class EventHandlers {
     }
 
     return false;
-  }
-
-  /**
-   * Keyboard handler for keybinds and transform shortcuts.
-   * @param {KeyboardEvent} event
-   */
-  onKeyDown(event) {
-    if (this.handleTransformModeKeys(event)) return;
-
-    for (const [action, combos] of Object.entries(this.keybindConfig)) {
-      if (combos.some((combo) => matchKey(event, combo))) {
-        const fn = this.actionMap[action];
-        if (fn) fn();
-        return;
-      }
-    }
   }
 
   /**

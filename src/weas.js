@@ -21,6 +21,8 @@ import { fromWidgetSnapshot } from "./state/adapters";
 
 import { MaterialsRegistry } from "./core/MaterialsRegistry";
 import { ShapeRegistry } from "./core/ShapeRegistry";
+import { KeybindManager } from "./core/KeybindManager";
+import { KeybindHUD } from "./core/ui/KeybindHUD";
 
 class WEAS {
   constructor({
@@ -32,10 +34,14 @@ class WEAS {
     keybindConfig = null,
   }) {
     this.uuid = THREE.MathUtils.generateUUID();
+    this.keybindConfig = keybindConfig;
+    this.keybindManager = new KeybindManager({
+      container: domElement,
+      keybindConfig: this.keybindConfig,
+    });
     // Initialize Three scene, camera, and renderer
     this.tjsConfig = tjsConfig;
     this.tjs = new BlendJS(domElement, this);
-    this.keybindConfig = keybindConfig;
 
     // initialise base materials with the MaterialRegistry
     this.materialsRegistry = new MaterialsRegistry();
@@ -68,6 +74,10 @@ class WEAS {
       this.tjs.addRenderHook((camera, renderer) =>
         this.avr?.highlightManager?.updateLabelSizes?.(camera, renderer),
       );
+    }
+
+    if (this.keybindManager && this.tjs?.hud) {
+      this._keybindHUD = new KeybindHUD(this.keybindManager, this.tjs.hud);
     }
 
     if (this.guiManager?.registerFolder) {

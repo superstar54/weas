@@ -1,34 +1,15 @@
 import { defaultKeyBindConfig } from "../config";
 import { ShapeOperation } from "./shape";
 
-// utility to check if an event matches a key combo
-function matchKey(event, combo) {
-  const key = combo[combo.length - 1];
-  const modifiers = combo.slice(0, -1);
-
-  if (event.key.toLowerCase() !== key.toLowerCase()) return false;
-
-  const ctrl = modifiers.includes("ctrl");
-  const shift = modifiers.includes("shift");
-  const alt = modifiers.includes("alt");
-  const meta = modifiers.includes("meta");
-
-  if (ctrl !== event.ctrlKey) return false;
-  if (shift !== event.shiftKey) return false;
-  if (alt !== event.altKey) return false;
-  if (meta !== event.metaKey) return false;
-
-  return true;
-}
-
 export class OperationSearchManager {
   constructor(weas, ops) {
     this.weas = weas;
-    // change the operations to an array
-    this.keybindConfig = this.weas.keybindConfig || defaultKeyBindConfig;
+    this.ops = ops;
+    this.keybindConfig = this.weas.keybindConfig || {};
     this.operations = getAllOperations(ops, this.keybindConfig);
     this.overlay = this.createOverlay();
     this.bindEvents();
+    this.registerKeybinds();
     this.updateSearchResults("");
   }
 
@@ -67,28 +48,26 @@ export class OperationSearchManager {
   }
 
   bindEvents() {
-    // Stop propagation of mouse and keyboard events from the GUI container
-    // e.g., when user input "r", it will not trigger the rotate event.
     const stopPropagation = (e) => e.stopPropagation();
     ["click", "keydown", "keyup", "keypress"].forEach((eventType) => {
       this.overlay.addEventListener(eventType, stopPropagation, false);
     });
-    // Bind global keydown event for showing and hiding the search
-    this.weas.tjs.containerElement.addEventListener("keydown", (e) => {
-      // Show search if any combo in the "search" keybind matches
-      const searchCombos = this.keybindConfig.SearchOperation || []
-      if (searchCombos.some((combo) => matchKey(e, combo))) {
-        e.preventDefault();
-        this.show();
-        return;
-      }
 
-      // Hide search on Escape
+    this.overlay.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         this.hide();
-        return;
+        this.weas.tjs.containerElement.focus();
       }
     });
+  }
+
+  registerKeybinds() {
+    const km = this.weas.keybindManager;
+    if (!km) return;
+
+    const searchCombos =
+      this.keybindConfig.SearchOperation || defaultKeyBindConfig.SearchOperation || null;
+    km.register("SearchOperation", () => this.show(), searchCombos);
   }
 
   show() {

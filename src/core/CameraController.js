@@ -88,25 +88,7 @@ class CameraController extends TrackballControls {
     camera.far = this.maxDistance;
     camera.updateProjectionMatrix();
 
-    // TODO - move this to be controlled by keybinds
-    // disable rotation on shift held.
-    this._shiftDown = false;
     this._storedRotateSpeed = this.rotateSpeed;
-
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Shift" && !this._shiftDown) {
-        this._shiftDown = true;
-        this._storedRotateSpeed = this.rotateSpeed;
-        this.rotateSpeed = 0;
-      }
-    });
-
-    window.addEventListener("keyup", (e) => {
-      if (e.key === "Shift" && this._shiftDown) {
-        this._shiftDown = false;
-        this.rotateSpeed = this._storedRotateSpeed;
-      }
-    });
 
     this.setParams(params);
     this._initDefaultViews();
@@ -132,6 +114,24 @@ class CameraController extends TrackballControls {
    */
   addCamera(name, camera) {
     this.cameras.set(name, camera);
+  }
+
+  _registerKeybinds() {
+    const kb = this.weas?.keybindManager;
+    if (!kb?.registerHold) return;
+    kb.registerHold(
+      "rotateLock",
+      {
+        onPress: () => {
+          this._storedRotateSpeed = this.rotateSpeed;
+          this.rotateSpeed = 0;
+        },
+        onRelease: () => {
+          this.rotateSpeed = this._storedRotateSpeed;
+        },
+      },
+      [["Shift"]],
+    );
   }
 
   /**
@@ -246,27 +246,7 @@ class CameraController extends TrackballControls {
     this.update();
   }
 
-  // TODO: move this to the keybind manager
-  _updateShiftState() {
-    const shiftPressed = window.event ? window.event.shiftKey : false;
-    if (shiftPressed && !this._shiftDown) {
-      this._shiftDown = true;
-      this._storedRotateSpeed = this.rotateSpeed;
-      this.rotateSpeed = 0;
-    } else if (!shiftPressed && this._shiftDown) {
-      this._shiftDown = false;
-      this.rotateSpeed = this._storedRotateSpeed;
-    }
-  }
-
-  /**
-   * Internal update loop.
-   * Handles shift-modified rotation locking.
-   *
-   * @param  {...any} args
-   */
   update(...args) {
-    this._updateShiftState();
     super.update(...args);
   }
 
