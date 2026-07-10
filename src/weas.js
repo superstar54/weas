@@ -70,6 +70,17 @@ class WEAS {
       );
     }
 
+    if (this.guiManager?.registerFolder) {
+      const gm = this.guiManager;
+      gm.registerFolder("Materials", (f) => gm.addMaterialsFolder(f));
+      gm.registerFolder("Shapes", (f) => gm.addShapeOperationsFolder(f));
+      gm.registerFolder("Camera Views", (f) => gm.addCameraControlsFolder(f));
+      gm.registerFolder("Camera Settings", (f) => gm.addCameraSettingsFolder(f));
+      gm.registerFolder("HUD Settings", (f) => gm.addHUDSettingsFolder(f));
+      gm.registerFolder("Legend Appearance", (f) => gm.addLegendHUDFolder(f));
+      gm.initGUI();
+    }
+
     this._initCameraStateSync();
     this.initialize();
   }

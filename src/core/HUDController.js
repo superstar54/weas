@@ -238,8 +238,14 @@ export class HUDController {
     if (!panel) return;
 
     panel.visible = visible;
-    // FIXME: May be buggy if panel original disp is something other than flex
-    panel.element.style.display = visible ? "flex" : "none";
+    if (!visible) {
+      if (panel._origDisplay === undefined) {
+        panel._origDisplay = panel.element.style.display || "";
+      }
+      panel.element.style.display = "none";
+    } else {
+      panel.element.style.display = panel._origDisplay || "flex";
+    }
   }
 
   render(mainCamera) {

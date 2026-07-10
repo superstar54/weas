@@ -77,11 +77,20 @@ class GUIManager {
     /** @type {import("dat.gui").GUI} */
     this.gui = new GUI();
     this.gui.closed = true;
-    if (!this.guiConfig.controls.enabled) {
-      this.gui.hide();
-    } else {
-      this.initGUI();
-    }
+    if (!this.guiConfig.controls.enabled) this.gui.hide();
+
+    /** @type {Array<{name:string,builder:(folder:import("dat.gui").GUI, gm:GUIManager)=>void}>} */
+    this._folderBuilders = [];
+  }
+
+  /**
+   * Register a GUI folder builder.
+   * Called during init after all subsystems are available.
+   * @param {string} name - Folder label
+   * @param {(folder:import("dat.gui").GUI, gm:GUIManager) => void} builder
+   */
+  registerFolder(name, builder) {
+    this._folderBuilders.push({ name, builder });
   }
 
   /**
@@ -91,15 +100,9 @@ class GUIManager {
   initGUI() {
     this.createGUIContainer();
 
-    const debug = true;
-
-    if (debug) {
-      this.addMaterialsFolder();
-      this.addShapeOperationsFolder();
-      this.addCameraControlsFolder();
-      this.addCameraSettingsFolder();
-      this.addHUDSettingsFolder();
-      this.addLegendHUDFolder();
+    for (const { name, builder } of this._folderBuilders) {
+      const folder = this.gui.addFolder(name);
+      builder(folder, this);
     }
   }
 
@@ -139,8 +142,7 @@ class GUIManager {
    * Materials GUI section (registry-driven material editing).
    * @private
    */
-  addMaterialsFolder() {
-    const folder = this.gui.addFolder("Materials");
+  addMaterialsFolder(folder) {
     const registry = this.weas.materialsRegistry;
 
     const refreshMaterials = () => {
@@ -222,8 +224,7 @@ class GUIManager {
    * Shape creation UI (operation-based shape system).
    * @private
    */
-  addShapeOperationsFolder() {
-    const folder = this.gui.addFolder("Shapes");
+  addShapeOperationsFolder(folder) {
     const registry = this.weas.shapeRegistry;
 
     const refreshShapes = () => {
@@ -261,8 +262,7 @@ class GUIManager {
    * Camera view management GUI.
    * @private
    */
-  addCameraControlsFolder() {
-    const folder = this.gui.addFolder("Camera Views");
+  addCameraControlsFolder(folder) {
     const cameraController = this.weas.tjs.cameraController;
 
     const refreshViews = () => {
@@ -300,8 +300,7 @@ class GUIManager {
    * Camera parameter tuning GUI.
    * @private
    */
-  addCameraSettingsFolder() {
-    const folder = this.gui.addFolder("Camera Settings");
+  addCameraSettingsFolder(folder) {
     const controller = this.weas.tjs.cameraController;
     if (!controller) return;
 
@@ -339,8 +338,7 @@ class GUIManager {
    * HUD debug controls (mini-scenes + HTML overlays).
    * @private
    */
-  addHUDSettingsFolder() {
-    const folder = this.gui.addFolder("HUD Settings");
+  addHUDSettingsFolder(folder) {
     const hud = this.weas.tjs.hud;
     if (!hud) return;
 
@@ -416,8 +414,7 @@ class GUIManager {
    * Legend appearance controls (atom / mesh visualization settings).
    * @private
    */
-  addLegendHUDFolder() {
-    const folder = this.gui.addFolder("Legend Appearance");
+  addLegendHUDFolder(folder) {
     const legendHUD = this.weas.tjs.hud.legendHUD;
     if (!legendHUD) return;
 

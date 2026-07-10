@@ -294,24 +294,6 @@ export class BlendJS {
     this.render();
   }
 
-  // now managed fully inside cameraControls
-  // TODO, this sort of thing should not be handled here
-  updateCameraAndControls({
-    lookAt = null,
-    direction = [0, 0, 1],
-    zoom = 1,
-    fov = 50,
-    padding = 10,
-  }) {
-    this.cameraController.fitToScene(this.scene, {
-      lookAt: lookAt,
-      direction: direction,
-      zoom: zoom,
-      fov: fov,
-      padding: padding,
-    });
-  }
-
   renderSceneInfo(scene, camera, left, bottom, width, height, renderer) {
     /*
      */
