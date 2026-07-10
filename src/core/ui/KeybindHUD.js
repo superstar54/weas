@@ -61,7 +61,10 @@ class KeybindHUD {
     this._badge.addEventListener("mouseleave", () => {
       this._badge.style.background = "rgba(30,30,40,0.75)";
     });
-    this._badge.addEventListener("click", () => this.toggle());
+    this._badge.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggle();
+    });
 
     this._panel = document.createElement("div");
     style(this._panel, {
@@ -112,9 +115,7 @@ class KeybindHUD {
       style(nameEl, { color: "rgba(255,255,255,0.85)" });
 
       const comboEl = document.createElement("span");
-      comboEl.textContent = action.combos
-        .map(formatCombo)
-        .join(", ");
+      comboEl.textContent = action.combos.map(formatCombo).join(", ");
       style(comboEl, {
         color: "rgba(255,255,255,0.55)",
         fontFamily: "monospace",
@@ -140,7 +141,7 @@ class KeybindHUD {
 
     this._hud.addHTMLPanel("keybinds", this._container, {
       anchor: "top-right",
-      offset: { x: 1, y: 1 },
+      offset: { x: 25, y: 0 },
     });
   }
 
@@ -154,11 +155,13 @@ class KeybindHUD {
   }
 
   _registerToggle() {
-    this._km.register(
-      "toggleKeybinds",
-      () => this.toggle(),
-      [["?"]],
-    );
+    this._km.register("toggleKeybinds", () => this.toggle(), [["?"]]);
+    this._clickOutside = (e) => {
+      if (this._visible && !this._container.contains(e.target)) {
+        this.hide();
+      }
+    };
+    document.addEventListener("click", this._clickOutside);
   }
 
   toggle() {
@@ -178,6 +181,7 @@ class KeybindHUD {
 
   destroy() {
     this._km.unregister("toggleKeybinds");
+    document.removeEventListener("click", this._clickOutside);
   }
 }
 

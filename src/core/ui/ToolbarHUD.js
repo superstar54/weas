@@ -121,15 +121,33 @@ class ToolbarHUD {
     if (hint) btn.title = hint;
 
     Object.assign(btn.style, {
-      border: "solid 1px rgba(205, 205, 205, 0.75)",
-      background: "rgba(239, 239, 239, 0.5)",
-      borderRadius: "4px",
-      padding: "4px 8px",
+      width: "32px",
+      height: "32px",
+      borderRadius: "50%",
+      border: "1px solid rgba(255,255,255,0.25)",
+      background: "rgba(30,30,40,0.65)",
       cursor: "pointer",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
+      color: "rgba(255,255,255,0.85)",
+      transition: "background 0.15s",
+      padding: "0",
     });
+
+    btn.addEventListener("mouseenter", () => {
+      btn.style.background = "rgba(60,60,80,0.85)";
+    });
+    btn.addEventListener("mouseleave", () => {
+      btn.style.background = "rgba(30,30,40,0.65)";
+    });
+
+    const svg = btn.querySelector("svg");
+    if (svg) {
+      svg.style.display = "block";
+      svg.style.width = "18px";
+      svg.style.height = "18px";
+    }
 
     if (onClick) btn.addEventListener("click", onClick);
 

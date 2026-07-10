@@ -2,49 +2,103 @@ import { defaultKeyBindConfig } from "../config";
 import { ShapeOperation } from "./shape";
 
 export class OperationSearchManager {
-  constructor(weas, ops) {
+  constructor(weas, ops, hud) {
     this.weas = weas;
     this.ops = ops;
+    this.hud = hud;
     this.keybindConfig = this.weas.keybindConfig || {};
     this.operations = getAllOperations(ops, this.keybindConfig);
     this.overlay = this.createOverlay();
+    this._addScrollbarStyles();
+    this._addClickOutsideHandler();
     this.bindEvents();
     this.registerKeybinds();
     this.updateSearchResults("");
   }
 
   createOverlay() {
-    // Create the overlay div
     const overlay = document.createElement("div");
     overlay.id = "operation-search";
-    overlay.className = "search-overlay";
     overlay.style.display = "none";
-    // Center overlay inside the containerElement
-    overlay.style.position = "absolute";
-    overlay.style.top = "20%";
-    overlay.style.left = "70%";
-    overlay.style.width = "300px"; // Set a fixed width for the overlay
-    overlay.style.height = "200px"; // Set a fixed height for the overlay
-    // overlay.style.overflow = 'hidden'; // Prevent overflow
+    overlay.style.width = "300px";
+    overlay.style.maxHeight = "280px";
+    overlay.style.backgroundColor = "rgba(20,20,28,0.92)";
+    overlay.style.border = "1px solid rgba(255,255,255,0.12)";
+    overlay.style.borderRadius = "6px";
+    overlay.style.backdropFilter = "blur(6px)";
+    overlay.style.WebkitBackdropFilter = "blur(6px)";
+    overlay.style.padding = "6px";
+    overlay.style.boxSizing = "border-box";
+    overlay.style.pointerEvents = "auto";
 
-    // Create the search input
     const searchBox = document.createElement("input");
     searchBox.type = "text";
     searchBox.id = "search-box";
     searchBox.placeholder = "Search operation...";
-    searchBox.addEventListener("input", (e) => this.updateSearchResults(e.target.value));
+    searchBox.style.width = "100%";
+    searchBox.style.boxSizing = "border-box";
+    searchBox.style.padding = "6px 8px";
+    searchBox.style.border = "1px solid rgba(255,255,255,0.15)";
+    searchBox.style.borderRadius = "4px";
+    searchBox.style.backgroundColor = "rgba(0,0,0,0.3)";
+    searchBox.style.color = "rgba(255,255,255,0.85)";
+    searchBox.style.fontSize = "13px";
+    searchBox.style.outline = "none";
+    searchBox.style.fontFamily = "sans-serif";
+    searchBox.addEventListener("focus", () => {
+      searchBox.style.borderColor = "rgba(255,255,255,0.35)";
+    });
+    searchBox.addEventListener("blur", () => {
+      searchBox.style.borderColor = "rgba(255,255,255,0.15)";
+    });
+    searchBox.addEventListener("input", (e) =>
+      this.updateSearchResults(e.target.value),
+    );
 
-    // Create the results container
     const resultsContainer = document.createElement("ul");
     resultsContainer.id = "search-results";
+    resultsContainer.style.listStyle = "none";
+    resultsContainer.style.margin = "6px 0 0 0";
+    resultsContainer.style.padding = "0";
+    resultsContainer.style.maxHeight = "230px";
+    resultsContainer.style.overflowY = "auto";
 
-    // Append children to overlay
     overlay.appendChild(searchBox);
     overlay.appendChild(resultsContainer);
 
-    // Append overlay to the weas's container element
-    this.weas.tjs.containerElement.appendChild(overlay);
+    this.hud.addHTMLPanel("search", overlay, {
+      anchor: "top-left",
+      offset: { x: 20, y: 20 },
+      visible: false,
+    });
     return overlay;
+  }
+
+  _addClickOutsideHandler() {
+    this._clickOutside = (e) => {
+      if (
+        this.overlay.style.display !== "none" &&
+        !this.overlay.contains(e.target)
+      ) {
+        this.hide();
+      }
+    };
+    document.addEventListener("click", this._clickOutside);
+  }
+
+  _addScrollbarStyles() {
+    if (OperationSearchManager._scrollStylesAdded) return;
+    OperationSearchManager._scrollStylesAdded = true;
+    const style = document.createElement("style");
+    style.textContent =
+      "#search-box::placeholder { color: rgba(255,255,255,0.35); }" +
+      "#search-box:focus { border-color: rgba(255,255,255,0.35); }" +
+      "#search-results li:focus { background: rgba(255,255,255,0.12); outline: none; }" +
+      "#search-results::-webkit-scrollbar { width: 5px; }" +
+      "#search-results::-webkit-scrollbar-track { background: transparent; }" +
+      "#search-results::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }" +
+      "#search-results::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }";
+    document.head.appendChild(style);
   }
 
   bindEvents() {
@@ -66,7 +120,9 @@ export class OperationSearchManager {
     if (!km) return;
 
     const searchCombos =
-      this.keybindConfig.SearchOperation || defaultKeyBindConfig.SearchOperation || null;
+      this.keybindConfig.SearchOperation ||
+      defaultKeyBindConfig.SearchOperation ||
+      null;
     km.register("SearchOperation", () => this.show(), searchCombos);
   }
 
@@ -114,7 +170,11 @@ export class OperationSearchManager {
     });
 
     if (value) {
-      displayOperations = displayOperations.filter((op) => op.description && op.description.toLowerCase().includes(value.toLowerCase()));
+      displayOperations = displayOperations.filter(
+        (op) =>
+          op.description &&
+          op.description.toLowerCase().includes(value.toLowerCase()),
+      );
     }
 
     // Limit the number of operations to display to 10
@@ -130,9 +190,23 @@ export class OperationSearchManager {
     displayOperations.forEach((op) => {
       if (!op.description) return;
       const listItem = document.createElement("li");
-      listItem.tabIndex = 0; // Makes the element focusable
+      listItem.tabIndex = 0;
+      listItem.style.padding = "4px 8px";
+      listItem.style.cursor = "pointer";
+      listItem.style.borderRadius = "4px";
+      listItem.style.color = "rgba(255,255,255,0.75)";
+      listItem.style.fontSize = "12px";
+      listItem.style.fontFamily = "sans-serif";
+      listItem.style.transition = "background 0.15s";
+      listItem.addEventListener("mouseenter", () => {
+        listItem.style.backgroundColor = "rgba(255,255,255,0.08)";
+      });
+      listItem.addEventListener("mouseleave", () => {
+        listItem.style.backgroundColor = "transparent";
+      });
       const baseLabel = `${op.category}: ${op.description}`;
-      const label = labelCounts[baseLabel] > 1 ? `${baseLabel} (${op.name})` : baseLabel;
+      const label =
+        labelCounts[baseLabel] > 1 ? `${baseLabel} (${op.name})` : baseLabel;
       listItem.textContent = label;
       listItem.onclick = () => this.execute(op);
       listItem.onkeydown = (e) => {

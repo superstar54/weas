@@ -25,7 +25,7 @@ export const ops = {
 export class OperationManager {
   constructor(weas) {
     this.weas = weas;
-    this.operationSearchManager = new OperationSearchManager(weas, ops);
+    this.operationSearchManager = new OperationSearchManager(weas, ops, weas.tjs.hud);
     this.undoStack = [];
     this.redoStack = [];
     this.isRestoring = false;

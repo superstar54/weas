@@ -22,7 +22,7 @@ class LegendHUD {
         min: 8,
         max: 36,
         step: 1,
-        default: 20,
+        default: 13,
         label: "Label Font Size",
       },
       headingFontSize: {
@@ -30,7 +30,7 @@ class LegendHUD {
         min: 10,
         max: 48,
         step: 1,
-        default: 24,
+        default: 11,
         label: "Heading Font Size",
       },
       iconSize: {
@@ -46,7 +46,7 @@ class LegendHUD {
         min: 0,
         max: 20,
         step: 1,
-        default: 6,
+        default: 4,
         label: "Row Gap",
       },
       columnGap: {
@@ -54,7 +54,7 @@ class LegendHUD {
         min: 0,
         max: 30,
         step: 1,
-        default: 10,
+        default: 8,
         label: "Column Gap",
       },
       panelPadding: {
@@ -62,12 +62,12 @@ class LegendHUD {
         min: 0,
         max: 20,
         step: 1,
-        default: 6,
+        default: 8,
         label: "Panel Padding",
       },
       panelBackground: {
         type: "color",
-        default: "rgba(0,0,0,0.1)",
+        default: "rgba(221, 221, 221, 0.92)",
         label: "Background",
       },
       panelBorderRadius: {
@@ -75,7 +75,7 @@ class LegendHUD {
         min: 0,
         max: 20,
         step: 1,
-        default: 3,
+        default: 6,
         label: "Border radius",
       },
       heading: {
@@ -107,6 +107,10 @@ class LegendHUD {
       this.headingEl = document.createElement("div");
       this.headingEl.textContent = this.settings.heading;
       this.headingEl.style.fontSize = `${this.settings.headingFontSize}px`;
+      this.headingEl.style.fontWeight = "600";
+      this.headingEl.style.textTransform = "uppercase";
+      this.headingEl.style.letterSpacing = "1px";
+      this.headingEl.style.color = "rgba(40, 40, 40, 0.5)";
       this.headingEl.style.marginBottom = `${this.settings.rowGap}px`;
       this.container.appendChild(this.headingEl);
     }
@@ -148,6 +152,10 @@ class LegendHUD {
       borderRadius: `${this.settings.panelBorderRadius}px`,
       fontFamily: this.settings.fontFamily,
       fontSize: `${this.settings.fontSize}px`,
+      color: "rgba(51, 51, 51, 0.85)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      backdropFilter: "blur(6px)",
+      WebkitBackdropFilter: "blur(6px)",
     });
   }
 
@@ -234,6 +242,10 @@ class LegendHUD {
 
     if (this.headingEl) {
       this.headingEl.style.fontSize = `${this.settings.headingFontSize}px`;
+      this.headingEl.style.fontWeight = "600";
+      this.headingEl.style.textTransform = "uppercase";
+      this.headingEl.style.letterSpacing = "1px";
+      this.headingEl.style.color = "rgba(37, 37, 37, 0.5)";
       if ("heading" in newSettings) {
         this.headingEl.textContent = this.settings.heading;
       }
