@@ -899,7 +899,7 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true, 
   const t0 = performance.now();
   // Create offsets for each atom
   let offsets = atoms.positions.map((_, index) => [index, [0, 0, 0]]);
-  let offsets1;
+  let offsets1 = [];
   const maxCutoff = Math.max(...Object.values(cutoffs).map((cutoff) => cutoff.max));
   // if pbc is true, include the atoms just outside the boundary with maxCutoff
   if (pbc) {
