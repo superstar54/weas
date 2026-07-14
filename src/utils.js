@@ -324,7 +324,7 @@ export function createLabel(
 export function fnv1aHash(arr) {
   let hash = 2166136261;
   for (let i = 0; i < arr.length; i++) {
-    const val = Array.isArray(arr[i]) ? arr[i].join(",") : arr[i];
+    const val = Array.isArray(arr[i]) ? arr[i].join(",") : String(arr[i]);
     for (let j = 0; j < val.length; j++) {
       hash ^= val.charCodeAt(j);
       hash +=
