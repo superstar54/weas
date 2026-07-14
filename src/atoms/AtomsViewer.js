@@ -973,7 +973,6 @@ class AtomsViewer {
     if (this._prevSpeciesHash !== this._hashes.speciesHash) {
         this._atomsChanged = true;
         this._prevSpeciesHash = this._hashes.speciesHash;
-        this.guiManager.updateLegend();
     } else {
         this._atomsChanged = false;
     }
