@@ -191,8 +191,14 @@ class CIFData {
       const translationMatch = component.match(/[+-]\s*(\d+\/\d+|\d*\.\d+|\d+)$/);
 
       if (translationMatch) {
-        // Calculate the translation considering fractions
-        const translationValue = eval(translationMatch[1]);
+        const frac = translationMatch[1];
+        const parts = frac.split("/");
+        const translationValue = parts.length === 2
+          ? parseFloat(parts[0]) / parseFloat(parts[1])
+          : parseFloat(frac);
+        if (!Number.isFinite(translationValue)) {
+          throw new Error(`Invalid fraction in symmetry operation: ${frac}`);
+        }
         vector[index] = translationValue;
       }
 
