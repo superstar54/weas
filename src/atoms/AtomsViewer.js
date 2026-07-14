@@ -790,7 +790,10 @@ class AtomsViewer {
         const normalizedValue = key === "modelStyle" ? normalizeModelStyle(value, this._modelStyle) : value;
         if (key === "selectedAtomsIndices") {
           const prevSelected = this._selectedAtomsIndices;
-          const nextSelected = Array.isArray(value) ? value : [];
+          const atomCount = this.atoms ? this.atoms.getAtomsCount() : 0;
+          const nextSelected = Array.isArray(value)
+            ? value.filter((i) => Number.isInteger(i) && i >= 0 && i < atomCount)
+            : [];
           const newSelectedAtoms = nextSelected.filter((atomIndex) => !prevSelected.includes(atomIndex));
           const unselectedAtoms = prevSelected.filter((atomIndex) => !nextSelected.includes(atomIndex));
           if (nextSelected.length > 0 && !this.weas.eventHandlers?.transformControls?.mode) {
