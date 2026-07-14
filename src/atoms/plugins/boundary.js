@@ -1,6 +1,7 @@
 import { calculateCartesianCoordinates } from "../../utils";
 import { radiiData, elementColors } from "../data/atomsData";
 import { Atoms } from "../atoms";
+import { convertColor } from "../utils";
 
 class Setting {
   constructor({ element, symbol, radius = 2.0, color = "#3d82ed" }) {
