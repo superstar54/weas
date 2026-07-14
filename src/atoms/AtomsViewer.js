@@ -163,8 +163,6 @@ class AtomsViewer {
   reset() {
     this.volumetricData = null;
     this.fermiSurfaceData = null;
-    this.atomLabels = [];
-    this.atomArrows = null;
     this.atomColors = new Array();
     this._atomScales = new Array();
     this._modelSticks = new Array();
@@ -969,8 +967,6 @@ class AtomsViewer {
     // --- Compute and store hashes
     this._hashes = this._hashes || {};
     this._hashes.speciesHash   = fnv1aHash(this.atoms.species);
-    this._hashes.positionsHash = fnv1aHash(this.atoms.positions.flat());
-    this._hashes.symbolsHash   = fnv1aHash(this.atoms.symbols);
 
     // Decide whether to update legend based only on species
     if (this._prevSpeciesHash !== this._hashes.speciesHash) {

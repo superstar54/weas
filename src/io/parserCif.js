@@ -5,7 +5,6 @@ export function parseCIF(cifString) {
   const data = {
     cell: [],
     pbc: [true, true, true],
-    species: {},
     positions: [],
     symbols: [],
   };

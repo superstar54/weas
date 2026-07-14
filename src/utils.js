@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 
-import { multiply, inv, transpose } from "mathjs";
+import { multiply, transpose } from "mathjs";
 
 /**
  * Normalises a value into a THREE.Vector3, accepting multiple input formats.
@@ -206,48 +206,7 @@ export function calculateCartesianCoordinates(matrix, fractionalCoordinates) {
   return multiply(transpose(matrix), fractionalCoordinates);
 }
 
-/** @deprecated Use mathjs multiply() directly */
-export function multiplyMatrixVector(matrix, vector) {
-  return multiply(matrix, vector);
-}
 
-/** @deprecated Use mathjs inv() directly */
-export function calculateInverseMatrix(matrix) {
-  return inv(matrix);
-}
-
-/**
- * Extracts the rotation axis and angle from a rotation matrix.
- * @param {THREE.Matrix4} rotationMatrix
- * @returns {{ angle: number, axis: { x: number, y: number, z: number } }}
- *   angle in degrees, axis as a normalized {x, y, z} vector.
- *   If the rotation angle is 0, defaults to axis {1, 0, 0}.
- */
-export function angleAxisFromRotationMatrix(rotationMatrix) {
-  // Convert the rotation matrix to a quaternion
-  const quaternion = new THREE.Quaternion().setFromRotationMatrix(
-    rotationMatrix,
-  );
-
-  // Extract the rotation axis and angle from the quaternion
-  const angle = 2 * Math.acos(quaternion.w); // Angle in radians
-  let axis = new THREE.Vector3(quaternion.x, quaternion.y, quaternion.z);
-
-  // If the quaternion is normalized, the axis can be directly used, but if it's not,
-  //  need to normalize the axis vector
-  if (axis.length() > 0) {
-    axis.normalize();
-  } else {
-    // Default axis if the angle is 0
-    axis = new THREE.Vector3(1, 0, 0);
-  }
-
-  // Convert angle to degrees for GUI
-  return {
-    angle: THREE.MathUtils.radToDeg(angle),
-    axis: { x: axis.x, y: axis.y, z: axis.z },
-  };
-}
 
 /**
  * Calculates the quaternion needed to orient a cylinder (or bond) between two atom positions.

@@ -98,8 +98,6 @@ class EventHandlers {
     this.mouseUpPosition = new THREE.Vector2();
     this.currentMousePosition = new THREE.Vector2();
     this.previousMousePosition = new THREE.Vector2();
-    this.boxselect = false;
-    this.dragMode = null; // 'move' or 'rotate'
     this.isDragging = false;
   }
 
