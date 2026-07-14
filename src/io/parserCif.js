@@ -214,7 +214,7 @@ class CIFData {
     // if getSpaceGroupName is defined, but no symmetry operations are found,
     // In principle, we need to use the space group to generate symmetry operations
     // but for now, we'll just throw an error
-    if (this.getSpaceGroupName && this.symmetryOps.length === 0) {
+    if (this.getSpaceGroupName() && this.symmetryOps.length === 0) {
       throw new Error("The space group is defined, but no symmetry operations are found. We cannot handle this case yet.");
     }
     // at least one symmetry operation is required, use identity if none are found
