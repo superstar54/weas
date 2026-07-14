@@ -4,31 +4,18 @@ Generated: July 2026
 
 ---
 
-## Critical Bugs & Vulnerabilities
+## ~~Critical Bugs & Vulnerabilities~~ (all fixed)
 
-### 1. `eval()` in CIF parser — `src/io/parserCif.js:195`
-Uses `eval()` on untrusted CIF file input to parse fraction strings. Replace with a safe fraction parser.
-
-### 2. `convertColor` missing import — `src/atoms/plugins/boundary.js:9`
-`Setting` class calls `convertColor()` which is never imported. Constructing a boundary Setting throws `ReferenceError`.
-
-### 3. Double `updateLegend()` call — `src/atoms/AtomsViewer.js:973-984`
-`updateLegend()` fires twice when species change (once inside an `if` block, once after it).
-
-### 4. `getSpaceGroupName` not invoked — `src/io/parserCif.js:211`
-`if (this.getSpaceGroupName && ...)` checks method truthiness (always true), not return value.
-
-### 5. `findNeighbors` uses uninitialized `offsets1` — `src/atoms/plugins/bond.js`
-When PBC is `false`, `offsets1` is never assigned but used in `offsets.concat(offsets1)`.
-
-### 6. `fnv1aHash` fails on non-strings — `src/utils.js:329`
-Calls `val.charCodeAt(j)` on elements that may be numbers, producing unreliable hashes.
-
-### 7. `adjust()` bypasses `OperationManager` — `src/operation/baseOperation.js`
-Calls `this.execute()` directly instead of `this.weas.ops.execute()`, so adjusted ops never update undo/redo stacks.
-
-### 8. Missing bounds check in `applyState` — `src/atoms/AtomsViewer.js`
-`selectedAtomsIndices` handler returns early, skipping the bounds check; camera may jump to `NaN`.
+| # | Issue | Fix |
+|---|-------|-----|
+| 1 | `eval()` in CIF parser | `ed355f2` — safe fraction parser |
+| 2 | `convertColor` missing import | `5add964` |
+| 3 | Double `updateLegend()` call | `b8cd242` |
+| 4 | `getSpaceGroupName` not invoked | `355ffd6` |
+| 5 | `findNeighbors` uninitialized `offsets1` | `64b57ed` |
+| 6 | `fnv1aHash` fails on non-strings | `839f780` |
+| 7 | `adjust()` bypasses OperationManager | `0380a17` |
+| 8 | Missing bounds check in `applyState` | `2ae5c3b` |
 
 ---
 
@@ -58,16 +45,15 @@ atom.js and bond.js have identical methods. Merge into shared utility.
 ### H. Merge the two hash functions
 `hashSymbols()` in AtomsViewer and `fnv1aHash()` from utils serve the same purpose. Pick one.
 
-### I. Clean up dead code
+### I. Clean up dead code — partially done (`e859338`)
+
+Removed: `atomLabels`, `atomArrows` (AtomsViewer.reset), `boxselect`/`dragMode` (EventHandlers.init), `data.species = {}` (parserCif), deprecated wrappers (utils.js), `positionsHash`/`symbolsHash` (drawModels).
+
+Remaining:
 
 | Location | Dead Code |
 |----------|-----------|
-| AtomsViewer.reset() | atomLabels, atomArrows, atomColors |
-| EventHandlers.init() | dragMode, boxselect |
 | atoms.js Atom class | Never instantiated by the data model |
-| parserCif.js | data.species = {} never populated |
-| utils.js | Deprecated wrappers |
-| drawModels | positionsHash, sysmbolsHash computed but never read |
 
 ### J. Fix naming inconsistencies
 
