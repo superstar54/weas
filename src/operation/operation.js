@@ -156,6 +156,9 @@ export class OperationManager {
       this.redoStack = [];
       this.updateAdjustLastOperationGUI();
     }
+    if (operation.affectsAtoms !== false) {
+      this.weas.eventHandlers.dispatchAtomsUpdated();
+    }
   }
 
   hideGUI() {
