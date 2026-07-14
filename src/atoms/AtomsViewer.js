@@ -1327,20 +1327,8 @@ class AtomsViewer {
 
   getFrameSignature(atoms) {
     const atomsCount = atoms.getAtomsCount();
-    const symbolsHash = this.hashSymbols(atoms.symbols);
+    const symbolsHash = fnv1aHash(atoms.symbols);
     return `${atomsCount}:${symbolsHash}`;
-  }
-
-  hashSymbols(symbols) {
-    let hash = 0;
-    for (let i = 0; i < symbols.length; i++) {
-      const symbol = symbols[i];
-      for (let j = 0; j < symbol.length; j++) {
-        hash = (hash * 31 + symbol.charCodeAt(j)) | 0;
-      }
-      hash = (hash * 31 + 124) | 0;
-    }
-    return hash >>> 0;
   }
 
   rebuildForFrame(atoms) {

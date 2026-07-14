@@ -590,10 +590,10 @@ export function drawLine(atoms, bondList, bondIndices, settings, lineType = "das
   bondIndices.forEach((instanceId) => {
     const bond = bondList[instanceId];
     const [index1, index2, offset1, offset2] = bond;
-    var position1 = atoms.positions[index1].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset1)[index]);
+    let position1 = atoms.positions[index1].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset1)[index]);
     position1 = new THREE.Vector3(...position1);
 
-    var position2 = atoms.positions[index2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
+    let position2 = atoms.positions[index2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
     position2 = new THREE.Vector3(...position2);
 
     // Add the start and end positions to the vertices array
@@ -921,7 +921,7 @@ export function findNeighbors(atoms, cutoffs, include_self = false, pbc = true, 
   const neighborsMap = {};
 
   // Function to calculate distance
-  var distance = function (a, b) {
+  const distance = function (a, b) {
     return Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2);
   };
 

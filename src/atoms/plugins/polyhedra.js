@@ -154,13 +154,14 @@ export class PolyhedraManager {
       // Assuming bonds.length is the number of verticesData
       for (const bondData of polyhedra.sticks) {
         const bond = bondList[bondData[0]];
-        // if isStart is true, then the second atom is neighbor
+        let atomIndex2;
+        let offset2;
         if (bondData[1]) {
-          var atomIndex2 = bond[1];
-          var offset2 = bond[3];
+          atomIndex2 = bond[1];
+          offset2 = bond[3];
         } else {
-          var atomIndex2 = bond[0];
-          var offset2 = bond[2];
+          atomIndex2 = bond[0];
+          offset2 = bond[2];
         }
         new_position = atoms.positions[atomIndex2].map((value, index) => value + calculateCartesianCoordinates(atoms.cell, offset2)[index]);
         const vertex = new THREE.Vector3(...new_position);
@@ -237,7 +238,7 @@ export class PolyhedraManager {
     if atomIndex is null, update all polyhedras
     if atoms is null, use this.atoms, otherwise use the provided atoms to update the bonds, e.g. trajectory data
     */
-    var atomIndices = [];
+    let atomIndices = [];
     if (atomIndex === null) {
       atomIndices = Object.keys(this.vertexAtomMap);
     } else {
@@ -287,24 +288,23 @@ export function filterBondMap(bondMap, symbols, elements, modelPolyhedras) {
 }
 
 export function calculateConvexHull(points) {
-  var faces = [];
-  var vertices = [];
-  var normals = [];
-  var indices = [];
-  var offsets = [];
+  const vertices = [];
+  const normals = [];
+  const indices = [];
+  const offsets = [];
   // generate vertices and normals
-  var hull = new ConvexHull().setFromPoints(points);
+  const hull = new ConvexHull().setFromPoints(points);
 
-  var faces = hull.faces;
+  const faces = hull.faces;
 
-  for (var i = 0; i < faces.length; i++) {
-    var face = faces[i];
-    var edge = face.edge;
+  for (let i = 0; i < faces.length; i++) {
+    const face = faces[i];
+    let edge = face.edge;
 
     // we move along a doubly-connected edge list to access all face points (see HalfEdge docs)
 
     do {
-      var point = edge.head().point;
+      const point = edge.head().point;
 
       vertices.push(point.x, point.y, point.z);
       indices.push(point.atomIndex);

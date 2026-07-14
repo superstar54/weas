@@ -300,10 +300,10 @@ export class BlendJS {
     // Use renderer size instead of container size, because the pixel ratio is taken into account
     const size = renderer.getSize(new THREE.Vector2());
 
-    var nleft = Math.floor(size.width * left);
-    var nbottom = Math.floor(size.height * bottom);
-    var nwidth = Math.floor(size.width * width);
-    var nheight = Math.floor(size.height * height);
+    const nleft = Math.floor(size.width * left);
+    const nbottom = Math.floor(size.height * bottom);
+    const nwidth = Math.floor(size.width * width);
+    const nheight = Math.floor(size.height * height);
 
     renderer.setViewport(nleft, nbottom, nwidth, nheight);
     renderer.setScissor(nleft, nbottom, nwidth, nheight);
@@ -333,8 +333,6 @@ export class BlendJS {
     if (this.hud) {
       this.hud.render(this.camera);
     }
-
-    this.cameraController.update();
   }
 
   exportImage(resolution = 2) {
@@ -365,7 +363,7 @@ export class BlendJS {
       highResPixelRatio,
     );
     // Get the image data URL
-    var imgData = compositeCanvas.toDataURL("image/png");
+    const imgData = compositeCanvas.toDataURL("image/png");
 
     // Reset the pixel ratio to its original value
     renderer.setPixelRatio(originalPixelRatio);
@@ -429,8 +427,8 @@ export class BlendJS {
 
   downloadImage(filenmae = "atomistic-model.png") {
     // Create a link and set the URL as the href
-    var imgData = this.exportImage();
-    var link = document.createElement("a");
+    const imgData = this.exportImage();
+    const link = document.createElement("a");
     link.href = imgData;
     link.download = filenmae;
 

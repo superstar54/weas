@@ -178,14 +178,14 @@ export class Isosurface {
       for (let i = 0; i < isovalues.length; i++) {
         const isovalue = isovalues[i];
         this.viewer.logger.debug("isovalue: ", isovalue);
-        var isoData = marchingCubes(dims, data, null, isovalue, setting.step_size);
+        const isoData = marchingCubes(dims, data, null, isovalue, setting.step_size);
 
         //
         // Convert positions to real positions
         isoData.positions = isoData.positions.map(function (pos) {
-          var x = pos[0] * stepSize[0][0] + pos[1] * stepSize[1][0] + pos[2] * stepSize[2][0] + origin[0];
-          var y = pos[0] * stepSize[0][1] + pos[1] * stepSize[1][1] + pos[2] * stepSize[2][1] + origin[1];
-          var z = pos[0] * stepSize[0][2] + pos[1] * stepSize[1][2] + pos[2] * stepSize[2][2] + origin[2];
+          const x = pos[0] * stepSize[0][0] + pos[1] * stepSize[1][0] + pos[2] * stepSize[2][0] + origin[0];
+          const y = pos[0] * stepSize[0][1] + pos[1] * stepSize[1][1] + pos[2] * stepSize[2][1] + origin[1];
+          const z = pos[0] * stepSize[0][2] + pos[1] * stepSize[1][2] + pos[2] * stepSize[2][2] + origin[2];
           return [x, y, z];
         });
 

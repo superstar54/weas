@@ -199,7 +199,7 @@ export class AtomManager {
     return atomsMesh;
   }
   updateAtomMesh(atomIndex = null, atoms = null) {
-    var matrix = new THREE.Matrix4();
+    const matrix = new THREE.Matrix4();
     for (let i = 0; i < atoms.positions.length; i++) {
       this.meshes["atom"].getMatrixAt(i, matrix);
       matrix.setPosition(new THREE.Vector3(...atoms.positions[i]));
