@@ -18,7 +18,6 @@ import { multiply, inv, transpose } from "mathjs";
  * @throws {Error} If the value cannot be converted
  */
 export function toVector3(value, name = "value") {
-  console.log("toVector3 called with value:", value);
   if (value instanceof THREE.Vector3) {
     return value;
   }

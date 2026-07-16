@@ -188,7 +188,6 @@ export class BlendJS {
   }
 
   observeContainerResize() {
-    console.log("Observing container resize");
     if (typeof ResizeObserver !== "function") {
       return;
     }
@@ -209,7 +208,6 @@ export class BlendJS {
         return;
       }
       this._lastObservedSize = { width, height };
-      console.log("Container resized:", width, height);
       if (this._resizeRaf) {
         return;
       }

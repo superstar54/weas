@@ -120,7 +120,6 @@ export class TextManager {
    * Removes an array of labels from the scene, defaults to all labels
    */
   clearLabels(labels = this.labels) {
-    console.log("clearing");
     if (!labels || labels.length === 0) return;
 
     const scene = this.scene;
