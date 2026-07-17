@@ -1,10 +1,16 @@
 import * as THREE from "three";
 import { convertColor } from "../utils";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils"; 
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
 import { cloneValue } from "../../state/store";
 
 class Setting {
-  constructor({ indices, scale = 1.1, type = "sphere", color = "yellow", opacity = 0.6 }) {
+  constructor({
+    indices,
+    scale = 1.1,
+    type = "sphere",
+    color = "yellow",
+    opacity = 0.6,
+  }) {
     // type: sphere, box, cross
     this.indices = indices;
     this.color = convertColor(color);
@@ -47,6 +53,14 @@ export class HighlightManager {
     this._crossViewNeedsUpdate = false;
     this._cameraSignature = new Float32Array(32);
     this._hasCameraSignature = false;
+    this._cachedGeometries = {
+      sphere: new THREE.SphereGeometry(1, 16, 16),
+      box: new THREE.BoxGeometry(2, 2, 2),
+      cross: this._createCrossGeometry(1),
+      crossViewBarX: new THREE.PlaneGeometry(2, 1),
+      crossViewBarY: new THREE.PlaneGeometry(2, 1),
+    };
+    this._cachedGeometries.crossViewBarY.rotateZ(Math.PI / 2);
     this.init();
 
     const pluginState = this.viewer.state.get("plugins.highlight");
@@ -75,7 +89,9 @@ export class HighlightManager {
   }
 
   setSettings(settings) {
-    this.viewer.state.set({ plugins: { highlight: { settings: cloneValue(settings) } } });
+    this.viewer.state.set({
+      plugins: { highlight: { settings: cloneValue(settings) } },
+    });
   }
 
   applySettings(settings) {
@@ -91,7 +107,10 @@ export class HighlightManager {
     });
   }
 
-  addSetting(name, { indices, scale = 1.1, type = "sphere", color = "#3d82ed", opacity = 0.6 }) {
+  addSetting(
+    name,
+    { indices, scale = 1.1, type = "sphere", color = "#3d82ed", opacity = 0.6 },
+  ) {
     /* Add a new setting to the highlights */
     const setting = new Setting({ indices, scale, type, color, opacity });
     this.settings[name] = setting;
@@ -100,7 +119,10 @@ export class HighlightManager {
   toPlainSettings() {
     const result = {};
     Object.entries(this.settings).forEach(([name, setting]) => {
-      result[name] = setting && typeof setting.toDict === "function" ? setting.toDict() : setting;
+      result[name] =
+        setting && typeof setting.toDict === "function"
+          ? setting.toDict()
+          : setting;
     });
     return result;
   }
@@ -125,24 +147,21 @@ export class HighlightManager {
     material.color.set("yellow");
     material.opacity = 0.6;
     material.transparent = true;
-    material.depthWrite = false
-    material.depthTest = true
+    material.depthWrite = false;
+    material.depthTest = true;
     // sphere
-    const geometry = new THREE.SphereGeometry(1, 16, 16);
-    this.drawHighlightMesh("sphere", geometry, material);
+    this.drawHighlightMesh("sphere", this._cachedGeometries.sphere, material);
     //box
     const material1 = material.clone();
     material1.color.set("green");
-    const boxGeometry = new THREE.BoxGeometry(2, 2, 2);
-    this.drawHighlightMesh("box", boxGeometry, material1);
+    this.drawHighlightMesh("box", this._cachedGeometries.box, material1);
     // cross
     const material2 = this.materialsRegistry.getMaterial("Basic", true);
     material2.color.set(0xffffff);
     material2.opacity = 1.0;
     material2.transparent = true;
     material2.vertexColors = true;
-    const crossGeometry = this.createCrossGeometry(1);
-    this.drawHighlightMesh("cross", crossGeometry, material2);
+    this.drawHighlightMesh("cross", this._cachedGeometries.cross, material2);
     const material3 = this.materialsRegistry.getMaterial("Basic", true);
     material3.color.set(0xffffff);
     material3.opacity = 1.0;
@@ -150,11 +169,16 @@ export class HighlightManager {
     material3.side = THREE.DoubleSide;
     material3.depthWrite = false;
     material3.vertexColors = true;
-    const crossViewGeometryX = this.createCrossBillboardBarGeometry();
-    const crossViewGeometryY = crossViewGeometryX.clone();
-    crossViewGeometryY.rotateZ(Math.PI / 2);
-    this.drawHighlightMesh("crossViewX", crossViewGeometryX, material3);
-    this.drawHighlightMesh("crossViewY", crossViewGeometryY, material3);
+    this.drawHighlightMesh(
+      "crossViewX",
+      this._cachedGeometries.crossViewBarX,
+      material3,
+    );
+    this.drawHighlightMesh(
+      "crossViewY",
+      this._cachedGeometries.crossViewBarY,
+      material3,
+    );
     this.viewer.requestRedraw?.("render");
   }
 
@@ -167,7 +191,6 @@ export class HighlightManager {
 
     const mesh = new THREE.InstancedMesh(geometry, material, baseMesh.count);
     mesh.renderOrder = 10; // Important! Render above
-    
 
     const position = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
@@ -192,7 +215,7 @@ export class HighlightManager {
     });
   }
 
-  createCrossGeometry(size = 1) {
+  _createCrossGeometry(size = 1) {
     /* Create a cross geometry for the highlight */
     const geometry1 = new THREE.TorusGeometry(size, 0.1, 16, 20);
     const geometry2 = new THREE.TorusGeometry(size, 0.1, 16, 20);
@@ -206,16 +229,31 @@ export class HighlightManager {
     return crossGeometry;
   }
 
-  createCrossBillboardBarGeometry() {
-    return new THREE.PlaneGeometry(2, 1);
-  }
-
-  updateHighlightAtomsMesh({ indices = [], scale = 1.1, color = "yellow", type = "sphere", opacity = null, occlude = true, offset = 1.0005, thickness = null }, name = null) {
+  updateHighlightAtomsMesh(
+    {
+      indices = [],
+      scale = 1.1,
+      color = "yellow",
+      type = "sphere",
+      opacity = null,
+      occlude = true,
+      offset = 1.0005,
+      thickness = null,
+    },
+    name = null,
+  ) {
     /* When the atom is moved, the boundary atoms should be moved as well.
      */
     if (type === "crossView") {
       const key = name || "crossView";
-      this._crossViewSettings[key] = { indices, scale, color, occlude, offset, thickness };
+      this._crossViewSettings[key] = {
+        indices,
+        scale,
+        color,
+        occlude,
+        offset,
+        thickness,
+      };
       this.updateCrossViewMaterialOcclusion();
       this._crossViewNeedsUpdate = true;
       return;
@@ -250,7 +288,8 @@ export class HighlightManager {
 
   updateLabelSizes(camera = null, renderer = null) {
     const activeCamera = camera || this.viewer?.tjs?.camera;
-    const activeRenderer = renderer || this.viewer?.tjs?.renderers?.MainRenderer?.renderer;
+    const activeRenderer =
+      renderer || this.viewer?.tjs?.renderers?.MainRenderer?.renderer;
     if (!activeCamera || !activeRenderer) {
       return;
     }
@@ -278,25 +317,55 @@ export class HighlightManager {
     camera.getWorldPosition(this._tmpCameraPos);
     const nextIndices = new Set();
     Object.values(this._crossViewSettings).forEach((setting) => {
-      const { indices = [], scale = 1.1, color = "yellow", offset = 1.0005, thickness = null } = setting || {};
-      const thicknessWorld = Number.isFinite(thickness) ? thickness : this._crossViewThicknessDefault;
+      const {
+        indices = [],
+        scale = 1.1,
+        color = "yellow",
+        offset = 1.0005,
+        thickness = null,
+      } = setting || {};
+      const thicknessWorld = Number.isFinite(thickness)
+        ? thickness
+        : this._crossViewThicknessDefault;
       indices.forEach((index) => {
         nextIndices.add(index);
         atomMesh.getMatrixAt(index, this._tmpBillboardAtomMatrix);
-        this._tmpBillboardAtomMatrix.decompose(this._tmpCenter, this._tmpDecomposeQuat, this._tmpBillboardScale);
-        const radius = this._tmpBillboardScale.x || this._tmpBillboardScale.y || this._tmpBillboardScale.z || 1;
+        this._tmpBillboardAtomMatrix.decompose(
+          this._tmpCenter,
+          this._tmpDecomposeQuat,
+          this._tmpBillboardScale,
+        );
+        const radius =
+          this._tmpBillboardScale.x ||
+          this._tmpBillboardScale.y ||
+          this._tmpBillboardScale.z ||
+          1;
         this._tmpBillboardScale.set(radius * scale, thicknessWorld, 1);
         this._tmpBillboardScale2.set(thicknessWorld, radius * scale, 1);
         if (camera.isOrthographicCamera) {
           this._tmpCenter.addScaledVector(this._tmpCameraDir, -radius * offset);
         } else {
-          this._tmpToCameraDir.copy(this._tmpCenter).sub(this._tmpCameraPos).normalize();
-          this._tmpCenter.addScaledVector(this._tmpToCameraDir, -radius * offset);
+          this._tmpToCameraDir
+            .copy(this._tmpCenter)
+            .sub(this._tmpCameraPos)
+            .normalize();
+          this._tmpCenter.addScaledVector(
+            this._tmpToCameraDir,
+            -radius * offset,
+          );
         }
-        this._tmpBillboardMatrix.compose(this._tmpCenter, this._tmpBillboardQuat, this._tmpBillboardScale);
+        this._tmpBillboardMatrix.compose(
+          this._tmpCenter,
+          this._tmpBillboardQuat,
+          this._tmpBillboardScale,
+        );
         meshX.setMatrixAt(index, this._tmpBillboardMatrix);
         meshX.setColorAt(index, convertColor(color));
-        this._tmpBillboardMatrix.compose(this._tmpCenter, this._tmpBillboardQuat, this._tmpBillboardScale2);
+        this._tmpBillboardMatrix.compose(
+          this._tmpCenter,
+          this._tmpBillboardQuat,
+          this._tmpBillboardScale2,
+        );
         meshY.setMatrixAt(index, this._tmpBillboardMatrix);
         meshY.setColorAt(index, convertColor(color));
       });
@@ -304,8 +373,16 @@ export class HighlightManager {
     this._crossViewIndices.forEach((index) => {
       if (!nextIndices.has(index)) {
         atomMesh.getMatrixAt(index, this._tmpBillboardAtomMatrix);
-        this._tmpBillboardAtomMatrix.decompose(this._tmpCenter, this._tmpDecomposeQuat, this._tmpBillboardScale);
-        this._tmpBillboardMatrix.compose(this._tmpCenter, this._tmpBillboardQuat, this._tmpBillboardZero);
+        this._tmpBillboardAtomMatrix.decompose(
+          this._tmpCenter,
+          this._tmpDecomposeQuat,
+          this._tmpBillboardScale,
+        );
+        this._tmpBillboardMatrix.compose(
+          this._tmpCenter,
+          this._tmpBillboardQuat,
+          this._tmpBillboardZero,
+        );
         meshX.setMatrixAt(index, this._tmpBillboardMatrix);
         meshY.setMatrixAt(index, this._tmpBillboardMatrix);
       }
@@ -327,7 +404,9 @@ export class HighlightManager {
     if (!meshX || !meshX.material || !meshY || !meshY.material) {
       return;
     }
-    const anyOcclude = Object.values(this._crossViewSettings).some((setting) => setting?.occlude !== false);
+    const anyOcclude = Object.values(this._crossViewSettings).some(
+      (setting) => setting?.occlude !== false,
+    );
     meshX.material.depthTest = anyOcclude;
     meshY.material.depthTest = anyOcclude;
     meshX.material.needsUpdate = true;
@@ -340,7 +419,10 @@ export class HighlightManager {
     let changed = false;
     for (let i = 0; i < 16; i++) {
       const value = elements[i];
-      if (!this._hasCameraSignature || Math.abs(this._cameraSignature[i] - value) > 1e-6) {
+      if (
+        !this._hasCameraSignature ||
+        Math.abs(this._cameraSignature[i] - value) > 1e-6
+      ) {
         changed = true;
       }
       this._cameraSignature[i] = value;
@@ -348,7 +430,10 @@ export class HighlightManager {
     for (let i = 0; i < 16; i++) {
       const value = proj[i];
       const idx = 16 + i;
-      if (!this._hasCameraSignature || Math.abs(this._cameraSignature[idx] - value) > 1e-6) {
+      if (
+        !this._hasCameraSignature ||
+        Math.abs(this._cameraSignature[idx] - value) > 1e-6
+      ) {
         changed = true;
       }
       this._cameraSignature[idx] = value;
