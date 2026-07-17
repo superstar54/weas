@@ -27,6 +27,7 @@ class Setting {
 export class HighlightManager {
   constructor(viewer) {
     this.viewer = viewer;
+    this.materialsRegistry = viewer.weas.materialsRegistry;
     this.settings = {};
     this.meshes = {};
     this._tmpCenter = new THREE.Vector3();
@@ -120,11 +121,10 @@ export class HighlightManager {
     if (!baseMesh) {
       return;
     }
-    const material = new THREE.MeshBasicMaterial({
-      color: "yellow",
-      opacity: 0.6,
-      transparent: true,
-    });
+    const material = this.materialsRegistry.getMaterial("Basic", true);
+    material.color.set("yellow");
+    material.opacity = 0.6;
+    material.transparent = true;
     material.depthWrite = false
     material.depthTest = true
     // sphere
@@ -132,26 +132,24 @@ export class HighlightManager {
     this.drawHighlightMesh("sphere", geometry, material);
     //box
     const material1 = material.clone();
-    material1.color = "green";
+    material1.color.set("green");
     const boxGeometry = new THREE.BoxGeometry(2, 2, 2);
     this.drawHighlightMesh("box", boxGeometry, material1);
     // cross
-    const material2 = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      opacity: 1.0,
-      transparent: true,
-      vertexColors: true,
-    });
+    const material2 = this.materialsRegistry.getMaterial("Basic", true);
+    material2.color.set(0xffffff);
+    material2.opacity = 1.0;
+    material2.transparent = true;
+    material2.vertexColors = true;
     const crossGeometry = this.createCrossGeometry(1);
     this.drawHighlightMesh("cross", crossGeometry, material2);
-    const material3 = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      opacity: 1.0,
-      transparent: true,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-      vertexColors: true,
-    });
+    const material3 = this.materialsRegistry.getMaterial("Basic", true);
+    material3.color.set(0xffffff);
+    material3.opacity = 1.0;
+    material3.transparent = true;
+    material3.side = THREE.DoubleSide;
+    material3.depthWrite = false;
+    material3.vertexColors = true;
     const crossViewGeometryX = this.createCrossBillboardBarGeometry();
     const crossViewGeometryY = crossViewGeometryX.clone();
     crossViewGeometryY.rotateZ(Math.PI / 2);
