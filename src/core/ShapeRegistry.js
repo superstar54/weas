@@ -37,6 +37,7 @@ export class ShapeRegistry {
     this.meta = {};
     this.materials = materialRegistry;
     this._callbacks = new Set();
+    this._geometryFactories = {};
     this._registerBuiltIns();
   }
 
@@ -92,57 +93,32 @@ export class ShapeRegistry {
   }
 
   _registerBuiltIns() {
-    const s = 1;
-
     this.register("Cube", (materials, options) =>
-      this._createBaseMesh(
-        materials,
-        new THREE.BoxGeometry(2 * s, 2 * s, 2 * s),
-        options,
-      ),
+      this._createBaseMesh(materials, this._geometryFactories.Cube(options), options),
     );
 
-    this.register("Sphere", (materials, options) => {
-      const widthSegments = options.widthSegments ?? 32;
-      const heightSegments = options.heightSegments ?? 32;
-      return this._createBaseMesh(
-        materials,
-        new THREE.SphereGeometry(s, widthSegments, heightSegments),
-        options,
-      );
-    });
+    this.register("Sphere", (materials, options) =>
+      this._createBaseMesh(materials, this._geometryFactories.Sphere(options), options),
+    );
 
     this.register("Plane", (materials, options) =>
-      this._createBaseMesh(
-        materials,
-        new THREE.PlaneGeometry(2 * s, 2 * s),
-        options,
-      ),
+      this._createBaseMesh(materials, this._geometryFactories.Plane(options), options),
     );
 
-    this.register("Cylinder", (materials, options) => {
-      const segments = options.segments ?? 24;
-      return this._createBaseMesh(
-        materials,
-        new THREE.CylinderGeometry(s, s, s, segments),
-        options,
-      );
-    });
+    this.register("Cylinder", (materials, options) =>
+      this._createBaseMesh(materials, this._geometryFactories.Cylinder(options), options),
+    );
 
     this.register("Cone", (materials, options) =>
-      this._createBaseMesh(
-        materials,
-        new THREE.ConeGeometry(s, 2 * s, 16),
-        options,
-      ),
+      this._createBaseMesh(materials, this._geometryFactories.Cone(options), options),
     );
 
     this.register("Torus", (materials, options) =>
-      this._createBaseMesh(
-        materials,
-        new THREE.TorusGeometry(s * 0.75, s * 0.25, 16, 32),
-        options,
-      ),
+      this._createBaseMesh(materials, this._geometryFactories.Torus(options), options),
+    );
+
+    this.register("Icosahedron", (materials, options) =>
+      this._createBaseMesh(materials, this._geometryFactories.Icosahedron(options), options),
     );
 
     /**
@@ -285,6 +261,65 @@ export class ShapeRegistry {
       };
       return mesh;
     });
+
+    // Geometry factories — return raw BufferGeometry without material or mesh
+    this._geometryFactories.Cube = (options) =>
+      new THREE.BoxGeometry(options.width ?? 2, options.height ?? 2, options.depth ?? 2);
+
+    this._geometryFactories.Sphere = (options) =>
+      new THREE.SphereGeometry(
+        options.radius ?? 1,
+        options.widthSegments ?? 32,
+        options.heightSegments ?? 32,
+        options.phiStart ?? 0,
+        options.phiLength ?? Math.PI * 2,
+        options.thetaStart ?? 0,
+        options.thetaLength ?? Math.PI,
+      );
+
+    this._geometryFactories.Plane = (options) =>
+      new THREE.PlaneGeometry(options.width ?? 2, options.height ?? 2);
+
+    this._geometryFactories.Cylinder = (options) =>
+      new THREE.CylinderGeometry(
+        options.radiusTop ?? 1,
+        options.radiusBottom ?? 1,
+        options.height ?? 1,
+        options.radialSegments ?? options.segments ?? 24,
+        options.heightSegments ?? 1,
+        options.openEnded ?? false,
+      );
+
+    this._geometryFactories.Cone = (options) =>
+      new THREE.ConeGeometry(
+        options.radius ?? 1,
+        options.height ?? 2,
+        options.radialSegments ?? 16,
+        options.heightSegments ?? 1,
+        options.openEnded ?? false,
+      );
+
+    this._geometryFactories.Torus = (options) =>
+      new THREE.TorusGeometry(
+        options.radius ?? 0.75,
+        options.tube ?? 0.25,
+        options.radialSegments ?? 16,
+        options.tubularSegments ?? 32,
+        options.arc ?? Math.PI * 2,
+      );
+
+    this._geometryFactories.Icosahedron = (options) =>
+      new THREE.IcosahedronGeometry(options.radius ?? 1, options.detail ?? 0);
+
+    this._geometryFactories.ConvexShape = (options) => {
+      if (!options.corners?.length) {
+        throw new Error("ConvexShape geometry requires corners");
+      }
+      const corners = options.corners.map((c) =>
+        c.isVector3 ? c : new THREE.Vector3(...c),
+      );
+      return new ConvexGeometry(corners);
+    };
   }
 
   /**
@@ -370,6 +405,20 @@ export class ShapeRegistry {
     }
 
     return shape;
+  }
+
+  /**
+   * Returns a raw BufferGeometry for the given shape name, without creating a Mesh.
+   * Useful for callers that need geometry for InstancedMesh or custom rendering.
+   *
+   * @param {string} name - Registered geometry name (e.g. "Cube", "Sphere")
+   * @param {object} options - Shape-specific parameters (all optional, have defaults)
+   * @returns {THREE.BufferGeometry}
+   */
+  getGeometry(name, options = {}) {
+    const factory = this._geometryFactories[name];
+    if (!factory) throw new Error(`No geometry factory for "${name}"`);
+    return factory(options);
   }
 
   /**

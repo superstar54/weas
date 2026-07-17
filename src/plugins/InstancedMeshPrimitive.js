@@ -102,6 +102,7 @@ export class InstancedMeshPrimitive {
   }
 
   getGeometry(setting) {
+    // TODO: delegate to this.shapeRegistry.getGeometry() once the API stabilises
     let geometry;
     let defaultShape;
     let params;
