@@ -34,6 +34,7 @@ export class HighlightManager {
   constructor(viewer) {
     this.viewer = viewer;
     this.materialsRegistry = viewer.weas.materialsRegistry;
+    this.shapeRegistry = viewer.weas.shapeRegistry;
     this.settings = {};
     this.meshes = {};
     this._tmpCenter = new THREE.Vector3();
@@ -54,11 +55,11 @@ export class HighlightManager {
     this._cameraSignature = new Float32Array(32);
     this._hasCameraSignature = false;
     this._cachedGeometries = {
-      sphere: new THREE.SphereGeometry(1, 16, 16),
-      box: new THREE.BoxGeometry(2, 2, 2),
+      sphere: this.shapeRegistry.getGeometry("Sphere", { radius: 1, widthSegments: 16, heightSegments: 16 }),
+      box: this.shapeRegistry.getGeometry("Cube"),
       cross: this._createCrossGeometry(1),
-      crossViewBarX: new THREE.PlaneGeometry(2, 1),
-      crossViewBarY: new THREE.PlaneGeometry(2, 1),
+      crossViewBarX: this.shapeRegistry.getGeometry("Plane", { width: 2, height: 1 }),
+      crossViewBarY: this.shapeRegistry.getGeometry("Plane", { width: 2, height: 1 }),
     };
     this._cachedGeometries.crossViewBarY.rotateZ(Math.PI / 2);
     this.init();
@@ -217,11 +218,12 @@ export class HighlightManager {
 
   _createCrossGeometry(size = 1) {
     /* Create a cross geometry for the highlight */
-    const geometry1 = new THREE.TorusGeometry(size, 0.1, 16, 20);
-    const geometry2 = new THREE.TorusGeometry(size, 0.1, 16, 20);
+    const torusOptions = { radius: size, tube: 0.1, radialSegments: 16, tubularSegments: 20 };
+    const geometry1 = this.shapeRegistry.getGeometry("Torus", torusOptions);
+    const geometry2 = this.shapeRegistry.getGeometry("Torus", torusOptions);
     // rotate the second torus
     geometry2.rotateX(Math.PI / 2);
-    const geometry3 = new THREE.TorusGeometry(size, 0.1, 16, 20);
+    const geometry3 = this.shapeRegistry.getGeometry("Torus", torusOptions);
     geometry3.rotateY(Math.PI / 2);
     // Merge the two geometries
     const crossGeometry = mergeGeometries([geometry1, geometry2, geometry3]);

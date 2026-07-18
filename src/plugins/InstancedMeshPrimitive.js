@@ -19,6 +19,7 @@ export class InstancedMeshPrimitive {
     this.viewer = viewer;
     this.scene = this.viewer.tjs.scene;
     this.materialsRegistry = this.viewer.materialsRegistry
+    this.shapeRegistry = this.viewer.shapeRegistry
     this.settings = [];
     this.meshes = [];
 
@@ -102,49 +103,25 @@ export class InstancedMeshPrimitive {
   }
 
   getGeometry(setting) {
-    // TODO: delegate to this.shapeRegistry.getGeometry() once the API stabilises
-    let geometry;
-    let defaultShape;
-    let params;
-    switch (setting.type) {
-      case "cube":
-        defaultShape = { width: 1, height: 1, depth: 1 };
-        params = { ...defaultShape, ...setting.shape };
-        geometry = new THREE.BoxGeometry(params.width, params.height, params.depth);
-        break;
-      case "cylinder":
-        defaultShape = { radiusTop: 1, radiusBottom: 1, height: 1, radialSegments: 8, heightSegments: 1, openEnded: false };
-        params = { ...defaultShape, ...setting.shape };
-        geometry = new THREE.CylinderGeometry(params.radiusTop, params.radiusBottom, params.height, params.radialSegments, params.heightSegments, params.openEnded);
-        break;
-      case "icosahedron":
-        defaultShape = { radius: 1, detail: 0 };
-        params = { ...defaultShape, ...setting.shape };
-        geometry = new THREE.IcosahedronGeometry(params.radius, params.detail);
-        break;
-      case "cone":
-        defaultShape = { radius: 1, height: 1, radialSegments: 8, heightSegments: 1, openEnded: false };
-        params = { ...defaultShape, ...setting.shape };
-        geometry = new THREE.ConeGeometry(params.radius, params.height, params.radialSegments, params.heightSegments, params.openEnded);
-        break;
-      case "plane":
-        defaultShape = { width: 1, height: 1 };
-        params = { ...defaultShape, ...setting.shape };
-        geometry = new THREE.PlaneGeometry(params.width, params.height);
-        break;
-      case "sphere":
-        defaultShape = { radius: 1, widthSegments: 8, heightSegments: 6, phiStart: 0, phiLength: Math.PI * 2, thetaStart: 0, thetaLength: Math.PI };
-        params = { ...defaultShape, ...setting.shape };
-        geometry = new THREE.SphereGeometry(params.radius, params.widthSegments, params.heightSegments, params.phiStart, params.phiLength, params.thetaStart, params.thetaLength);
-        break;
-      case "torus":
-        defaultShape = { radius: 1, tube: 0.4, radialSegments: 8, tubularSegments: 6, arc: Math.PI * 2 };
-        params = { ...defaultShape, ...setting.shape };
-        geometry = new THREE.TorusGeometry(params.radius, params.tube, params.radialSegments, params.tubularSegments, params.arc);
-        break;
-      default:
-        console.error("Unknown setting type: ", type);
+    const nameMap = {
+      cube: "Cube", sphere: "Sphere", cylinder: "Cylinder",
+      cone: "Cone", plane: "Plane", torus: "Torus", icosahedron: "Icosahedron",
+    };
+    const defaults = {
+      cube: { width: 1, height: 1, depth: 1 },
+      sphere: { radius: 1, widthSegments: 8, heightSegments: 6, phiStart: 0, phiLength: Math.PI * 2, thetaStart: 0, thetaLength: Math.PI },
+      cylinder: { radiusTop: 1, radiusBottom: 1, height: 1, radialSegments: 8, heightSegments: 1, openEnded: false },
+      cone: { radius: 1, height: 1, radialSegments: 8, heightSegments: 1, openEnded: false },
+      plane: { width: 1, height: 1 },
+      torus: { radius: 1, tube: 0.4, radialSegments: 8, tubularSegments: 6, arc: Math.PI * 2 },
+      icosahedron: { radius: 1, detail: 0 },
+    };
+    const name = nameMap[setting.type];
+    if (!name) {
+      console.error("Unknown setting type: ", setting.type);
+      return null;
     }
-    return geometry;
+    const params = { ...defaults[setting.type], ...setting.shape };
+    return this.shapeRegistry.getGeometry(name, params);
   }
 }

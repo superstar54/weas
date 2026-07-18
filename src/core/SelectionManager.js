@@ -585,7 +585,7 @@ export class SelectionManager {
       return;
     }
     if (!this[meshKey]) {
-      const geometry = new THREE.PlaneGeometry(size, size);
+      const geometry = this.weas.shapeRegistry.getGeometry("Plane", { width: size, height: size });
       const material = new THREE.MeshBasicMaterial({
         color,
         transparent: true,
