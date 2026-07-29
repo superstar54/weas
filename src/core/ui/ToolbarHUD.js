@@ -93,7 +93,10 @@ class ToolbarHUD {
     });
   }
 
-  addButton(key, { label = "", hint = "", icon, onClick } = {}) {
+  addButton(
+    key,
+    { label = "", hint = "", icon, onClick, fontSize = "15px" } = {},
+  ) {
     if (this.buttons.has(key)) this.removeButton(key);
 
     const btn = document.createElement("button");
@@ -123,6 +126,7 @@ class ToolbarHUD {
       color: "rgba(255,255,255,0.85)",
       transition: "background 0.15s",
       padding: "0",
+      fontSize: fontSize
     });
 
     btn.addEventListener("mouseenter", () => {

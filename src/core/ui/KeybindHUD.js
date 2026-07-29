@@ -19,7 +19,7 @@ function style(el, styles) {
 class KeybindHUD {
   constructor(keybindManager, hud) {
     this._km = keybindManager;
-    this._hud = hud;
+    this.toolbarHUD = hud.ToolbarHUD;
     this._visible = false;
 
     this._build();
@@ -27,58 +27,26 @@ class KeybindHUD {
   }
 
   _build() {
-    this._container = document.createElement("div");
-    style(this._container, {
-      position: "relative",
-      fontFamily: "sans-serif",
-      fontSize: "13px",
-      color: "#ccc",
-      userSelect: "none",
-      pointerEvents: "auto",
-    });
-
-    this._badge = document.createElement("div");
-    style(this._badge, {
-      width: "28px",
-      height: "28px",
-      borderRadius: "50%",
-      background: "rgba(30,30,40,0.75)",
-      border: "1px solid rgba(255,255,255,0.35)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      fontSize: "15px",
-      fontWeight: "700",
-      lineHeight: "1",
-      color: "#eee",
-      transition: "background 0.15s",
-    });
-    this._badge.textContent = "?";
-    this._badge.addEventListener("mouseenter", () => {
-      this._badge.style.background = "rgba(60,60,80,0.85)";
-    });
-    this._badge.addEventListener("mouseleave", () => {
-      this._badge.style.background = "rgba(30,30,40,0.75)";
-    });
-    this._badge.addEventListener("click", (e) => {
-      e.stopPropagation();
-      this.toggle();
-    });
-
     this._panel = document.createElement("div");
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "relative";
+
     style(this._panel, {
       position: "absolute",
-      top: "32px",
+      top: "0",
       right: "0",
+      width: "220px",
       background: "rgba(20,20,28,0.92)",
       border: "1px solid rgba(255,255,255,0.15)",
-      borderRadius: "6px",
-      padding: "8px 12px",
-      minWidth: "200px",
+      borderRadius: "8px",
+      padding: "10px 12px",
       display: "none",
-      backdropFilter: "blur(6px)",
-      pointerEvents: "auto",
+      color: "rgba(255,255,255,0.85)",
+      fontFamily: "sans-serif",
+      fontSize: "13px",
+      lineHeight: "1.5",
+      textAlign: "left",
+      whiteSpace: "nowrap",
     });
 
     const header = document.createElement("div");
@@ -106,6 +74,7 @@ class KeybindHUD {
         display: "flex",
         justifyContent: "space-between",
         gap: "16px",
+
         padding: "2px 0",
         lineHeight: "1.6",
       });
@@ -136,13 +105,22 @@ class KeybindHUD {
       this._panel.appendChild(empty);
     }
 
-    this._container.appendChild(this._badge);
-    this._container.appendChild(this._panel);
-
-    this._hud.addHTMLPanel("keybinds", this._container, {
-      anchor: "top-right",
-      offset: { x: 25, y: 0 },
+    this._button = this.toolbarHUD.addButton("keybinds", {
+      label: "?",
+      hint: "Show keybinds",
+      fontSize: "24px",
+      onClick: (e) => {
+        e.stopPropagation();
+        this.toggle();
+      },
     });
+
+    this._button.style.position = "relative";
+    this.toolbarHUD.hud.container.appendChild(this._panel);
+    this._button.style.overflow = "visible";
+
+    wrapper.appendChild(this._button);
+    this.toolbarHUD.container.appendChild(wrapper);
   }
 
   _friendlyName(name) {
@@ -157,7 +135,7 @@ class KeybindHUD {
   _registerToggle() {
     this._km.register("toggleKeybinds", () => this.toggle(), [["?"]]);
     this._clickOutside = (e) => {
-      if (this._visible && !this._container.contains(e.target)) {
+      if (this._visible && !this._button.contains(e.target)) {
         this.hide();
       }
     };
