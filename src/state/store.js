@@ -21,6 +21,23 @@ function getByPath(target, path) {
   return current;
 }
 
+function setByPath(target, path, value) {
+  const parts = path.split(".");
+  let current = target;
+
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+
+    if (!current[part] || typeof current[part] !== "object") {
+      current[part] = {};
+    }
+
+    current = current[part];
+  }
+
+  current[parts[parts.length - 1]] = value;
+}
+
 function mergeDeep(target, source) {
   Object.entries(source || {}).forEach(([key, value]) => {
     if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -62,6 +79,17 @@ class StateStore {
       this.pending = true;
       return;
     }
+    this.emit();
+  }
+
+  replace(path, value) {
+    setByPath(this.state, path, cloneValue(value));
+
+    if (this.depth > 0) {
+      this.pending = true;
+      return;
+    }
+
     this.emit();
   }
 

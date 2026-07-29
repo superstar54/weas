@@ -99,17 +99,15 @@ export class Measurement {
     // deterministic name: e.g., "measurement-1-2-3"
     const name = `measurement-${indices.join("-")}`;
 
-    // assign or overwrite the measurement for these indices
-    measurements[name] = { indices };
+    if (measurements[name]) {
+      // Toggle off existing measurement
+      delete measurements[name];
+    } else {
+      // Add new measurement
+      measurements[name] = { indices };
+    }
 
-    this.viewer.state.set({
-      plugins: {
-        measurement: {
-          ...current,
-          measurements,
-        },
-      },
-    });
+    this.viewer.state.replace("plugins.measurement.measurements", measurements);
   }
 
   /**
@@ -117,9 +115,10 @@ export class Measurement {
    * @param {Object} settings - Settings to apply.
    */
   setSettings(settings) {
-    this.viewer.state.set({
-      plugins: { measurement: { settings: cloneValue(settings) } },
-    });
+    this.viewer.state.replace(
+      "plugins.measurement.settings",
+      cloneValue(settings),
+    );
   }
 
   /**
