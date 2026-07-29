@@ -9,6 +9,35 @@ import {
 
 import merge from "lodash.merge";
 
+// some measurement keys will return the same response, this should group them correctly
+function getMeasurementKey(indices) {
+  if (indices.length === 1) {
+    return indices.join("-");
+  }
+
+  if (indices.length === 2) {
+    return [...indices].sort((a, b) => a - b).join("-");
+  }
+
+  if (indices.length === 3) {
+    const forward = indices.join("-");
+    const reverse = [indices[2], indices[1], indices[0]].join("-");
+
+    return forward < reverse ? forward : reverse;
+  }
+
+  if (indices.length === 4) {
+    const reverse = [...indices].reverse();
+
+    const forwardKey = indices.join("-");
+    const reverseKey = reverse.join("-");
+
+    return forwardKey < reverseKey ? forwardKey : reverseKey;
+  }
+
+  return indices.join("-");
+}
+
 // TODO: Think if this even belongs here?
 // I feel like measuring the distance between two objects
 // might be a useful method to have at the weas core and hide alot of this logic away
@@ -96,14 +125,11 @@ export class Measurement {
     const current = this.viewer.state.get("plugins.measurement") || {};
     const measurements = { ...(current.measurements || {}) };
 
-    // deterministic name: e.g., "measurement-1-2-3"
-    const name = `measurement-${indices.join("-")}`;
+    const name = `measurement-${getMeasurementKey(indices)}`;
 
     if (measurements[name]) {
-      // Toggle off existing measurement
       delete measurements[name];
     } else {
-      // Add new measurement
       measurements[name] = { indices };
     }
 
