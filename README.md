@@ -103,7 +103,7 @@ Clone the repository,
 
 ```console
 npm install
-npm start
+npm run dev
 ```
 
 Then go to the `demo` site.
@@ -112,7 +112,7 @@ Then go to the `demo` site.
 
 ```console
 npm install
-npm test
+npm run test
 ```
 
 #### End-to-end test
