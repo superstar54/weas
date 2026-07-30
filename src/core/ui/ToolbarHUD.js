@@ -91,6 +91,50 @@ class ToolbarHUD {
         this.weas.avr.Measurement.measure(this.weas.avr.selectedAtomsIndices);
       },
     });
+
+    this.addButton("export", {
+      label: "Export",
+      hint: "Export state as JSON",
+      onClick: () => {
+        const snapshot = this.weas.exportState();
+        const text = JSON.stringify(snapshot, null, 2);
+        const blob = new Blob([text], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "weas-state.json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      },
+    });
+
+    this.addButton("import", {
+      label: "Import",
+      hint: "Import state from JSON",
+      onClick: () => {
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = ".json,.on";
+        fileInput.style.display = "none";
+        document.body.appendChild(fileInput);
+        fileInput.addEventListener("change", async () => {
+          const file = fileInput.files && fileInput.files[0];
+          document.body.removeChild(fileInput);
+          if (!file) return;
+          try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            this.weas.importState(data);
+          } catch (error) {
+            console.error("Import failed:", error);
+            alert(`Import failed: ${error.message || error}`);
+          }
+        }, { once: true });
+        fileInput.click();
+      },
+    });
   }
 
   addButton(
