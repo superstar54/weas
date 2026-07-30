@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { CellManager } from "./cell";
 import { AtomManager } from "./plugins/atom";
 import { BondManager, defaultBondRadius, searchBondedAtoms } from "./plugins/bond";
+import { BondPopover } from "./plugins/bondPopover";
 import { clearObjects, clearObject, toIndexArray, toVector3, calculateCartesianCoordinates } from "../utils";
 import { PolyhedraManager } from "./plugins/polyhedra";
 import { BoundaryManager } from "./plugins/boundary";
@@ -70,6 +71,7 @@ class AtomsViewer {
     this.highlightManager = new HighlightManager(this);
     this.guiManager = new AtomsGUI(this, this.weas.guiManager.gui, this.weas.guiManager.guiConfig); // Pass guiConfig
     this.bondManager = new BondManager(this, viewerSettings.bondSettings);
+    this.bondPopover = new BondPopover(this);
     this.boundaryManager = new BoundaryManager(this);
     this.polyhedraManager = new PolyhedraManager(this);
     this.isosurfaceManager = new Isosurface(this);

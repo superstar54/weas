@@ -209,6 +209,11 @@ class AtomsGUI {
         );
       });
 
+    // Bond Length Popover Button
+    atomsFolder
+      .add({ openBondEditor: () => this.viewer.bondPopover.toggle() }, "openBondEditor")
+      .name("Edit Bond Lengths");
+
     // Legend Toggle Control
     this.legendToggleController = atomsFolder
       .add(this.atomLegendConfig, "enabled")

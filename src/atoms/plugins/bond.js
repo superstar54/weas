@@ -158,6 +158,57 @@ export class BondManager {
     this.settings[key] = setting;
   }
 
+  getBondLength(specie1, specie2) {
+    const key = specie1 + "-" + specie2;
+    const setting = this.settings[key];
+    if (!setting) return null;
+    return setting.toDict();
+  }
+
+  getSupportedPairs() {
+    return Object.keys(this.settings).map((key) => key.split("-"));
+  }
+
+  getAllBondLengths() {
+    const result = [];
+    Object.values(this.settings).forEach((setting) => {
+      result.push(setting.toDict());
+    });
+    return result;
+  }
+
+  setBondLength(specie1, specie2, { min, max, radius, color1, color2 }) {
+    const key = specie1 + "-" + specie2;
+    if (!this.settings[key]) return;
+    const setting = this.settings[key];
+    if (min !== undefined) setting.min = min;
+    if (max !== undefined) setting.max = max;
+    if (radius !== undefined) setting.radius = radius;
+    if (color1 !== undefined) setting.color1 = convertColor(color1);
+    if (color2 !== undefined) setting.color2 = convertColor(color2);
+  }
+
+  resetBondLength(specie1, specie2) {
+    const sym1 = this.viewer.originalAtoms.species[specie1];
+    const sym2 = this.viewer.originalAtoms.species[specie2];
+    if (!sym1 || !sym2) return;
+    const key = specie1 + "-" + specie2;
+    this.settings[key] = this.getDefaultSetting(specie1, sym1, specie2, sym2);
+  }
+
+  resetAllBondLengths() {
+    const species = this.viewer.originalAtoms.species;
+    this.settings = {};
+    Object.entries(species).forEach(([symbol1, specie1]) => {
+      Object.entries(species).forEach(([symbol2, specie2]) => {
+        const elementPair = specie1.element + "-" + specie2.element;
+        if (default_bond_pairs[elementPair] === undefined) return;
+        const key = symbol1 + "-" + symbol2;
+        this.settings[key] = this.getDefaultSetting(symbol1, specie1, symbol2, specie2);
+      });
+    });
+  }
+
   buildBondDict() {
     /* Build a dictionary of cutoffs */
     const cutoffDict = {};
