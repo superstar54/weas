@@ -23,6 +23,7 @@ import { MaterialsRegistry } from "./core/MaterialsRegistry";
 import { ShapeRegistry } from "./core/ShapeRegistry";
 import { KeybindManager } from "./core/KeybindManager";
 import { KeybindHUD } from "./core/ui/KeybindHUD";
+import { CameraHUD } from "./core/ui/CameraHUD";
 
 class WEAS {
   constructor({
@@ -78,6 +79,10 @@ class WEAS {
 
     if (this.keybindManager && this.tjs?.hud) {
       this._keybindHUD = new KeybindHUD(this.keybindManager, this.tjs.hud);
+    }
+
+    if (this.tjs?.hud && this.tjs?.cameraController) {
+      this._cameraHUD = new CameraHUD(this, this.tjs.hud);
     }
 
     if (this.guiManager?.registerFolder) {

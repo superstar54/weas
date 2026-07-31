@@ -1,5 +1,16 @@
 import { toolbarIcons } from "./Icons";
 
+const DEFAULT_ORDER = [
+  "undo",
+  "redo",
+  "measure",
+  "camera",
+  "fullscreen",
+  "export",
+  "import",
+  "keybinds",
+];
+
 class ToolbarHUD {
   constructor(weas, hudController, config = {}) {
     this.weas = weas;
@@ -20,6 +31,10 @@ class ToolbarHUD {
 
     this.config = Object.assign({ panelKey: "toolbar" }, config);
     this.buttons = new Map();
+    this._order = Array.isArray(config.order)
+      ? config.order.slice()
+      : DEFAULT_ORDER.slice();
+    this._reorderScheduled = false;
 
     this.container = document.createElement("div");
     Object.assign(this.container.style, {
@@ -119,19 +134,23 @@ class ToolbarHUD {
         fileInput.accept = ".json,.on";
         fileInput.style.display = "none";
         document.body.appendChild(fileInput);
-        fileInput.addEventListener("change", async () => {
-          const file = fileInput.files && fileInput.files[0];
-          document.body.removeChild(fileInput);
-          if (!file) return;
-          try {
-            const text = await file.text();
-            const data = JSON.parse(text);
-            this.weas.importState(data);
-          } catch (error) {
-            console.error("Import failed:", error);
-            alert(`Import failed: ${error.message || error}`);
-          }
-        }, { once: true });
+        fileInput.addEventListener(
+          "change",
+          async () => {
+            const file = fileInput.files && fileInput.files[0];
+            document.body.removeChild(fileInput);
+            if (!file) return;
+            try {
+              const text = await file.text();
+              const data = JSON.parse(text);
+              this.weas.importState(data);
+            } catch (error) {
+              console.error("Import failed:", error);
+              alert(`Import failed: ${error.message || error}`);
+            }
+          },
+          { once: true },
+        );
         fileInput.click();
       },
     });
@@ -170,7 +189,7 @@ class ToolbarHUD {
       color: "rgba(255,255,255,0.85)",
       transition: "background 0.15s",
       padding: "0",
-      fontSize: fontSize
+      fontSize: fontSize,
     });
 
     btn.addEventListener("mouseenter", () => {
@@ -195,7 +214,39 @@ class ToolbarHUD {
 
     this.container.appendChild(btn);
     this.buttons.set(key, btn);
+    btn.dataset.key = key;
+    this._scheduleReorder();
     return btn;
+  }
+
+  setOrder(order) {
+    this._order = Array.isArray(order) ? order.slice() : [];
+    this._reorder();
+  }
+
+  _scheduleReorder() {
+    if (this._reorderScheduled) return;
+    this._reorderScheduled = true;
+    queueMicrotask(() => {
+      this._reorderScheduled = false;
+      this._reorder();
+    });
+  }
+
+  _reorder() {
+    if (!this._order || this._order.length === 0) return;
+    const children = Array.from(this.container.children);
+    const rank = (child) => {
+      const btn = child.dataset?.key
+        ? child
+        : child.querySelector("[data-key]");
+      const key = btn?.dataset?.key;
+      if (!key) return Number.MAX_SAFE_INTEGER;
+      const pos = this._order.indexOf(key);
+      return pos === -1 ? Number.MAX_SAFE_INTEGER : pos;
+    };
+    children.sort((a, b) => rank(a) - rank(b));
+    children.forEach((child) => this.container.appendChild(child));
   }
 
   removeButton(key) {
