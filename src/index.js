@@ -19,7 +19,10 @@ import {
 import "./style.css";
 
 // Export the modules to be publicly available
+import { AgentAPI } from "./agent";
+
 export {
+  AgentAPI,
   WEAS,
   Specie,
   Atom,

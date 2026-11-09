@@ -63,6 +63,9 @@ const editor = new WEAS({
 });
 
 window.editor = editor;
+// Agent/console entry point: weas.help() explains the API.
+window.weas = editor.agent;
+console.info("WEAS agent API ready: run weas.help()");
 document
   .getElementById("structure-selector")
   .addEventListener("change", async (event) => {

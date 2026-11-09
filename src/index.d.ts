@@ -40,6 +40,8 @@ export declare class WEAS {
   readonly objectManager: any;
   /** The atoms viewer plugin */
   readonly avr: AtomsViewer;
+  /** Self-describing API for agents and console use; see agent.help() */
+  readonly agent: AgentAPI;
   /** Instanced mesh primitive plugin */
   readonly instancedMeshPrimitive: InstancedMeshPrimitive;
   /** AnyMesh plugin */
@@ -75,6 +77,29 @@ export declare class WEAS {
   exportState(): Record<string, any>;
   /** Import a previously exported state snapshot */
   importState(snapshot: Record<string, any>): void;
+}
+
+export interface AgentState {
+  natoms: number;
+  symbols: string[];
+  positions: number[][];
+  cell: number[][];
+  pbc: boolean[];
+  selected: number[];
+}
+
+/** Self-describing operation API: list() -> describe(name) -> run(name, params) */
+export declare class AgentAPI {
+  constructor(weas: WEAS);
+  readonly editor: WEAS;
+  help(): string;
+  list(filter?: string): { name: string; description: string; category: string }[];
+  describe(name: string): { name: string; description: string; params: Record<string, Record<string, any>> };
+  run(name: string, params?: Record<string, any>): AgentState;
+  state(): AgentState;
+  select(indices: number[]): AgentState;
+  undo(): AgentState;
+  redo(): AgentState;
 }
 
 /** Convert a weas-widget snapshot to a WEAS state payload */

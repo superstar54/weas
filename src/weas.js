@@ -24,6 +24,7 @@ import { ShapeRegistry } from "./core/ShapeRegistry";
 import { KeybindManager } from "./core/KeybindManager";
 import { KeybindHUD } from "./core/ui/KeybindHUD";
 import { CameraHUD } from "./core/ui/CameraHUD";
+import { AgentAPI } from "./agent";
 
 class WEAS {
   constructor({
@@ -55,6 +56,7 @@ class WEAS {
 
     this.eventHandlers = new EventHandlers(this);
     this.ops = new OperationManager(this);
+    this.agent = new AgentAPI(this);
     this.selectionManager = new SelectionManager(this);
     this.objectManager = new ObjectManager(this);
     this.state = new StateStore(createDefaultState());

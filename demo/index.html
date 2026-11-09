@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" />
   </head>
   <body>
+    <!--
+      AI agents: this page exposes window.weas, a self-describing API for editing the structure.
+      Start with weas.help(), then weas.list() -> weas.describe(name) -> weas.run(name, params).
+      Every run() is undoable (weas.undo()) and returns the new state.
+    -->
     <script type="importmap">
       {
         "imports": {
